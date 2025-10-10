@@ -18,12 +18,19 @@ import shutil
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path for config import
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import configuration
+from config import get_config
 
 # Import the augmentation system
 # Note: PoseAugmentationGenerator class moved here from generate_augmented_dataset.py
 from openhands_modernized import WLASLPoseProcessor
+
+# Load config
+config = get_config()
 
 class PoseAugmentationGenerator:
     """Generate multiple augmented versions of pose sequences."""
@@ -365,9 +372,9 @@ def create_proper_splits(source_dir, target_dir, classes_filter=None,
 
 def main():
     parser = argparse.ArgumentParser(description='Generate properly split augmented dataset')
-    parser.add_argument('--source', default="C:/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/wlasl_poses_complete/pickle_files",
+    parser.add_argument('--source', default=str(config.pickle_files_dir),
                        help='Source directory containing original .pkl files')
-    parser.add_argument('--target', default="C:/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/wlasl_poses_complete/properly_split_20_class",
+    parser.add_argument('--target', default=str(config.dataset_root / "properly_split_20_class"),
                        help='Target directory for properly split dataset')
     parser.add_argument('--classes', type=int, choices=[20, 50, 100], default=20,
                        help='Filter to top N classes (default: 20)')

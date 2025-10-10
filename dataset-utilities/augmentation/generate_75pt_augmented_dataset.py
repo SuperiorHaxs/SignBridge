@@ -19,6 +19,13 @@ from pathlib import Path
 from tqdm import tqdm
 from pose_format import Pose
 
+# Add project root to path for config import
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import configuration
+from config import get_config
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from openhands_modernized import WLASLPoseProcessor, PoseTransforms
 
@@ -28,12 +35,15 @@ sys.path.insert(0, dataset_utils_dir)
 from augment_pose_file import apply_shear, apply_rotation
 
 # ============================================================================
-# CONFIGURATION - All paths and settings
+# CONFIGURATION - Now managed by config system
 # ============================================================================
 
+# Load config
+config = get_config()
+
 # Base directories
-WLASL_BASE_DIR = "C:/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/wlasl_poses_complete"
-EXPERIMENTS_BASE_DIR = "C:/Users/padwe/OneDrive/WLASL-proj/OpenHands-Modernized/experiments"
+WLASL_BASE_DIR = str(config.dataset_root)
+EXPERIMENTS_BASE_DIR = str(config.experiments_dir)
 
 # Will be set based on command-line arguments
 INPUT_DIR = None
