@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Read(//c/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/**)",
+      "Bash(find:*)",
+      "WebFetch(domain:openhands.ai4bharat.org)",
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:github.com)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

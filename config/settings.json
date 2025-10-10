@@ -1,0 +1,13 @@
+{
+  "data_root": "C:/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/wlasl_poses_complete",
+  "project_root": "auto",
+
+  "_instructions": {
+    "description": "Configuration file for ASL-v1 project paths",
+    "data_root": "UPDATE THIS when cloning to new machine: Full path to your dataset root directory (e.g., 'E:/wlasl-data/wlasl-kaggle/wlasl_poses_complete' or '/mnt/external/wlasl-kaggle/wlasl_poses_complete')",
+    "project_root": "Leave as 'auto' for automatic detection, or set to absolute path of asl-v1 directory",
+    "setup": "Run 'python setup_config.py' for interactive configuration",
+    "example_windows": "E:/wlasl-data/wlasl-kaggle/wlasl_poses_complete",
+    "example_linux": "/mnt/external-drive/wlasl-kaggle/wlasl_poses_complete"
+  }
+}

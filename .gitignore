@@ -1,0 +1,96 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environment variables
+.env
+.env.local
+
+# Model files and training outputs
+*.pth
+*.pt
+*.h5
+*.pkl
+*.pickle
+*.ckpt
+checkpoints/
+models/wlasl_*_class_model/
+models/checkpoints/
+models/training-outputs/
+
+# Dataset files (on external drive, not in repo)
+# Note: Dataset should be configured via config/settings.json
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Output files
+output/
+experiments/
+*.mp4
+*.avi
+*.pose
+*.eaf
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Archive folder (old experiments)
+archive/
+
+# Large data files
+*.csv
+*.tsv
+*.json.gz
+*.zip
+*.tar.gz
+
+# Keep config structure but allow settings.json to be committed
+# (it contains example/current paths that user should update)
+# config/settings.json is COMMITTED so users know what to configure
