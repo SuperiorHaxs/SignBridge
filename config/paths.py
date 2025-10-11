@@ -139,9 +139,10 @@ class PathConfig:
                 'val': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/val",
             },
             50: {
-                'train_original': self.dataset_root / "conservative_split_50_class/train",
-                'train_augmented': self.dataset_root / "augmented_75pt_50_class",
-                'test': self.dataset_root / "pose_split_50_class/test",
+                'train_original': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/train",
+                'train_augmented': self.dataset_root / "dataset_splits/50_classes/augmented/50c_augmented_75pt_pose",
+                'test': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/test",
+                'val': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/val",
             },
             100: {
                 'train_original': self.dataset_root / "conservative_split_100_class/train",
