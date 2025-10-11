@@ -130,24 +130,33 @@ class PathConfig:
         # Base dataset directory
         self.dataset_root = self.data_root
 
+        # Augmented pool (central storage for all augmented files)
+        self.augmented_pool_root = self.data_root.parent / "augmented_pool"
+        self.augmented_pool_pickle = self.augmented_pool_root / "pickle"
+        self.augmented_pool_pose = self.augmented_pool_root / "pose"
+        self.augmented_pool_index = self.augmented_pool_pickle / "pickle_index.json"
+
         # Dataset splits for different class counts
         self.dataset_splits = {
             20: {
                 'train_original': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/train",
-                'train_augmented': self.dataset_root / "dataset_splits/20_classes/augmented/augmented_75pt_pickle_from_pose",
+                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
                 'test': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/test",
                 'val': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/val",
+                'class_mapping': self.dataset_root / "dataset_splits/20_classes/20_class_mapping.json",
             },
             50: {
                 'train_original': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/train",
-                'train_augmented': self.dataset_root / "dataset_splits/50_classes/augmented/50c_augmented_75pt_pose",
+                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
                 'test': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/test",
                 'val': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/val",
+                'class_mapping': self.dataset_root / "dataset_splits/50_classes/50_class_mapping.json",
             },
             100: {
                 'train_original': self.dataset_root / "conservative_split_100_class/train",
-                'train_augmented': self.dataset_root / "augmented_75pt_100_class",
+                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
                 'test': self.dataset_root / "pose_split_100_class/test",
+                'class_mapping': self.dataset_root / "dataset_splits/100_classes/100_class_mapping.json",
             }
         }
 

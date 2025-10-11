@@ -475,7 +475,8 @@ class WLASLPoseProcessor:
     def load_pickle_pose(self, pickle_path: str) -> np.ndarray:
         """Load pose data from WLASL pickle file and convert to 27-point format."""
         try:
-            with open(pickle_path, 'rb') as f:
+            # Buffered reading for better performance on external drives
+            with open(pickle_path, 'rb', buffering=1024*1024) as f:  # 1MB buffer
                 pose_data = pickle.load(f)
 
             # Extract keypoints from various possible formats

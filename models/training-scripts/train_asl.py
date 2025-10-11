@@ -26,9 +26,6 @@ from torch.utils.data import WeightedRandomSampler, DataLoader
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 # Add project root to path for config import
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
@@ -36,15 +33,19 @@ sys.path.insert(0, str(project_root))
 # Import configuration
 from config import get_config
 
+# Add openhands model path from config
+config = get_config()
+openhands_src = config.openhands_dir / "src"
+sys.path.insert(0, str(openhands_src))
+
 # Import the OpenHands architecture
 from openhands_modernized import WLASLDatasetLoader, OpenHandsModel, OpenHandsConfig, WLASLOpenHandsDataset
 
 # ============================================================================
 # DATASET CONFIGURATION - Now managed by config system
 # ============================================================================
-config = get_config()
 DATASET_ROOT = str(config.dataset_root / "dataset_splits")
-MAX_SEQ_LENGTH = 256  # Reduced for memory efficiency
+MAX_SEQ_LENGTH = 128  # Optimized for CPU training speed - most signs are shorter anyway
 
 # Dataset paths for different class counts - loaded from config
 DATASET_PATHS = {
@@ -156,12 +157,7 @@ def save_checkpoint(model, optimizer, epoch, best_val_acc, patience_counter,
     checkpoint = {
         # Model and optimizer state
         'model_state_dict': model.state_dict(),
-        'optimizer_state_dict': {
-            'lr': optimizer.lr,
-            'weight_decay': optimizer.weight_decay,
-            'momentum': optimizer.momentum,
-            'momentum_buffers': optimizer.momentum_buffers
-        },
+        'optimizer_state_dict': optimizer.state_dict(),  # Use PyTorch optimizer's state_dict
 
         # Training progress
         'epoch': epoch,
@@ -235,12 +231,14 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
     # Restore model
     model.load_state_dict(checkpoint['model_state_dict'])
 
-    # Restore optimizer
+    # Restore optimizer (handle both old custom optimizer and new PyTorch optimizer)
     opt_state = checkpoint['optimizer_state_dict']
-    optimizer.lr = opt_state['lr']
-    optimizer.weight_decay = opt_state['weight_decay']
-    optimizer.momentum = opt_state['momentum']
-    optimizer.momentum_buffers = opt_state['momentum_buffers']
+    if isinstance(opt_state, dict) and 'state' in opt_state:
+        # New PyTorch optimizer format
+        optimizer.load_state_dict(opt_state)
+    else:
+        # Old custom optimizer format - skip optimizer restoration
+        print("  WARNING: Old optimizer format detected, optimizer state not restored")
 
     # Restore random states for reproducibility
     if 'random_state' in checkpoint:
@@ -289,91 +287,117 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     if dataset_type == 'augmented':
         print(f"LOADING: Loading from BOTH original train AND augmented datasets")
 
-        # FIRST: Load target glosses from augmented path to filter properly
-        print(f"LOADING: Determining target classes from augmented dataset...")
-        target_glosses = set()
-        for class_dir in Path(augmented_path).iterdir():
-            if class_dir.is_dir():
-                target_glosses.add(class_dir.name.upper())
+        # OPTIMIZED: Load class mapping to determine target classes
+        class_mapping_path = DATASET_PATHS[num_classes].get('class_mapping')
+        if class_mapping_path and Path(class_mapping_path).exists():
+            print(f"LOADING: Reading class mapping from {class_mapping_path}")
+            with open(class_mapping_path, 'r') as f:
+                class_mapping = json.load(f)
+            target_glosses = set(g.upper() for g in class_mapping['classes'])
+            print(f"TARGET: {len(target_glosses)} target classes from mapping file")
+        else:
+            # Fallback: scan original train directory
+            print(f"LOADING: Class mapping not found, scanning original train directory...")
+            original_train_path = DATASET_PATHS[num_classes]['train_original']
+            target_glosses = set()
+            for class_name in os.listdir(original_train_path):
+                class_dir_path = os.path.join(original_train_path, class_name)
+                if os.path.isdir(class_dir_path):
+                    target_glosses.add(class_name.upper())
+            print(f"TARGET: {len(target_glosses)} target classes from original train")
 
-        print(f"TARGET: {len(target_glosses)} target classes: {sorted(list(target_glosses))}")
+        print(f"CLASSES: {sorted(list(target_glosses))}")
 
-        # 1. Load from ORIGINAL train directory (FILTERED to target classes only)
+        # 1. Load from ORIGINAL train directory
         original_train_path = DATASET_PATHS[num_classes]['train_original']
-        print(f"LOADING: Loading original train files from {original_train_path} (filtered to {len(target_glosses)} target classes)")
+        print(f"LOADING: Collecting original train files from {original_train_path}")
 
         original_count = 0
-        for class_dir in Path(original_train_path).iterdir():
-            if class_dir.is_dir():
-                class_name = class_dir.name.upper()
-                # FILTER: Only load if this class is in target_glosses
-                if class_name not in target_glosses:
-                    continue
+        # Use os.listdir to avoid Windows file handle issues
+        for class_name in os.listdir(original_train_path):
+            class_dir_path = os.path.join(original_train_path, class_name)
+            # Skip non-directories
+            if not os.path.isdir(class_dir_path):
+                continue
 
-                for pkl_file in class_dir.glob("*.pkl"):
-                    try:
-                        with open(pkl_file, 'rb') as f:
-                            pickle_data = pickle.load(f)
+            class_name_upper = class_name.upper()
+            # FILTER: Only load if this class is in target_glosses
+            if class_name_upper not in target_glosses:
+                continue
 
-                        if isinstance(pickle_data, dict) and 'gloss' in pickle_data:
-                            gloss_label = pickle_data['gloss'].upper()
-                            # Double-check it's in target classes
-                            if gloss_label in target_glosses:
-                                all_pose_files.append(str(pkl_file))
-                                all_labels.append(gloss_label)
-                                original_count += 1
-                    except:
-                        continue
+            # OPTIMIZED: Just collect file paths, gloss = directory name
+            for filename in os.listdir(class_dir_path):
+                if filename.endswith('.pkl'):
+                    pkl_file = os.path.join(class_dir_path, filename)
+                    all_pose_files.append(pkl_file)
+                    all_labels.append(class_name_upper)
+                    original_count += 1
 
-        print(f"FOUND: {original_count} original train files (from {len(target_glosses)} target classes)")
+        print(f"FOUND: {original_count} original train files from {len(target_glosses)} classes")
 
-        # 2. Load from AUGMENTED dataset directory
-        print(f"LOADING: Loading augmented files from {augmented_path}")
+        # 2. Load from AUGMENTED pool using index
+        print(f"LOADING: Loading augmented files from pool using index...")
+
+        # Load index file for fast access
+        index_path = config.augmented_pool_index
+        if index_path.exists():
+            print(f"LOADING: Reading augmented pool index from {index_path}")
+            with open(index_path, 'r') as f:
+                augmented_index = json.load(f)
+            print(f"INDEX: Loaded index with {len(augmented_index)} classes")
+        else:
+            print(f"WARNING: Index file not found at {index_path}, falling back to directory scan")
+            augmented_index = None
 
         augmented_count = 0
-        for class_dir in Path(augmented_path).iterdir():
-            if class_dir.is_dir():
-                for pkl_file in class_dir.glob("*.pkl"):
-                    try:
-                        with open(pkl_file, 'rb') as f:
-                            pickle_data = pickle.load(f)
+        augmented_pool_path = Path(augmented_path)
 
-                        if isinstance(pickle_data, dict) and 'gloss' in pickle_data:
-                            gloss_label = pickle_data['gloss'].upper()
-                            all_pose_files.append(str(pkl_file))
-                            all_labels.append(gloss_label)
+        if augmented_index:
+            # Fast path: use index (trust index, don't check exists to avoid Windows file handle limits)
+            for gloss_name in target_glosses:
+                if gloss_name in augmented_index:
+                    gloss_dir = augmented_pool_path / gloss_name.lower()
+                    for pkl_filename in augmented_index[gloss_name]:
+                        pkl_file = gloss_dir / pkl_filename
+                        all_pose_files.append(str(pkl_file))
+                        all_labels.append(gloss_name)
+                        augmented_count += 1
+        else:
+            # Slow path: directory scan (fallback)
+            for gloss_name in target_glosses:
+                gloss_dir_path = os.path.join(augmented_path, gloss_name.lower())
+                if os.path.isdir(gloss_dir_path):
+                    for filename in os.listdir(gloss_dir_path):
+                        if filename.endswith('.pkl'):
+                            pkl_file = os.path.join(gloss_dir_path, filename)
+                            all_pose_files.append(pkl_file)
+                            all_labels.append(gloss_name)
                             augmented_count += 1
-                    except:
-                        continue
 
         print(f"FOUND: {augmented_count} augmented files")
         print(f"TOTAL: {len(all_pose_files)} files ({original_count} original + {augmented_count} augmented) for {len(target_glosses)} classes")
 
     else:
-        # Original dataset loading
-        print(f"LOADING: Loading from original dataset at {DATASET_ROOT}")
+        # Original dataset loading - load from specific train directory
+        original_train_path = DATASET_PATHS[num_classes]['train_original']
+        print(f"LOADING: Loading from original train dataset at {original_train_path}")
 
-        for file_path in Path(DATASET_ROOT).rglob("*.pkl"):
-            try:
-                with open(file_path, 'rb') as f:
-                    pickle_data = pickle.load(f)
-
-                if isinstance(pickle_data, dict) and 'gloss' in pickle_data:
-                    gloss_label = pickle_data['gloss'].upper()
-                    all_pose_files.append(str(file_path))
-                    all_labels.append(gloss_label)
-            except:
-                continue
+        # OPTIMIZED: Just collect file paths, gloss = directory name, use os.listdir to avoid Windows issues
+        for class_name in os.listdir(original_train_path):
+            class_dir_path = os.path.join(original_train_path, class_name)
+            if os.path.isdir(class_dir_path):
+                class_name_upper = class_name.upper()
+                for filename in os.listdir(class_dir_path):
+                    if filename.endswith('.pkl'):
+                        pkl_file = os.path.join(class_dir_path, filename)
+                        all_pose_files.append(pkl_file)
+                        all_labels.append(class_name_upper)
 
         print(f"FOUND: Total files found: {len(all_pose_files)}")
 
-        # Load N-class vocabulary for original dataset
-        vocab_path = config.get_class_mapping(num_classes)
-        with open(vocab_path, 'r') as f:
-            vocab = json.load(f)
-
-        target_glosses = {gloss.upper() for gloss in vocab.values()}
-        print(f"TARGET: Top {num_classes} classes: {sorted(list(target_glosses))}")
+        # Create target glosses from the data we actually loaded
+        target_glosses = set(all_labels)
+        print(f"TARGET: {len(target_glosses)} classes: {sorted(list(target_glosses))}")
 
     # Filter to only include target glosses
     filtered_files = []
@@ -410,68 +434,59 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers)
     model.to(device)
 
-    # Split data - use larger validation set due to small dataset
-    train_files, temp_files, train_labels, temp_labels = train_test_split(
-        filtered_files, filtered_labels,
-        test_size=0.4, random_state=42, stratify=filtered_labels  # Larger test set
-    )
+    # Use pre-split data if available, otherwise use the loaded training data
+    train_files = filtered_files
+    train_labels = filtered_labels
 
-    val_files, test_files, val_labels, test_labels = train_test_split(
-        temp_files, temp_labels,
-        test_size=0.5, random_state=42, stratify=temp_labels  # 20% val, 20% test
-    )
+    # Load validation data if available
+    if 'val' in DATASET_PATHS[num_classes]:
+        val_path = DATASET_PATHS[num_classes]['val']
+        val_files = []
+        val_labels = []
 
-    print(f"SPLIT: Train: {len(train_files)}, Val: {len(val_files)}, Test: {len(test_files)}")
+        print(f"LOADING: Loading validation data from {val_path}")
+        # OPTIMIZED: Just collect file paths, gloss = directory name, use os.listdir to avoid Windows issues
+        for class_name in os.listdir(val_path):
+            class_dir_path = os.path.join(val_path, class_name)
+            if os.path.isdir(class_dir_path):
+                class_name_upper = class_name.upper()
+                if class_name_upper in target_glosses:
+                    for filename in os.listdir(class_dir_path):
+                        if filename.endswith('.pkl'):
+                            pkl_file = os.path.join(class_dir_path, filename)
+                            val_files.append(pkl_file)
+                            val_labels.append(class_name_upper)
+        print(f"FOUND: {len(val_files)} validation files")
+    else:
+        # No val split, use 20% of training for validation
+        train_files, val_files, train_labels, val_labels = train_test_split(
+            filtered_files, filtered_labels,
+            test_size=0.2, random_state=42, stratify=None  # No stratify for small datasets
+        )
+        print(f"SPLIT: Created validation split from training data")
+
+    print(f"SPLIT: Train: {len(train_files)}, Val: {len(val_files)}")
     print(f"RATIO: ~{len(train_files)/len(unique_glosses):.1f} train samples per class")
 
-    # Create datasets with conditional augmentation based on dataset type
-    if dataset_type == 'augmented':
-        # Reduced augmentation since we already have diverse pre-generated samples
-        train_dataset = WLASLOpenHandsDataset(
-            train_files, train_labels, gloss_to_id,
-            MAX_SEQ_LENGTH, augment=False  # No additional augmentation needed
-        )
-        print(f"AUGMENTATION: Using pre-generated diverse samples - no runtime augmentation")
-    else:
-        # Aggressive augmentation for original small dataset
-        train_dataset = WLASLOpenHandsDataset(
-            train_files, train_labels, gloss_to_id,
-            MAX_SEQ_LENGTH, augment=True  # Aggressive augmentation
-        )
-        print(f"AUGMENTATION: Using runtime augmentation for original dataset")
+    # Create datasets - NO runtime augmentation (all augmentation is pre-done)
+    train_dataset = WLASLOpenHandsDataset(
+        train_files, train_labels, gloss_to_id,
+        MAX_SEQ_LENGTH, augment=False  # No runtime augmentation
+    )
+    print(f"AUGMENTATION: No runtime augmentation (using pre-generated augmented data)")
 
     val_dataset = WLASLOpenHandsDataset(
         val_files, val_labels, gloss_to_id,
         MAX_SEQ_LENGTH, augment=False
     )
 
-    # CLASS BALANCING: Create weighted sampler for balanced training
-    print(f"\nCLASS BALANCING: Implementing weighted sampling...")
-
-    # Calculate class weights (inverse frequency)
-    train_label_counts = Counter(train_labels)
-    class_weights = {}
-    total_samples = len(train_labels)
-
-    for label in unique_glosses:
-        count = train_label_counts.get(label, 1)  # Avoid division by zero
-        class_weights[label] = total_samples / (len(unique_glosses) * count)
-
-    # Create sample weights for WeightedRandomSampler
-    sample_weights = [class_weights[label] for label in train_labels]
-    sampler = WeightedRandomSampler(
-        weights=sample_weights,
-        num_samples=len(train_dataset),
-        replacement=True  # Allow sampling with replacement to balance classes
-    )
-
-    print(f"   Class weights range: {min(class_weights.values()):.2f} - {max(class_weights.values()):.2f}")
-    print(f"   Weighted sampling: Each class will be sampled equally on average")
+    # CLASS BALANCING: Using shuffle for now (WeightedRandomSampler causes hang)
+    print(f"\nCLASS BALANCING: Using shuffle (WeightedRandomSampler currently disabled)")
 
     # Conditional training parameters based on dataset type
     if dataset_type == 'augmented':
         # Optimized for balanced 50-class model
-        batch_size = 32  # Reduced for memory efficiency
+        batch_size = 16  # Optimized for CPU training speed
         lr = 1e-4  # OpenHands methodology: lower learning rate
         weight_decay = 0.008 if num_classes >= 50 else 0.01  # Balanced regularization
         scheduler_patience = 8 if num_classes >= 50 else 5  # More patience for 50+ classes
@@ -484,7 +499,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"  Weight decay: {weight_decay} (more regularization)")
     else:
         # Original hyperparams for small dataset
-        batch_size = 32  # Reduced for memory efficiency
+        batch_size = 16  # Optimized for CPU training speed
         lr = 1e-4  # OpenHands methodology: lower learning rate
         weight_decay = 0.001  # Less weight decay
         scheduler_patience = 3  # More aggressive
@@ -501,47 +516,13 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     else:
         print(f"  Early stopping: Disabled (will train for full {num_epochs} epochs)")
 
-    # Use weighted sampler instead of shuffle=True
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=sampler, num_workers=0)
+    # Use shuffle instead of weighted sampler
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
-    # Manual parameter updates to avoid PyTorch optimizer compilation issues
-    class SimpleOptimizer:
-        def __init__(self, parameters, lr=0.001, weight_decay=0.0, momentum=0.9):
-            self.param_groups = [{'params': list(parameters), 'lr': lr, 'weight_decay': weight_decay, 'momentum': momentum}]
-            self.lr = lr
-            self.weight_decay = weight_decay
-            self.momentum = momentum
-            self.momentum_buffers = {}
-
-        def zero_grad(self):
-            for param in self.param_groups[0]['params']:
-                if param.grad is not None:
-                    param.grad.data.zero_()
-
-        def step(self):
-            for i, param in enumerate(self.param_groups[0]['params']):
-                if param.grad is None:
-                    continue
-
-                grad = param.grad.data
-
-                # Weight decay
-                if self.weight_decay != 0:
-                    grad = grad.add(param.data, alpha=self.weight_decay)
-
-                # Momentum
-                if self.momentum != 0:
-                    if i not in self.momentum_buffers:
-                        self.momentum_buffers[i] = torch.zeros_like(param.data)
-                    buf = self.momentum_buffers[i]
-                    buf.mul_(self.momentum).add_(grad)
-                    grad = buf
-
-                # Update parameters
-                param.data.add_(grad, alpha=-self.lr)
-
-    optimizer = SimpleOptimizer(model.parameters(), lr=lr, weight_decay=weight_decay)
+    # Use PyTorch's built-in optimizer (much faster than custom Python implementation)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=0.9)
+    print(f"OPTIMIZER: Using torch.optim.SGD with lr={lr}, weight_decay={weight_decay}, momentum=0.9")
 
     # Simple scheduler
     scheduler = None
@@ -578,7 +559,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"RESUMED: Starting from epoch {start_epoch}, best val acc: {best_val_acc:.2f}%")
 
     # Training loop with conditional parameters
-    print("TRAINING: Starting 20-class training...")
+    print("TRAINING: Starting training...")
     print(f"BASELINE: Random accuracy baseline = {100/len(unique_glosses):.1f}%")
     print("-" * 60)
 
@@ -587,6 +568,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         total_loss = 0
         correct = 0
         total = 0
+
+        print(f"\nEpoch {epoch+1}/{num_epochs}")
 
         for batch_idx, batch in enumerate(train_loader):
             pose_sequences = batch['pose_sequence'].to(device)
@@ -609,8 +592,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
             correct += (predictions == labels).sum().item()
             total += labels.size(0)
 
-            if (batch_idx + 1) % 10 == 0:  # More frequent logging
-                print(f"    Batch {batch_idx + 1}/{len(train_loader)} - Loss: {loss.item():.4f}")
+            if (batch_idx + 1) % 20 == 0:  # Progress logging every 20 batches
+                print(f"    Batch {batch_idx + 1}/{len(train_loader)} - Loss: {loss.item():.4f}", flush=True)
 
         avg_loss = total_loss / len(train_loader)
         train_accuracy = 100 * correct / total
