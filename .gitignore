@@ -52,6 +52,8 @@ checkpoints/
 models/wlasl_*_class_model/
 models/checkpoints/
 models/training-outputs/
+models/training-scripts/models/
+models/openhands-modernized/bin/
 
 # Dataset files (large, stored locally or external drive)
 # Note: Dataset should be configured via config/settings.json
