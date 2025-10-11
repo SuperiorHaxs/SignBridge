@@ -97,35 +97,57 @@ Replace `/absolute/path/to/datasets/wlasl_poses_complete` with your actual path.
 
 ### 5. Setup Dataset Structure
 
-Create the following directory structure:
+**IMPORTANT:** Dataset files are NOT included in the repository (too large).
 
-```
-asl-v1/
-└── datasets/
-    └── wlasl_poses_complete/
-        ├── dataset_splits/
-        │   ├── 20_classes/
-        │   │   └── original/pickle_from_pose_split_20_class/
-        │   │       ├── train/ (20 class folders)
-        │   │       ├── test/
-        │   │       └── val/
-        │   └── 50_classes/
-        │       └── original/pickle_from_pose_split_50_class/
-        │           ├── train/ (50 class folders)
-        │           ├── test/
-        │           └── val/
-        └── (parent directory)/
-            └── augmented_pool/
-                └── pickle/
-                    ├── accident/
-                    ├── apple/
-                    └── ... (896 class folders)
-                    └── pickle_index.json
-```
+**Step-by-step instructions to set up datasets:**
 
-**Note:** Dataset files are NOT included in the repository (too large). You must copy them from:
+1. **Create datasets directory in your cloned repo:**
+   ```bash
+   cd asl-v1
+   mkdir datasets
+   ```
+
+2. **Copy your wlasl_poses_complete folder:**
+   ```bash
+   # From another system or external drive
+   cp -r /path/to/wlasl_poses_complete datasets/
+
+   # Or on Windows
+   xcopy /E /I D:\wlasl_poses_complete datasets\wlasl_poses_complete
+   ```
+
+3. **Verify the directory structure:**
+   ```
+   asl-v1/
+   └── datasets/
+       └── wlasl_poses_complete/
+           ├── dataset_splits/
+           │   ├── 20_classes/
+           │   │   └── original/pickle_from_pose_split_20_class/
+           │   │       ├── train/ (20 class folders with .pkl files)
+           │   │       ├── test/
+           │   │       └── val/
+           │   └── 50_classes/
+           │       └── original/pickle_from_pose_split_50_class/
+           │           ├── train/ (50 class folders with .pkl files)
+           │           ├── test/
+           │           └── val/
+           └── (this will be created next) →
+
+   asl-v1/
+   └── datasets/
+       └── augmented_pool/
+           └── pickle/
+               ├── accident/
+               ├── apple/
+               └── ... (896 class folders)
+               └── pickle_index.json
+   ```
+
+**Where to get dataset files:**
 - Another system where you've already set up ASL-v1
-- Original WLASL dataset source after processing
+- Original WLASL dataset source after processing with pose extraction
+- **Note:** The augmented_pool goes in `datasets/augmented_pool/`, NOT inside wlasl_poses_complete
 
 ### 6. Setup Augmented Pool
 

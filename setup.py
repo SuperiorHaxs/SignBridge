@@ -319,39 +319,70 @@ def guide_dataset_setup():
     """Guide user through dataset setup."""
     print_header("Dataset Setup Guide")
 
-    print_info("The ASL-v1 training requires the following dataset structure:")
-    print()
-    print("  datasets/")
-    print("  └── wlasl_poses_complete/")
-    print("      ├── dataset_splits/")
-    print("      │   ├── 20_classes/")
-    print("      │   │   └── original/pickle_from_pose_split_20_class/")
-    print("      │   │       ├── train/  (20 class folders with .pkl files)")
-    print("      │   │       ├── test/")
-    print("      │   │       └── val/")
-    print("      │   └── 50_classes/")
-    print("      │       └── original/pickle_from_pose_split_50_class/")
-    print("      │           ├── train/  (50 class folders with .pkl files)")
-    print("      │           ├── test/")
-    print("      │           └── val/")
-    print("      └── (parent)/")
-    print("          └── augmented_pool/")
-    print("              └── pickle/")
-    print("                  ├── accident/")
-    print("                  ├── apple/")
-    print("                  └── ... (augmented class folders)")
+    print_warning("IMPORTANT: Dataset files are NOT included in the git repository (too large).")
     print()
 
-    print_warning("IMPORTANT: You need to transfer your pre-existing dataset files to this structure.")
-    print_info("Dataset files are NOT included in the git repository (too large).")
+    # Get the configured data_root
+    config_file = Path("config/settings.json")
+    try:
+        with open(config_file, 'r') as f:
+            config = json.load(f)
+        data_root = Path(config.get('data_root', ''))
+    except:
+        data_root = Path("datasets/wlasl_poses_complete")
+
+    # Check if datasets directory exists
+    datasets_dir = Path("datasets")
+    if not datasets_dir.exists():
+        print_info("Creating datasets directory...")
+        datasets_dir.mkdir(parents=True, exist_ok=True)
+        print_success(f"Created: {datasets_dir.absolute()}")
+    else:
+        print_success(f"datasets/ directory exists at: {datasets_dir.absolute()}")
+
+    print()
+    print_info("Required directory structure:")
+    print()
+    print("  asl-v1/")
+    print("  └── datasets/")
+    print("      ├── wlasl_poses_complete/")
+    print("      │   └── dataset_splits/")
+    print("      │       ├── 20_classes/")
+    print("      │       │   └── original/pickle_from_pose_split_20_class/")
+    print("      │       │       ├── train/  (20 class folders with .pkl files)")
+    print("      │       │       ├── test/")
+    print("      │       │       └── val/")
+    print("      │       └── 50_classes/")
+    print("      │           └── original/pickle_from_pose_split_50_class/")
+    print("      │               ├── train/  (50 class folders with .pkl files)")
+    print("      │               ├── test/")
+    print("      │               └── val/")
+    print("      └── augmented_pool/  (separate, NOT inside wlasl_poses_complete)")
+    print("          └── pickle/")
+    print("              ├── accident/")
+    print("              ├── apple/")
+    print("              └── ... (896 class folders)")
     print()
 
-    print_info("Steps to setup datasets:")
-    print("  1. Copy your wlasl_poses_complete folder to the configured data_root")
-    print("  2. Ensure the directory structure matches above")
-    print("  3. The augmented_pool will be created in the next step if needed")
+    print_info("Steps to copy dataset files:")
+    print("  1. Copy wlasl_poses_complete folder to: datasets/")
+    print("     Example (Linux/Mac): cp -r /source/wlasl_poses_complete datasets/")
+    print("     Example (Windows):   xcopy /E /I D:\\wlasl_poses_complete datasets\\wlasl_poses_complete")
+    print()
+    print("  2. Copy augmented_pool folder to: datasets/")
+    print("     Example (Linux/Mac): cp -r /source/augmented_pool datasets/")
+    print("     Example (Windows):   xcopy /E /I D:\\augmented_pool datasets\\augmented_pool")
     print()
 
+    # Check if wlasl_poses_complete exists
+    wlasl_path = data_root
+    if wlasl_path.exists():
+        print_success(f"Found wlasl_poses_complete at: {wlasl_path}")
+    else:
+        print_warning(f"wlasl_poses_complete NOT FOUND at: {wlasl_path}")
+        print_info("Please copy the dataset files before continuing.")
+
+    print()
     if not prompt_yes_no("Have you copied the dataset files to the correct location?"):
         print_warning("Please copy your dataset files before continuing.")
         print_info("You can resume this setup by running: python setup.py")
