@@ -119,12 +119,33 @@ def check_python_version():
     version = sys.version_info
     print_info(f"Python version: {version.major}.{version.minor}.{version.micro}")
 
+    # Check for Python 3.11.9 (recommended version)
+    if version.major == 3 and version.minor == 11 and version.micro == 9:
+        print_success("Python version is compatible (3.11.9 - recommended)")
+        return True
+
+    # Check if version is compatible but not recommended
+    if version.major == 3 and 8 <= version.minor <= 12:
+        print_warning(f"Python {version.major}.{version.minor}.{version.micro} detected")
+        print_warning("This project was created with Python 3.11.9")
+        print_warning("Some dependencies (like mediapipe) may not work with other versions")
+        print()
+        print_info("To install Python 3.11.9:")
+        print("  1. Download from: https://www.python.org/downloads/release/python-3119/")
+        print("  2. Install Python 3.11.9")
+        print("  3. Run setup again with: py -3.11 setup.py")
+        print()
+        if not prompt_yes_no("Continue with current Python version anyway?", default=False):
+            return False
+        return True
+
     if version.major < 3 or (version.major == 3 and version.minor < 8):
         print_error("Python 3.8 or higher is required")
         return False
 
-    print_success("Python version is compatible")
-    return True
+    print_warning(f"Python {version.major}.{version.minor} may not be fully compatible")
+    print_info("Python 3.11.9 is recommended for this project")
+    return False
 
 
 def check_git_repo():

@@ -7,6 +7,10 @@ Complete guide for setting up ASL-v1 Sign Language Recognition system on a new m
 After cloning the repository, run the interactive setup script:
 
 ```bash
+# Recommended: Use Python 3.11.9
+py -3.11 setup.py
+
+# Or with system Python (if 3.11.9 is default)
 python setup.py
 ```
 
@@ -17,7 +21,9 @@ The setup script will guide you through all necessary configuration steps.
 ## System Requirements
 
 ### Minimum Requirements
-- **Python**: 3.8 or higher
+- **Python**: 3.11.9 (REQUIRED - this project was created with this version)
+  - Download: https://www.python.org/downloads/release/python-3119/
+  - **Important**: Some dependencies (like mediapipe) may not work with Python 3.13+
 - **Storage**: 50GB+ free space for datasets
 - **RAM**: 8GB+ (16GB recommended)
 - **OS**: Windows, Linux, or macOS
@@ -43,8 +49,13 @@ cd asl-v1
 
 ### 2. Create Virtual Environment
 
+**IMPORTANT: Use Python 3.11.9 for best compatibility**
+
 ```bash
-# Create virtual environment
+# Create virtual environment with Python 3.11.9
+py -3.11 -m venv venv
+
+# Or if 3.11.9 is your default Python
 python -m venv venv
 
 # Activate (Windows)
