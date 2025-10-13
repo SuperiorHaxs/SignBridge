@@ -174,6 +174,19 @@ python dataset-utilities/augmentation/generate_augmented_dataset.py \
 python dataset-utilities/conversion/video_to_pose_extraction.py
 ```
 
+## 📊 Research Project Timeline
+
+This project follows a phased research approach, progressing from isolated sign recognition to a complete real-time translation system.
+
+| Phase | Title | Status | Planned Completion | Key Deliverables | Success Criteria |
+|-------|-------|--------|-------------------|------------------|------------------|
+| **Phase 1** | Isolated Sign Recognition<br>(OpenHands-Modernized) | 🔄 **IN PROGRESS** | TBD | • Trained 20-class model<br>• Trained 50-class model<br>• Architecture paper | • 80%+ Top-3 accuracy (20-class)<br>• 60%+ Top-3 accuracy (50-class)<br>• Published baseline results |
+| **Phase 2** | LLM Sentence Constructor | ⏳ NOT STARTED | TBD | • LLM integration module<br>• Sign-to-sentence pipeline<br>• Grammar correction system | • Grammatically correct sentences<br>• Context-based disambiguation<br>• 90%+ sentence coherence |
+| **Phase 3** | Full Pipeline Integration | ⏳ NOT STARTED | TBD | • End-to-end system<br>• Batch processing capability<br>• Evaluation framework | • Functional sign sequence → English text<br>• <2s latency per sign<br>• 75%+ translation accuracy |
+| **Phase 4** | Continuous Sign Detection | ⏳ NOT STARTED | TBD | • Temporal segmentation model<br>• Boundary detection system<br>• Continuous recognition pipeline | • 85%+ boundary detection accuracy<br>• Real-time processing capability<br>• <200ms segmentation latency |
+| **Phase 5** | Real-Time Webcam Application | ⏳ NOT STARTED | TBD | • Desktop application<br>• Real-time inference pipeline<br>• User interface | • 15-30 FPS processing<br>• <500ms end-to-end latency<br>• Deployable application |
+| **Phase 6** | Optimization & Deployment | ⏳ NOT STARTED | TBD | • Model quantization<br>• Performance optimization<br>• Documentation & demos | • 2x speed improvement<br>• Production-ready code<br>• Public release |
+
 ## 📊 Model Performance
 
 | Model | Classes | Dataset | Top-1 Acc | Top-3 Acc | Notes |
