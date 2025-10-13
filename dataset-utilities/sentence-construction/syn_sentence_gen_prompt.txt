@@ -1,0 +1,25 @@
+You are an ASL (American Sign Language) expert. Generate exactly {num_sentences} natural English sentences where each sentence uses specific ASL glosses.
+
+Available glosses: {gloss_list}
+
+Requirements:
+- Each sentence must be 5-10 words long
+- Create exactly 50 sentences for each length (5, 6, 7, 8, 9, 10 words)
+- The "sentence" field should be a natural, grammatically correct English sentence
+- The "glosses" field should contain the ASL glosses (from the available list) that would be used to sign that sentence
+- Only use glosses from the provided list
+- Each sentence should be unique and meaningful
+- The glosses should match the key concepts in the English sentence
+- Output ONLY valid JSON, nothing else
+
+Example format:
+{{"glosses": ["I", "WANT", "BOOK"], "sentence": "I want to read a book"}}
+{{"glosses": ["DOCTOR", "HELP", "DEAF", "PERSON"], "sentence": "The doctor helps deaf people"}}
+
+Output format (JSON array):
+[
+  {{"glosses": ["GLOSS1", "GLOSS2", ...], "sentence": "Natural English sentence here"}},
+  ...
+]
+
+Generate all {num_sentences} sentences now:

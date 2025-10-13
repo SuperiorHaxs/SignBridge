@@ -46,6 +46,9 @@ from collections import deque
 # Add current directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
+# Add project-utilities to path for BLEU calculation
+sys.path.insert(0, str(Path(__file__).parent.parent / "project-utilities"))
+
 # Import OpenCV for webcam capture
 try:
     import cv2
@@ -92,6 +95,15 @@ except ImportError as e:
 
 # Optional: Check if Gemini API is available (lazy import)
 GEMINI_AVAILABLE = None  # Will be checked when needed
+
+# Try to import BLEU calculator (optional)
+try:
+    from calculate_sent_bleu import calculate_bleu_from_glosses
+    BLEU_AVAILABLE = True
+    print("SUCCESS: BLEU calculator imported")
+except ImportError:
+    BLEU_AVAILABLE = False
+    print("INFO: BLEU calculator not available (optional feature)")
 
 
 class MotionDetector:
@@ -338,7 +350,8 @@ class EndToEndPipeline:
         segmentation_method="auto",
         velocity_threshold=0.02,
         min_sign_duration=10,
-        use_top_k=1
+        use_top_k=1,
+        num_glosses=20
     ):
         self.checkpoint_path = checkpoint_path
         self.gemini_api_key = gemini_api_key
@@ -346,6 +359,7 @@ class EndToEndPipeline:
         self.velocity_threshold = velocity_threshold
         self.min_sign_duration = min_sign_duration
         self.use_top_k = use_top_k
+        self.num_glosses = num_glosses
         self.model = None
         self.tokenizer = None
         self.temp_dir = None
@@ -897,6 +911,35 @@ Return only the constructed English sentence, nothing else.
             print(f"PREDICTED GLOSSES: {', '.join([g for g in glosses if g != '<UNKNOWN>'])}")
             print(f"FINAL SENTENCE: '{final_sentence}'")
 
+            # Calculate BLEU score if available
+            if BLEU_AVAILABLE and len(glosses) > 0:
+                try:
+                    # Extract gloss strings
+                    gloss_list = []
+                    for g in glosses:
+                        if g != '<UNKNOWN>':
+                            if isinstance(g, dict):
+                                gloss_list.append(g.get('gloss', g.get('top_prediction', '')))
+                            else:
+                                gloss_list.append(str(g))
+
+                    if gloss_list:
+                        # Calculate BLEU using configured num_glosses
+                        result = calculate_bleu_from_glosses(
+                            glosses=gloss_list,
+                            predicted_sentence=final_sentence,
+                            num_glosses=self.num_glosses,
+                            verbose=False
+                        )
+
+                        if result['found']:
+                            print(f"BLEU SCORE: {result['bleu_score']:.2f}")
+                            print(f"REFERENCE: '{result['reference']}'")
+                        else:
+                            print("BLEU SCORE: N/A (glosses not in reference dataset)")
+                except Exception as e:
+                    print(f"BLEU SCORE: Error calculating ({e})")
+
             return final_sentence
 
         except Exception as e:
@@ -1200,6 +1243,12 @@ def main():
         choices=[1, 2, 3, 4, 5],
         help="Use top-k predictions from model (1=top-1 only, 3=top-3, default: 1)"
     )
+    parser.add_argument(
+        "--num-glosses",
+        type=int,
+        default=20,
+        help="Number of glosses in the model (for BLEU score calculation, default: 20)"
+    )
 
     args = parser.parse_args()
 
@@ -1228,7 +1277,8 @@ def main():
             segmentation_method=args.segmentation_method,
             velocity_threshold=args.velocity_threshold,
             min_sign_duration=args.min_sign_duration,
-            use_top_k=args.use_top_k
+            use_top_k=args.use_top_k,
+            num_glosses=args.num_glosses
         )
 
         if args.webcam:

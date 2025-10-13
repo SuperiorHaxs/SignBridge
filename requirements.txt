@@ -23,6 +23,7 @@ google-generativeai>=0.3.0
 # Utilities
 tqdm>=4.65.0
 Pillow>=10.0.0
+sacrebleu>=2.3.0
 
 # File Format Support
 h5py>=3.9.0
