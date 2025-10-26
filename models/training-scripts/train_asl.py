@@ -47,25 +47,26 @@ from openhands_modernized import WLASLDatasetLoader, OpenHandsModel, OpenHandsCo
 DATASET_ROOT = str(config.dataset_root / "dataset_splits")
 MAX_SEQ_LENGTH = 128  # Optimized for CPU training speed - most signs are shorter anyway
 
-# Dataset paths for different class counts - loaded from config
-DATASET_PATHS = {
-    20: {
-        'train_original': str(config.dataset_splits[20]['train_original']),
-        'train_augmented': str(config.dataset_splits[20]['train_augmented']),
-        'test': str(config.dataset_splits[20]['test']),
-        'val': str(config.dataset_splits[20]['val']),
-    },
-    50: {
-        'train_original': str(config.dataset_splits[50]['train_original']),
-        'train_augmented': str(config.dataset_splits[50]['train_augmented']),
-        'test': str(config.dataset_splits[50]['test']),
-    },
-    100: {
-        'train_original': str(config.dataset_splits[100]['train_original']),
-        'train_augmented': str(config.dataset_splits[100]['train_augmented']),
-        'test': str(config.dataset_splits[100]['test']),
+# Dataset paths - loaded dynamically from config
+# No need to hardcode each class count - config.dataset_splits handles it
+def get_dataset_paths(num_classes):
+    """Get dataset paths for specified number of classes from config."""
+    if num_classes not in config.dataset_splits:
+        raise ValueError(f"No dataset configuration found for {num_classes} classes. "
+                        f"Available: {list(config.dataset_splits.keys())}")
+
+    splits = config.dataset_splits[num_classes]
+    paths = {
+        'train_original': str(splits['train_original']),
+        'train_augmented': str(splits['train_augmented']),
+        'test': str(splits['test']),
     }
-}
+
+    # Add val path if it exists in config
+    if 'val' in splits:
+        paths['val'] = str(splits['val'])
+
+    return paths
 # ============================================================================
 
 # Architecture selection
@@ -234,8 +235,15 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
     # Restore optimizer (handle both old custom optimizer and new PyTorch optimizer)
     opt_state = checkpoint['optimizer_state_dict']
     if isinstance(opt_state, dict) and 'state' in opt_state:
-        # New PyTorch optimizer format
-        optimizer.load_state_dict(opt_state)
+        # Try to load PyTorch optimizer state
+        try:
+            optimizer.load_state_dict(opt_state)
+            print("  OPTIMIZER: Restored optimizer state from checkpoint")
+        except (KeyError, ValueError, RuntimeError) as e:
+            # Checkpoint has different optimizer type (e.g., SGD vs AdamW)
+            print(f"  WARNING: Optimizer incompatible ({type(e).__name__}), using fresh optimizer state")
+            print(f"           This happens when switching optimizer types (e.g., SGD -> AdamW)")
+            print(f"           Training will continue with fresh optimizer state")
     else:
         # Old custom optimizer format - skip optimizer restoration
         print("  WARNING: Old optimizer format detected, optimizer state not restored")
@@ -288,7 +296,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"LOADING: Loading from BOTH original train AND augmented datasets")
 
         # OPTIMIZED: Load class mapping to determine target classes
-        class_mapping_path = DATASET_PATHS[num_classes].get('class_mapping')
+        dataset_paths = get_dataset_paths(num_classes)
+        class_mapping_path = dataset_paths.get('class_mapping')
         if class_mapping_path and Path(class_mapping_path).exists():
             print(f"LOADING: Reading class mapping from {class_mapping_path}")
             with open(class_mapping_path, 'r') as f:
@@ -298,7 +307,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         else:
             # Fallback: scan original train directory
             print(f"LOADING: Class mapping not found, scanning original train directory...")
-            original_train_path = DATASET_PATHS[num_classes]['train_original']
+            original_train_path = dataset_paths['train_original']
             target_glosses = set()
             for class_name in os.listdir(original_train_path):
                 class_dir_path = os.path.join(original_train_path, class_name)
@@ -309,7 +318,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"CLASSES: {sorted(list(target_glosses))}")
 
         # 1. Load from ORIGINAL train directory
-        original_train_path = DATASET_PATHS[num_classes]['train_original']
+        original_train_path = dataset_paths['train_original']
         print(f"LOADING: Collecting original train files from {original_train_path}")
 
         original_count = 0
@@ -335,6 +344,17 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
 
         print(f"FOUND: {original_count} original train files from {len(target_glosses)} classes")
 
+        # Extract original video IDs from train split to prevent data leakage
+        original_video_ids = set()
+        for file_path in all_pose_files[-original_count:]:  # Last N files are the original train files
+            # Extract video ID from filename (e.g., "00623.pkl" -> "00623")
+            filename = os.path.basename(file_path)
+            video_id = filename.replace('.pkl', '')
+            original_video_ids.add(video_id)
+
+        print(f"FILTER: {len(original_video_ids)} unique original video IDs from train split")
+        print(f"FILTER: Augmented files will only include augmentations of these train videos")
+
         # 2. Load from AUGMENTED pool using index
         print(f"LOADING: Loading augmented files from pool using index...")
 
@@ -358,10 +378,18 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
                 if gloss_name in augmented_index:
                     gloss_dir = augmented_pool_path / gloss_name.lower()
                     for pkl_filename in augmented_index[gloss_name]:
-                        pkl_file = gloss_dir / pkl_filename
-                        all_pose_files.append(str(pkl_file))
-                        all_labels.append(gloss_name)
-                        augmented_count += 1
+                        # FILTER: Only include if original video ID is in train split (prevent data leakage)
+                        # Augmented filename format: "aug_XX_VIDEOID.pkl"
+                        # Extract original video ID
+                        if pkl_filename.startswith('aug_'):
+                            parts = pkl_filename.replace('.pkl', '').split('_')
+                            if len(parts) >= 3:
+                                original_video_id = parts[2]
+                                if original_video_id in original_video_ids:
+                                    pkl_file = gloss_dir / pkl_filename
+                                    all_pose_files.append(str(pkl_file))
+                                    all_labels.append(gloss_name)
+                                    augmented_count += 1
         else:
             # Slow path: directory scan (fallback)
             for gloss_name in target_glosses:
@@ -369,17 +397,25 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
                 if os.path.isdir(gloss_dir_path):
                     for filename in os.listdir(gloss_dir_path):
                         if filename.endswith('.pkl'):
-                            pkl_file = os.path.join(gloss_dir_path, filename)
-                            all_pose_files.append(pkl_file)
-                            all_labels.append(gloss_name)
-                            augmented_count += 1
+                            # FILTER: Only include if original video ID is in train split (prevent data leakage)
+                            # Augmented filename format: "aug_XX_VIDEOID.pkl"
+                            if filename.startswith('aug_'):
+                                parts = filename.replace('.pkl', '').split('_')
+                                if len(parts) >= 3:
+                                    original_video_id = parts[2]
+                                    if original_video_id in original_video_ids:
+                                        pkl_file = os.path.join(gloss_dir_path, filename)
+                                        all_pose_files.append(pkl_file)
+                                        all_labels.append(gloss_name)
+                                        augmented_count += 1
 
         print(f"FOUND: {augmented_count} augmented files")
         print(f"TOTAL: {len(all_pose_files)} files ({original_count} original + {augmented_count} augmented) for {len(target_glosses)} classes")
 
     else:
         # Original dataset loading - load from specific train directory
-        original_train_path = DATASET_PATHS[num_classes]['train_original']
+        dataset_paths = get_dataset_paths(num_classes)
+        original_train_path = dataset_paths['train_original']
         print(f"LOADING: Loading from original train dataset at {original_train_path}")
 
         # OPTIMIZED: Just collect file paths, gloss = directory name, use os.listdir to avoid Windows issues
@@ -439,8 +475,9 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     train_labels = filtered_labels
 
     # Load validation data if available
-    if 'val' in DATASET_PATHS[num_classes]:
-        val_path = DATASET_PATHS[num_classes]['val']
+    dataset_paths = get_dataset_paths(num_classes)
+    if 'val' in dataset_paths:
+        val_path = dataset_paths['val']
         val_files = []
         val_labels = []
 
@@ -530,7 +567,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         T_max=num_epochs,  # Full cycle length
         eta_min=1e-6       # Minimum learning rate
     )
-    print(f"SCHEDULER: Using CosineAnnealingLR (lr: {lr} → 1e-6 over {num_epochs} epochs)")
+    print(f"SCHEDULER: Using CosineAnnealingLR (lr: {lr} -> 1e-6 over {num_epochs} epochs)")
 
     print()
 
@@ -674,7 +711,7 @@ def test_multi_class_model(num_classes=20, architecture="openhands", model_size=
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load from the configured TEST directory
-    test_dir = DATASET_PATHS[num_classes]['test']
+    test_dir = get_dataset_paths(num_classes)['test']
     print(f"LOADING: Loading test data from {test_dir}")
 
     test_files = []
@@ -819,9 +856,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Auto-generate augmented path from DATASET_PATHS if not provided
+    # Auto-generate augmented path from config if not provided
     if args.dataset == 'augmented' and not args.augmented_path:
-        args.augmented_path = DATASET_PATHS[args.classes]['train_augmented']
+        args.augmented_path = get_dataset_paths(args.classes)['train_augmented']
 
     try:
         if args.test or args.mode == 'test':

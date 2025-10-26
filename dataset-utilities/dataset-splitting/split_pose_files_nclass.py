@@ -45,28 +45,139 @@ TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
 
-# Base class list (prioritized by frequency and utility)
-BASE_CLASS_ORDER = [
-    # Top 20 (existing from 20-class set)
-    'accident', 'apple', 'bath', 'before', 'blue', 'chair', 'clothes',
-    'cousin', 'deaf', 'doctor', 'eat', 'enjoy', 'forget', 'give', 'go',
-    'graduation', 'halloween', 'help', 'hot', 'hurry',
 
-    # Next 30 (for 50-class)
-    'book', 'drink', 'computer', 'who', 'candy', 'walk', 'thin', 'no',
-    'fine', 'year', 'yes', 'table', 'now', 'what', 'finish', 'black',
-    'thanksgiving', 'all', 'many', 'like', 'cool', 'orange', 'mother',
-    'woman', 'dog', 'hearing', 'tall', 'wrong', 'kiss', 'man',
+# ============================================================================
+# DYNAMIC CLASS SELECTION - No hardcoded lists!
+# ============================================================================
 
-    # Next 50 (for 100-class) - add more as needed
-    'family', 'graduate', 'bed', 'language', 'fish', 'hat', 'bowling',
-    'shirt', 'later', 'white', 'study', 'can', 'bird', 'pink', 'want',
-    'time', 'dance', 'play', 'color', 'summer', 'winter', 'spring',
-    'fall', 'school', 'work', 'home', 'car', 'train', 'airplane',
-    'bus', 'bicycle', 'run', 'jump', 'sit', 'stand', 'sleep', 'wake',
-    'morning', 'afternoon', 'evening', 'night', 'day', 'week', 'month',
-    'yesterday', 'today', 'tomorrow', 'happy', 'sad', 'angry', 'tired'
-]
+def get_class_frequencies(metadata_file):
+    """
+    Count video frequency for each class from metadata.
+    Returns dict: {gloss: video_count} sorted by frequency (descending).
+    """
+    with open(metadata_file, 'r') as f:
+        data = json.load(f)
+
+    # Count videos per gloss
+    gloss_counts = defaultdict(int)
+    for video_id, info in data.items():
+        gloss = info['gloss']
+        gloss_counts[gloss] += 1
+
+    # Sort by frequency (descending)
+    sorted_glosses = sorted(gloss_counts.items(), key=lambda x: x[1], reverse=True)
+
+    return dict(sorted_glosses)
+
+
+def load_class_mapping_if_exists(class_mapping_path):
+    """
+    Load class list from class_mapping.json if it exists.
+    Returns list of classes, or None if file doesn't exist.
+    """
+    if not os.path.exists(class_mapping_path):
+        return None
+
+    try:
+        with open(class_mapping_path, 'r') as f:
+            mapping = json.load(f)
+
+        # Handle both formats: {"classes": [...]} or just [...]
+        if isinstance(mapping, dict) and 'classes' in mapping:
+            return mapping['classes']
+        elif isinstance(mapping, list):
+            return mapping
+        else:
+            print(f"WARNING: Unexpected format in {class_mapping_path}")
+            return None
+    except Exception as e:
+        print(f"WARNING: Failed to load {class_mapping_path}: {e}")
+        return None
+
+
+def save_class_mapping(class_mapping_path, classes):
+    """
+    Save class list to class_mapping.json.
+    Creates parent directories if needed.
+    """
+    os.makedirs(os.path.dirname(class_mapping_path), exist_ok=True)
+
+    mapping = {
+        'classes': classes,
+        'num_classes': len(classes),
+        'creation_method': 'frequency_based_incremental'
+    }
+
+    with open(class_mapping_path, 'w') as f:
+        json.dump(mapping, f, indent=2)
+
+    print(f"Saved class mapping to {class_mapping_path}")
+
+
+def select_classes_incrementally(num_classes, metadata_file, class_mapping_path, previous_mapping_path=None):
+    """
+    Select classes incrementally based on frequency.
+
+    Strategy:
+    1. If class_mapping.json exists for num_classes, use it (stable)
+    2. Otherwise, load previous tier's classes (e.g., 20 for 50, or 50 for 100)
+    3. Select additional classes by frequency (excluding existing)
+    4. Save to class_mapping.json
+
+    Args:
+        num_classes: Target number of classes (20, 50, 100)
+        metadata_file: Path to video_to_gloss_mapping.json
+        class_mapping_path: Path to save class_mapping.json for this tier
+        previous_mapping_path: Optional path to previous tier's class_mapping.json
+
+    Returns:
+        List of selected classes
+    """
+    # Check if this tier already has a saved mapping
+    existing_classes = load_class_mapping_if_exists(class_mapping_path)
+    if existing_classes:
+        print(f"Using existing class mapping from {class_mapping_path}")
+        print(f"  {len(existing_classes)} classes (stable)")
+        return existing_classes
+
+    # Load previous tier's classes if available
+    base_classes = []
+    if previous_mapping_path:
+        base_classes = load_class_mapping_if_exists(previous_mapping_path)
+        if base_classes:
+            print(f"Building on {len(base_classes)} classes from previous tier")
+        else:
+            print(f"Previous tier mapping not found, starting fresh")
+
+    # Get all classes by frequency
+    class_frequencies = get_class_frequencies(metadata_file)
+
+    # Select additional classes
+    selected_classes = list(base_classes) if base_classes else []
+    base_set = set(selected_classes)
+
+    # Add most frequent classes until we reach num_classes
+    for gloss, count in class_frequencies.items():
+        if gloss not in base_set:
+            selected_classes.append(gloss)
+            if len(selected_classes) >= num_classes:
+                break
+
+    # Verify we got enough classes
+    if len(selected_classes) < num_classes:
+        print(f"WARNING: Only {len(selected_classes)} classes available, requested {num_classes}")
+
+    # Save the mapping
+    save_class_mapping(class_mapping_path, selected_classes)
+
+    print(f"Selected {len(selected_classes)} classes:")
+    if base_classes:
+        new_count = len(selected_classes) - len(base_classes)
+        print(f"  {len(base_classes)} from previous tier + {new_count} new classes")
+    else:
+        print(f"  All {len(selected_classes)} classes selected by frequency")
+
+    return selected_classes
 
 
 def get_existing_classes(existing_path):
@@ -82,26 +193,27 @@ def get_existing_classes(existing_path):
     return sorted(existing_classes)
 
 
-def get_top_n_classes(num_classes, existing_classes=None):
-    """Get top N classes, prioritizing existing classes."""
-    if existing_classes:
-        # Start with existing classes
-        target_classes = list(existing_classes)
-        num_existing = len(existing_classes)
+def get_top_n_classes(num_classes, metadata_file, class_mapping_path, previous_mapping_path=None):
+    """
+    Get top N classes using dynamic frequency-based selection.
 
-        # Add new classes from BASE_CLASS_ORDER until we reach num_classes
-        for gloss in BASE_CLASS_ORDER:
-            if gloss not in target_classes:
-                target_classes.append(gloss)
-                if len(target_classes) >= num_classes:
-                    break
+    This is a wrapper around select_classes_incrementally for backward compatibility.
 
-        print(f"Building on {num_existing} existing classes, adding {num_classes - num_existing} new classes")
-    else:
-        # No existing classes, just take first N from BASE_CLASS_ORDER
-        target_classes = BASE_CLASS_ORDER[:num_classes]
+    Args:
+        num_classes: Target number of classes
+        metadata_file: Path to video_to_gloss_mapping.json
+        class_mapping_path: Path to class_mapping.json for this tier
+        previous_mapping_path: Optional path to previous tier's class_mapping.json
 
-    return target_classes[:num_classes]
+    Returns:
+        List of selected classes
+    """
+    return select_classes_incrementally(
+        num_classes,
+        metadata_file,
+        class_mapping_path,
+        previous_mapping_path
+    )
 
 
 def load_metadata(target_classes):
@@ -284,14 +396,25 @@ def main():
     VAL_RATIO = args.val_ratio
     TEST_RATIO = args.test_ratio
 
-    # Determine output directory
-    output_dir = os.path.join(WLASL_BASE_DIR, f"dataset_splits/{args.num_classes}_classes/original/pose_split_{args.num_classes}_class")
+    # Determine output directory and class mapping paths
+    output_base = os.path.join(WLASL_BASE_DIR, f"dataset_splits/{args.num_classes}_classes")
+    output_dir = os.path.join(output_base, "original", f"pose_split_{args.num_classes}_class")
+    class_mapping_path = os.path.join(output_base, "class_mapping.json")
 
-    # Get existing classes if path provided
-    existing_classes = get_existing_classes(args.existing_classes_path)
+    # Determine previous tier's class mapping path for incremental building
+    previous_mapping_path = None
+    if args.num_classes == 50:
+        previous_mapping_path = os.path.join(WLASL_BASE_DIR, "dataset_splits/20_classes/class_mapping.json")
+    elif args.num_classes == 100:
+        previous_mapping_path = os.path.join(WLASL_BASE_DIR, "dataset_splits/50_classes/class_mapping.json")
 
-    # Get target classes
-    target_classes = get_top_n_classes(args.num_classes, existing_classes if existing_classes else None)
+    # Get target classes using dynamic frequency-based selection
+    target_classes = get_top_n_classes(
+        num_classes=args.num_classes,
+        metadata_file=METADATA_FILE,
+        class_mapping_path=class_mapping_path,
+        previous_mapping_path=previous_mapping_path
+    )
 
     print("=" * 70)
     print(f"SPLITTING POSE FILES INTO TRAIN/VAL/TEST ({args.num_classes} CLASSES)")
@@ -299,18 +422,8 @@ def main():
     print()
     print(f"Input directory:  {POSE_FILES_DIR}")
     print(f"Output directory: {output_dir}")
+    print(f"Class mapping: {class_mapping_path}")
     print(f"Target classes: {len(target_classes)}")
-    print()
-
-    if existing_classes:
-        num_new = args.num_classes - len(existing_classes)
-        print(f"Building on {len(existing_classes)} existing classes:")
-        print(f"  Existing: {existing_classes}")
-        print(f"  Adding {num_new} new classes: {target_classes[len(existing_classes):]}")
-    else:
-        print(f"Creating new {args.num_classes}-class split:")
-        print(f"  Classes: {target_classes}")
-
     print()
 
     # Load metadata
