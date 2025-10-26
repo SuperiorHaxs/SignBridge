@@ -74,7 +74,7 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
     if architecture == "openhands" or architecture == "transformer":
         # Configure model size
         if model_size == "large":
-            default_hidden = 128
+            default_hidden = 256  # Updated to match openhands-modernized design
             default_layers = 6
             default_heads = 16
         else:  # small
@@ -486,9 +486,9 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     # Conditional training parameters based on dataset type
     if dataset_type == 'augmented':
         # Optimized for balanced 50-class model
-        batch_size = 16  # Optimized for CPU training speed
+        batch_size = 32  # Larger batch for more stable gradients
         lr = 1e-4  # OpenHands methodology: lower learning rate
-        weight_decay = 0.008 if num_classes >= 50 else 0.01  # Balanced regularization
+        weight_decay = 0.001  # Reduced for larger model with AdamW
         scheduler_patience = 8 if num_classes >= 50 else 5  # More patience for 50+ classes
         # Use command line parameter or default for early stopping
         early_stopping_patience = early_stopping_patience if early_stopping_patience is not None else None
@@ -521,11 +521,16 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
     # Use PyTorch's built-in optimizer (much faster than custom Python implementation)
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=weight_decay, momentum=0.9)
-    print(f"OPTIMIZER: Using torch.optim.SGD with lr={lr}, weight_decay={weight_decay}, momentum=0.9")
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, betas=(0.9, 0.999))
+    print(f"OPTIMIZER: Using torch.optim.AdamW with lr={lr}, weight_decay={weight_decay}, betas=(0.9, 0.999)")
 
-    # Simple scheduler
-    scheduler = None
+    # Cosine annealing scheduler for gradual learning rate decay
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer,
+        T_max=num_epochs,  # Full cycle length
+        eta_min=1e-6       # Minimum learning rate
+    )
+    print(f"SCHEDULER: Using CosineAnnealingLR (lr: {lr} → 1e-6 over {num_epochs} epochs)")
 
     print()
 
@@ -603,8 +608,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         val_accuracy = val_results['top1_accuracy']
         val_top3_accuracy = val_results['top3_accuracy']
 
-        if scheduler:
-            scheduler.step()  # Only if scheduler exists
+        # Step scheduler after validation
+        scheduler.step()
         current_lr = optimizer.param_groups[0]['lr']
 
         print(f"Epoch {epoch+1:2d}/{num_epochs}")
