@@ -13,6 +13,7 @@ Supports both pickle and pose file augmentation via --input-type parameter.
 import os
 import sys
 import pickle
+import json
 import argparse
 import numpy as np
 from pathlib import Path
@@ -26,7 +27,12 @@ sys.path.insert(0, str(project_root))
 # Import configuration
 from config import get_config
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add openhands model path from config
+config = get_config()
+openhands_src = config.openhands_dir / "src"
+sys.path.insert(0, str(openhands_src))
+
+# Import the OpenHands modules
 from openhands_modernized import WLASLPoseProcessor, PoseTransforms
 
 # Import pose augmentation functions
@@ -38,9 +44,6 @@ from augment_pose_file import apply_shear, apply_rotation
 # CONFIGURATION - Now managed by config system
 # ============================================================================
 
-# Load config
-config = get_config()
-
 # Base directories
 WLASL_BASE_DIR = str(config.dataset_root)
 EXPERIMENTS_BASE_DIR = str(config.experiments_dir)
@@ -49,31 +52,106 @@ EXPERIMENTS_BASE_DIR = str(config.experiments_dir)
 INPUT_DIR = None
 OUTPUT_DIR = None
 
-# Augmentation settings
-NUM_AUGMENTATIONS = 10  # Generate 10 augmented versions per sample
+# ============================================================================
+# AUGMENTATION CONFIGURATION - Set count for each strategy (0 = disabled)
+# ============================================================================
+
+# Augmentation strategy counts (set to 0 to disable)
+AUGMENTATION_CONFIG = {
+    # Phase 1: Geometric transformations
+    'geometric': 10,           # Shear + Rotation combinations (aug_00 to aug_09)
+
+    # Phase 2: Horizontal flips
+    'horizontal_flip': 5,      # Mirror + variations (aug_10 to aug_14)
+
+    # Phase 3: Spatial variations
+    'spatial_noise': 2,        # Gaussian noise - low/medium (aug_15, aug_16)
+    'translation': 2,          # Position shift - small/medium (aug_17, aug_18)
+
+    # Phase 4: Scaling
+    'scaling': 2,              # Size variations - 0.95x/1.05x (aug_19, aug_20)
+
+    # Phase 5: Advanced temporal
+    'speed_variation': 2,      # Temporal stretch/compress - 0.85x/1.15x (aug_21, aug_22)
+
+    # Phase 6: Combinations
+    'combinations': 3,         # Multi-transform combos (aug_23, aug_24, aug_25)
+}
+
+# Calculate total augmentations (sum of all non-zero counts)
+NUM_AUGMENTATIONS = sum(count for count in AUGMENTATION_CONFIG.values() if count > 0)
+
+# Augmentation parameters
 SHEAR_STD = 0.1
 ROTATION_STD = 0.1
+NOISE_LOW = 0.01
+NOISE_MEDIUM = 0.02
+TRANSLATION_SMALL = 0.03
+TRANSLATION_MEDIUM = 0.05
+SCALE_SMALL = 0.95
+SCALE_LARGE = 1.05
+SPEED_SLOW = 0.85
+SPEED_FAST = 1.15
 
-# Base class order (same as in split_pose_files_nclass.py)
-BASE_CLASS_ORDER = [
-    # Top 20
-    'accident', 'apple', 'bath', 'before', 'blue', 'chair', 'clothes',
-    'cousin', 'deaf', 'doctor', 'eat', 'enjoy', 'forget', 'give', 'go',
-    'graduation', 'halloween', 'help', 'hot', 'hurry',
-    # Next 30 (for 50-class)
-    'book', 'drink', 'computer', 'who', 'candy', 'walk', 'thin', 'no',
-    'fine', 'year', 'yes', 'table', 'now', 'what', 'finish', 'black',
-    'thanksgiving', 'all', 'many', 'like', 'cool', 'orange', 'mother',
-    'woman', 'dog', 'hearing', 'tall', 'wrong', 'kiss', 'man',
-    # Next 50 (for 100-class)
-    'family', 'graduate', 'bed', 'language', 'fish', 'hat', 'bowling',
-    'shirt', 'later', 'white', 'study', 'can', 'bird', 'pink', 'want',
-    'time', 'dance', 'play', 'color', 'summer', 'winter', 'spring',
-    'fall', 'school', 'work', 'home', 'car', 'train', 'airplane',
-    'bus', 'bicycle', 'run', 'jump', 'sit', 'stand', 'sleep', 'wake',
-    'morning', 'afternoon', 'evening', 'night', 'day', 'week', 'month',
-    'yesterday', 'today', 'tomorrow', 'happy', 'sad', 'angry', 'tired'
-]
+# ============================================================================
+# DYNAMIC CLASS LOADING - No hardcoded lists!
+# ============================================================================
+
+def load_class_mapping(num_classes):
+    """
+    Load class list from class_mapping.json dynamically.
+
+    Args:
+        num_classes: Number of classes (e.g., 20, 50, 100)
+
+    Returns:
+        List of class names in order, or None if not found
+    """
+    # Try standard location first: dataset_splits/{N}_classes/{N}_class_mapping.json
+    class_mapping_path = os.path.join(
+        WLASL_BASE_DIR,
+        f"dataset_splits/{num_classes}_classes/{num_classes}_class_mapping.json"
+    )
+
+    if os.path.exists(class_mapping_path):
+        try:
+            with open(class_mapping_path, 'r') as f:
+                mapping = json.load(f)
+
+            # Extract classes list from mapping
+            if 'classes' in mapping:
+                print(f"Loaded {len(mapping['classes'])} classes from {class_mapping_path}")
+                return mapping['classes']
+            else:
+                print(f"WARNING: 'classes' field not found in {class_mapping_path}")
+                return None
+        except Exception as e:
+            print(f"WARNING: Failed to load {class_mapping_path}: {e}")
+            return None
+    else:
+        print(f"WARNING: Class mapping not found at {class_mapping_path}")
+        return None
+
+
+def get_classes_from_directory(input_dir):
+    """
+    Fallback: Discover classes by scanning the input directory.
+
+    Args:
+        input_dir: Path to input directory containing class subdirectories
+
+    Returns:
+        Sorted list of class names
+    """
+    if not os.path.exists(input_dir):
+        return []
+
+    classes = sorted([
+        d for d in os.listdir(input_dir)
+        if os.path.isdir(os.path.join(input_dir, d))
+    ])
+
+    return classes
 
 
 # ============================================================================
@@ -111,13 +189,126 @@ def load_and_extract_75pt(pickle_path):
     return pose_75pt, metadata
 
 
-def apply_augmentation_pickle(pose_data, augmentation_id):
+def apply_horizontal_flip(pose_data):
     """
-    Apply augmentation to 75-point pose data (pickle mode).
+    Apply horizontal flip to pose data, swapping left/right hand keypoints.
 
     Args:
         pose_data: (frames, 75, 2)
-        augmentation_id: int, for seeding
+
+    Returns:
+        flipped_data: (frames, 75, 2)
+    """
+    flipped = pose_data.copy()
+    # Flip x-coordinates
+    flipped[:, :, 0] = -flipped[:, :, 0]
+
+    # Swap left/right hand keypoints (indices 33-53 left, 54-74 right)
+    left_hand = flipped[:, 33:54, :].copy()
+    right_hand = flipped[:, 54:75, :].copy()
+    flipped[:, 33:54, :] = right_hand
+    flipped[:, 54:75, :] = left_hand
+
+    return flipped
+
+
+def apply_spatial_noise(pose_data, noise_std=0.01):
+    """
+    Add Gaussian noise to keypoint positions.
+
+    Args:
+        pose_data: (frames, 75, 2)
+        noise_std: Standard deviation of noise
+
+    Returns:
+        noisy_data: (frames, 75, 2)
+    """
+    noise = np.random.normal(0, noise_std, pose_data.shape)
+    # Only add noise to non-zero keypoints
+    mask = (pose_data != 0).astype(float)
+    return pose_data + (noise * mask)
+
+
+def apply_translation(pose_data, shift_std=0.05):
+    """
+    Translate pose by random offset.
+
+    Args:
+        pose_data: (frames, 75, 2)
+        shift_std: Standard deviation of translation
+
+    Returns:
+        translated_data: (frames, 75, 2)
+    """
+    shift_x = np.random.normal(0, shift_std)
+    shift_y = np.random.normal(0, shift_std)
+    translated = pose_data.copy()
+    translated[:, :, 0] += shift_x
+    translated[:, :, 1] += shift_y
+    return translated
+
+
+def apply_scaling(pose_data, scale_factor):
+    """
+    Scale pose size around center.
+
+    Args:
+        pose_data: (frames, 75, 2)
+        scale_factor: Scale multiplier (e.g., 0.95 or 1.05)
+
+    Returns:
+        scaled_data: (frames, 75, 2)
+    """
+    scaled = pose_data.copy()
+    # Find center of non-zero keypoints
+    valid_mask = (pose_data != 0).any(axis=2)
+    if valid_mask.any():
+        center = pose_data[valid_mask].mean(axis=0)
+        # Scale around center
+        scaled[:, :, :] = (scaled[:, :, :] - center) * scale_factor + center
+    return scaled
+
+
+def apply_speed_variation(pose_data, speed_factor):
+    """
+    Apply temporal stretching or compression.
+
+    Args:
+        pose_data: (frames, 75, 2)
+        speed_factor: Speed multiplier (0.85 = slow, 1.15 = fast)
+
+    Returns:
+        resampled_data: (new_frames, 75, 2)
+    """
+    num_frames = pose_data.shape[0]
+    target_frames = int(num_frames * speed_factor)
+
+    if target_frames < 2:
+        target_frames = 2
+
+    # Interpolate frames
+    indices = np.linspace(0, num_frames - 1, target_frames)
+    resampled = np.zeros((target_frames, pose_data.shape[1], pose_data.shape[2]))
+
+    for kp_idx in range(pose_data.shape[1]):
+        for coord_idx in range(pose_data.shape[2]):
+            resampled[:, kp_idx, coord_idx] = np.interp(
+                indices,
+                np.arange(num_frames),
+                pose_data[:, kp_idx, coord_idx]
+            )
+
+    return resampled
+
+
+def apply_augmentation_pickle(pose_data, augmentation_id):
+    """
+    Apply augmentation to 75-point pose data (pickle mode).
+    Uses AUGMENTATION_CONFIG to determine which transforms to apply.
+
+    Args:
+        pose_data: (frames, 75, 2)
+        augmentation_id: int, determines which augmentation to apply
 
     Returns:
         augmented_data: (frames, 75, 2)
@@ -126,13 +317,87 @@ def apply_augmentation_pickle(pose_data, augmentation_id):
     np.random.seed(augmentation_id)
 
     transforms = PoseTransforms()
-
-    # Apply transformations
     augmented = pose_data.copy()
-    augmented = transforms.center_and_scale_normalize(augmented)
-    augmented = transforms.apply_shear(augmented, shear_std=SHEAR_STD)
-    augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD)
 
+    # Determine augmentation strategy based on ID
+    current_id = augmentation_id
+
+    # Phase 1: Geometric
+    if AUGMENTATION_CONFIG['geometric'] > 0 and current_id < AUGMENTATION_CONFIG['geometric']:
+        augmented = transforms.center_and_scale_normalize(augmented)
+        augmented = transforms.apply_shear(augmented, shear_std=SHEAR_STD)
+        augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD)
+        return augmented
+
+    if AUGMENTATION_CONFIG['geometric'] > 0:
+        current_id -= AUGMENTATION_CONFIG['geometric']
+
+    # Phase 2: Horizontal Flip
+    if AUGMENTATION_CONFIG['horizontal_flip'] > 0 and current_id < AUGMENTATION_CONFIG['horizontal_flip']:
+        augmented = apply_horizontal_flip(augmented)
+        if current_id == 1:  # Flip + rotation
+            augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD * 0.5)
+        elif current_id == 2:  # Flip + shear
+            augmented = transforms.apply_shear(augmented, shear_std=SHEAR_STD * 0.5)
+        elif current_id == 3:  # Flip + noise
+            augmented = apply_spatial_noise(augmented, noise_std=NOISE_LOW)
+        elif current_id == 4:  # Flip + translation
+            augmented = apply_translation(augmented, shift_std=TRANSLATION_SMALL)
+        return augmented
+
+    if AUGMENTATION_CONFIG['horizontal_flip'] > 0:
+        current_id -= AUGMENTATION_CONFIG['horizontal_flip']
+
+    # Phase 3: Spatial Noise
+    if AUGMENTATION_CONFIG['spatial_noise'] > 0 and current_id < AUGMENTATION_CONFIG['spatial_noise']:
+        noise_std = NOISE_LOW if current_id == 0 else NOISE_MEDIUM
+        augmented = apply_spatial_noise(augmented, noise_std=noise_std)
+        return augmented
+
+    if AUGMENTATION_CONFIG['spatial_noise'] > 0:
+        current_id -= AUGMENTATION_CONFIG['spatial_noise']
+
+    # Phase 4: Translation
+    if AUGMENTATION_CONFIG['translation'] > 0 and current_id < AUGMENTATION_CONFIG['translation']:
+        shift_std = TRANSLATION_SMALL if current_id == 0 else TRANSLATION_MEDIUM
+        augmented = apply_translation(augmented, shift_std=shift_std)
+        return augmented
+
+    if AUGMENTATION_CONFIG['translation'] > 0:
+        current_id -= AUGMENTATION_CONFIG['translation']
+
+    # Phase 5: Scaling
+    if AUGMENTATION_CONFIG['scaling'] > 0 and current_id < AUGMENTATION_CONFIG['scaling']:
+        scale_factor = SCALE_SMALL if current_id == 0 else SCALE_LARGE
+        augmented = apply_scaling(augmented, scale_factor=scale_factor)
+        return augmented
+
+    if AUGMENTATION_CONFIG['scaling'] > 0:
+        current_id -= AUGMENTATION_CONFIG['scaling']
+
+    # Phase 6: Speed Variation
+    if AUGMENTATION_CONFIG['speed_variation'] > 0 and current_id < AUGMENTATION_CONFIG['speed_variation']:
+        speed_factor = SPEED_SLOW if current_id == 0 else SPEED_FAST
+        augmented = apply_speed_variation(augmented, speed_factor=speed_factor)
+        return augmented
+
+    if AUGMENTATION_CONFIG['speed_variation'] > 0:
+        current_id -= AUGMENTATION_CONFIG['speed_variation']
+
+    # Phase 7: Combinations
+    if AUGMENTATION_CONFIG['combinations'] > 0 and current_id < AUGMENTATION_CONFIG['combinations']:
+        if current_id == 0:  # Rotation + Noise
+            augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD)
+            augmented = apply_spatial_noise(augmented, noise_std=NOISE_LOW)
+        elif current_id == 1:  # Shear + Translation
+            augmented = transforms.apply_shear(augmented, shear_std=SHEAR_STD)
+            augmented = apply_translation(augmented, shift_std=TRANSLATION_SMALL)
+        elif current_id == 2:  # Flip + Scaling
+            augmented = apply_horizontal_flip(augmented)
+            augmented = apply_scaling(augmented, scale_factor=SCALE_LARGE)
+        return augmented
+
+    # Fallback: return original (shouldn't reach here)
     return augmented
 
 
@@ -189,14 +454,128 @@ def load_pose_file(pose_path):
     return pose, metadata
 
 
-def apply_augmentation_pose(pose_data, augmentation_id):
+def apply_horizontal_flip_pose(pose_data):
     """
-    Apply augmentation to pose data (pose mode).
-    Uses imported functions from augment_pose_file.py
+    Apply horizontal flip to pose data (4D format).
 
     Args:
         pose_data: (frames, people, keypoints, dims)
-        augmentation_id: int, for seeding
+
+    Returns:
+        flipped_data: (frames, people, keypoints, dims)
+    """
+    flipped = pose_data.copy()
+    # Flip x-coordinates (dim 0)
+    flipped[:, :, :, 0] = -flipped[:, :, :, 0]
+
+    # Swap left/right hand keypoints
+    # MediaPipe: body (0-32), left hand (33-53), right hand (54-74)
+    left_hand = flipped[:, :, 33:54, :].copy()
+    right_hand = flipped[:, :, 54:75, :].copy()
+    flipped[:, :, 33:54, :] = right_hand
+    flipped[:, :, 54:75, :] = left_hand
+
+    return flipped
+
+
+def apply_spatial_noise_pose(pose_data, noise_std=0.01):
+    """
+    Add Gaussian noise to pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        noise_std: Standard deviation of noise
+
+    Returns:
+        noisy_data: (frames, people, keypoints, dims)
+    """
+    noise = np.random.normal(0, noise_std, pose_data.shape)
+    # Only add noise to non-zero keypoints
+    mask = (pose_data != 0).astype(float)
+    return pose_data + (noise * mask)
+
+
+def apply_translation_pose(pose_data, shift_std=0.05):
+    """
+    Translate pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        shift_std: Standard deviation of translation
+
+    Returns:
+        translated_data: (frames, people, keypoints, dims)
+    """
+    shift_x = np.random.normal(0, shift_std)
+    shift_y = np.random.normal(0, shift_std)
+    translated = pose_data.copy()
+    translated[:, :, :, 0] += shift_x
+    translated[:, :, :, 1] += shift_y
+    return translated
+
+
+def apply_scaling_pose(pose_data, scale_factor):
+    """
+    Scale pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        scale_factor: Scale multiplier
+
+    Returns:
+        scaled_data: (frames, people, keypoints, dims)
+    """
+    scaled = pose_data.copy()
+    # Find center of non-zero keypoints
+    valid_mask = (pose_data != 0).any(axis=3)
+    if valid_mask.any():
+        center = pose_data[valid_mask].mean(axis=0)[:2]  # x, y center
+        # Scale around center
+        scaled[:, :, :, :2] = (scaled[:, :, :, :2] - center) * scale_factor + center
+    return scaled
+
+
+def apply_speed_variation_pose(pose_data, speed_factor):
+    """
+    Apply temporal stretching/compression to pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        speed_factor: Speed multiplier
+
+    Returns:
+        resampled_data: (new_frames, people, keypoints, dims)
+    """
+    num_frames = pose_data.shape[0]
+    target_frames = int(num_frames * speed_factor)
+
+    if target_frames < 2:
+        target_frames = 2
+
+    # Interpolate frames
+    indices = np.linspace(0, num_frames - 1, target_frames)
+    resampled = np.zeros((target_frames, pose_data.shape[1], pose_data.shape[2], pose_data.shape[3]))
+
+    for person_idx in range(pose_data.shape[1]):
+        for kp_idx in range(pose_data.shape[2]):
+            for dim_idx in range(pose_data.shape[3]):
+                resampled[:, person_idx, kp_idx, dim_idx] = np.interp(
+                    indices,
+                    np.arange(num_frames),
+                    pose_data[:, person_idx, kp_idx, dim_idx]
+                )
+
+    return resampled
+
+
+def apply_augmentation_pose(pose_data, augmentation_id):
+    """
+    Apply augmentation to pose data (pose mode).
+    Uses AUGMENTATION_CONFIG to determine which transforms to apply.
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        augmentation_id: int, determines which augmentation to apply
 
     Returns:
         augmented_data: (frames, people, keypoints, dims)
@@ -204,11 +583,84 @@ def apply_augmentation_pose(pose_data, augmentation_id):
     # Set seed for reproducibility
     np.random.seed(augmentation_id)
 
-    # Apply geometric transformations (using imported functions)
     augmented = pose_data.copy()
-    augmented = apply_shear(augmented, shear_std=SHEAR_STD)
-    augmented = apply_rotation(augmented, rotation_std=ROTATION_STD)
+    current_id = augmentation_id
 
+    # Phase 1: Geometric
+    if AUGMENTATION_CONFIG['geometric'] > 0 and current_id < AUGMENTATION_CONFIG['geometric']:
+        augmented = apply_shear(augmented, shear_std=SHEAR_STD)
+        augmented = apply_rotation(augmented, rotation_std=ROTATION_STD)
+        return augmented
+
+    if AUGMENTATION_CONFIG['geometric'] > 0:
+        current_id -= AUGMENTATION_CONFIG['geometric']
+
+    # Phase 2: Horizontal Flip
+    if AUGMENTATION_CONFIG['horizontal_flip'] > 0 and current_id < AUGMENTATION_CONFIG['horizontal_flip']:
+        augmented = apply_horizontal_flip_pose(augmented)
+        if current_id == 1:  # Flip + rotation
+            augmented = apply_rotation(augmented, rotation_std=ROTATION_STD * 0.5)
+        elif current_id == 2:  # Flip + shear
+            augmented = apply_shear(augmented, shear_std=SHEAR_STD * 0.5)
+        elif current_id == 3:  # Flip + noise
+            augmented = apply_spatial_noise_pose(augmented, noise_std=NOISE_LOW)
+        elif current_id == 4:  # Flip + translation
+            augmented = apply_translation_pose(augmented, shift_std=TRANSLATION_SMALL)
+        return augmented
+
+    if AUGMENTATION_CONFIG['horizontal_flip'] > 0:
+        current_id -= AUGMENTATION_CONFIG['horizontal_flip']
+
+    # Phase 3: Spatial Noise
+    if AUGMENTATION_CONFIG['spatial_noise'] > 0 and current_id < AUGMENTATION_CONFIG['spatial_noise']:
+        noise_std = NOISE_LOW if current_id == 0 else NOISE_MEDIUM
+        augmented = apply_spatial_noise_pose(augmented, noise_std=noise_std)
+        return augmented
+
+    if AUGMENTATION_CONFIG['spatial_noise'] > 0:
+        current_id -= AUGMENTATION_CONFIG['spatial_noise']
+
+    # Phase 4: Translation
+    if AUGMENTATION_CONFIG['translation'] > 0 and current_id < AUGMENTATION_CONFIG['translation']:
+        shift_std = TRANSLATION_SMALL if current_id == 0 else TRANSLATION_MEDIUM
+        augmented = apply_translation_pose(augmented, shift_std=shift_std)
+        return augmented
+
+    if AUGMENTATION_CONFIG['translation'] > 0:
+        current_id -= AUGMENTATION_CONFIG['translation']
+
+    # Phase 5: Scaling
+    if AUGMENTATION_CONFIG['scaling'] > 0 and current_id < AUGMENTATION_CONFIG['scaling']:
+        scale_factor = SCALE_SMALL if current_id == 0 else SCALE_LARGE
+        augmented = apply_scaling_pose(augmented, scale_factor=scale_factor)
+        return augmented
+
+    if AUGMENTATION_CONFIG['scaling'] > 0:
+        current_id -= AUGMENTATION_CONFIG['scaling']
+
+    # Phase 6: Speed Variation
+    if AUGMENTATION_CONFIG['speed_variation'] > 0 and current_id < AUGMENTATION_CONFIG['speed_variation']:
+        speed_factor = SPEED_SLOW if current_id == 0 else SPEED_FAST
+        augmented = apply_speed_variation_pose(augmented, speed_factor=speed_factor)
+        return augmented
+
+    if AUGMENTATION_CONFIG['speed_variation'] > 0:
+        current_id -= AUGMENTATION_CONFIG['speed_variation']
+
+    # Phase 7: Combinations
+    if AUGMENTATION_CONFIG['combinations'] > 0 and current_id < AUGMENTATION_CONFIG['combinations']:
+        if current_id == 0:  # Rotation + Noise
+            augmented = apply_rotation(augmented, rotation_std=ROTATION_STD)
+            augmented = apply_spatial_noise_pose(augmented, noise_std=NOISE_LOW)
+        elif current_id == 1:  # Shear + Translation
+            augmented = apply_shear(augmented, shear_std=SHEAR_STD)
+            augmented = apply_translation_pose(augmented, shift_std=TRANSLATION_SMALL)
+        elif current_id == 2:  # Flip + Scaling
+            augmented = apply_horizontal_flip_pose(augmented)
+            augmented = apply_scaling_pose(augmented, scale_factor=SCALE_LARGE)
+        return augmented
+
+    # Fallback: return original
     return augmented
 
 
@@ -216,13 +668,27 @@ def save_augmented_pose(pose_data, original_pose, metadata, output_path, augment
     """
     Save augmented pose data as .pose file.
     """
+    # Create confidence mask matching the augmented data shape
+    # Shape: (frames, people, keypoints)
+    new_frames = pose_data.shape[0]
+
+    # If frames changed (e.g., from speed variation), resize confidence
+    if new_frames != original_pose.body.confidence.shape[0]:
+        # Create new confidence based on non-zero values in augmented data
+        confidence = np.ones((new_frames, pose_data.shape[1], pose_data.shape[2]), dtype=np.float32)
+        # Mark zero keypoints as low confidence
+        confidence[pose_data[:, :, :, 0] == 0] = 0.0
+    else:
+        # Same number of frames, can reuse original confidence
+        confidence = original_pose.body.confidence
+
     # Create new pose with augmented data
     augmented_pose = Pose(
         header=original_pose.header,
         body=original_pose.body.__class__(
             fps=original_pose.body.fps,
             data=pose_data,
-            confidence=original_pose.body.confidence
+            confidence=confidence
         )
     )
 
@@ -254,18 +720,19 @@ def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=No
         OUTPUT_DIR = output_dir
         file_extension = '.pkl' if input_type == 'pickle' else '.pose'
     else:
-        # Use default directory structure
-        class_folder = f"{num_classes}-classes"
-        experiments_dir = os.path.join(EXPERIMENTS_BASE_DIR, class_folder)
-        os.makedirs(experiments_dir, exist_ok=True)
+        # Use default augmented_pool structure (MODULAR APPROACH)
+        # augmented_pool is a sibling of wlasl_poses_complete
+        augmented_pool_dir = Path(WLASL_BASE_DIR).parent / "augmented_pool"
 
         if input_type == 'pickle':
-            INPUT_DIR = os.path.join(WLASL_BASE_DIR, f"conservative_split_{num_classes}_class", "train")
-            OUTPUT_DIR = os.path.join(experiments_dir, "augmented_75pt_pickle")
+            # Pickle mode: load from pickle train split, save to augmented_pool/pickle/
+            INPUT_DIR = os.path.join(WLASL_BASE_DIR, f"dataset_splits/{num_classes}_classes/original/pickle_from_pose_split_{num_classes}_class/train")
+            OUTPUT_DIR = str(augmented_pool_dir / "pickle")
             file_extension = '.pkl'
-        else:  # pose
-            INPUT_DIR = os.path.join(WLASL_BASE_DIR, f"pose_split_{num_classes}_class", "train")
-            OUTPUT_DIR = os.path.join(experiments_dir, "augmented_75pt_pose")
+        else:  # pose (RECOMMENDED - modular approach)
+            # Pose mode: load ORIGINAL .pose from train split, save to augmented_pool/pose/
+            INPUT_DIR = os.path.join(WLASL_BASE_DIR, f"dataset_splits/{num_classes}_classes/original/pose_split_{num_classes}_class/train")
+            OUTPUT_DIR = str(augmented_pool_dir / "pose")
             file_extension = '.pose'
 
     print("=" * 70)
@@ -276,26 +743,49 @@ def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=No
     print(f"Number of classes: {num_classes}")
     print(f"Input directory:  {INPUT_DIR}")
     print(f"Output directory: {OUTPUT_DIR}")
-    print(f"Augmentations per sample: {NUM_AUGMENTATIONS}")
+    print()
+    print(f"AUGMENTATION CONFIG: {NUM_AUGMENTATIONS} total augmentations")
+    for strategy, count in AUGMENTATION_CONFIG.items():
+        if count > 0:
+            print(f"  ✓ {strategy}: {count} variants")
+        else:
+            print(f"  ✗ {strategy}: disabled (count=0)")
     print()
 
     # Create output directory
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Get all class directories
-    all_class_dirs = sorted([d for d in os.listdir(INPUT_DIR)
-                            if os.path.isdir(os.path.join(INPUT_DIR, d))])
-
-    # Filter by num_classes if specified
+    # Get target classes dynamically
     if num_classes and num_classes > 0:
-        # Get target classes from BASE_CLASS_ORDER
-        target_classes = BASE_CLASS_ORDER[:num_classes]
+        # Try loading from class_mapping.json first
+        target_classes = load_class_mapping(num_classes)
+
+        if target_classes is None:
+            # Fallback: discover classes from input directory
+            print(f"Fallback: discovering classes from input directory...")
+            target_classes = get_classes_from_directory(INPUT_DIR)
+            print(f"Found {len(target_classes)} classes in directory")
+
+        # Get all class directories that exist in input
+        all_class_dirs = sorted([d for d in os.listdir(INPUT_DIR)
+                                if os.path.isdir(os.path.join(INPUT_DIR, d))])
+
         # Filter to only include target classes that exist
         class_dirs = [c for c in target_classes if c in all_class_dirs]
-        print(f"Filtering to top {num_classes} classes (found {len(class_dirs)} with data)")
+        print(f"Using {len(class_dirs)} classes from mapping (found in input directory)")
+
+        # Warn if some classes are missing
+        missing = [c for c in target_classes if c not in all_class_dirs]
+        if missing:
+            print(f"WARNING: {len(missing)} classes from mapping not found in input directory:")
+            for c in missing[:10]:  # Show first 10
+                print(f"  - {c}")
+            if len(missing) > 10:
+                print(f"  ... and {len(missing) - 10} more")
     else:
-        class_dirs = all_class_dirs
-        print(f"Processing all {len(class_dirs)} classes")
+        # Process all classes found in directory
+        class_dirs = get_classes_from_directory(INPUT_DIR)
+        print(f"Processing all {len(class_dirs)} classes from directory")
 
     print(f"Classes to process:")
     for class_name in class_dirs:

@@ -1,0 +1,4 @@
+{
+  "data_root": "/path/to/your/datasets/wlasl_poses_complete",
+  "project_root": "auto"
+}

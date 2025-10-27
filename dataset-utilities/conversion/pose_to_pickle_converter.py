@@ -17,18 +17,6 @@ from pathlib import Path
 from tqdm import tqdm
 from pose_format import Pose
 
-# ============================================================================
-# CONFIGURATION - All paths and settings
-# ============================================================================
-
-# Base directories (can be overridden by command-line arguments)
-WLASL_BASE_DIR = "C:/Users/padwe/OneDrive/WLASL-proj/wlasl-kaggle/wlasl_poses_complete"
-EXPERIMENTS_BASE_DIR = "C:/Users/padwe/OneDrive/WLASL-proj/OpenHands-Modernized/experiments"
-
-# Will be set based on command-line arguments
-INPUT_DIR = None
-OUTPUT_DIR = None
-
 
 def pose_to_numpy(pose):
     """Convert pose_format Pose object to numpy arrays"""
@@ -50,6 +38,92 @@ def pose_to_numpy(pose):
     except Exception as e:
         print(f"Error converting pose data: {e}")
         return None, None
+
+
+def convert_single_pose_file(input_file):
+    """
+    Convert a single .pose file to pickle format.
+    Saves with same name but .pkl extension in same directory.
+
+    Args:
+        input_file: Path to .pose file
+    """
+    print("=" * 70)
+    print("CONVERTING SINGLE .POSE FILE TO PICKLE FORMAT")
+    print("=" * 70)
+    print()
+    print(f"Input file: {input_file}")
+
+    # Validate input
+    if not os.path.exists(input_file):
+        print(f"ERROR: File not found: {input_file}")
+        return
+
+    if not input_file.endswith('.pose'):
+        print(f"ERROR: Input must be a .pose file")
+        return
+
+    try:
+        # Load pose file
+        with open(input_file, 'rb') as f:
+            pose = Pose.read(f.read())
+
+        # Convert to numpy
+        keypoints, confidences = pose_to_numpy(pose)
+
+        if keypoints is None:
+            print("ERROR: Failed to convert pose data")
+            return
+
+        # Extract metadata from filename
+        filename = os.path.basename(input_file)
+        video_id = filename.replace('.pose', '')
+
+        # Get gloss from parent directory name (if in class folder)
+        parent_dir = os.path.basename(os.path.dirname(input_file))
+        gloss = parent_dir if parent_dir else 'unknown'
+
+        # Check if augmented
+        is_augmented = video_id.startswith('aug_')
+        augmentation_id = None
+        original_video_id = video_id
+
+        if is_augmented:
+            parts = video_id.split('_')
+            if len(parts) >= 3:
+                try:
+                    augmentation_id = int(parts[1])
+                    original_video_id = '_'.join(parts[2:])
+                except ValueError:
+                    pass
+
+        # Create pickle data
+        pickle_data = {
+            'keypoints': keypoints,
+            'confidences': confidences,
+            'video_id': original_video_id,
+            'gloss': gloss,
+            'split': 'train',
+            'augmented': is_augmented,
+            'augmentation_id': augmentation_id,
+            'pose_file': input_file
+        }
+
+        # Create output path (same directory, .pkl extension)
+        output_file = input_file.replace('.pose', '.pkl')
+
+        # Save pickle file
+        with open(output_file, 'wb') as f:
+            pickle.dump(pickle_data, f)
+
+        print(f"✓ Converted successfully")
+        print(f"Output file: {output_file}")
+        print()
+
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 
 def convert_pose_directory(input_dir, output_dir):
@@ -193,17 +267,24 @@ def convert_pose_directory(input_dir, output_dir):
 def main():
     """Main conversion logic with command-line arguments."""
     parser = argparse.ArgumentParser(description='Convert .pose files to pickle format')
-    parser.add_argument('--input-dir', type=str, required=True,
+    parser.add_argument('--input-file', type=str, default=None,
+                        help='Single .pose file to convert (outputs to same directory with .pkl extension)')
+    parser.add_argument('--input-dir', type=str, default=None,
                         help='Input directory containing .pose files with class subdirectories')
-    parser.add_argument('--output-dir', type=str, required=True,
-                        help='Output directory for pickle files (will preserve directory structure)')
-    parser.add_argument('--classes', type=int, default=20,
-                        help='Number of classes (for experiment organization, default: 20)')
+    parser.add_argument('--output-dir', type=str, default=None,
+                        help='Output directory for pickle files (required with --input-dir)')
 
     args = parser.parse_args()
 
-    # Convert pose files to pickle
-    convert_pose_directory(args.input_dir, args.output_dir)
+    # Validate arguments
+    if args.input_file:
+        # Single file mode
+        convert_single_pose_file(args.input_file)
+    elif args.input_dir and args.output_dir:
+        # Directory mode
+        convert_pose_directory(args.input_dir, args.output_dir)
+    else:
+        parser.error("Either --input-file OR (--input-dir AND --output-dir) must be provided")
 
 
 if __name__ == "__main__":

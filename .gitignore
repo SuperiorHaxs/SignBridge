@@ -99,6 +99,8 @@ archive/
 *.zip
 *.tar.gz
 
-# Keep config structure but allow settings.json to be committed
-# (it contains example/current paths that user should update)
-# config/settings.json is COMMITTED so users know what to configure
+# User-specific configuration (contains local paths)
+config/settings.json
+
+# Claude Code workspace files
+.claude/*.lnk

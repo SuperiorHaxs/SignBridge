@@ -43,6 +43,7 @@
 | OpenHands 75pt Original | 20 | OpenHands (6-layer) | 75 | ~1200 | 20.00% | - | - | 5.0% | 4.0x | Major Improvement |
 | OpenHands 75pt Augmented | 20 | OpenHands (6-layer) | 75 | ~775 | **42.47%** | - | 75.29% | 5.0% | **8.5x** | **BEST** |
 | OpenHands 50-Class | 50 | OpenHands (3-layer) | 27 | ~6754 | 9.38% | - | 18.27% | 2.0% | 4.7x | Success |
+| OpenHands 50-Class Large (Aug) | 50 | OpenHands (6-layer) | 75 | ~8,892 | **43.64%** | - | 58.18% | 2.0% | **21.8x** | **BEST for 50** |
 
 ### Architecture Specifications
 
@@ -61,3 +62,4 @@
 | 75pt Original | ~8M | 128 | 6 | 16 | 512 | 0.1 |
 | 75pt Augmented | ~8M | 128 | 6 | 16 | 512 | 0.1 |
 | 50-Class | ~175K | 64 | 3 | 8 | 256 | 0.1 |
+| 50-Class Large (Aug) | ~8M | 128 | 6 | 16 | 512 | 0.1 |
