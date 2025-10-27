@@ -70,7 +70,7 @@ def get_dataset_paths(num_classes):
 # ============================================================================
 
 # Architecture selection
-def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None):
+def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1):
     """Create model based on architecture choice and size."""
     if architecture == "openhands" or architecture == "transformer":
         # Configure model size
@@ -93,7 +93,8 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
             hidden_size=final_hidden,
             num_hidden_layers=final_layers,
             num_attention_heads=final_heads,
-            intermediate_size=final_hidden * 4  # Scale intermediate size
+            intermediate_size=final_hidden * 4,  # Scale intermediate size
+            dropout_prob=dropout  # Configurable dropout
         )
         model = OpenHandsModel(config)
         print(f"MODEL: OpenHands Architecture ({model_size.upper()}) for {num_classes} classes")
@@ -101,6 +102,7 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
         print(f"   Hidden size: {config.hidden_size}")
         print(f"   Transformer layers: {config.num_hidden_layers}")
         print(f"   Attention heads: {config.num_attention_heads}")
+        print(f"   Dropout: {config.dropout_prob}")
         print(f"   Total Parameters: {sum(p.numel() for p in model.parameters()):,}")
         return model, config
     else:
@@ -259,7 +261,7 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
     )
 
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
-                           architecture="openhands", model_size="small", hidden_size=None, num_layers=None, force_fresh=False):
+                           architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1, force_fresh=False):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -467,7 +469,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     dataset_loader.id_to_gloss = id_to_gloss
 
     # Create model with selected architecture
-    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers)
+    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout)
     model.to(device)
 
     # Use pre-split data if available, otherwise use the loaded training data
@@ -634,8 +636,9 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
             correct += (predictions == labels).sum().item()
             total += labels.size(0)
 
-            if (batch_idx + 1) % 20 == 0:  # Progress logging every 20 batches
-                print(f"    Batch {batch_idx + 1}/{len(train_loader)} - Loss: {loss.item():.4f}", flush=True)
+            # Removed batch-level logging for cleaner output
+            # if (batch_idx + 1) % 20 == 0:  # Progress logging every 20 batches
+            #     print(f"    Batch {batch_idx + 1}/{len(train_loader)} - Loss: {loss.item():.4f}", flush=True)
 
         avg_loss = total_loss / len(train_loader)
         train_accuracy = 100 * correct / total
@@ -697,7 +700,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
 
     return model, dataset_loader
 
-def test_multi_class_model(num_classes=20, architecture="openhands", model_size="small", hidden_size=None, num_layers=None):
+def test_multi_class_model(num_classes=20, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1):
     """Test the trained multi-class model on the PROPERLY SPLIT test set."""
 
     print("="*70)
@@ -771,7 +774,7 @@ def test_multi_class_model(num_classes=20, architecture="openhands", model_size=
     else:
         # Fallback: create model with provided parameters
         print(f"WARNING: Config not found, using provided parameters")
-        model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers)
+        model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout)
 
     print(f"LOADING: Loading weights from {model_path}")
     try:
@@ -851,6 +854,8 @@ if __name__ == "__main__":
                        help='Custom hidden size (overrides model-size)')
     parser.add_argument('--num-layers', type=int, default=None,
                        help='Custom number of layers (overrides model-size)')
+    parser.add_argument('--dropout', type=float, default=0.1,
+                       help='Dropout probability (default: 0.1). Increase to 0.2-0.3 to reduce overfitting')
     parser.add_argument('--force-fresh', action='store_true',
                        help='Ignore any existing checkpoint and start fresh training')
 
@@ -870,7 +875,8 @@ if __name__ == "__main__":
                 architecture=args.architecture,
                 model_size=args.model_size,
                 hidden_size=args.hidden_size,
-                num_layers=args.num_layers
+                num_layers=args.num_layers,
+                dropout=args.dropout
             )
 
         else:
@@ -909,6 +915,7 @@ if __name__ == "__main__":
                 model_size=args.model_size,
                 hidden_size=args.hidden_size,
                 num_layers=args.num_layers,
+                dropout=args.dropout,
                 force_fresh=args.force_fresh
             )
 
