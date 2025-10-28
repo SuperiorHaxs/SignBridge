@@ -41,9 +41,10 @@
 |------------|---------|--------------|-----------|---------------|---------|----------|-----------|----------|-------------|--------|
 | OpenHands 27pt Baseline | 20 | OpenHands (3-layer) | 27 | ~1200 | 10.91% | - | - | 5.0% | 2.2x | Baseline |
 | OpenHands 75pt Original | 20 | OpenHands (6-layer) | 75 | ~1200 | 20.00% | - | - | 5.0% | 4.0x | Major Improvement |
-| OpenHands 75pt Augmented | 20 | OpenHands (6-layer) | 75 | ~775 | **42.47%** | - | 75.29% | 5.0% | **8.5x** | **BEST** |
+| OpenHands 75pt Augmented | 20 | OpenHands (6-layer) | 75 | ~775 | **42.47%** | - | 75.29% | 5.0% | **8.5x** | **BEST for 20** |
 | OpenHands 50-Class | 50 | OpenHands (3-layer) | 27 | ~6754 | 9.38% | - | 18.27% | 2.0% | 4.7x | Success |
-| OpenHands 50-Class Large (Aug) | 50 | OpenHands (6-layer) | 75 | ~8,892 | **43.64%** | - | 58.18% | 2.0% | **21.8x** | **BEST for 50** |
+| OpenHands 50-Class Large (Aug) | 50 | OpenHands (6-layer) | 75 | ~8,892 | 43.64% | - | 58.18% | 2.0% | 21.8x | Overfitting |
+| OpenHands 50-Class Small (Aug+D0.25) | 50 | OpenHands (3-layer) | 75 | ~9,234 | **47.27%** | - | 50.91% | 2.0% | **23.6x** | **BEST for 50** |
 
 ### Architecture Specifications
 
@@ -62,4 +63,5 @@
 | 75pt Original | ~8M | 128 | 6 | 16 | 512 | 0.1 |
 | 75pt Augmented | ~8M | 128 | 6 | 16 | 512 | 0.1 |
 | 50-Class | ~175K | 64 | 3 | 8 | 256 | 0.1 |
-| 50-Class Large (Aug) | ~8M | 128 | 6 | 16 | 512 | 0.1 |
+| 50-Class Large (Aug) | ~4.8M | 256 | 6 | 16 | 1024 | 0.25 |
+| 50-Class Small (Aug+D0.25) | ~175K | 64 | 3 | 8 | 256 | 0.25 |
