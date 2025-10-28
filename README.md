@@ -6,14 +6,14 @@
 
 ## Table of Contents
 
-1. [Project Goals and Motivation](#1-project-goals-and-motivation)
-2. [Current State of the Field](#2-current-state-of-the-field)
-3. [Research Challenges & Our Solutions](#3-research-challenges--our-solutions)
-4. [Phased Research Roadmap](#4-phased-research-roadmap)
-5. [Performance Comparison](#5-performance-comparison)
-6. [More Details on Our Unique Features & Innovations](#6-more-details-on-our-unique-features--innovations)
-7. [Getting Started](#7-getting-started)
-8. [Related Work](#8-related-work)
+1. [Project Goals and Motivation](#1--project-goals-and-motivation)
+2. [Current State of the Field](#2--current-state-of-the-field)
+3. [Research Challenges & Our Solutions](#3--research-challenges--our-solutions)
+4. [Phased Research Roadmap](#4--phased-research-roadmap)
+5. [Performance Comparison](#5--performance-comparison)
+6. [More Details on Our Unique Features & Innovations](#6--more-details-on-our-unique-features--innovations)
+7. [Getting Started](#7--getting-started)
+8. [Related Work](#8--related-work)
 
 ---
 
@@ -89,9 +89,8 @@ Build a **production-ready, real-time ASL translation system** that:
 
 | Challenge | Problem Statement | Solution & Impact |
 |-----------|-------------------|-------------------|
-| **Natural Language Generation** | No end-to-end systems combining modern pose models with LLMs. Traditional rule-based grammar insufficient for natural output. | **Solution: Streaming Gemini Integration**<br>Smart buffering with 5 trigger strategies (pause, buffer size, question words, sentence endings, timeout). Context-aware prompts with top-K integration.<br>**Result**: <2s latency with grammatically correct sentences. |
-| **Continuous Sign Segmentation** | Segmenting continuous signing into individual signs is unsolved. Real-world videos unusable without manual annotation. | **Solution: Dual Segmentation Methods**<br>Auto-detect (pose_to_segments ML-based) + motion-based (velocity thresholds). Configurable for different signing styles.<br>**Result**: Automated boundary detection for real-world videos. |
-| **Translation Quality Evaluation** | Manual quality assessment of ASL translations is time-consuming and subjective. Need automated metrics. | **Solution: BLEU Score Evaluation**<br>Automatic BLEU calculation against reference sentences using synthetic sentence generator.<br>**Result**: Quantitative evaluation framework (in progress). |
+| **Natural Language Generation** | No end-to-end systems combining modern pose models with LLMs. Traditional rule-based grammar insufficient for natural output. | **Solution: LLM-based Self-Correcting Sentence Construction**<br>**Implementation**: Streaming Gemini API with smart buffering (5 trigger strategies), context-aware prompts, top-K integration<br>**Components**: Smart buffering, local fallback, BLEU score evaluation (in progress)<br>**Result**: <2s latency with grammatically correct sentences. |
+| **Continuous Sign Segmentation** | Segmenting continuous signing into individual signs is unsolved. Real-world videos unusable without manual annotation. | **Solution: Continuous Sign Detection**<br>**Implementation**: Dual segmentation approach - auto-detect (pose_to_segments ML-based) + motion-based (velocity thresholds)<br>**Features**: Configurable for different signing styles, works on real-world videos<br>**Result**: Automated boundary detection enabling continuous video processing. |
 
 ### (e) Reusability & Extensibility
 
@@ -111,11 +110,11 @@ Build a **production-ready, real-time ASL translation system** that:
 | **3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
 | **4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **5** | Real-Time Webcam App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
-| **6** | Isolated Sign Recognition Model Optimization & Expansion | ⏳ **NOT STARTED** | • 100-class model<br>• 300-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 67%+ Top-3 (100-class)<br>• 67%+ Top-3 (300-class)<br>• 67%+ Top-3 (50-class optimized)<br>• Reduced overfitting | **Future:** Scale to larger vocabularies with optimized training. Dropout 0.35, label smoothing, gradient clipping |
+| **6** | Isolated Sign Recognition Model Optimization & Expansion | 🔄 **IN PROGRESS** | • 100-class model<br>• 300-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 67%+ Top-3 (100-class)<br>• 67%+ Top-3 (300-class)<br>• 67%+ Top-3 (50-class optimized)<br>• Reduced overfitting | **In Progress:** Dropout tuning (testing 0.35), label smoothing, gradient clipping. **Next:** 100-class and 300-class models |
 | **7** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
-| **8** | Deployment & Release | ⏳ **NOT STARTED** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **Future:** Package for distribution |
+| **8** | Deployment & Release | 🔄 **IN PROGRESS** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **In Progress:** Documentation (README, training results). **Next:** Containerization, model quantization |
 
-**Current Status:** 4 of 8 phases complete (50% done), 1 in progress, 3 not started
+**Current Status:** 4 of 8 phases complete (50% done), 3 in progress, 1 not started
 
 ---
 
@@ -244,13 +243,15 @@ Dropout 0.25 (optimized): 47.27% val (stable until epoch 25)
 
 ### (d) Application
 
-#### 🤖 Streaming Gemini Integration
+#### 🤖 LLM-based Self-Correcting Sentence Construction
 **What it does:**
-- Real-time LLM integration for natural sentence construction
-- Smart buffering with 5 trigger strategies
-- Local fallback for common phrases
+- Real-time LLM integration for natural sentence construction from sign predictions
+- Transforms isolated sign glosses into grammatically correct English sentences
+- Self-correcting through context-aware prompting
 
-**Smart Buffering Triggers:**
+**Implementation: Streaming Gemini API**
+
+**Smart Buffering Triggers (5 strategies):**
 1. **Pause detection**: 1.8s silence + 2+ words
 2. **Buffer size**: 3-4 words accumulated
 3. **Question words**: Immediate on "what/who/where/when/why/how"
@@ -266,13 +267,24 @@ Dropout 0.25 (optimized): 47.27% val (stable until epoch 25)
 - Adapts to trigger reason (question vs statement)
 - Top-K prediction integration for better word choice
 
+**Quality Evaluation (BLEU Score):**
+- Automatic BLEU score calculation against reference sentences
+- Uses synthetic sentence generator for ground truth
+- **Status**: Framework implemented, evaluation in progress
+
 **Result:** <2s latency with grammatically correct sentences
 
-**File:** `applications/gemini_conversation_manager.py`
+**Files:**
+- `applications/gemini_conversation_manager.py`
+- `project-utilities/calculate_sent_bleu.py`
 
-#### 🔀 Dual Segmentation Methods
+#### 🔍 Continuous Sign Detection
 **What it does:**
-- Two complementary methods for detecting sign boundaries in continuous video
+- Automatically detects sign boundaries in continuous signing videos
+- Segments video stream into individual signs without manual annotation
+- Enables real-world video processing
+
+**Implementation: Dual Segmentation Approach**
 
 **Method 1: Auto-detect (pose_to_segments)**
 - Uses pose-format library's built-in ML-based segmentation
@@ -290,25 +302,9 @@ Dropout 0.25 (optimized): 47.27% val (stable until epoch 25)
 --segmentation-method motion --velocity-threshold 0.02  # Velocity-based
 ```
 
+**Result:** Automated boundary detection enabling real-world video processing
+
 **File:** `applications/motion_based_segmenter.py`
-
-#### 📊 BLEU Score Evaluation
-**What it does:**
-- Automatic translation quality assessment
-- BLEU score calculation against reference sentences
-- Uses synthetic sentence generator for ground truth
-
-**Status:** Framework implemented, evaluation in progress
-
-**Usage:**
-```bash
-python applications/predict_sentence.py video.mp4 \
-  --num-glosses 50 \
-  --gemini-api-key KEY
-# Automatically calculates and displays BLEU score
-```
-
-**File:** `project-utilities/calculate_sent_bleu.py`
 
 ### (e) Reusability & Extensibility
 
