@@ -5,13 +5,33 @@ BLEU Score Calculator for ASL Sentence Construction
 Calculates BLEU score by comparing a predicted sentence against reference sentences
 from the synthetic sentence dataset. Looks up reference sentences by matching glosses.
 
-Usage:
+Command Line Usage:
     # With custom predicted sentence
     python calculate_sent_bleu.py --glosses "I,WANT,BOOK" --sentence "I want to read a book" --num-glosses 20
 
     # Using concatenated glosses as sentence (adds period automatically)
     python calculate_sent_bleu.py --glosses "MANY,HOT,DOG" --num-glosses 50
     # Uses "MANY HOT DOG." as the predicted sentence
+
+Programmatic Usage:
+    from calculate_sent_bleu import calculate_bleu_from_glosses
+
+    result = calculate_bleu_from_glosses(
+        glosses=["DOG", "LIKE", "WALK"],
+        predicted_sentence="Dogs like walking",
+        num_glosses=50,
+        verbose=False
+    )
+
+    print(f"BLEU Score: {result['bleu_score']:.2f}")
+    print(f"Reference: {result['reference']}")
+    print(f"Found: {result['found']}")
+
+    Returns:
+        dict with:
+            - 'bleu_score': float (0-100)
+            - 'reference': str (reference sentence, or None if not found)
+            - 'found': bool (whether reference was found for the glosses)
 """
 
 import os
