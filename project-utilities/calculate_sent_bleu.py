@@ -6,8 +6,12 @@ Calculates BLEU score by comparing a predicted sentence against reference senten
 from the synthetic sentence dataset. Looks up reference sentences by matching glosses.
 
 Usage:
+    # With custom predicted sentence
     python calculate_sent_bleu.py --glosses "I,WANT,BOOK" --sentence "I want to read a book" --num-glosses 20
-    python calculate_sent_bleu.py --glosses "DOCTOR,HELP,DEAF" --sentence "The doctor helps people" --num-glosses 50
+
+    # Using concatenated glosses as sentence (adds period automatically)
+    python calculate_sent_bleu.py --glosses "MANY,HOT,DOG" --num-glosses 50
+    # Uses "MANY HOT DOG." as the predicted sentence
 """
 
 import os
@@ -185,8 +189,9 @@ def main():
     parser.add_argument(
         '--sentence',
         type=str,
-        required=True,
-        help='Predicted sentence to evaluate'
+        required=False,
+        default=None,
+        help='Predicted sentence to evaluate (if not provided, uses concatenated glosses with period)'
     )
     parser.add_argument(
         '--num-glosses',
@@ -208,9 +213,17 @@ def main():
     # Parse glosses
     glosses = [g.strip() for g in args.glosses.split(',')]
 
+    # If no sentence provided, use concatenated glosses with period
+    if args.sentence is None:
+        predicted_sentence = ' '.join(glosses) + '.'
+        if args.verbose:
+            print(f"No sentence provided, using concatenated glosses: {predicted_sentence}")
+    else:
+        predicted_sentence = args.sentence
+
     if args.verbose:
         print(f"Input glosses: {glosses}")
-        print(f"Predicted sentence: {args.sentence}")
+        print(f"Predicted sentence: {predicted_sentence}")
         print(f"Loading reference dataset ({args.num_glosses} glosses)...")
 
     # Load reference dataset
@@ -234,7 +247,7 @@ def main():
         print(f"Reference sentence: {reference_sentence}")
 
     # Calculate BLEU score
-    bleu_score = calculate_bleu_score(args.sentence, reference_sentence)
+    bleu_score = calculate_bleu_score(predicted_sentence, reference_sentence)
 
     # Output results
     if args.verbose:
@@ -242,7 +255,7 @@ def main():
         print(f"BLEU Score Results")
         print(f"{'='*70}")
         print(f"Glosses:            {', '.join(glosses)}")
-        print(f"Predicted:          {args.sentence}")
+        print(f"Predicted:          {predicted_sentence}")
         print(f"Reference:          {reference_sentence}")
         print(f"BLEU Score:         {bleu_score:.2f}")
         print(f"{'='*70}")
