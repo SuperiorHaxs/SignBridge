@@ -31,6 +31,7 @@ from config import get_config
 REFERENCE_DATASET_DIR = "datasets/synthetic_sentences"  # Relative to project root
 REFERENCE_FILENAME_TEMPLATE = "synthetic_gloss_to_sentence_llm_dataset_{num_glosses}_glosses.json"
 IGNORE_PUNCTUATION = True  # If True, strips trailing punctuation before comparison
+IGNORE_CASE = True  # If True, normalizes both sentences to lowercase before comparison
 
 
 def load_reference_dataset(num_glosses, config):
@@ -96,15 +97,20 @@ def calculate_bleu_score(predicted_sentence, reference_sentence):
         BLEU score (0-100)
     """
     # Normalize sentences based on configuration
+    predicted_normalized = predicted_sentence
+    reference_normalized = reference_sentence
+
     if IGNORE_PUNCTUATION:
         import string
         # Remove ALL punctuation from both sentences
         translator = str.maketrans('', '', string.punctuation)
-        predicted_normalized = predicted_sentence.translate(translator).strip()
-        reference_normalized = reference_sentence.translate(translator).strip()
-    else:
-        predicted_normalized = predicted_sentence
-        reference_normalized = reference_sentence
+        predicted_normalized = predicted_normalized.translate(translator).strip()
+        reference_normalized = reference_normalized.translate(translator).strip()
+
+    if IGNORE_CASE:
+        # Normalize to lowercase for case-insensitive comparison
+        predicted_normalized = predicted_normalized.lower()
+        reference_normalized = reference_normalized.lower()
 
     # sacrebleu expects reference as a list (can have multiple references)
     bleu = sentence_bleu(predicted_normalized, [reference_normalized])
