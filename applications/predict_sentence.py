@@ -10,7 +10,7 @@ Pipeline flow (Real-time Mode):
 4. Convert buffered frames to pose data using MediaPipe
 5. Segment poses (auto-detect sign boundaries)
 6. Predict individual glosses using OpenHands model
-7. Construct grammatically correct English sentence with Gemini API
+7. Construct grammatically correct English sentence using LLM
 
 Pipeline flow (File Mode):
 1. Accept input video file
@@ -18,11 +18,11 @@ Pipeline flow (File Mode):
 3. Segment pose file using pose_segment2.py with auto-detect
 4. Convert pose segments to pickle segments
 5. Predict individual glosses using OpenHands model
-6. Use Gemini API to construct grammatically correct English sentence
+6. Use LLM to construct grammatically correct English sentence
 
 Usage:
-    Real-time webcam: python predict_sentence.py --webcam [--checkpoint path] [--gemini-api-key key]
-    File mode:        python predict_sentence.py input_video.mp4 [--checkpoint path] [--gemini-api-key key]
+    Real-time webcam: python predict_sentence.py --webcam [--checkpoint path] [--no-llm]
+    File mode:        python predict_sentence.py input_video.mp4 [--checkpoint path] [--no-llm]
 """
 
 import os
@@ -46,8 +46,11 @@ from collections import deque
 # Add current directory to Python path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-# Add project-utilities to path for BLEU calculation
+# Add project-utilities to path (for BLEU calculation and LLM interface)
 sys.path.insert(0, str(Path(__file__).parent.parent / "project-utilities"))
+
+# Add OpenHands model path
+sys.path.insert(0, str(Path(__file__).parent.parent / "models" / "openhands-modernized" / "src"))
 
 # Import OpenCV for webcam capture
 try:
@@ -93,8 +96,15 @@ except ImportError as e:
     print(f"ERROR: Failed to import pose_format: {e}")
     sys.exit(1)
 
-# Optional: Check if Gemini API is available (lazy import)
-GEMINI_AVAILABLE = None  # Will be checked when needed
+# Import LLM interface
+try:
+    from llm_interface import create_llm_provider, get_current_model_info, LLMError
+    LLM_AVAILABLE = True
+    print("SUCCESS: LLM interface imported successfully")
+except ImportError as e:
+    LLM_AVAILABLE = False
+    print(f"WARNING: Failed to import LLM interface: {e}")
+    print("FALLBACK: Sentence construction will use simple word joining")
 
 # Try to import BLEU calculator (optional)
 try:
@@ -346,20 +356,22 @@ class EndToEndPipeline:
     def __init__(
         self,
         checkpoint_path=None,
-        gemini_api_key=None,
+        use_llm=True,
         segmentation_method="auto",
         velocity_threshold=0.02,
         min_sign_duration=10,
         use_top_k=1,
-        num_glosses=20
+        num_glosses=20,
+        no_confidence_scores=False
     ):
         self.checkpoint_path = checkpoint_path
-        self.gemini_api_key = gemini_api_key
+        self.use_llm = use_llm and LLM_AVAILABLE  # Only use LLM if requested AND available
         self.segmentation_method = segmentation_method
         self.velocity_threshold = velocity_threshold
         self.min_sign_duration = min_sign_duration
         self.use_top_k = use_top_k
         self.num_glosses = num_glosses
+        self.no_confidence_scores = no_confidence_scores
         self.model = None
         self.tokenizer = None
         self.temp_dir = None
@@ -563,6 +575,102 @@ class EndToEndPipeline:
             print(f"ERROR: Motion-based segmentation failed: {e}")
             raise
 
+    def _segment_pose_from_metadata(self, pose_file, metadata_file):
+        """Segment pose file using pre-defined metadata boundaries"""
+        print("\n" + "="*60)
+        print("STEP 2: Segmenting pose file using metadata")
+        print("="*60)
+
+        segments_dir = os.path.join(self.temp_dir, "segments")
+        os.makedirs(segments_dir, exist_ok=True)
+
+        print(f"INPUT: Pose file: {pose_file}")
+        print(f"INPUT: Metadata file: {metadata_file}")
+        print(f"OUTPUT: Segments directory: {segments_dir}")
+
+        try:
+            # Load metadata JSON
+            print("\nLoading segment metadata...")
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+
+            # Validate metadata structure
+            if 'segments' not in metadata:
+                raise ValueError("Metadata file missing 'segments' field")
+
+            segments_info = metadata['segments']
+            print(f"Found {len(segments_info)} segments in metadata")
+
+            # Display segment boundaries
+            for i, seg_info in enumerate(segments_info, 1):
+                gloss = seg_info.get('gloss', 'UNKNOWN')
+                start = seg_info.get('start_frame', 0)
+                end = seg_info.get('end_frame', 0)
+                num_frames = seg_info.get('num_frames', 0)
+                print(f"  {i}. {gloss}: frames {start}-{end} ({num_frames} frames)")
+
+            # Load full pose file
+            print(f"\nLoading pose file: {pose_file}")
+            with open(pose_file, 'rb') as f:
+                buffer = f.read()
+                full_pose = Pose.read(buffer)
+
+            print(f"Pose file loaded: {full_pose.body.data.shape[0]} total frames")
+
+            # Create segment files based on metadata boundaries
+            segment_files = []
+            for i, seg_info in enumerate(segments_info):
+                gloss = seg_info.get('gloss', 'UNKNOWN')
+                start = seg_info['start_frame']
+                end = seg_info['end_frame'] + 1  # +1 because slice end is exclusive
+
+                print(f"\nExtracting segment {i+1}/{len(segments_info)}: {gloss} (frames {start}:{end})")
+
+                # Extract segment frames
+                segment_data = full_pose.body.data[start:end]
+                print(f"  Extracted shape: {segment_data.shape}")
+
+                # Extract confidence for segment
+                segment_confidence = None
+                if full_pose.body.confidence is not None:
+                    segment_confidence = full_pose.body.confidence[start:end]
+
+                # Create new Pose object for segment (with fps from original)
+                segment_pose = Pose(
+                    header=full_pose.header,
+                    body=full_pose.body.__class__(
+                        fps=full_pose.body.fps,
+                        data=segment_data,
+                        confidence=segment_confidence
+                    )
+                )
+
+                # Save segment pose file
+                segment_filename = f"segment_{i+1:02d}_{gloss}.pose"
+                segment_path = os.path.join(segments_dir, segment_filename)
+
+                with open(segment_path, 'wb') as f:
+                    segment_pose.write(f)
+
+                file_size = os.path.getsize(segment_path)
+                print(f"  Saved: {segment_filename} ({file_size:,} bytes)")
+                segment_files.append(segment_path)
+
+            # Final summary
+            print(f"\nRESULT: {len(segment_files)} segments created:")
+            for i, seg_file in enumerate(segment_files):
+                file_name = os.path.basename(seg_file)
+                file_size = os.path.getsize(seg_file)
+                print(f"  {i+1:2d}. {file_name} ({file_size:,} bytes)")
+
+            return segment_files
+
+        except Exception as e:
+            print(f"ERROR: Metadata-based segmentation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
+
     def step3_convert_segments_to_pickle(self, segment_files):
         """Step 3: Convert pose segments to pickle format"""
         print("\n" + "="*60)
@@ -709,11 +817,58 @@ class EndToEndPipeline:
 
         return predictions
 
-    def step5_construct_sentence_with_gemini(self, glosses):
-        """Step 5: Use Gemini API to construct grammatically correct sentence"""
+    def _load_llm_prompt(self, prompt_type, **kwargs):
+        """Load LLM prompt template from file and format with variables"""
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Determine which prompt file to load
+        if prompt_type == "simple":
+            prompt_file = os.path.join(script_dir, "llm_prompt_simple.txt")
+        elif prompt_type == "topk":
+            if self.no_confidence_scores:
+                prompt_file = os.path.join(script_dir, "llm_prompt_topk_no_confidence.txt")
+            else:
+                prompt_file = os.path.join(script_dir, "llm_prompt_topk.txt")
+        else:
+            raise ValueError(f"Unknown prompt type: {prompt_type}")
+
+        # Load and format template
+        try:
+            with open(prompt_file, 'r', encoding='utf-8') as f:
+                template = f.read()
+
+            # Format template with provided variables
+            return template.format(**kwargs)
+        except FileNotFoundError:
+            print(f"WARNING: Prompt file not found: {prompt_file}")
+            print("Using fallback inline prompt")
+            # Fallback to simple inline prompt
+            if prompt_type == "simple":
+                return f"""You are an expert in American Sign Language (ASL) and English grammar.
+Given the following ASL glosses in order, construct a natural, grammatically correct English sentence.
+
+ASL Glosses: {kwargs.get('glosses', '')}
+
+Return only the constructed English sentence, nothing else."""
+            else:
+                return f"""You are an expert in American Sign Language (ASL) and English grammar.
+Given the following ASL glosses in sequential order, construct a natural, grammatically correct English sentence.
+
+ASL Gloss Predictions:
+{kwargs.get('gloss_details', '')}
+
+Return only the constructed English sentence, nothing else."""
+        except Exception as e:
+            print(f"ERROR: Failed to load prompt template: {e}")
+            raise
+
+    def step5_construct_sentence_with_llm(self, glosses):
+        """Step 5: Use LLM to construct grammatically correct sentence"""
         print("\n" + "="*60)
-        print("STEP 5: Constructing sentence with Gemini API")
+        print("STEP 5: Constructing sentence with LLM")
         print("="*60)
+        print(f"DEBUG_INFO: step5_construct_sentence_with_llm called with {len(glosses)} glosses")
+        print(f"DEBUG_INFO: LLM enabled: {self.use_llm}")
 
         # Process glosses - extract strings and top-k info
         processed_glosses = []
@@ -732,6 +887,7 @@ class EndToEndPipeline:
 
         if not processed_glosses:
             print("ERROR: No valid glosses to construct sentence")
+            print("DEBUG_INFO: FALLBACK_REASON: No valid glosses")
             return "No valid predictions available"
 
         # Format for display
@@ -747,32 +903,9 @@ class EndToEndPipeline:
         else:
             print(f"INPUT GLOSSES: {', '.join(processed_glosses)}")
 
-        if not self.gemini_api_key:
-            print("WARNING: No Gemini API key provided")
-            print("FALLBACK: Joining glosses with spaces")
-            # Extract simple strings for fallback
-            fallback_glosses = []
-            for g in processed_glosses:
-                if isinstance(g, dict):
-                    fallback_glosses.append(g.get('gloss', g.get('top_prediction', 'UNKNOWN')))
-                else:
-                    fallback_glosses.append(g)
-            return " ".join(fallback_glosses)
-
-        # Check if Gemini is available (dynamic import)
-        global GEMINI_AVAILABLE
-        if GEMINI_AVAILABLE is None:
-            try:
-                import importlib
-                module_name = 'google.' + 'generativeai'
-                genai_module = importlib.import_module(module_name)
-                GEMINI_AVAILABLE = True
-            except ImportError:
-                GEMINI_AVAILABLE = False
-
-        if not GEMINI_AVAILABLE:
-            print("ERROR: Gemini AI library not installed")
-            print("INSTALL: Run 'pip install google-generativeai' to enable Gemini API")
+        if not self.use_llm:
+            print("WARNING: LLM disabled or not available")
+            print("DEBUG_INFO: FALLBACK_REASON: LLM not enabled")
             print("FALLBACK: Joining glosses with spaces")
             # Extract simple strings for fallback
             fallback_glosses = []
@@ -784,12 +917,11 @@ class EndToEndPipeline:
             return " ".join(fallback_glosses)
 
         try:
-            # Import and configure Gemini dynamically
-            import importlib
-            module_name = 'google.' + 'generativeai'
-            genai = importlib.import_module(module_name)
-            genai.configure(api_key=self.gemini_api_key)
-            model = genai.GenerativeModel('gemini-2.5-flash')
+            # Create LLM provider from environment configuration
+            llm = create_llm_provider(
+                max_tokens=500,  # Sentence construction needs moderate token count
+                timeout=30  # 30 seconds should be plenty for sentence construction
+            )
 
             # Create prompt based on whether we have top-k predictions
             if has_top_k:
@@ -797,69 +929,61 @@ class EndToEndPipeline:
                 gloss_details = []
                 for i, g in enumerate(processed_glosses, 1):
                     if isinstance(g, dict):
-                        detail = f"Position {i}:\n"
                         # Handle both 'top_k' and 'top_k_predictions' keys
                         top_k_list = g.get('top_k_predictions', g.get('top_k', []))
                         if top_k_list:
-                            for j, pred in enumerate(top_k_list, 1):
-                                detail += f"  Option {j}: '{pred['gloss']}' (confidence: {pred['confidence']:.1%})\n"
+                            if self.no_confidence_scores:
+                                # Format WITHOUT confidence scores (comma-separated)
+                                glosses = ", ".join([f"'{pred['gloss']}'" for pred in top_k_list])
+                                detail = f"Position {i}: {glosses}\n"
+                            else:
+                                # Format WITH confidence scores (numbered options)
+                                detail = f"Position {i}:\n"
+                                for j, pred in enumerate(top_k_list, 1):
+                                    detail += f"  Option {j}: '{pred['gloss']}' (confidence: {pred['confidence']:.1%})\n"
                         else:
                             # Fallback to main gloss
-                            detail += f"  '{g.get('gloss', 'UNKNOWN')}'\n"
+                            detail = f"Position {i}: '{g.get('gloss', 'UNKNOWN')}'\n"
                         gloss_details.append(detail)
                     else:
-                        gloss_details.append(f"Position {i}:\n  '{g}'")
+                        gloss_details.append(f"Position {i}: '{g}'\n")
 
-                prompt = f"""
-You are an expert in American Sign Language (ASL) and English grammar.
-Given the following ASL glosses in sequential order, construct a natural, grammatically correct English sentence that conveys the intended meaning.
-
-For each position, you are given multiple prediction options with confidence scores. Use the confidence scores and contextual understanding to select the most appropriate word for each position.
-
-ASL Gloss Predictions:
-{''.join(gloss_details)}
-
-Instructions:
-1. Consider that ASL has different grammar rules than English
-2. For each position, choose the most contextually appropriate option from the given predictions
-3. Use the confidence scores as a guide, but prioritize semantic and grammatical coherence
-4. Add appropriate articles (a, an, the) where needed
-5. Add appropriate prepositions and conjunctions
-6. Ensure proper verb tenses and subject-verb agreement
-7. Make the sentence sound natural and professional
-
-Return only the constructed English sentence, nothing else.
-"""
+                # Load prompt from external file
+                prompt = self._load_llm_prompt("topk", gloss_details=''.join(gloss_details))
+                mode_str = "NO-CONFIDENCE" if self.no_confidence_scores else "WITH-CONFIDENCE"
+                print(f"DEBUG: Using TOP-K prompt ({mode_str}) with {len(processed_glosses)} positions")
+                print(f"DEBUG: First position details: {gloss_details[0][:100] if gloss_details else 'none'}")
             else:
-                # Simple prompt for single predictions
-                prompt = f"""
-You are an expert in American Sign Language (ASL) and English grammar.
-Given the following ASL glosses in order, construct a natural, grammatically correct English sentence that conveys the intended meaning.
+                # Load simple prompt from external file
+                prompt = self._load_llm_prompt("simple", glosses=', '.join(processed_glosses))
+                print(f"DEBUG: Using SIMPLE prompt with glosses: {', '.join(processed_glosses)}")
 
-ASL Glosses: {', '.join(processed_glosses)}
+            print("PROMPT: Sending request to LLM...")
 
-Instructions:
-1. Consider that ASL has different grammar rules than English
-2. Add appropriate articles (a, an, the) where needed
-3. Add appropriate prepositions and conjunctions
-4. Ensure proper verb tenses and subject-verb agreement
-5. Make the sentence sound natural and professional
-6. If some glosses seem unclear, use context to infer the most likely meaning
+            # Retry logic with exponential backoff for rate limiting
+            max_retries = 3
+            for attempt in range(max_retries):
+                try:
+                    sentence = llm.generate(prompt)
 
-Return only the constructed English sentence, nothing else.
-"""
+                    print(f"SUCCESS: LLM response received")
+                    print(f"CONSTRUCTED SENTENCE: '{sentence}'")
 
-            print("PROMPT: Sending request to Gemini API...")
-            response = model.generate_content(prompt)
-            sentence = response.text.strip()
-
-            print(f"SUCCESS: Gemini response received")
-            print(f"CONSTRUCTED SENTENCE: '{sentence}'")
-
-            return sentence
+                    return sentence
+                except Exception as retry_error:
+                    if attempt < max_retries - 1:
+                        import time
+                        wait_time = (attempt + 1) * 2  # 2s, 4s, 6s
+                        print(f"WARNING: LLM API failed (attempt {attempt + 1}/{max_retries}): {retry_error}")
+                        print(f"  Retrying in {wait_time} seconds...")
+                        time.sleep(wait_time)
+                    else:
+                        # Final attempt failed
+                        raise retry_error
 
         except Exception as e:
-            print(f"ERROR: Gemini API call failed: {e}")
+            print(f"ERROR: LLM API call failed after {max_retries} attempts: {e}")
+            print(f"DEBUG_INFO: FALLBACK_REASON: LLM API exception - {type(e).__name__}: {str(e)[:100]}")
             print("FALLBACK: Joining glosses with spaces")
             # Extract simple strings for fallback
             fallback_glosses = []
@@ -877,10 +1001,10 @@ Return only the constructed English sentence, nothing else.
         print(f"INPUT VIDEO: {input_video}")
         if self.checkpoint_path:
             print(f"CHECKPOINT: {self.checkpoint_path}")
-        if self.gemini_api_key:
-            print("GEMINI API: Enabled")
+        if self.use_llm:
+            print("LLM: Enabled")
         else:
-            print("GEMINI API: Disabled (fallback to word joining)")
+            print("LLM: Disabled (fallback to word joining)")
         print()
 
         try:
@@ -900,7 +1024,7 @@ Return only the constructed English sentence, nothing else.
             glosses = self.step4_predict_glosses(pickle_files)
 
             # Step 5: Construct sentence
-            final_sentence = self.step5_construct_sentence_with_gemini(glosses)
+            final_sentence = self.step5_construct_sentence_with_llm(glosses)
 
             # Final results
             print("\n" + "="*60)
@@ -908,8 +1032,117 @@ Return only the constructed English sentence, nothing else.
             print("="*60)
             print(f"INPUT VIDEO: {input_video}")
             print(f"SEGMENTS PROCESSED: {len(segment_files)}")
-            print(f"PREDICTED GLOSSES: {', '.join([g for g in glosses if g != '<UNKNOWN>'])}")
+
+            # Extract gloss strings for display (handle both string and dict)
+            display_glosses = []
+            for g in glosses:
+                if g != '<UNKNOWN>':
+                    if isinstance(g, dict):
+                        display_glosses.append(g.get('gloss', g.get('top_prediction', 'UNKNOWN')))
+                    else:
+                        display_glosses.append(str(g))
+            print(f"PREDICTED GLOSSES: {', '.join(display_glosses)}")
             print(f"FINAL SENTENCE: '{final_sentence}'")
+
+            # Also output glosses as JSON for programmatic access (includes top-k if available)
+            import json
+            print(f"GLOSSES_JSON: {json.dumps(glosses)}")
+
+            # Calculate BLEU score if available
+            if BLEU_AVAILABLE and len(glosses) > 0:
+                try:
+                    # Extract gloss strings
+                    gloss_list = []
+                    for g in glosses:
+                        if g != '<UNKNOWN>':
+                            if isinstance(g, dict):
+                                gloss_list.append(g.get('gloss', g.get('top_prediction', '')))
+                            else:
+                                gloss_list.append(str(g))
+
+                    if gloss_list:
+                        # Calculate BLEU using configured num_glosses
+                        result = calculate_bleu_from_glosses(
+                            glosses=gloss_list,
+                            predicted_sentence=final_sentence,
+                            num_glosses=self.num_glosses,
+                            verbose=False
+                        )
+
+                        if result['found']:
+                            print(f"BLEU SCORE: {result['bleu_score']:.2f}")
+                            print(f"REFERENCE: '{result['reference']}'")
+                        else:
+                            print("BLEU SCORE: N/A (glosses not in reference dataset)")
+                except Exception as e:
+                    print(f"BLEU SCORE: Error calculating ({e})")
+
+            return final_sentence
+
+        except Exception as e:
+            print(f"\nERROR: Pipeline failed: {e}")
+            raise
+        finally:
+            # Clean up temporary files
+            self._cleanup_temp_directory()
+
+    def run_pipeline_from_pose(self, pose_file, segment_metadata=None):
+        """Run pipeline starting from pose file (skips video-to-pose conversion)"""
+        print("Sign Language Pose File to English Sentence Pipeline")
+        print("="*60)
+        print(f"INPUT POSE: {pose_file}")
+        if segment_metadata:
+            print(f"SEGMENT METADATA: {segment_metadata}")
+        if self.checkpoint_path:
+            print(f"CHECKPOINT: {self.checkpoint_path}")
+        if self.use_llm:
+            print("LLM: Enabled")
+        else:
+            print("LLM: Disabled (fallback to word joining)")
+        print()
+
+        try:
+            # Create temporary working directory
+            self._create_temp_directory()
+
+            # SKIP Step 1: Video to pose (already have pose file)
+
+            # Step 2: Pose segmentation (use metadata if provided, otherwise auto-segment)
+            if segment_metadata:
+                segment_files = self._segment_pose_from_metadata(pose_file, segment_metadata)
+            else:
+                segment_files = self.step2_segment_pose(pose_file)
+
+            # Step 3: Convert to pickle
+            pickle_files = self.step3_convert_segments_to_pickle(segment_files)
+
+            # Step 4: Predict glosses
+            glosses = self.step4_predict_glosses(pickle_files)
+
+            # Step 5: Construct sentence
+            final_sentence = self.step5_construct_sentence_with_llm(glosses)
+
+            # Final results
+            print("\n" + "="*60)
+            print("FINAL RESULTS")
+            print("="*60)
+            print(f"INPUT POSE: {pose_file}")
+            print(f"SEGMENTS PROCESSED: {len(segment_files)}")
+
+            # Extract gloss strings for display (handle both string and dict)
+            display_glosses = []
+            for g in glosses:
+                if g != '<UNKNOWN>':
+                    if isinstance(g, dict):
+                        display_glosses.append(g.get('gloss', g.get('top_prediction', 'UNKNOWN')))
+                    else:
+                        display_glosses.append(str(g))
+            print(f"PREDICTED GLOSSES: {', '.join(display_glosses)}")
+            print(f"FINAL SENTENCE: '{final_sentence}'")
+
+            # Also output glosses as JSON for programmatic access (includes top-k if available)
+            import json
+            print(f"GLOSSES_JSON: {json.dumps(glosses)}")
 
             # Calculate BLEU score if available
             if BLEU_AVAILABLE and len(glosses) > 0:
@@ -957,10 +1190,10 @@ Return only the constructed English sentence, nothing else.
         print("MODE: Webcam real-time translation")
         if self.checkpoint_path:
             print(f"CHECKPOINT: {self.checkpoint_path}")
-        if self.gemini_api_key:
-            print("GEMINI API: Enabled")
+        if self.use_llm:
+            print("LLM: Enabled")
         else:
-            print("GEMINI API: Disabled (fallback to word joining)")
+            print("LLM: Disabled (fallback to word joining)")
         print()
 
         print("INSTRUCTIONS:")
@@ -1106,10 +1339,10 @@ Return only the constructed English sentence, nothing else.
                 print(f"DETECTED GLOSSES: {', '.join(gloss_strings)}")
 
                 try:
-                    final_sentence = self.step5_construct_sentence_with_gemini(detected_glosses)
+                    final_sentence = self.step5_construct_sentence_with_llm(detected_glosses)
                     print(f"FINAL SENTENCE: '{final_sentence}'")
                 except Exception as e:
-                    print(f"ERROR: Gemini failed: {e}")
+                    print(f"ERROR: LLM failed: {e}")
 
     def _processing_worker(self, queue, glosses_list, pose_estimator, stop_flag):
         """Background worker thread - processes frames from queue (MediaPipe safe)"""
@@ -1196,6 +1429,14 @@ def main():
         help="Input video file path (not required if --webcam is used)"
     )
     parser.add_argument(
+        "--pose-file",
+        help="Input pose file path (skips video-to-pose conversion)"
+    )
+    parser.add_argument(
+        "--segment-metadata",
+        help="Segment metadata JSON file (skips auto-segmentation, requires --pose-file)"
+    )
+    parser.add_argument(
         "--webcam",
         action="store_true",
         help="Use webcam for real-time sign language translation"
@@ -1211,8 +1452,9 @@ def main():
         help="Path to model checkpoint directory (e.g., './checkpoints/checkpoint_epoch_5')"
     )
     parser.add_argument(
-        "--gemini-api-key",
-        help="Gemini API key for sentence construction (optional, or set GEMINI_API_KEY env var)"
+        "--no-llm",
+        action="store_true",
+        help="Disable LLM sentence construction (use simple gloss joining instead)"
     )
     parser.add_argument(
         "--output",
@@ -1249,23 +1491,40 @@ def main():
         default=20,
         help="Number of glosses in the model (for BLEU score calculation, default: 20)"
     )
+    parser.add_argument(
+        "--no-confidence-scores",
+        action="store_true",
+        help="Send only top-k words to LLM without confidence scores (LLM selects based on semantic fit only)"
+    )
 
     args = parser.parse_args()
 
-    # Get Gemini API key from args or environment variable
-    gemini_api_key = args.gemini_api_key or os.environ.get('GEMINI_API_KEY')
-
     # Validate arguments
+    if args.segment_metadata and not args.pose_file:
+        print("ERROR: --segment-metadata requires --pose-file")
+        parser.print_help()
+        return 1
+
     if args.webcam:
         # Webcam mode - no input video needed
         pass
+    elif args.pose_file:
+        # Pose file mode - validate input pose exists
+        if not os.path.exists(args.pose_file):
+            print(f"ERROR: Input pose file not found: {args.pose_file}")
+            return 1
+        # Validate segment metadata if provided
+        if args.segment_metadata:
+            if not os.path.exists(args.segment_metadata):
+                print(f"ERROR: Segment metadata file not found: {args.segment_metadata}")
+                return 1
     elif args.input_video:
-        # File mode - validate input video exists
+        # Video file mode - validate input video exists
         if not os.path.exists(args.input_video):
             print(f"ERROR: Input video not found: {args.input_video}")
             return 1
     else:
-        print("ERROR: Either provide an input video file or use --webcam flag")
+        print("ERROR: Either provide an input video file, --pose-file, or use --webcam flag")
         parser.print_help()
         return 1
 
@@ -1273,19 +1532,39 @@ def main():
         # Create pipeline
         pipeline = EndToEndPipeline(
             checkpoint_path=args.checkpoint,
-            gemini_api_key=gemini_api_key,
+            use_llm=not args.no_llm,  # Enable LLM unless --no-llm flag is set
             segmentation_method=args.segmentation_method,
             velocity_threshold=args.velocity_threshold,
             min_sign_duration=args.min_sign_duration,
             use_top_k=args.use_top_k,
-            num_glosses=args.num_glosses
+            num_glosses=args.num_glosses,
+            no_confidence_scores=args.no_confidence_scores
         )
 
         if args.webcam:
-            # Run webcam mode
+            # Run webcam mode (isolated - no changes for easier merging)
             pipeline.run_webcam_pipeline(camera_index=args.camera_index)
+        elif args.pose_file:
+            # Run pose file mode (NEW - skips video-to-pose conversion)
+            result_sentence = pipeline.run_pipeline_from_pose(
+                args.pose_file,
+                segment_metadata=args.segment_metadata
+            )
+
+            # Save output if requested
+            if args.output:
+                try:
+                    with open(args.output, 'w') as f:
+                        f.write(f"Input Pose: {args.pose_file}\n")
+                        f.write(f"Final Sentence: {result_sentence}\n")
+                    print(f"\nSAVED: Results saved to: {args.output}")
+                except Exception as e:
+                    print(f"ERROR: Failed to save output: {e}")
+
+            print(f"\nSUCCESS: Pipeline completed successfully")
+            print(f"FINAL RESULT: '{result_sentence}'")
         else:
-            # Run file mode
+            # Run video file mode
             result_sentence = pipeline.run_pipeline(args.input_video)
 
             # Save output if requested

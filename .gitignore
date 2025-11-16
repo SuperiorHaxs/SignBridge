@@ -104,3 +104,6 @@ config/settings.json
 
 # Claude Code workspace files
 .claude/*.lnk
+
+# Synthetic evaluation temporary results
+project-utilities/synthetic_evaluation/evaluation_results/

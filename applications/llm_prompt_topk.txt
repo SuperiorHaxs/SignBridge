@@ -1,0 +1,107 @@
+CRITICAL OUTPUT REQUIREMENT:
+You must output ONLY the final grammatically correct English sentence.
+Do NOT include:
+- Any reasoning or explanation
+- Phrases like "Here's my analysis:" or "Here's my reasoning:"
+- Any meta-commentary about your selection process
+- Multiple sentence options
+
+OUTPUT FORMAT: Just one complete sentence, nothing else.
+
+Example:
+✓ CORRECT: "The mother helps the deaf person."
+❌ WRONG: "Here's my analysis: The mother helps the deaf person."
+❌ WRONG: "I selected mother, help, and deaf because..."
+
+Your goal is to generate a grammatically correct and naturally-sounding sentence in English language, based on the inputs provided to you.
+
+MOST IMPORTANT PRINCIPLE: These words come from American Sign Language (ASL) video signs describing a scene, action, or concept. ALL selected words must work together thematically to describe a coherent real-world scenario.
+
+Look for:
+- Related objects (chair + table, mother + deaf)
+- Natural actions (dog + walk, candy + give)
+- Logical scenes (apple + eat, help + person)
+
+You will be given word options with confidence scores for each position.
+The confidence scores just indicate the confidence level with which the particular word was predicted using a different model for a video sign. It is not the confidence level of the word to be used in the sentence you are forming.
+
+IMPORTANT: The "position" numbers are ONLY for selecting which words to use. You can arrange the selected words in ANY order in your sentence that makes grammatical sense. The position numbers do NOT dictate the word order in your output sentence.
+
+Your sentence must use only one word from the list of words provided for each position that best go together to form a complete sentence.
+
+SELECTION PRIORITY:
+- FIRST: Identify which words across ALL positions relate thematically (e.g., CHAIR+TABLE, DOG+WALK, MOTHER+DEAF, CANDY+GIVE)
+- SECOND: Prefer semantically related words even if they have lower confidence scores
+- THIRD: Only use confidence scores as a tiebreaker when multiple options have equal semantic fit
+
+Before selecting, ask yourself:
+- "Do any of these words describe the same scene/topic?" (furniture, family, food, etc.)
+- "Which combination tells the most natural story?"
+- "Would a human naturally use these words together?"
+
+You must add only filler words (articles, prepositions, conjunctions) to form grammatically correct and natural sentences.
+
+CRITICAL CONSTRAINT - READ CAREFULLY:
+Once you select ONE word from each position, you MUST use ONLY those selected words in your sentence.
+DO NOT use other words from the same position's alternatives, even if they would make a better sentence.
+For example: If Position 1 has ['now', 'give', 'dog'] and you select 'now', you CANNOT use 'give' or 'dog' in your sentence.
+You are locked into your selections. No mixing words from the same position.
+
+Word Predictions:
+{gloss_details}
+
+Example 1 - Choosing lower-ranked option for coherence:
+Given positions:
+Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
+Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
+Position 3: 'wrong' (41%), 'candy' (16%), 'deaf' (11%)
+
+✓ CORRECT OUTPUT: "The mother helps the deaf person."
+Why correct: Selected 'deaf' (rank 3, 11%) because mother+help+deaf form a coherent scenario
+
+❌ WRONG OUTPUT: "The mother helps candy."
+Why wrong: Selected 'candy' (rank 2) but makes no semantic sense
+
+❌ WRONG OUTPUT: "The mother helps wrong."
+Why wrong: Selected 'wrong' (rank 1) just because of high confidence, but makes no sense
+
+❌ WRONG OUTPUT: "The mother helps the deaf and candy person."
+Why wrong: VIOLATION! Used both 'deaf' AND 'candy' from Position 3 - you must select only ONE word per position
+
+❌ WRONG OUTPUT: "The mother with blue helps the deaf."
+Why wrong: VIOLATION! Selected 'mother' from Position 1 but then used 'blue' from Position 1's alternatives
+
+Example 2 - Related objects:
+Given positions:
+Position 1: 'chair' (85%), 'computer' (10%), 'year' (5%)
+Position 2: 'computer' (71%), 'table' (28%), 'year' (1%)
+Position 3: 'blue' (60%), 'happy' (30%), 'sad' (10%)
+
+✓ CORRECT OUTPUT: "The blue chair is on the table."
+Why correct: Selected 'table' (rank 2, 28%) because chair+table are related furniture
+
+❌ WRONG OUTPUT: "The computer chair is blue."
+Why wrong: Selected 'computer' (rank 1) ignoring that chair+table make semantic sense
+
+❌ WRONG OUTPUT: "The blue chair is on the table and computer."
+Why wrong: VIOLATION! Selected 'table' from Position 2 but then also used 'computer' from Position 2's alternatives
+
+Example 3 - Handling 4 positions:
+Given positions:
+Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
+Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
+Position 3: 'wrong' (41%), 'candy' (16%), 'deaf' (11%)
+Position 4: 'man' (75%), 'woman' (20%), 'child' (5%)
+
+✓ CORRECT OUTPUT: "The mother helps the deaf man."
+Why correct: Selected all 4 positions (mother, help, deaf, man) with semantic coherence - describes a caregiving scenario
+
+❌ WRONG OUTPUT: "The mother helps the man."
+Why wrong: Only used 3 positions, skipped position 3 entirely
+
+❌ WRONG OUTPUT: "The mother helps wrong man."
+Why wrong: Selected 'wrong' (rank 1) just for high confidence, but makes no semantic sense
+
+Remember: SEMANTIC COHERENCE trumps confidence scores. Choose words that naturally belong together in a real-world scenario.
+
+FINAL REMINDER: Output ONLY the sentence. No explanation. No analysis. No reasoning. Just the sentence.

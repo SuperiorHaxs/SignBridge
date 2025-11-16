@@ -6,6 +6,7 @@ torchvision>=0.15.0
 mediapipe>=0.10.0
 pose-format>=0.4.0
 opencv-python>=4.8.0
+vidgear>=0.3.0  # For pose visualization
 
 # Data Processing
 numpy>=1.24.0
@@ -19,11 +20,15 @@ seaborn>=0.12.0
 
 # AI/ML APIs
 google-generativeai>=0.3.0
+openai>=1.0.0  # For HuggingFace OpenAI-compatible API
 
 # Utilities
 tqdm>=4.65.0
 Pillow>=10.0.0
 sacrebleu>=2.3.0
+bert-score>=0.3.13  # For semantic similarity evaluation
+requests>=2.31.0  # For HTTP requests (LLM APIs)
+python-dotenv>=1.0.0  # For .env file support
 
 # File Format Support
 h5py>=3.9.0

@@ -1,25 +1,58 @@
-You are an ASL (American Sign Language) expert. Generate exactly {num_sentences} natural English sentences where each sentence uses specific ASL glosses.
+YOU MUST ONLY USE WORDS FROM THIS LIST. NO EXCEPTIONS.
 
-Available glosses: {gloss_list}
+========================================
+YOUR COMPLETE VOCABULARY ({num_glosses} words):
+========================================
 
-Requirements:
-- Each sentence must be 5-10 words long
-- Create exactly 50 sentences for each length (5, 6, 7, 8, 9, 10 words)
-- The "sentence" field should be a natural, grammatically correct English sentence
-- The "glosses" field should contain the ASL glosses (from the available list) that would be used to sign that sentence
-- Only use glosses from the provided list
-- Each sentence should be unique and meaningful
-- The glosses should match the key concepts in the English sentence
-- Output ONLY valid JSON, nothing else
+{gloss_list}
 
-Example format:
-{{"glosses": ["I", "WANT", "BOOK"], "sentence": "I want to read a book"}}
-{{"glosses": ["DOCTOR", "HELP", "DEAF", "PERSON"], "sentence": "The doctor helps deaf people"}}
+========================================
 
-Output format (JSON array):
+TASK: Generate {num_sentences} English sentences using ONLY the {num_glosses} words listed above.
+
+APPROACH (follow these steps mentally for each sentence):
+1. First, pick {min_glosses} to {max_glosses} words from the vocabulary list above
+2. Then, construct a sentence using ONLY those words (plus function words: the, a, an, is, are, was, were, in, on, at, to, from, with, for, and, but, or, some, many, this, that, it, he, she, they, can, will, should)
+3. Verify: Does the sentence contain ANY content word (noun/verb/adjective/adverb) NOT in the vocabulary list? If YES, reject it and try again.
+
+WORD COUNT REQUIREMENTS:
+For this batch of {num_sentences} sentences, generate:
+
+{exact_breakdown}
+
+CRITICAL RULES:
+- EVERY noun, verb, adjective, and adverb MUST be from the vocabulary list above
+- If you need a word that's NOT in the vocabulary list, DO NOT USE IT - pick different words from the list instead
+- Function words (the, a, is, are, etc.) can be added freely
+- Each sentence must be grammatically complete
+
+OUTPUT FORMAT (JSON array only):
 [
-  {{"glosses": ["GLOSS1", "GLOSS2", ...], "sentence": "Natural English sentence here"}},
+  {{"glosses": ["WORD1", "WORD2", "WORD3"], "sentence": "Complete English sentence"}},
+  {{"glosses": ["WORD4", "WORD5", "WORD6", "WORD7"], "sentence": "Another complete sentence"}},
   ...
 ]
 
-Generate all {num_sentences} sentences now:
+EXAMPLES:
+
+✓ CORRECT (3 words from vocabulary):
+{{"glosses": ["MOTHER", "HELP", "DEAF"], "sentence": "The mother helps the deaf person"}}
+
+✓ CORRECT (4 words from vocabulary):
+{{"glosses": ["DOG", "WALK", "MAN", "NOW"], "sentence": "The man walks the dog now"}}
+
+✓ CORRECT (5 words from vocabulary):
+{{"glosses": ["APPLE", "BOOK", "CHAIR", "TABLE", "BLUE"], "sentence": "The blue book and apple are on the table with a chair"}}
+
+✗ WRONG (uses word not in vocabulary):
+{{"glosses": ["MOTHER", "HELP"], "sentence": "The mother helps the child"}}
+REJECTED because "child" is not in the vocabulary list
+
+VERIFICATION CHECKLIST (check each sentence):
+□ All nouns in my sentence are from the {num_glosses} words above
+□ All verbs in my sentence are from the {num_glosses} words above
+□ All adjectives in my sentence are from the {num_glosses} words above
+□ I used the correct number of vocabulary words ({min_glosses} to {max_glosses})
+□ The sentence is grammatically complete
+
+GENERATE {num_sentences} SENTENCES NOW:

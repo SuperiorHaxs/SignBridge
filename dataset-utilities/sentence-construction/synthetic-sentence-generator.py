@@ -2,12 +2,30 @@
 """
 Synthetic Sentence Generator for ASL Testing
 
-Generates synthetic sentences using glosses from WLASL dataset and Gemini API.
-Creates a dataset with sentences using glosses from the dataset.
+Generates synthetic sentences using glosses from WLASL dataset and configured LLM.
+Uses batch generation for reliability and speed.
+
+Configuration:
+    All LLM settings (model, API key, temperature, etc.) are configured in:
+    project-utilities/llm-interface/.env
+
+    To change the model, edit LLM_MODEL in that .env file.
 
 Usage:
-    export GEMINI_API_KEY=your_api_key_here
-    python synthetic-sentence-generator.py --num-glosses 20
+    # Generate 100 sentences (default) with 50 glosses
+    python synthetic-sentence-generator.py --num-glosses 50
+
+    # Generate 200 sentences with custom batch size
+    python synthetic-sentence-generator.py --num-glosses 50 --num-sentences 200 --batch-size 25
+
+    # Quick test with just 20 sentences
+    python synthetic-sentence-generator.py --num-glosses 50 --num-sentences 20
+
+Configuration:
+    To change the gloss distribution (e.g., 3-8 vs 5-10 glosses per sentence),
+    edit the GLOSS_DISTRIBUTION dictionary at the top of this file.
+    Three preset options are provided: Option A (realistic ASL), Option B (complex),
+    and Option C (balanced). Simply comment/uncomment the desired option.
 """
 
 import os
@@ -16,11 +34,21 @@ import json
 import argparse
 from pathlib import Path
 from collections import defaultdict
-import google.generativeai as genai
 
-# Add parent directories to path for config import
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+# Add parent directories to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "project-utilities"))
+
 from config import get_config
+
+# Import LLM interface (now IDE-resolvable via package __init__.py)
+try:
+    from llm_interface import create_llm_provider, get_current_model_info, LLMError
+except ImportError as e:
+    print(f"ERROR: Failed to import LLM interface: {e}")
+    print("Make sure you're running from the project root and llm-interface is set up")
+    sys.exit(1)
 
 # ============================================================================
 # CONFIGURATION
@@ -28,6 +56,46 @@ from config import get_config
 PROMPT_TEMPLATE_FILE = "syn_sentence_gen_prompt.txt"
 OUTPUT_FILENAME_TEMPLATE = "synthetic_gloss_to_sentence_llm_dataset_{class_count}_glosses.json"
 OUTPUT_REF_SENTENCE_DATASET_DIR = "datasets/synthetic_sentences"  # Relative to project root
+
+# Gloss Distribution Configuration
+# Defines how many glosses per sentence and their distribution
+# Format: {num_glosses: percentage}
+# Percentages should sum to 1.0 (100%)
+
+# Option A: Realistic ASL Distribution (CURRENT)
+# Reflects actual ASL usage patterns - most sentences use 3-5 glosses
+GLOSS_DISTRIBUTION = {
+    3: 0.30,  # 30% - very common in everyday ASL
+    4: 0.30,  # 30% - common
+    5: 0.20,  # 20% - typical
+    6: 0.10,  # 10% - less common
+    7: 0.05,  # 5%  - rare
+    8: 0.05,  # 5%  - very rare
+}
+
+# Option B: Model Testing Focus (complex translation challenges)
+# GLOSS_DISTRIBUTION = {
+#     5: 0.20,  # 20%
+#     6: 0.20,  # 20%
+#     7: 0.20,  # 20%
+#     8: 0.20,  # 20%
+#     9: 0.10,  # 10%
+#     10: 0.10, # 10%
+# }
+
+# Option C: Balanced Approach (realistic + challenging)
+# GLOSS_DISTRIBUTION = {
+#     3: 0.20,  # 20%
+#     4: 0.20,  # 20%
+#     5: 0.20,  # 20%
+#     6: 0.20,  # 20%
+#     7: 0.10,  # 10%
+#     8: 0.10,  # 10%
+# }
+
+# Minimum and maximum glosses (derived from distribution)
+MIN_GLOSSES = min(GLOSS_DISTRIBUTION.keys())
+MAX_GLOSSES = max(GLOSS_DISTRIBUTION.keys())
 
 
 def find_closest_dataset(num_glosses, dataset_root):
@@ -85,119 +153,197 @@ def extract_glosses(dataset_path):
     return sorted(glosses)
 
 
-def generate_sentences(glosses, api_key, num_sentences=300):
+def generate_sentences_batch(glosses, batch_num_sentences, llm, prompt_template):
     """
-    Generate sentences using Gemini API.
+    Generate a single batch of sentences.
 
     Args:
         glosses: List of gloss strings
-        api_key: Gemini API key
-        num_sentences: Total number of sentences to generate
+        batch_num_sentences: Number of sentences to generate in this batch
+        llm: LLM provider instance
+        prompt_template: Prompt template string
 
     Returns:
         List of dicts with 'glosses' and 'sentence' keys
     """
-    genai.configure(api_key=api_key)
+    # Format glosses as a numbered list for better visibility
+    gloss_list = "\n".join([f"{i+1}. {gloss}" for i, gloss in enumerate(glosses)])
 
-    # List and try available models
-    print("\nChecking available models...")
-    available_models = []
+    # Create distribution description for the prompt
+    dist_desc = ", ".join([f"{count} glosses ({int(pct*100)}%)" for count, pct in sorted(GLOSS_DISTRIBUTION.items())])
+
+    # Calculate exact sentence counts for this batch based on distribution
+    exact_breakdown = []
+    for count, pct in sorted(GLOSS_DISTRIBUTION.items()):
+        num_for_this_count = max(1, int(batch_num_sentences * pct))  # At least 1
+        exact_breakdown.append(f"- Generate {num_for_this_count} sentences with EXACTLY {count} words")
+    exact_breakdown_str = "\n".join(exact_breakdown)
+
+    prompt = prompt_template.format(
+        num_sentences=batch_num_sentences,
+        num_glosses=len(glosses),
+        gloss_list=gloss_list,
+        min_glosses=MIN_GLOSSES,
+        max_glosses=MAX_GLOSSES,
+        distribution_desc=dist_desc,
+        exact_breakdown=exact_breakdown_str
+    )
+
+    response_text = llm.generate(prompt)
+
+    # Parse response
+    # Extract JSON from response (handle markdown code blocks if present)
+    response_text = response_text.strip()
+
+    # Remove markdown code blocks
+    if response_text.startswith("```"):
+        lines = response_text.split("\n")
+        # Remove first and last lines (the ``` markers)
+        response_text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+        response_text = response_text.strip()
+
+    # Remove "json" language identifier if present
+    if response_text.startswith("json"):
+        response_text = response_text[4:].strip()
+
     try:
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                available_models.append(m.name)
-                print(f"  Found: {m.name}")
-    except Exception as e:
-        print(f"Warning: Could not list models: {e}")
+        sentences_data = json.loads(response_text)
+    except json.JSONDecodeError as e:
+        # Print partial response for debugging
+        print(f"  JSON Parse Error at position {e.pos}")
+        print(f"  Response preview (first 500 chars):")
+        print(f"  {response_text[:500]}")
+        print(f"  Response preview (last 200 chars):")
+        print(f"  ...{response_text[-200:]}")
+        raise
 
-    # Try models in order of preference
-    model_names = available_models if available_models else [
-        'models/gemini-1.5-flash-latest',
-        'models/gemini-1.5-flash',
-        'models/gemini-1.5-pro',
-        'models/gemini-pro'
-    ]
+    # Validate and normalize
+    validated_sentences = []
+    gloss_set = set(g.upper() for g in glosses)
 
-    model = None
-    for model_name in model_names:
-        try:
-            model = genai.GenerativeModel(model_name)
-            # Test with a simple prompt to verify it works
-            test_response = model.generate_content("Say 'test'")
-            print(f"Using model: {model_name}")
-            break
-        except Exception as e:
-            print(f"  Model {model_name} failed: {str(e)[:100]}")
+    for item in sentences_data:
+        # Normalize glosses to uppercase
+        item_glosses = [g.upper() for g in item['glosses']]
+
+        # Validate gloss count range
+        if len(item_glosses) < MIN_GLOSSES:
+            print(f"  Warning: Skipping sentence - only {len(item_glosses)} glosses (minimum {MIN_GLOSSES} required)")
+            continue
+        if len(item_glosses) > MAX_GLOSSES:
+            print(f"  Warning: Skipping sentence - {len(item_glosses)} glosses (maximum {MAX_GLOSSES} allowed)")
             continue
 
-    if model is None:
-        print("\nNo compatible model found. Please check:")
-        print("1. Your API key is valid")
-        print("2. You have access to Gemini API")
-        print("3. Try getting a new key from https://makersuite.google.com/app/apikey")
-        raise Exception("Could not find a compatible Gemini model")
+        # Validate glosses are in our set
+        invalid_glosses = [g for g in item_glosses if g not in gloss_set]
+        if not invalid_glosses:
+            validated_sentences.append({
+                'glosses': item_glosses,
+                'sentence': item['sentence']
+            })
+        else:
+            print(f"  Warning: Skipping sentence - invalid glosses {invalid_glosses} not in allowed set")
+
+    return validated_sentences
+
+
+def generate_sentences(glosses, num_sentences=100, batch_size=20):
+    """
+    Generate sentences using configured LLM in batches.
+
+    All LLM configuration (model, API key, temperature, etc.) is read from
+    the .env file in project-utilities/llm-interface/.env
+
+    Args:
+        glosses: List of gloss strings
+        num_sentences: Total number of sentences to generate (default: 100)
+        batch_size: Number of sentences per batch (default: 20)
+
+    Returns:
+        List of dicts with 'glosses' and 'sentence' keys
+    """
+    # Get current model configuration
+    model_info = get_current_model_info()
+    print(f"\nLLM Configuration (from .env):")
+    print(f"  Provider: {model_info['provider']}")
+    print(f"  Model: {model_info['model']}")
+    print(f"  Temperature: {model_info['temperature']}")
+    print(f"  Max Tokens: {model_info['max_tokens']}")
+    print(f"  API Key: {'Set' if model_info['api_key_set'] else 'NOT SET'}")
+
+    # Initialize LLM provider from environment config
+    try:
+        llm = create_llm_provider(
+            max_tokens=3000,  # Batch of 20 sentences needs ~1500-2000 tokens
+            timeout=60  # 1 minute per batch is plenty
+        )
+
+        # Test with a simple prompt to verify it works
+        test_response = llm.generate("Say 'test'", max_tokens=10)
+        print(f"\n[SUCCESS] LLM is ready")
+        print(f"  Test response: {test_response}")
+    except Exception as e:
+        print(f"\n[ERROR] LLM initialization failed: {e}")
+        print("\nPlease check your .env configuration in project-utilities/llm-interface/")
+        raise Exception(f"Could not initialize LLM: {e}")
 
     # Load prompt template from file
     prompt_file = Path(__file__).parent / PROMPT_TEMPLATE_FILE
     try:
-        with open(prompt_file, 'r') as f:
+        with open(prompt_file, 'r', encoding='utf-8') as f:
             prompt_template = f.read()
     except FileNotFoundError:
         print(f"Error: Prompt file not found at {prompt_file}")
         return []
 
-    # Fill in the template
-    gloss_list = ", ".join(glosses)
-    prompt = prompt_template.format(
-        num_sentences=num_sentences,
-        gloss_list=gloss_list
-    )
+    # Calculate number of batches
+    num_batches = (num_sentences + batch_size - 1) // batch_size  # Ceiling division
 
-    print("Calling Gemini API to generate sentences...")
-    response = model.generate_content(prompt)
+    print(f"\nGenerating {num_sentences} sentences in {num_batches} batches of ~{batch_size} sentences each...")
+    print(f"(Each batch takes 10-20 seconds)")
 
-    # Parse response
-    try:
-        # Extract JSON from response (handle markdown code blocks if present)
-        response_text = response.text.strip()
-        if response_text.startswith("```"):
-            # Remove markdown code block markers
-            lines = response_text.split("\n")
-            response_text = "\n".join(lines[1:-1])
+    all_sentences = []
 
-        sentences_data = json.loads(response_text)
+    for batch_idx in range(num_batches):
+        # Calculate how many sentences for this batch
+        sentences_remaining = num_sentences - len(all_sentences)
+        batch_num = min(batch_size, sentences_remaining)
 
-        # Validate and normalize
-        validated_sentences = []
-        gloss_set = set(g.upper() for g in glosses)
+        print(f"\n[Batch {batch_idx + 1}/{num_batches}] Generating {batch_num} sentences...")
 
-        for item in sentences_data:
-            # Normalize glosses to uppercase
-            item_glosses = [g.upper() for g in item['glosses']]
+        # Try batch with one retry on JSON parse errors
+        max_retries = 1
+        for retry in range(max_retries + 1):
+            try:
+                batch_sentences = generate_sentences_batch(glosses, batch_num, llm, prompt_template)
+                all_sentences.extend(batch_sentences)
+                print(f"  [OK] Generated {len(batch_sentences)} valid sentences (Total: {len(all_sentences)}/{num_sentences})")
+                break  # Success, move to next batch
 
-            # Validate glosses are in our set
-            if all(g in gloss_set for g in item_glosses):
-                validated_sentences.append({
-                    'glosses': item_glosses,
-                    'sentence': item['sentence']
-                })
-            else:
-                print(f"Warning: Skipping sentence with invalid glosses: {item_glosses}")
+            except json.JSONDecodeError as e:
+                if retry < max_retries:
+                    print(f"  [RETRY] JSON parsing error, retrying... (attempt {retry + 1}/{max_retries + 1})")
+                else:
+                    print(f"  [ERROR] JSON parsing error in batch {batch_idx + 1}: {e}")
+                    print(f"  Skipping this batch after {max_retries + 1} attempts...")
 
-        print(f"Generated {len(validated_sentences)} valid sentences")
-        return validated_sentences
+            except Exception as e:
+                print(f"  [ERROR] Error in batch {batch_idx + 1}: {e}")
+                print(f"  Skipping this batch and continuing...")
+                break
 
-    except json.JSONDecodeError as e:
-        print(f"Error parsing Gemini response: {e}")
-        print(f"Response: {response.text[:500]}...")
-        return []
+    print(f"\n{'='*70}")
+    print(f"Batch generation complete!")
+    print(f"Successfully generated {len(all_sentences)} sentences")
+    print(f"{'='*70}")
+
+    return all_sentences
 
 
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate synthetic ASL sentences using Gemini API'
+        description='Generate synthetic ASL sentences using configured LLM'
     )
     parser.add_argument(
         '--num-glosses',
@@ -211,15 +357,20 @@ def main():
         default=None,
         help=f'Output directory for generated dataset (default: {OUTPUT_REF_SENTENCE_DATASET_DIR} relative to project root)'
     )
+    parser.add_argument(
+        '--num-sentences',
+        type=int,
+        default=100,
+        help='Total number of sentences to generate (default: 100)'
+    )
+    parser.add_argument(
+        '--batch-size',
+        type=int,
+        default=20,
+        help='Number of sentences per batch (default: 20)'
+    )
 
     args = parser.parse_args()
-
-    # Get API key from environment
-    api_key = os.getenv('GEMINI_API_KEY')
-    if not api_key:
-        print("Error: GEMINI_API_KEY environment variable not set")
-        print("Set it with: export GEMINI_API_KEY=your_api_key_here")
-        sys.exit(1)
 
     # Get config and find dataset
     config = get_config()
@@ -241,8 +392,12 @@ def main():
     print(f"Found {len(glosses)} glosses: {', '.join(glosses[:10])}{'...' if len(glosses) > 10 else ''}")
 
     # Generate sentences
-    print("\nGenerating sentences with Gemini API...")
-    sentences_data = generate_sentences(glosses, api_key)
+    print("\nGenerating sentences with configured LLM...")
+    sentences_data = generate_sentences(
+        glosses,
+        num_sentences=args.num_sentences,
+        batch_size=args.batch_size
+    )
 
     if not sentences_data:
         print("Error: Failed to generate sentences")
