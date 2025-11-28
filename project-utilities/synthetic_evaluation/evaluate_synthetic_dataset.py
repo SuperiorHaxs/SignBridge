@@ -369,15 +369,71 @@ class SyntheticDatasetEvaluator:
                 'total_glosses': len(predicted_glosses)
             }
 
+    def _extract_sentence_from_response(self, llm_response):
+        """
+        Extract just the sentence from LLM response (handles both JSON and plain text).
+
+        Args:
+            llm_response: LLM output (JSON or plain sentence)
+
+        Returns:
+            Clean sentence string
+        """
+        if not llm_response:
+            return ""
+
+        try:
+            import json
+            import re
+
+            # Debug: Print first 500 chars of raw response
+            if not self.quiet:
+                print(f"  DEBUG: Raw LLM response (first 500 chars): {llm_response[:500]}")
+
+            # Strip markdown code fences if present
+            cleaned_response = llm_response.strip()
+            if cleaned_response.startswith('```'):
+                # Remove opening fence (```json or ```)
+                cleaned_response = re.sub(r'^```(?:json)?\s*', '', cleaned_response)
+                # Remove closing fence
+                cleaned_response = re.sub(r'\s*```\s*$', '', cleaned_response)
+                cleaned_response = cleaned_response.strip()
+                if not self.quiet:
+                    print(f"  DEBUG: Stripped markdown fences. Cleaned response: {cleaned_response[:300]}")
+
+            # Try to parse as JSON
+            json_match = re.search(r'\{[\s\S]*"selections"[\s\S]*"sentence"[\s\S]*\}', cleaned_response)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                    sentence = data.get('sentence', '')
+                    if not self.quiet:
+                        print(f"  DEBUG: Extracted sentence from JSON: '{sentence}'")
+                    return sentence if sentence else llm_response
+                except json.JSONDecodeError as e:
+                    if not self.quiet:
+                        print(f"  DEBUG: JSON parsing failed: {e}")
+                    pass
+
+            # Not JSON or parsing failed, return cleaned response
+            if not self.quiet:
+                print(f"  DEBUG: No JSON found, returning cleaned response")
+            return cleaned_response
+
+        except Exception as e:
+            if not self.quiet:
+                print(f"  DEBUG: Exception in _extract_sentence_from_response: {e}")
+            return llm_response
+
     def _extract_effective_glosses(self, predicted_glosses, llm_sentence):
         """
         Extract which glosses from top-k the LLM actually used in the generated sentence.
-        This determines the "effective predictions" by finding which gloss from each
-        position's top-k list appears in the LLM sentence.
+        First tries to parse JSON format with explicit selections.
+        Falls back to reverse-engineering if JSON parsing fails.
 
         Args:
             predicted_glosses: List of predictions with top_k info (dicts)
-            llm_sentence: The LLM-generated sentence
+            llm_sentence: The LLM-generated sentence (or JSON with selections)
 
         Returns:
             List of effective gloss strings (what LLM chose from top-k)
@@ -386,9 +442,52 @@ class SyntheticDatasetEvaluator:
             return []
 
         try:
+            # First, try to parse as JSON
+            import json
+            import re
+
+            # Strip markdown code fences if present
+            cleaned_response = llm_sentence.strip()
+            if cleaned_response.startswith('```'):
+                # Remove opening fence (```json or ```)
+                cleaned_response = re.sub(r'^```(?:json)?\s*', '', cleaned_response)
+                # Remove closing fence
+                cleaned_response = re.sub(r'\s*```\s*$', '', cleaned_response)
+                cleaned_response = cleaned_response.strip()
+
+            # Try to extract JSON from response
+            sentence_for_fallback = None  # Track sentence from JSON for fallback
+            json_match = re.search(r'\{[\s\S]*"selections"[\s\S]*"sentence"[\s\S]*\}', cleaned_response)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                    selections = data.get('selections', [])
+                    sentence = data.get('sentence', '')
+                    sentence_for_fallback = sentence  # Save for fallback
+
+                    # Validate: selections count matches position count
+                    if len(selections) == len(predicted_glosses):
+                        # Additional validation: check if sentence uses all selections
+                        sentence_lower = sentence.lower()
+                        all_used = all(sel.lower() in sentence_lower for sel in selections)
+
+                        if all_used:
+                            print(f"  [JSON PARSE SUCCESS] Extracted {len(selections)} selections from JSON")
+                            return [str(sel).upper() for sel in selections]
+                        else:
+                            print(f"  [JSON VALIDATION WARNING] Not all selections used in sentence, falling back to reverse engineering")
+                    else:
+                        print(f"  [JSON VALIDATION WARNING] Selection count mismatch ({len(selections)} vs {len(predicted_glosses)}), falling back")
+                except json.JSONDecodeError as e:
+                    print(f"  [JSON PARSE WARNING] Invalid JSON format: {e}, falling back to reverse engineering")
+
+            # Fallback: Reverse engineer from sentence (original logic)
+            # Use sentence from JSON if available, otherwise use cleaned response
+            sentence_to_parse = sentence_for_fallback if sentence_for_fallback else cleaned_response
+
             # Normalize LLM sentence
             translator = str.maketrans('', '', string.punctuation)
-            llm_normalized = llm_sentence.translate(translator).strip().lower()
+            llm_normalized = sentence_to_parse.translate(translator).strip().lower()
             llm_words = llm_normalized.split()
 
             effective_glosses = []
@@ -831,8 +930,17 @@ class SyntheticDatasetEvaluator:
                 timeout=120
             )
 
-            # Parse output to extract final sentence
-            output_lines = result.stdout.strip().split('\n')
+            # Print stderr if not empty (for debugging)
+            if result.stderr and result.stderr.strip():
+                print(f"  DEBUG: STDERR output from predict_sentence.py:")
+                print(f"  {result.stderr}")
+
+            # Parse output to extract final sentence (handle multiline JSON responses)
+            import json
+            import re
+
+            stdout_full = result.stdout
+            output_lines = stdout_full.strip().split('\n')
 
             # Debug: Check what we got back
             if not self.quiet:
@@ -843,17 +951,34 @@ class SyntheticDatasetEvaluator:
             predicted_sentence = None
             predicted_glosses = []
 
+            # Extract FINAL SENTENCE (may be multiline JSON)
+            sentence_match = re.search(r"FINAL SENTENCE:\s*'(.*?)'(?:\n|$)", stdout_full, re.DOTALL)
+            if sentence_match:
+                raw_output = sentence_match.group(1)
+
+                # Try to parse as JSON first
+                json_match = re.search(r'\{[\s\S]*"selections"[\s\S]*"sentence"[\s\S]*\}', raw_output)
+                if json_match:
+                    try:
+                        data = json.loads(json_match.group(0))
+                        # Store full JSON for later parsing
+                        predicted_sentence = raw_output
+                        if not self.quiet:
+                            print(f"  [JSON DETECTED] LLM returned JSON format")
+                    except json.JSONDecodeError:
+                        # Not valid JSON, treat as plain sentence
+                        predicted_sentence = raw_output
+                else:
+                    # Plain sentence format
+                    predicted_sentence = raw_output
+
+            # Print DEBUG_INFO lines and extract GLOSSES_JSON
             for line in output_lines:
                 # Print DEBUG_INFO lines from subprocess
                 if "DEBUG_INFO:" in line and not self.quiet:
                     print(f"  {line}")
 
-                if "FINAL SENTENCE:" in line:
-                    # Extract sentence from "FINAL SENTENCE: 'text'"
-                    parts = line.split("FINAL SENTENCE:", 1)
-                    if len(parts) == 2:
-                        predicted_sentence = parts[1].strip().strip("'\"")
-                elif "GLOSSES_JSON:" in line:
+                if "GLOSSES_JSON:" in line:
                     # Extract glosses with top-k info from JSON
                     parts = line.split("GLOSSES_JSON:", 1)
                     if len(parts) == 2:
@@ -1074,8 +1199,14 @@ class SyntheticDatasetEvaluator:
                 return result
 
             # Step 2: Run prediction (with top-3 for LLM)
-            predicted_sentence, predicted_glosses = self._run_prediction(pose_file, metadata_file)
+            predicted_response, predicted_glosses = self._run_prediction(pose_file, metadata_file)
+
+            # Extract clean sentence from response (handles JSON or plain text)
+            predicted_sentence = self._extract_sentence_from_response(predicted_response)
+
+            # Store both raw response and clean sentence
             result['predicted_sentence'] = predicted_sentence
+            result['predicted_response_raw'] = predicted_response  # For selection extraction
             result['predicted_glosses'] = predicted_glosses
 
             if not predicted_sentence:
@@ -1107,7 +1238,8 @@ class SyntheticDatasetEvaluator:
                         print(f"    Position {mm['position']}: '{mm['predicted']}' vs '{mm['original']}'")
 
             # Step 3c: Extract effective glosses (what LLM chose from top-k) and calculate accuracy
-            effective_glosses = self._extract_effective_glosses(predicted_glosses, predicted_sentence)
+            # Use raw response for JSON parsing, fallback to sentence for reverse engineering
+            effective_glosses = self._extract_effective_glosses(predicted_glosses, predicted_response)
             result['effective_glosses'] = effective_glosses
 
             effective_accuracy_result = self._calculate_gloss_accuracy(effective_glosses, glosses)
@@ -1577,7 +1709,7 @@ class SyntheticDatasetEvaluator:
             f.write(f"Failed: {failed} ({failed/total*100:.1f}%)\n\n")
 
             # 1. MODEL GLOSS ACCURACY (Top-1 predictions)
-            if gloss_accuracies:
+            if gloss_accuracies and total_glosses > 0:
                 f.write("="*80 + "\n")
                 f.write("1. MODEL GLOSS ACCURACY - TOP-1 (Before LLM Selection)\n")
                 f.write("="*80 + "\n")
@@ -1586,14 +1718,14 @@ class SyntheticDatasetEvaluator:
                 f.write(f"Average Per Entry: {sum(gloss_accuracies)/len(gloss_accuracies):.1f}%\n\n")
 
             # 2. EFFECTIVE GLOSS ACCURACY (LLM-selected from top-k)
-            if effective_gloss_accuracies:
+            if effective_gloss_accuracies and effective_total_glosses > 0:
                 f.write("="*80 + "\n")
                 f.write("2. EFFECTIVE GLOSS ACCURACY (After LLM Selection from Top-K)\n")
                 f.write("="*80 + "\n")
                 f.write(f"Overall Accuracy: {effective_total_correct}/{effective_total_glosses} ({effective_total_correct/effective_total_glosses*100:.1f}%)\n")
                 f.write(f"Perfect Predictions (all glosses correct): {effective_perfect_predictions}/{len(effective_gloss_accuracies)} entries ({effective_perfect_predictions/len(effective_gloss_accuracies)*100:.1f}%)\n")
                 f.write(f"Average Per Entry: {sum(effective_gloss_accuracies)/len(effective_gloss_accuracies):.1f}%\n")
-                if gloss_accuracies:
+                if gloss_accuracies and total_glosses > 0:
                     overall_improvement = (effective_total_correct/effective_total_glosses*100) - (total_correct/total_glosses*100)
                     f.write(f"\nImprovement from LLM Selection: {overall_improvement:+.1f}% ({total_correct}/{total_glosses} -> {effective_total_correct}/{effective_total_glosses})\n")
                     f.write(f"Perfect Predictions Gained: {effective_perfect_predictions - perfect_predictions} entries\n\n")
@@ -1603,8 +1735,12 @@ class SyntheticDatasetEvaluator:
             f.write("3. GLOSS SELECTION BREAKDOWN\n")
             f.write("="*80 + "\n")
             f.write(f"Total Gloss Positions: {effective_total_glosses}\n")
-            f.write(f"Correctly Selected from Top-K: {effective_total_correct} ({effective_total_correct/effective_total_glosses*100:.1f}%)\n")
-            f.write(f"Incorrectly Selected from Top-K: {effective_total_glosses - effective_total_correct} ({(effective_total_glosses - effective_total_correct)/effective_total_glosses*100:.1f}%)\n\n")
+            if effective_total_glosses > 0:
+                f.write(f"Correctly Selected from Top-K: {effective_total_correct} ({effective_total_correct/effective_total_glosses*100:.1f}%)\n")
+                f.write(f"Incorrectly Selected from Top-K: {effective_total_glosses - effective_total_correct} ({(effective_total_glosses - effective_total_correct)/effective_total_glosses*100:.1f}%)\n\n")
+            else:
+                f.write(f"Correctly Selected from Top-K: 0 (N/A - no evaluations succeeded)\n")
+                f.write(f"Incorrectly Selected from Top-K: 0 (N/A - no evaluations succeeded)\n\n")
 
             # 4. DETAILED MISMATCH ANALYSIS
             if effective_gloss_accuracies:

@@ -916,6 +916,9 @@ Return only the constructed English sentence, nothing else."""
                     fallback_glosses.append(g)
             return " ".join(fallback_glosses)
 
+        # Define retry count at top level so exception handler can access it
+        max_retries = 3
+
         try:
             # Create LLM provider from environment configuration
             llm = create_llm_provider(
@@ -961,7 +964,6 @@ Return only the constructed English sentence, nothing else."""
             print("PROMPT: Sending request to LLM...")
 
             # Retry logic with exponential backoff for rate limiting
-            max_retries = 3
             for attempt in range(max_retries):
                 try:
                     sentence = llm.generate(prompt)

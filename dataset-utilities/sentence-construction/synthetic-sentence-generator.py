@@ -65,12 +65,12 @@ OUTPUT_REF_SENTENCE_DATASET_DIR = "datasets/synthetic_sentences"  # Relative to 
 # Option A: Realistic ASL Distribution (CURRENT)
 # Reflects actual ASL usage patterns - most sentences use 3-5 glosses
 GLOSS_DISTRIBUTION = {
-    3: 0.30,  # 30% - very common in everyday ASL
+    3: 0.50,  # 30% - very common in everyday ASL
     4: 0.30,  # 30% - common
     5: 0.20,  # 20% - typical
-    6: 0.10,  # 10% - less common
-    7: 0.05,  # 5%  - rare
-    8: 0.05,  # 5%  - very rare
+    6: 0.00,  # 10% - less common
+    7: 0.00,  # 5%  - rare
+    8: 0.00,  # 5%  - very rare
 }
 
 # Option B: Model Testing Focus (complex translation challenges)
