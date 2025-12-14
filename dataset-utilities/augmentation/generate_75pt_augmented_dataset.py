@@ -59,39 +59,51 @@ OUTPUT_DIR = None
 # Augmentation strategy counts (set to 0 to disable)
 AUGMENTATION_CONFIG = {
     # Phase 1: Geometric transformations
-    'geometric': 10,           # Shear + Rotation combinations (aug_00 to aug_09)
+    'geometric': 12,           # Shear + Rotation combinations (aug_00 to aug_11) - Increased from 10
 
     # Phase 2: Horizontal flips
-    'horizontal_flip': 5,      # Mirror + variations (aug_10 to aug_14)
+    'horizontal_flip': 6,      # Mirror + variations (aug_12 to aug_17) - Increased from 5
 
     # Phase 3: Spatial variations
-    'spatial_noise': 2,        # Gaussian noise - low/medium (aug_15, aug_16)
-    'translation': 2,          # Position shift - small/medium (aug_17, aug_18)
+    'spatial_noise': 3,        # Gaussian noise - low/medium/high (aug_18 to aug_20) - Increased from 2
+    'translation': 3,          # Position shift - small/medium/large (aug_21 to aug_23) - Increased from 2
 
     # Phase 4: Scaling
-    'scaling': 2,              # Size variations - 0.95x/1.05x (aug_19, aug_20)
+    'scaling': 3,              # Size variations - 0.90x/1.0x/1.10x (aug_24 to aug_26) - Increased from 2
 
     # Phase 5: Advanced temporal
-    'speed_variation': 2,      # Temporal stretch/compress - 0.85x/1.15x (aug_21, aug_22)
+    'speed_variation': 4,      # Temporal stretch/compress - 0.65x/0.75x/1.25x/1.35x (aug_27 to aug_30) - Increased from 2
 
-    # Phase 6: Combinations
-    'combinations': 3,         # Multi-transform combos (aug_23, aug_24, aug_25)
+    # Phase 6: Occlusion (NEW - simulates missing/blocked keypoints)
+    'keypoint_occlusion': 3,   # Random keypoint dropout - 10%/15%/20% (aug_31 to aug_33) - NEW
+    'hand_dropout': 2,         # Entire hand dropout - left/right (aug_34 to aug_35) - NEW
+
+    # Phase 7: Combinations
+    'combinations': 4,         # Multi-transform combos (aug_36 to aug_39) - Increased from 3
 }
 
 # Calculate total augmentations (sum of all non-zero counts)
 NUM_AUGMENTATIONS = sum(count for count in AUGMENTATION_CONFIG.values() if count > 0)
 
-# Augmentation parameters
-SHEAR_STD = 0.1
-ROTATION_STD = 0.1
-NOISE_LOW = 0.01
-NOISE_MEDIUM = 0.02
-TRANSLATION_SMALL = 0.03
-TRANSLATION_MEDIUM = 0.05
-SCALE_SMALL = 0.95
-SCALE_LARGE = 1.05
-SPEED_SLOW = 0.85
-SPEED_FAST = 1.15
+# Augmentation parameters (Updated for more aggressive augmentation)
+SHEAR_STD = 0.15                    # Increased from 0.1 (+50%)
+ROTATION_STD = 0.15                 # Increased from 0.1 (+50%, ~±7.5°)
+NOISE_LOW = 0.015                   # Increased from 0.01 (+50%)
+NOISE_MEDIUM = 0.025                # Increased from 0.02 (+25%)
+TRANSLATION_SMALL = 0.04            # Increased from 0.03 (+33%)
+TRANSLATION_MEDIUM = 0.08           # Increased from 0.05 (+60%)
+SCALE_SMALL = 0.90                  # Increased range from 0.95 (10% vs 5%)
+SCALE_LARGE = 1.10                  # Increased range from 1.05 (10% vs 5%)
+SPEED_SLOW = 0.75                   # Increased range from 0.85 (25% vs 15%)
+SPEED_FAST = 1.25                   # Increased range from 1.15 (25% vs 15%)
+SPEED_VERY_SLOW = 0.65              # NEW: Very slow variant
+SPEED_VERY_FAST = 1.35              # NEW: Very fast variant
+
+# Occlusion parameters (NEW)
+KEYPOINT_OCCLUSION_LOW = 0.10       # 10% keypoints dropped
+KEYPOINT_OCCLUSION_MEDIUM = 0.15    # 15% keypoints dropped
+KEYPOINT_OCCLUSION_HIGH = 0.20      # 20% keypoints dropped
+HAND_DROPOUT_PROB = 0.15            # 15% chance to drop entire hand
 
 # ============================================================================
 # DYNAMIC CLASS LOADING - No hardcoded lists!
@@ -301,6 +313,51 @@ def apply_speed_variation(pose_data, speed_factor):
     return resampled
 
 
+def apply_keypoint_occlusion(pose_data, occlusion_prob=0.15):
+    """
+    Randomly occlude keypoints to simulate tracking errors and occlusions.
+
+    Args:
+        pose_data: (frames, 75, 2) - x, y coordinates
+        occlusion_prob: Probability of each keypoint being occluded (0-1)
+
+    Returns:
+        occluded_data: (frames, 75, 2) with random keypoints set to 0
+    """
+    occluded = pose_data.copy()
+    # Generate random mask: True = keep, False = occlude
+    # Shape: (frames, 75)
+    mask = np.random.random(pose_data.shape[:2]) > occlusion_prob
+    # Apply mask to both x and y coordinates
+    occluded = occluded * mask[:, :, np.newaxis]
+    return occluded
+
+
+def apply_hand_dropout(pose_data, dropout_prob=0.15):
+    """
+    Randomly drop entire hand to simulate severe occlusion (hand behind body, etc.).
+
+    Args:
+        pose_data: (frames, 75, 2)
+        dropout_prob: Probability of dropping a hand (0-1)
+
+    Returns:
+        data_with_dropout: (frames, 75, 2) with one hand potentially set to 0
+    """
+    dropped = pose_data.copy()
+
+    if np.random.random() < dropout_prob:
+        # Randomly choose left hand (33-53) or right hand (54-74)
+        if np.random.random() < 0.5:
+            # Drop left hand (21 keypoints)
+            dropped[:, 33:54, :] = 0
+        else:
+            # Drop right hand (21 keypoints)
+            dropped[:, 54:75, :] = 0
+
+    return dropped
+
+
 def apply_augmentation_pickle(pose_data, augmentation_id):
     """
     Apply augmentation to 75-point pose data (pickle mode).
@@ -375,16 +432,52 @@ def apply_augmentation_pickle(pose_data, augmentation_id):
     if AUGMENTATION_CONFIG['scaling'] > 0:
         current_id -= AUGMENTATION_CONFIG['scaling']
 
-    # Phase 6: Speed Variation
+    # Phase 6: Speed Variation (Updated to 4 variants)
     if AUGMENTATION_CONFIG['speed_variation'] > 0 and current_id < AUGMENTATION_CONFIG['speed_variation']:
-        speed_factor = SPEED_SLOW if current_id == 0 else SPEED_FAST
+        if current_id == 0:
+            speed_factor = SPEED_SLOW          # 0.75x
+        elif current_id == 1:
+            speed_factor = SPEED_FAST          # 1.25x
+        elif current_id == 2:
+            speed_factor = SPEED_VERY_SLOW     # 0.65x
+        else:  # current_id == 3
+            speed_factor = SPEED_VERY_FAST     # 1.35x
+
         augmented = apply_speed_variation(augmented, speed_factor=speed_factor)
         return augmented
 
     if AUGMENTATION_CONFIG['speed_variation'] > 0:
         current_id -= AUGMENTATION_CONFIG['speed_variation']
 
-    # Phase 7: Combinations
+    # Phase 7: Keypoint Occlusion (NEW)
+    if AUGMENTATION_CONFIG['keypoint_occlusion'] > 0 and current_id < AUGMENTATION_CONFIG['keypoint_occlusion']:
+        if current_id == 0:
+            occlusion_prob = KEYPOINT_OCCLUSION_LOW       # 10%
+        elif current_id == 1:
+            occlusion_prob = KEYPOINT_OCCLUSION_MEDIUM    # 15%
+        else:  # current_id == 2
+            occlusion_prob = KEYPOINT_OCCLUSION_HIGH      # 20%
+
+        augmented = apply_keypoint_occlusion(augmented, occlusion_prob=occlusion_prob)
+        return augmented
+
+    if AUGMENTATION_CONFIG['keypoint_occlusion'] > 0:
+        current_id -= AUGMENTATION_CONFIG['keypoint_occlusion']
+
+    # Phase 8: Hand Dropout (NEW)
+    if AUGMENTATION_CONFIG['hand_dropout'] > 0 and current_id < AUGMENTATION_CONFIG['hand_dropout']:
+        # Variant 1: Standard dropout
+        # Variant 2: Dropout + slight noise to remaining hand for realism
+        augmented = apply_hand_dropout(augmented, dropout_prob=HAND_DROPOUT_PROB)
+        if current_id == 1:
+            # Add slight noise to make it more realistic
+            augmented = apply_spatial_noise(augmented, noise_std=NOISE_LOW)
+        return augmented
+
+    if AUGMENTATION_CONFIG['hand_dropout'] > 0:
+        current_id -= AUGMENTATION_CONFIG['hand_dropout']
+
+    # Phase 9: Combinations (Updated to 4 variants)
     if AUGMENTATION_CONFIG['combinations'] > 0 and current_id < AUGMENTATION_CONFIG['combinations']:
         if current_id == 0:  # Rotation + Noise
             augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD)
@@ -395,6 +488,9 @@ def apply_augmentation_pickle(pose_data, augmentation_id):
         elif current_id == 2:  # Flip + Scaling
             augmented = apply_horizontal_flip(augmented)
             augmented = apply_scaling(augmented, scale_factor=SCALE_LARGE)
+        elif current_id == 3:  # Speed + Occlusion (NEW combination)
+            augmented = apply_speed_variation(augmented, speed_factor=SPEED_FAST)
+            augmented = apply_keypoint_occlusion(augmented, occlusion_prob=KEYPOINT_OCCLUSION_LOW)
         return augmented
 
     # Fallback: return original (shouldn't reach here)
@@ -568,6 +664,51 @@ def apply_speed_variation_pose(pose_data, speed_factor):
     return resampled
 
 
+def apply_keypoint_occlusion_pose(pose_data, occlusion_prob=0.15):
+    """
+    Randomly occlude keypoints in pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        occlusion_prob: Probability of each keypoint being occluded
+
+    Returns:
+        occluded_data: (frames, people, keypoints, dims)
+    """
+    occluded = pose_data.copy()
+    # Generate random mask: True = keep, False = occlude
+    # Shape: (frames, people, keypoints)
+    mask = np.random.random(pose_data.shape[:3]) > occlusion_prob
+    # Apply mask to all dimensions
+    occluded = occluded * mask[:, :, :, np.newaxis]
+    return occluded
+
+
+def apply_hand_dropout_pose(pose_data, dropout_prob=0.15):
+    """
+    Randomly drop entire hand in pose data (4D format).
+
+    Args:
+        pose_data: (frames, people, keypoints, dims)
+        dropout_prob: Probability of dropping a hand
+
+    Returns:
+        data_with_dropout: (frames, people, keypoints, dims)
+    """
+    dropped = pose_data.copy()
+
+    if np.random.random() < dropout_prob:
+        # Randomly choose left hand (33-53) or right hand (54-74)
+        if np.random.random() < 0.5:
+            # Drop left hand (21 keypoints)
+            dropped[:, :, 33:54, :] = 0
+        else:
+            # Drop right hand (21 keypoints)
+            dropped[:, :, 54:75, :] = 0
+
+    return dropped
+
+
 def apply_augmentation_pose(pose_data, augmentation_id):
     """
     Apply augmentation to pose data (pose mode).
@@ -638,16 +779,52 @@ def apply_augmentation_pose(pose_data, augmentation_id):
     if AUGMENTATION_CONFIG['scaling'] > 0:
         current_id -= AUGMENTATION_CONFIG['scaling']
 
-    # Phase 6: Speed Variation
+    # Phase 6: Speed Variation (Updated to 4 variants)
     if AUGMENTATION_CONFIG['speed_variation'] > 0 and current_id < AUGMENTATION_CONFIG['speed_variation']:
-        speed_factor = SPEED_SLOW if current_id == 0 else SPEED_FAST
+        if current_id == 0:
+            speed_factor = SPEED_SLOW          # 0.75x
+        elif current_id == 1:
+            speed_factor = SPEED_FAST          # 1.25x
+        elif current_id == 2:
+            speed_factor = SPEED_VERY_SLOW     # 0.65x
+        else:  # current_id == 3
+            speed_factor = SPEED_VERY_FAST     # 1.35x
+
         augmented = apply_speed_variation_pose(augmented, speed_factor=speed_factor)
         return augmented
 
     if AUGMENTATION_CONFIG['speed_variation'] > 0:
         current_id -= AUGMENTATION_CONFIG['speed_variation']
 
-    # Phase 7: Combinations
+    # Phase 7: Keypoint Occlusion (NEW)
+    if AUGMENTATION_CONFIG['keypoint_occlusion'] > 0 and current_id < AUGMENTATION_CONFIG['keypoint_occlusion']:
+        if current_id == 0:
+            occlusion_prob = KEYPOINT_OCCLUSION_LOW       # 10%
+        elif current_id == 1:
+            occlusion_prob = KEYPOINT_OCCLUSION_MEDIUM    # 15%
+        else:  # current_id == 2
+            occlusion_prob = KEYPOINT_OCCLUSION_HIGH      # 20%
+
+        augmented = apply_keypoint_occlusion_pose(augmented, occlusion_prob=occlusion_prob)
+        return augmented
+
+    if AUGMENTATION_CONFIG['keypoint_occlusion'] > 0:
+        current_id -= AUGMENTATION_CONFIG['keypoint_occlusion']
+
+    # Phase 8: Hand Dropout (NEW)
+    if AUGMENTATION_CONFIG['hand_dropout'] > 0 and current_id < AUGMENTATION_CONFIG['hand_dropout']:
+        # Variant 1: Standard dropout
+        # Variant 2: Dropout + slight noise to remaining hand for realism
+        augmented = apply_hand_dropout_pose(augmented, dropout_prob=HAND_DROPOUT_PROB)
+        if current_id == 1:
+            # Add slight noise to make it more realistic
+            augmented = apply_spatial_noise_pose(augmented, noise_std=NOISE_LOW)
+        return augmented
+
+    if AUGMENTATION_CONFIG['hand_dropout'] > 0:
+        current_id -= AUGMENTATION_CONFIG['hand_dropout']
+
+    # Phase 9: Combinations (Updated to 4 variants)
     if AUGMENTATION_CONFIG['combinations'] > 0 and current_id < AUGMENTATION_CONFIG['combinations']:
         if current_id == 0:  # Rotation + Noise
             augmented = apply_rotation(augmented, rotation_std=ROTATION_STD)
@@ -658,6 +835,9 @@ def apply_augmentation_pose(pose_data, augmentation_id):
         elif current_id == 2:  # Flip + Scaling
             augmented = apply_horizontal_flip_pose(augmented)
             augmented = apply_scaling_pose(augmented, scale_factor=SCALE_LARGE)
+        elif current_id == 3:  # Speed + Occlusion (NEW combination)
+            augmented = apply_speed_variation_pose(augmented, speed_factor=SPEED_FAST)
+            augmented = apply_keypoint_occlusion_pose(augmented, occlusion_prob=KEYPOINT_OCCLUSION_LOW)
         return augmented
 
     # Fallback: return original
