@@ -12,13 +12,13 @@ from pathlib import Path
 from openhands_modernized import OpenHandsConfig, OpenHandsModel, WLASLPoseProcessor
 
 
-def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = 20):
+def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
     """
     Load OpenHands model from checkpoint directory.
 
     Args:
         checkpoint_path: Path to checkpoint directory containing pytorch_model.bin
-        vocab_size: Number of classes (default 20)
+        vocab_size: Number of classes (optional, will be read from config.json if available)
 
     Returns:
         tuple: (model, id_to_gloss_mapping)
@@ -38,8 +38,33 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = 20):
     with open(vocab_file, 'r') as f:
         id_to_gloss = json.load(f)
 
-    # Create model config
-    config = OpenHandsConfig(vocab_size=vocab_size)
+    # Try to load config from checkpoint directory
+    config_file = checkpoint_path / "config.json"
+    if config_file.exists():
+        with open(config_file, 'r') as f:
+            config_dict = json.load(f)
+        # Create config from saved values
+        config = OpenHandsConfig(
+            num_pose_keypoints=config_dict.get('num_pose_keypoints', 75),
+            pose_channels=config_dict.get('pose_channels', 2),
+            pose_features=config_dict.get('pose_features', 150),
+            hidden_size=config_dict.get('hidden_size', 64),
+            num_hidden_layers=config_dict.get('num_hidden_layers', 3),
+            num_attention_heads=config_dict.get('num_attention_heads', 8),
+            intermediate_size=config_dict.get('intermediate_size', 256),
+            max_position_embeddings=config_dict.get('max_position_embeddings', 257),
+            dropout_prob=config_dict.get('dropout_prob', 0.1),
+            layer_norm_eps=config_dict.get('layer_norm_eps', 1e-12),
+            vocab_size=config_dict.get('vocab_size', vocab_size or 20),
+            use_cls_token=config_dict.get('use_cls_token', True)
+        )
+        print(f"Loaded config from {config_file}")
+        print(f"  hidden_size={config.hidden_size}, num_layers={config.num_hidden_layers}, vocab={config.vocab_size}")
+    else:
+        # Fallback to default config with provided vocab_size
+        config = OpenHandsConfig(vocab_size=vocab_size or 20)
+        print(f"Using default config with vocab_size={config.vocab_size}")
+
     model = OpenHandsModel(config)
 
     # Load weights
@@ -48,7 +73,7 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = 20):
     model.eval()
 
     print(f"SUCCESS: Loaded model from {checkpoint_path}")
-    print(f"VOCAB: {vocab_size} classes")
+    print(f"VOCAB: {config.vocab_size} classes")
 
     return model, id_to_gloss
 
@@ -98,7 +123,8 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
 
         top_k_predictions = []
         for prob, idx in zip(top_probs[0], top_ids[0]):
-            gloss = tokenizer.get(str(idx), f"UNKNOWN_{idx}")
+            idx_int = idx.item()  # Convert tensor to int
+            gloss = tokenizer.get(str(idx_int), f"UNKNOWN_{idx_int}")
             top_k_predictions.append({
                 'gloss': gloss,
                 'confidence': prob.item()
