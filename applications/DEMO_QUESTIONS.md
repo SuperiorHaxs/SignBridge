@@ -4,23 +4,23 @@ These questions are designed to be answered using words from the WLASL-100 class
 
 ## Interview Questions
 
-| Question | Possible Answers (from vocab) |
-|----------|------------------------------|
-| What do you want to do for work? | work, cook, doctor, secretary |
-| Can you tell me about your family? | mother, son, wife, family, cousin |
-| When can you start? | now, later, thursday |
-| Do you like to work with people? | yes, no, like |
-| What did you study in school? | school, study, language, computer |
+| Question | Sample Answer (fluent sentence) |
+|----------|--------------------------------|
+| What do you want to do for work? | "I want to be a secretary" or "I want to work as a doctor" |
+| Can you tell me about your family? | "I have a mother, wife, and son" or "My cousin is deaf" |
+| When can you start? | "I can start now" or "I can start later on Thursday" |
+| Do you like to work with people? | "Yes, I like to help people" or "No, I like to work alone" |
+| What did you study in school? | "I study computer and language at school" |
 
 ## Doctor's Office Questions
 
-| Question | Possible Answers (from vocab) |
-|----------|------------------------------|
-| Do you need help? | yes, no, help |
-| Are you hot or cold? | hot, cool, fine |
-| Do you want water? | yes, no, want, water |
-| Can you walk? | yes, no, walk |
-| Did you eat before coming? | yes, no, eat, before |
+| Question | Sample Answer (fluent sentence) |
+|----------|--------------------------------|
+| Do you need help? | "Yes, I need help" or "No, I am fine" |
+| Are you hot or cold? | "I am hot" or "I feel cool and fine" |
+| Do you want water? | "Yes, I want water" or "No, I want to eat" |
+| Can you walk? | "Yes, I can walk" or "No, I need help to walk" |
+| Did you eat before coming? | "Yes, I eat before" or "No, I forget to eat" |
 
 ## Available Vocabulary (100 classes)
 
