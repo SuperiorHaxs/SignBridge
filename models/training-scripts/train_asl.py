@@ -261,7 +261,8 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
     )
 
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
-                           architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1, force_fresh=False):
+                           architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
+                           label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -555,6 +556,17 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     else:
         print(f"  Early stopping: Disabled (will train for full {num_epochs} epochs)")
 
+    # Print new training enhancements
+    print(f"  Label smoothing: {label_smoothing} (improves top-k accuracy)")
+    print(f"  Gradient clipping: max_norm={grad_clip} (prevents explosions)")
+    if warmup_epochs is None:
+        computed_warmup = max(int(num_epochs * 0.1), 10)
+        print(f"  LR warmup: {computed_warmup} epochs (10% of total, auto-computed)")
+    elif warmup_epochs == 0:
+        print(f"  LR warmup: Disabled")
+    else:
+        print(f"  LR warmup: {warmup_epochs} epochs (custom)")
+
     # Use shuffle instead of weighted sampler
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
@@ -563,13 +575,47 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, betas=(0.9, 0.999))
     print(f"OPTIMIZER: Using torch.optim.AdamW with lr={lr}, weight_decay={weight_decay}, betas=(0.9, 0.999)")
 
-    # Cosine annealing scheduler for gradual learning rate decay
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer,
-        T_max=num_epochs,  # Full cycle length
-        eta_min=1e-6       # Minimum learning rate
-    )
-    print(f"SCHEDULER: Using CosineAnnealingLR (lr: {lr} -> 1e-6 over {num_epochs} epochs)")
+    # Learning rate warmup + cosine annealing scheduler
+    if warmup_epochs is None:
+        warmup_epochs = max(int(num_epochs * 0.1), 10)  # 10% of total epochs or minimum 10 epochs
+    elif warmup_epochs == 0:
+        warmup_epochs = 0  # Disable warmup if explicitly set to 0
+
+    if warmup_epochs > 0:
+        # Use warmup + cosine annealing
+        cosine_epochs = num_epochs - warmup_epochs
+
+        # Create sequential scheduler: warmup -> cosine annealing
+        warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer,
+            start_factor=0.01,  # Start at 1% of target LR
+            end_factor=1.0,     # Reach 100% of target LR
+            total_iters=warmup_epochs
+        )
+
+        cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=cosine_epochs,  # Remaining epochs after warmup
+            eta_min=1e-6          # Minimum learning rate
+        )
+
+        scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer,
+            schedulers=[warmup_scheduler, cosine_scheduler],
+            milestones=[warmup_epochs]
+        )
+        print(f"SCHEDULER: Using Warmup ({warmup_epochs} epochs) + CosineAnnealingLR ({cosine_epochs} epochs)")
+        print(f"  Warmup: {lr*0.01:.6f} -> {lr:.6f} over {warmup_epochs} epochs")
+        print(f"  Cosine: {lr:.6f} -> 1e-6 over {cosine_epochs} epochs")
+    else:
+        # No warmup, just cosine annealing
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer,
+            T_max=num_epochs,  # Full cycle length
+            eta_min=1e-6       # Minimum learning rate
+        )
+        print(f"SCHEDULER: Using CosineAnnealingLR (no warmup)")
+        print(f"  Cosine: {lr:.6f} -> 1e-6 over {num_epochs} epochs")
 
     print()
 
@@ -625,10 +671,12 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
 
             optimizer.zero_grad()
             logits = model(pose_sequences, attention_mask)
-            loss = torch.nn.functional.cross_entropy(logits, labels)
+            # Label smoothing: prevents overconfident predictions, improves top-k accuracy
+            loss = torch.nn.functional.cross_entropy(logits, labels, label_smoothing=label_smoothing)
 
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            # Gradient clipping: prevents gradient explosions
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=grad_clip)
             optimizer.step()
 
             total_loss += loss.item()
@@ -856,6 +904,12 @@ if __name__ == "__main__":
                        help='Custom number of layers (overrides model-size)')
     parser.add_argument('--dropout', type=float, default=0.1,
                        help='Dropout probability (default: 0.1). Increase to 0.2-0.3 to reduce overfitting')
+    parser.add_argument('--label-smoothing', type=float, default=0.1,
+                       help='Label smoothing factor (default: 0.1). Improves top-k accuracy by preventing overconfident predictions')
+    parser.add_argument('--warmup-epochs', type=int, default=None,
+                       help='Number of warmup epochs (default: 10%% of total epochs). Set to 0 to disable warmup')
+    parser.add_argument('--grad-clip', type=float, default=1.0,
+                       help='Gradient clipping max norm (default: 1.0). Prevents gradient explosions')
     parser.add_argument('--force-fresh', action='store_true',
                        help='Ignore any existing checkpoint and start fresh training')
 
@@ -916,6 +970,9 @@ if __name__ == "__main__":
                 hidden_size=args.hidden_size,
                 num_layers=args.num_layers,
                 dropout=args.dropout,
+                label_smoothing=args.label_smoothing,
+                warmup_epochs=args.warmup_epochs,
+                grad_clip=args.grad_clip,
                 force_fresh=args.force_fresh
             )
 
