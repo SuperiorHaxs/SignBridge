@@ -3,11 +3,27 @@
 """
 training_pre_processing_setup.py
 
-Pre-processing and verification script for ASL training setup.
-Checks and prepares dataset structure, mappings, and configurations for training.
+End-to-end preprocessing script for ASL training setup.
+Automates dataset splitting, augmentation, and configuration for training.
+
+Features:
+    - Creates pose and pickle dataset splits (train/val/test)
+    - Generates 40x augmented variants with occlusion techniques
+    - Automatically updates config/settings.json
+    - Detects and resumes from incomplete setups
+    - Force-fresh mode for consistent regeneration
 
 Usage:
+    # Complete end-to-end setup (recommended)
+    python training_pre_processing_setup.py --classes 100 --setup
+
+    # Force fresh start (ensures all classes have 40x augmentation)
+    python training_pre_processing_setup.py --classes 100 --setup --force-fresh
+
+    # Only verify existing setup
     python training_pre_processing_setup.py --classes 50 --verify-only
+
+    # Legacy: only create splits (no augmentation)
     python training_pre_processing_setup.py --classes 100 --create-splits
 """
 
@@ -21,6 +37,7 @@ import numpy as np
 from pathlib import Path
 from collections import defaultdict
 from tqdm import tqdm
+from datetime import datetime
 
 # Fix Windows console encoding
 if sys.platform == 'win32':
@@ -78,6 +95,27 @@ try:
 except Exception as e:
     CONVERSION_UTILS_AVAILABLE = False
     print(f"WARNING: Could not import conversion utilities: {e}")
+
+try:
+    # Import augmentation utilities
+    augmentation_module_path = project_root / "dataset-utilities" / "augmentation" / "generate_75pt_augmented_dataset.py"
+    spec = importlib.util.spec_from_file_location("generate_75pt_augmented_dataset", augmentation_module_path)
+    augmentation_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(augmentation_module)
+
+    # Extract configuration and functions
+    NUM_AUGMENTATIONS = augmentation_module.NUM_AUGMENTATIONS
+    AUGMENTATION_CONFIG = augmentation_module.AUGMENTATION_CONFIG
+    load_class_mapping = augmentation_module.load_class_mapping
+    get_classes_from_directory = augmentation_module.get_classes_from_directory
+    load_and_extract_75pt = augmentation_module.load_and_extract_75pt
+    apply_augmentation_pickle = augmentation_module.apply_augmentation_pickle
+    save_augmented_pickle = augmentation_module.save_augmented_pickle
+
+    AUGMENTATION_UTILS_AVAILABLE = True
+except Exception as e:
+    AUGMENTATION_UTILS_AVAILABLE = False
+    print(f"WARNING: Could not import augmentation utilities: {e}")
 
 
 def print_section(title):
@@ -349,6 +387,541 @@ def create_class_mapping(num_classes, config):
 
 
 # ============================================================================
+# STATE DETECTION AND MANAGEMENT
+# ============================================================================
+
+def check_setup_state(num_classes, config):
+    """
+    Check the current state of setup for specified class count.
+
+    Returns:
+        dict: Status of each setup component
+            {
+                'pose_splits': bool,
+                'pickle_splits': bool,
+                'augmented_pool': bool,
+                'augmented_index': bool,
+                'config_updated': bool
+            }
+    """
+    state = {
+        'pose_splits': False,
+        'pickle_splits': False,
+        'augmented_pool': False,
+        'augmented_index': False,
+        'config_updated': False
+    }
+
+    # Check pose splits
+    pose_split_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pose_split_{num_classes}_class"
+    if pose_split_dir.exists():
+        train_exists = (pose_split_dir / "train").exists()
+        val_exists = (pose_split_dir / "val").exists()
+        test_exists = (pose_split_dir / "test").exists()
+        state['pose_splits'] = train_exists and val_exists and test_exists
+
+    # Check pickle splits
+    pkl_split_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class"
+    if pkl_split_dir.exists():
+        train_exists = (pkl_split_dir / "train").exists()
+        val_exists = (pkl_split_dir / "val").exists()
+        test_exists = (pkl_split_dir / "test").exists()
+        state['pickle_splits'] = train_exists and val_exists and test_exists
+
+    # Check augmented pool (check if classes exist in pool)
+    augmented_pool = config.augmented_pool_pickle
+    if augmented_pool.exists():
+        # Load class mapping to get expected classes
+        class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
+        if class_mapping_path.exists():
+            try:
+                with open(class_mapping_path, 'r') as f:
+                    mapping = json.load(f)
+                expected_classes = mapping.get('classes', [])
+
+                # Check if all classes exist in augmented pool
+                classes_in_pool = [d.name for d in augmented_pool.iterdir() if d.is_dir()]
+                state['augmented_pool'] = all(cls.upper() in [c.upper() for c in classes_in_pool] for cls in expected_classes)
+            except:
+                state['augmented_pool'] = False
+
+    # Check augmented index
+    index_path = config.augmented_pool_index
+    state['augmented_index'] = index_path.exists()
+
+    # Check if config is updated
+    settings_path = config.project_root / "config" / "settings.json"
+    if settings_path.exists():
+        try:
+            with open(settings_path, 'r') as f:
+                settings = json.load(f)
+            dataset_splits = settings.get('dataset_splits', {})
+            state['config_updated'] = str(num_classes) in dataset_splits or num_classes in dataset_splits
+        except:
+            state['config_updated'] = False
+
+    return state
+
+
+def print_setup_state(num_classes, state):
+    """Print the current setup state in a formatted way."""
+    print_section(f"Setup State - {num_classes} Classes")
+
+    status_map = {True: "✓ Complete", False: "✗ Missing"}
+
+    print_status(f"Pose splits (train/val/test):        {status_map[state['pose_splits']]}",
+                "SUCCESS" if state['pose_splits'] else "ERROR")
+    print_status(f"Pickle splits (train/val/test):      {status_map[state['pickle_splits']]}",
+                "SUCCESS" if state['pickle_splits'] else "ERROR")
+    print_status(f"Augmented dataset (40x variants):    {status_map[state['augmented_pool']]}",
+                "SUCCESS" if state['augmented_pool'] else "ERROR")
+    print_status(f"Augmentation index:                  {status_map[state['augmented_index']]}",
+                "SUCCESS" if state['augmented_index'] else "ERROR")
+    print_status(f"Config/settings.json updated:        {status_map[state['config_updated']]}",
+                "SUCCESS" if state['config_updated'] else "ERROR")
+
+    print()
+
+    # Determine what needs to be done
+    needs_work = [k for k, v in state.items() if not v]
+    if needs_work:
+        print_status(f"Status: Incomplete ({len(needs_work)} steps remaining)", "WARNING")
+    else:
+        print_status("Status: Complete and ready for training!", "SUCCESS")
+
+
+# ============================================================================
+# AUGMENTATION GENERATION
+# ============================================================================
+
+def generate_augmented_dataset(num_classes, config, force=False):
+    """
+    Generate augmented dataset using 40x variants with occlusion.
+
+    Args:
+        num_classes: Number of classes to augment
+        config: PathConfig instance
+        force: If True, regenerate even if already exists
+
+    Returns:
+        bool: Success status
+    """
+    if not AUGMENTATION_UTILS_AVAILABLE:
+        print_status("Augmentation utilities not available", "ERROR")
+        return False
+
+    print_section(f"Step 4: Generate Augmented Dataset ({num_classes} classes)")
+
+    # Paths
+    pkl_train_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/train"
+    augmented_pool = config.augmented_pool_pickle
+    index_path = config.augmented_pool_index
+
+    # Check if pickle train directory exists
+    if not pkl_train_dir.exists():
+        print_status(f"Pickle train directory not found: {pkl_train_dir}", "ERROR")
+        return False
+
+    # Get class list
+    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
+    try:
+        with open(class_mapping_path, 'r') as f:
+            mapping = json.load(f)
+        target_classes = mapping.get('classes', [])
+    except:
+        print_status("Could not load class mapping", "ERROR")
+        return False
+
+    print_status(f"Target classes: {len(target_classes)}", "INFO")
+    print_status(f"Augmentation variants: {NUM_AUGMENTATIONS} (40x)", "INFO")
+    print_status(f"Output directory: {augmented_pool}", "INFO")
+    print()
+
+    # Create output directory
+    augmented_pool.mkdir(parents=True, exist_ok=True)
+
+    # Track statistics
+    total_files = 0
+    total_augmented = 0
+    skipped_files = 0
+
+    # Process each class
+    for class_name in target_classes:
+        class_upper = class_name.upper()
+        print(f"Processing: {class_name}")
+
+        input_class_dir = pkl_train_dir / class_name
+        output_class_dir = augmented_pool / class_upper
+
+        if not input_class_dir.exists():
+            print(f"  WARNING: Class directory not found: {input_class_dir}")
+            continue
+
+        # Create output class directory
+        output_class_dir.mkdir(parents=True, exist_ok=True)
+
+        # Get all pickle files in this class
+        input_files = sorted([f for f in input_class_dir.iterdir() if f.suffix == '.pkl'])
+
+        if not input_files:
+            print(f"  WARNING: No pickle files found")
+            continue
+
+        print(f"  Files: {len(input_files)}")
+
+        # Process each file
+        for input_file in tqdm(input_files, desc=f"  {class_name}", ncols=80):
+            # Check if already augmented (unless force=True)
+            base_name = input_file.stem
+            first_aug_filename = f"aug_00_{base_name}.pkl"
+
+            if not force and (output_class_dir / first_aug_filename).exists():
+                # Check if it has all 40 variants
+                variant_count = len(list(output_class_dir.glob(f"aug_*_{base_name}.pkl")))
+                if variant_count >= NUM_AUGMENTATIONS:
+                    skipped_files += 1
+                    total_augmented += NUM_AUGMENTATIONS
+                    total_files += 1
+                    continue
+                else:
+                    # Has some but not all variants, regenerate
+                    print(f"    Incomplete augmentation for {base_name} ({variant_count}/{NUM_AUGMENTATIONS}), regenerating...")
+
+            try:
+                # Load and extract 75-point data
+                pose_data, metadata = load_and_extract_75pt(str(input_file))
+
+                # Generate all 40 augmented variants
+                for aug_id in range(NUM_AUGMENTATIONS):
+                    # Apply augmentation
+                    augmented_pose = apply_augmentation_pickle(pose_data, aug_id)
+
+                    # Create output filename
+                    output_filename = f"aug_{aug_id:02d}_{base_name}.pkl"
+                    output_path = output_class_dir / output_filename
+
+                    # Save augmented pickle
+                    save_augmented_pickle(augmented_pose, metadata, str(output_path), aug_id)
+
+                    total_augmented += 1
+
+                total_files += 1
+
+            except Exception as e:
+                print(f"\n  ERROR processing {input_file.name}: {e}")
+                continue
+
+        print(f"  Completed: {len(input_files)} files -> {len(input_files) * NUM_AUGMENTATIONS} augmented")
+
+    # Generate index file
+    print()
+    print_status("Generating augmentation index...", "INFO")
+
+    index_data = {}
+    for class_dir in augmented_pool.iterdir():
+        if class_dir.is_dir():
+            class_name = class_dir.name
+            pkl_files = [f.name for f in class_dir.glob("*.pkl")]
+            index_data[class_name] = sorted(pkl_files)
+
+    try:
+        with open(index_path, 'w') as f:
+            json.dump(index_data, f, indent=2)
+        print_status(f"Index saved: {index_path}", "SUCCESS")
+    except Exception as e:
+        print_status(f"Error saving index: {e}", "ERROR")
+        return False
+
+    # Print summary
+    print()
+    print_status("="*70, "INFO")
+    print_status(f"Augmentation complete!", "SUCCESS")
+    print_status(f"Total original files: {total_files}", "INFO")
+    print_status(f"Total augmented files: {total_augmented}", "INFO")
+    print_status(f"Skipped (already done): {skipped_files}", "INFO")
+    print_status(f"Augmentation factor: {NUM_AUGMENTATIONS}x (40 variants)", "INFO")
+    print_status("="*70, "INFO")
+    print()
+
+    return True
+
+
+# ============================================================================
+# CONFIGURATION FILE MANAGEMENT
+# ============================================================================
+
+def update_config_file(num_classes, config):
+    """
+    Update config/settings.json with paths for specified class count.
+
+    Args:
+        num_classes: Number of classes
+        config: PathConfig instance
+
+    Returns:
+        bool: Success status
+    """
+    print_section(f"Step 5: Update Configuration File")
+
+    settings_path = config.project_root / "config" / "settings.json"
+
+    # Create backup first
+    backup_path = settings_path.with_suffix(f".json.backup.{datetime.now().strftime('%Y%m%d_%H%M%S')}")
+    try:
+        shutil.copy2(settings_path, backup_path)
+        print_status(f"Backup created: {backup_path.name}", "SUCCESS")
+    except Exception as e:
+        print_status(f"Warning: Could not create backup: {e}", "WARNING")
+
+    # Load existing settings
+    try:
+        with open(settings_path, 'r') as f:
+            settings = json.load(f)
+    except Exception as e:
+        print_status(f"Error reading config file: {e}", "ERROR")
+        return False
+
+    # Prepare new paths (relative to data_root)
+    new_paths = {
+        "train_original": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/train",
+        "val": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/val",
+        "test": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/test",
+        "train_augmented": "../augmented_pool/pickle",  # Relative to data_root
+        "class_mapping": f"dataset_splits/{num_classes}_classes/class_mapping.json"
+    }
+
+    # Update or create dataset_splits section
+    if 'dataset_splits' not in settings:
+        settings['dataset_splits'] = {}
+
+    # Use string key for JSON compatibility
+    settings['dataset_splits'][str(num_classes)] = new_paths
+
+    # Write updated settings
+    try:
+        with open(settings_path, 'w') as f:
+            json.dump(settings, f, indent=2)
+        print_status(f"Config updated: {settings_path}", "SUCCESS")
+        print()
+        print_status(f"Added paths for {num_classes} classes:", "INFO")
+        for key, value in new_paths.items():
+            print(f"    {key}: {value}")
+        print()
+        return True
+    except Exception as e:
+        print_status(f"Error writing config file: {e}", "ERROR")
+        return False
+
+
+# ============================================================================
+# CLEANUP FOR FRESH START
+# ============================================================================
+
+def cleanup_for_fresh_start(num_classes, config):
+    """
+    Clean up existing pickle splits and augmented data for fresh regeneration.
+    Preserves pose splits (source of truth).
+
+    Args:
+        num_classes: Number of classes
+        config: PathConfig instance
+
+    Returns:
+        bool: Success status
+    """
+    print_section(f"Cleanup for Fresh Start - {num_classes} Classes")
+
+    items_to_delete = []
+
+    # Pickle splits
+    pkl_split_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class"
+    if pkl_split_dir.exists():
+        items_to_delete.append(("Pickle splits", pkl_split_dir))
+
+    # Augmented pool classes
+    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
+    if class_mapping_path.exists():
+        try:
+            with open(class_mapping_path, 'r') as f:
+                mapping = json.load(f)
+            target_classes = mapping.get('classes', [])
+
+            augmented_pool = config.augmented_pool_pickle
+            for class_name in target_classes:
+                class_upper = class_name.upper()
+                class_dir = augmented_pool / class_upper
+                if class_dir.exists():
+                    items_to_delete.append((f"Augmented class '{class_name}'", class_dir))
+        except:
+            pass
+
+    # Augmented index (will be regenerated)
+    index_path = config.augmented_pool_index
+    if index_path.exists():
+        items_to_delete.append(("Augmentation index", index_path))
+
+    if not items_to_delete:
+        print_status("Nothing to clean up (fresh state)", "SUCCESS")
+        return True
+
+    # Show what will be deleted
+    print_status(f"The following items will be DELETED:", "WARNING")
+    for name, path in items_to_delete:
+        print(f"  - {name}: {path}")
+    print()
+    print_status("Pose splits will be PRESERVED (source of truth)", "INFO")
+    print()
+
+    # Confirm
+    response = input("Continue with cleanup? (yes/no): ").strip().lower()
+    if response not in ['yes', 'y']:
+        print_status("Cleanup cancelled", "WARNING")
+        return False
+
+    # Delete items
+    print()
+    deleted_count = 0
+    for name, path in items_to_delete:
+        try:
+            if path.is_dir():
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+            print_status(f"Deleted: {name}", "SUCCESS")
+            deleted_count += 1
+        except Exception as e:
+            print_status(f"Error deleting {name}: {e}", "ERROR")
+
+    print()
+    print_status(f"Cleanup complete: {deleted_count}/{len(items_to_delete)} items deleted", "SUCCESS")
+    return True
+
+
+# ============================================================================
+# COMPLETE SETUP ORCHESTRATION
+# ============================================================================
+
+def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
+    """
+    Run complete end-to-end setup for specified class count.
+
+    Steps:
+        1. Class selection (from pose files)
+        2. Split pose files (train/val/test)
+        3. Convert pose to pickle (all 3 splits)
+        4. Generate augmented dataset (40x variants)
+        5. Update config/settings.json
+        6. Verify complete setup
+
+    Args:
+        num_classes: Number of classes
+        config: PathConfig instance
+        resume: If True, skip completed steps
+        force_fresh: If True, delete and restart from scratch
+
+    Returns:
+        bool: Success status
+    """
+    print_section(f"Complete Setup - {num_classes} Classes")
+    print()
+    print(f"Mode: {'Force Fresh (Delete & Restart)' if force_fresh else 'Resume (Skip completed steps)'}")
+    print()
+
+    # Step 0: Cleanup if force_fresh
+    if force_fresh:
+        if not cleanup_for_fresh_start(num_classes, config):
+            print_status("Setup cancelled", "ERROR")
+            return False
+
+    # Check current state
+    state = check_setup_state(num_classes, config)
+    print_setup_state(num_classes, state)
+
+    # Determine which steps to run
+    steps_to_run = []
+
+    if not state['pose_splits'] or not resume:
+        steps_to_run.extend([1, 2])  # Class selection and pose splitting
+
+    if not state['pickle_splits'] or not resume:
+        steps_to_run.append(3)  # Pickle conversion
+
+    if not state['augmented_pool'] or not state['augmented_index'] or not resume:
+        steps_to_run.append(4)  # Augmentation
+
+    if not state['config_updated'] or not resume:
+        steps_to_run.append(5)  # Config update
+
+    if not steps_to_run:
+        print_status("All steps already complete!", "SUCCESS")
+        steps_to_run = [6]  # Just verify
+    else:
+        print()
+        print_status(f"Steps to run: {steps_to_run}", "INFO")
+        if resume:
+            completed_steps = [i+1 for i in range(5) if i+1 not in steps_to_run]
+            if completed_steps:
+                print_status(f"Steps to skip (already done): {completed_steps}", "INFO")
+        print()
+
+    # Execute steps
+    success = True
+
+    # Steps 1-2: Create pose splits (handled by create_dataset_splits)
+    if 1 in steps_to_run or 2 in steps_to_run or 3 in steps_to_run:
+        print_status("Running Steps 1-3: Create pose splits and convert to pickle", "INFO")
+        success = create_dataset_splits(num_classes, config)
+        if not success:
+            print_status("Failed to create dataset splits", "ERROR")
+            return False
+    else:
+        print_status("Steps 1-3: Skipping (already complete)", "SUCCESS")
+
+    # Step 4: Generate augmented dataset
+    if 4 in steps_to_run:
+        success = generate_augmented_dataset(num_classes, config, force=force_fresh)
+        if not success:
+            print_status("Failed to generate augmented dataset", "ERROR")
+            return False
+    else:
+        print_status("Step 4: Skipping augmentation (already complete)", "SUCCESS")
+        print()
+
+    # Step 5: Update config
+    if 5 in steps_to_run:
+        success = update_config_file(num_classes, config)
+        if not success:
+            print_status("Failed to update config file", "ERROR")
+            return False
+    else:
+        print_status("Step 5: Skipping config update (already complete)", "SUCCESS")
+        print()
+
+    # Step 6: Final verification
+    print_section(f"Step 6: Final Verification")
+
+    # Re-check state
+    final_state = check_setup_state(num_classes, config)
+    print_setup_state(num_classes, final_state)
+
+    all_complete = all(final_state.values())
+
+    if all_complete:
+        print_status("="*70, "SUCCESS")
+        print_status(f"{num_classes}-CLASS SETUP COMPLETE!", "SUCCESS")
+        print_status("="*70, "SUCCESS")
+        print()
+        print_status("You can now start training with:", "INFO")
+        print()
+        print(f"    python train_asl.py --classes {num_classes} --dataset augmented --model-size small")
+        print()
+        return True
+    else:
+        print_status("Setup incomplete - some steps failed", "ERROR")
+        return False
+
+
+# ============================================================================
 # ORCHESTRATION - Create complete dataset splits using imported utilities
 # ============================================================================
 
@@ -455,36 +1028,74 @@ def print_summary(num_classes, all_checks_passed):
 def main():
     """Main verification and setup workflow."""
     parser = argparse.ArgumentParser(
-        description='Verify and prepare dataset for ASL training'
+        description='End-to-end preprocessing and verification for ASL training',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Complete end-to-end setup (recommended)
+  python training_pre_processing_setup.py --classes 100 --setup
+
+  # Force fresh start (delete and regenerate)
+  python training_pre_processing_setup.py --classes 100 --setup --force-fresh
+
+  # Only verify existing setup
+  python training_pre_processing_setup.py --classes 50 --verify-only
+
+  # Only create splits (no augmentation)
+  python training_pre_processing_setup.py --classes 100 --create-splits
+        """
     )
     parser.add_argument(
         '--classes',
         type=int,
         required=True,
         choices=[20, 50, 100],
-        help='Number of classes to verify/create (20, 50, or 100)'
+        help='Number of classes (20, 50, or 100)'
+    )
+    parser.add_argument(
+        '--setup',
+        action='store_true',
+        help='Run complete end-to-end setup (splits + augmentation + config)'
+    )
+    parser.add_argument(
+        '--force-fresh',
+        action='store_true',
+        help='Delete existing data and start fresh (use with --setup)'
     )
     parser.add_argument(
         '--verify-only',
         action='store_true',
-        help='Only verify existing splits, do not create new ones'
+        help='Only verify existing setup, do not create anything'
     )
     parser.add_argument(
         '--create-splits',
         action='store_true',
-        help='Create dataset splits if they do not exist'
+        help='Only create dataset splits (no augmentation, no config update)'
     )
 
     args = parser.parse_args()
 
-    # Determine mode
-    if args.create_splits and args.verify_only:
-        print("ERROR: Cannot use both --create-splits and --verify-only")
+    # Validate argument combinations
+    mode_flags = [args.setup, args.verify_only, args.create_splits]
+    if sum(mode_flags) > 1:
+        print("ERROR: Can only use one of: --setup, --verify-only, --create-splits")
         sys.exit(1)
 
-    mode = "Create Splits" if args.create_splits else ("Verify Only" if args.verify_only else "Verify and Prepare")
+    if args.force_fresh and not args.setup:
+        print("ERROR: --force-fresh can only be used with --setup")
+        sys.exit(1)
 
-    print_section(f"ASL Training Setup - {args.classes} Classes")
+    # Determine mode
+    if args.setup:
+        mode = "Complete Setup (with --force-fresh)" if args.force_fresh else "Complete Setup (resume mode)"
+    elif args.create_splits:
+        mode = "Create Splits Only"
+    elif args.verify_only:
+        mode = "Verify Only"
+    else:
+        mode = "Verify and Suggest"
+
+    print_section(f"ASL Training Preprocessing - {args.classes} Classes")
     print()
     print(f"Mode: {mode}")
     print()
@@ -494,59 +1105,72 @@ def main():
         config = get_config()
         print_status(f"Configuration loaded", "SUCCESS")
         print_status(f"  └─ Data root: {config.data_root}", "INFO")
+        print()
     except Exception as e:
         print_status(f"Failed to load configuration: {e}", "ERROR")
         sys.exit(1)
 
-    # If create-splits mode, create the splits
-    if args.create_splits:
+    # Route to appropriate workflow
+    if args.setup:
+        # Complete end-to-end setup
+        success = run_complete_setup(
+            num_classes=args.classes,
+            config=config,
+            resume=(not args.force_fresh),
+            force_fresh=args.force_fresh
+        )
+        sys.exit(0 if success else 1)
+
+    elif args.create_splits:
+        # Create splits only (legacy mode)
         success = create_dataset_splits(args.classes, config)
         if success:
-            print_status("NEXT STEP: Update config/settings.json with the new split paths", "WARNING")
-            print_status("Then run verification with: --verify-only", "INFO")
+            print_status("NEXT STEP: Run complete setup to add augmentation and update config", "WARNING")
+            print(f"  python training_pre_processing_setup.py --classes {args.classes} --setup")
             sys.exit(0)
         else:
             print_status("Failed to create dataset splits", "ERROR")
             sys.exit(1)
 
-    # Otherwise, run verification steps
-    checks_passed = []
+    else:
+        # Verify-only or suggest mode
+        checks_passed = []
 
-    # Step 1: Check directory structure
-    checks_passed.append(check_directory_structure(args.classes, config))
+        # Step 1: Check directory structure
+        checks_passed.append(check_directory_structure(args.classes, config))
 
-    # If verification failed and not verify-only, offer to create splits
-    if not checks_passed[0] and not args.verify_only:
-        print()
-        print_status("Dataset splits not found", "WARNING")
-        print_status("To create splits, run with --create-splits flag:", "INFO")
-        print(f"  python training_pre_processing_setup.py --classes {args.classes} --create-splits")
-        print()
-        sys.exit(1)
+        # If verification failed and not verify-only, suggest setup
+        if not checks_passed[0] and not args.verify_only:
+            print()
+            print_status("Dataset not found", "WARNING")
+            print_status("To set up everything, run:", "INFO")
+            print(f"  python training_pre_processing_setup.py --classes {args.classes} --setup")
+            print()
+            sys.exit(1)
 
-    # Step 2: List classes
-    classes = list_classes(args.classes, config)
-    checks_passed.append(len(classes) > 0)
+        # Step 2: List classes
+        classes = list_classes(args.classes, config)
+        checks_passed.append(len(classes) > 0)
 
-    # Step 3: Count samples
-    sample_counts = count_samples_per_class(args.classes, config)
-    checks_passed.append(len(sample_counts) > 0)
+        # Step 3: Count samples
+        sample_counts = count_samples_per_class(args.classes, config)
+        checks_passed.append(len(sample_counts) > 0)
 
-    # Step 4: Check augmented pool
-    checks_passed.append(check_augmented_pool(config))
+        # Step 4: Check augmented pool
+        checks_passed.append(check_augmented_pool(config))
 
-    # Step 5: Verify class coverage
-    checks_passed.append(verify_class_coverage(args.classes, config))
+        # Step 5: Verify class coverage
+        checks_passed.append(verify_class_coverage(args.classes, config))
 
-    # Step 6: Check class mapping
-    create_class_mapping(args.classes, config)
+        # Step 6: Check class mapping
+        create_class_mapping(args.classes, config)
 
-    # Final summary
-    all_passed = all(checks_passed)
-    print_summary(args.classes, all_passed)
+        # Final summary
+        all_passed = all(checks_passed)
+        print_summary(args.classes, all_passed)
 
-    # Exit with appropriate code
-    sys.exit(0 if all_passed else 1)
+        # Exit with appropriate code
+        sys.exit(0 if all_passed else 1)
 
 
 if __name__ == "__main__":
