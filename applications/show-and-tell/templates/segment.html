@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 2: Segment - ASL Show & Tell{% endblock %}
+
+{% block phase1_class %}completed{% endblock %}
+{% block phase2_class %}active{% endblock %}
+
+{% block content %}
+<div class="segment-container">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="/" class="btn btn-back">&larr; Back</a>
+        <h2>Phase 2: Segment Signs</h2>
+    </div>
+
+    <!-- Pose Video Display -->
+    <div class="pose-display-section">
+        <div class="video-panel">
+            <div class="panel-header">
+                <h2>Full Pose Sequence</h2>
+                <span class="status-badge status-success">Ready</span>
+            </div>
+            <div class="video-wrapper">
+                <video id="full-pose-video" controls muted playsinline></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Segmentation Controls -->
+    <div class="segmentation-controls">
+        <button id="btn-segment" class="btn btn-primary btn-large">
+            Segment into Individual Signs
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loading-state" style="display: none;">
+        <div class="spinner-large"></div>
+        <p>Detecting sign boundaries...</p>
+        <p class="loading-detail">Analyzing motion patterns</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="error-state" style="display: none;">
+        <div class="error-icon">&#9888;</div>
+        <h3>Segmentation Failed</h3>
+        <p id="error-message"></p>
+        <button id="btn-retry" class="btn btn-primary">Try Again</button>
+    </div>
+
+    <!-- Segments Display -->
+    <div class="segments-result" id="segments-result" style="display: none;">
+        <h3>Detected Sign Segments</h3>
+        <p class="segments-summary" id="segments-summary"></p>
+
+        <div class="segments-timeline" id="segments-timeline">
+            <!-- Segment items will be inserted here -->
+        </div>
+
+        <div class="action-bar">
+            <a href="/predict" id="btn-next" class="btn btn-primary btn-large">
+                Next: Predict Glosses &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/segment.js') }}"></script>
+{% endblock %}

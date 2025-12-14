@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 3: Predict - ASL Show & Tell{% endblock %}
+
+{% block phase1_class %}completed{% endblock %}
+{% block phase2_class %}completed{% endblock %}
+{% block phase3_class %}active{% endblock %}
+
+{% block content %}
+<div class="predict-container">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="/segment" class="btn btn-back">&larr; Back</a>
+        <h2>Phase 3: Predict Glosses</h2>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loading-state">
+        <div class="spinner-large"></div>
+        <p>Running model predictions...</p>
+        <p class="loading-detail">This may take a moment</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="error-state" style="display: none;">
+        <div class="error-icon">&#9888;</div>
+        <h3>Prediction Failed</h3>
+        <p id="error-message"></p>
+        <a href="/segment" class="btn btn-primary">Go Back</a>
+    </div>
+
+    <!-- Predictions Grid -->
+    <div class="predictions-content" id="predictions-content" style="display: none;">
+        <div class="segments-grid" id="predictions-grid">
+            <!-- Prediction cards will be inserted here -->
+        </div>
+
+        <div class="action-bar">
+            <div class="detected-glosses">
+                <span class="label">Detected Signs:</span>
+                <span class="glosses" id="detected-glosses"></span>
+            </div>
+            <a href="/construct" id="btn-next" class="btn btn-primary btn-large">
+                Next: Construct Sentence &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Card Template -->
+<template id="prediction-card-template">
+    <div class="segment-card">
+        <div class="segment-video-wrapper">
+            <video class="segment-video" autoplay loop muted playsinline></video>
+        </div>
+        <div class="segment-info">
+            <div class="segment-number">Segment <span class="seg-num"></span></div>
+            <div class="prediction-top1">
+                <span class="prediction-gloss"></span>
+                <div class="confidence-bar-wrapper">
+                    <div class="confidence-bar"></div>
+                    <span class="confidence-value"></span>
+                </div>
+            </div>
+            <div class="prediction-topk">
+                <div class="topk-header">Alternatives:</div>
+                <ul class="topk-list"></ul>
+            </div>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/predict.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 5: Evaluate - ASL Show & Tell{% endblock %}
+
+{% block phase1_class %}completed{% endblock %}
+{% block phase2_class %}completed{% endblock %}
+{% block phase3_class %}completed{% endblock %}
+{% block phase4_class %}completed{% endblock %}
+{% block phase5_class %}active{% endblock %}
+
+{% block content %}
+<div class="evaluate-container">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="/construct" class="btn btn-back">&larr; Back</a>
+        <h2>Phase 5: Evaluate Results</h2>
+    </div>
+
+    <!-- Sentences Summary -->
+    <div class="sentences-section">
+        <div class="sentence-box">
+            <div class="sentence-label">Reference (Ground Truth)</div>
+            <div class="sentence-text" id="reference-sentence"></div>
+        </div>
+
+        <div class="sentence-box raw-sentence">
+            <div class="sentence-label">Raw Concatenation</div>
+            <div class="sentence-text" id="raw-sentence"></div>
+        </div>
+
+        <div class="sentence-box llm-sentence">
+            <div class="sentence-label">LLM Constructed</div>
+            <div class="sentence-text" id="llm-sentence"></div>
+        </div>
+    </div>
+
+    <!-- Evaluate Button -->
+    <div class="evaluate-controls" id="evaluate-controls">
+        <button id="btn-evaluate" class="btn btn-primary btn-large">
+            Calculate Evaluation Metrics
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loading-state" style="display: none;">
+        <div class="spinner-large"></div>
+        <p>Calculating metrics...</p>
+        <p class="loading-detail">BLEU, BERTScore, Quality</p>
+    </div>
+
+    <!-- Metrics Section -->
+    <div class="metrics-section" id="metrics-section" style="display: none;">
+        <h3>Evaluation Metrics</h3>
+        <table class="metrics-table">
+            <thead>
+                <tr>
+                    <th>Metric</th>
+                    <th>Raw Score</th>
+                    <th>LLM Score</th>
+                    <th>Improvement</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="metric-row" data-metric="bleu">
+                    <td class="metric-name">
+                        <span class="metric-title">BLEU Score</span>
+                        <span class="metric-desc">N-gram precision</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="bert">
+                    <td class="metric-name">
+                        <span class="metric-title">BERTScore</span>
+                        <span class="metric-desc">Semantic similarity</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="quality">
+                    <td class="metric-name">
+                        <span class="metric-title">Quality Score</span>
+                        <span class="metric-desc">Fluency (reference-free)</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row composite" data-metric="composite">
+                    <td class="metric-name">
+                        <span class="metric-title">Composite Score</span>
+                        <span class="metric-desc">Weighted average</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="metrics-note">
+            <strong>Metric Weights:</strong> Quality (40%), Coverage (25%), BERTScore (20%), BLEU (15%)
+        </div>
+    </div>
+
+    <!-- Final Actions -->
+    <div class="final-actions" id="final-actions" style="display: none;">
+        <button id="btn-start-over" class="btn btn-outline btn-large">
+            Start Over
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/evaluate.js') }}"></script>
+{% endblock %}

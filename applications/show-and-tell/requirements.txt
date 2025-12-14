@@ -1,0 +1,16 @@
+# Show-and-Tell Demo Application
+# Most dependencies are already installed in the project venv
+
+# Flask web framework
+flask>=2.0.0
+
+# All other dependencies should already be installed:
+# - pose-format (provides video_to_pose.exe, visualize_pose.exe)
+# - mediapipe
+# - torch
+# - transformers (for GPT-2 quality scoring)
+# - bert-score
+# - sacrebleu
+# - google-generativeai (for Gemini LLM)
+# - numpy
+# - opencv-python

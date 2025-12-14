@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 4: Construct - ASL Show & Tell{% endblock %}
+
+{% block phase1_class %}completed{% endblock %}
+{% block phase2_class %}completed{% endblock %}
+{% block phase3_class %}completed{% endblock %}
+{% block phase4_class %}active{% endblock %}
+
+{% block content %}
+<div class="construct-container">
+    <!-- Header -->
+    <div class="page-header">
+        <a href="/predict" class="btn btn-back">&larr; Back</a>
+        <h2>Phase 4: Construct Sentence</h2>
+    </div>
+
+    <!-- Input: Raw Glosses -->
+    <div class="construct-section">
+        <h3>Input: Detected Glosses</h3>
+        <div class="gloss-chips" id="gloss-chips">
+            <!-- Gloss chips will be inserted here -->
+        </div>
+    </div>
+
+    <!-- LLM Processing -->
+    <div class="llm-section" id="llm-section">
+        <button id="btn-construct" class="btn btn-primary btn-large">
+            Construct Sentence with LLM
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loading-state" style="display: none;">
+        <div class="spinner-large"></div>
+        <p>Constructing grammatically correct sentence...</p>
+        <p class="loading-detail">Using LLM to improve fluency</p>
+    </div>
+
+    <!-- Results -->
+    <div class="construct-results" id="construct-results" style="display: none;">
+        <div class="sentences-comparison">
+            <div class="sentence-box raw-sentence">
+                <div class="sentence-label">Raw Concatenation</div>
+                <div class="sentence-text" id="raw-sentence"></div>
+                <div class="sentence-note">Direct word-by-word translation</div>
+            </div>
+
+            <div class="sentence-arrow">
+                <span class="arrow-icon">&rarr;</span>
+                <span class="arrow-label">LLM</span>
+            </div>
+
+            <div class="sentence-box llm-sentence">
+                <div class="sentence-label">LLM Constructed</div>
+                <div class="sentence-text" id="llm-sentence"></div>
+                <div class="sentence-note">Grammatically improved sentence</div>
+            </div>
+        </div>
+
+        <div class="word-selections" id="word-selections">
+            <h4>Word Selections by LLM</h4>
+            <div class="selections-list" id="selections-list">
+                <!-- Selection details will be inserted here -->
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <a href="/evaluate" id="btn-next" class="btn btn-primary btn-large">
+                Next: Evaluate Results &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/construct.js') }}"></script>
+{% endblock %}

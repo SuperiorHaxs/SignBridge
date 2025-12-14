@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Phase 1: Convert - ASL Show & Tell{% endblock %}
+
+{% block phase1_class %}active{% endblock %}
+
+{% block content %}
+<div class="convert-container">
+    <!-- ============================================================
+         LIVE MODE CONTENT
+         ============================================================ -->
+    <div class="live-mode-content" id="live-mode-content">
+        <!-- Reference Sentence Input -->
+        <div class="reference-input-section">
+            <h3>
+                <span class="ref-icon">&#128221;</span>
+                Reference Sentence (Ground Truth)
+            </h3>
+            <p class="helper-text">
+                Enter the English sentence you are signing. This will be used to evaluate the translation accuracy.
+            </p>
+            <input type="text"
+                   id="reference-sentence"
+                   class="reference-input-large"
+                   placeholder="e.g., The woman helps the deaf child"
+                   autocomplete="off">
+        </div>
+
+        <!-- Input Mode Selection -->
+        <div class="input-mode-section">
+            <h3>Select Input Mode</h3>
+            <div class="input-mode-toggle">
+                <button class="mode-btn active" data-mode="webcam" id="mode-webcam">
+                    <span class="mode-icon">&#127909;</span>
+                    <span class="mode-label">Webcam</span>
+                    <span class="mode-desc">Record live from camera</span>
+                </button>
+                <button class="mode-btn" data-mode="upload" id="mode-upload">
+                    <span class="mode-icon">&#128194;</span>
+                    <span class="mode-label">Upload</span>
+                    <span class="mode-desc">Upload a video file</span>
+                </button>
+                <button class="mode-btn" data-mode="pose" id="mode-pose">
+                    <span class="mode-icon">&#129471;</span>
+                    <span class="mode-label">Pose File</span>
+                    <span class="mode-desc">Upload .pose directly</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Video Panel (Single Panel) -->
+        <div class="video-panel-single">
+            <div class="video-panel input-panel">
+                <div class="panel-header">
+                    <h2 id="input-panel-title">Webcam Capture</h2>
+                    <span class="status-badge" id="input-status">Ready</span>
+                </div>
+
+                <!-- Webcam Mode -->
+                <div class="webcam-mode" id="webcam-mode">
+                    <div class="video-wrapper video-wrapper-large">
+                        <video id="webcam-video" autoplay muted playsinline></video>
+                        <div class="video-overlay" id="webcam-overlay">
+                            <div class="overlay-content">
+                                <div class="spinner"></div>
+                                <p id="overlay-text">Processing...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-controls">
+                        <button id="btn-start" class="btn btn-primary">
+                            <span class="btn-icon">&#9679;</span> Start Recording
+                        </button>
+                        <button id="btn-stop" class="btn btn-danger" disabled>
+                            <span class="btn-icon">&#9632;</span> Stop Recording
+                        </button>
+                    </div>
+                    <div class="recording-indicator" id="recording-indicator">
+                        <span class="recording-dot"></span>
+                        <span class="recording-time" id="recording-time">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Upload Mode -->
+                <div class="upload-mode" id="upload-mode" style="display: none;">
+                    <div class="video-wrapper video-wrapper-large" id="upload-area-wrapper">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">&#128193;</div>
+                            <p class="upload-text">Drag & drop a video file here</p>
+                            <p class="upload-hint">or click to browse (MP4, WebM, MOV)</p>
+                            <input type="file" id="upload-input" class="upload-input" accept="video/*">
+                        </div>
+                        <video id="uploaded-video" controls style="display: none;"></video>
+                    </div>
+                    <div class="panel-controls" id="upload-controls" style="display: none;">
+                        <button id="btn-change-video" class="btn btn-outline">Change Video</button>
+                    </div>
+                </div>
+
+                <!-- Pose File Mode -->
+                <div class="pose-mode" id="pose-mode" style="display: none;">
+                    <div class="video-wrapper video-wrapper-large">
+                        <div class="upload-area" id="pose-upload-area">
+                            <div class="upload-icon">&#129471;</div>
+                            <p class="upload-text">Drag & drop a .pose file here</p>
+                            <p class="upload-hint">or click to browse (.pose files)</p>
+                            <input type="file" id="pose-input" class="upload-input" accept=".pose">
+                        </div>
+                        <div class="pose-file-info" id="pose-file-info" style="display: none;">
+                            <div class="pose-icon-large">&#129471;</div>
+                            <p class="pose-filename" id="pose-filename"></p>
+                            <p class="pose-status">Pose file loaded</p>
+                        </div>
+                    </div>
+                    <div class="panel-controls" id="pose-controls" style="display: none;">
+                        <button id="btn-change-pose" class="btn btn-outline">Change File</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Convert Button (centered below video) -->
+            <div class="convert-action">
+                <button id="btn-convert" class="btn btn-success btn-large" disabled>
+                    Convert to Pose &rarr;
+                </button>
+                <button id="btn-continue-pose" class="btn btn-success btn-large" style="display: none;">
+                    Continue &rarr;
+                </button>
+                <p class="convert-hint" id="convert-hint">Record or upload a video first</p>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions-panel">
+            <h3>Instructions</h3>
+            <ol>
+                <li><strong>Enter Reference:</strong> Type the English sentence you will be signing</li>
+                <li><strong>Choose Mode:</strong> Select webcam, video upload, or pose file upload</li>
+                <li><strong>Capture/Upload:</strong> Record your ASL signing or upload a file</li>
+                <li><strong>Convert:</strong> Click "Convert to Pose" (or "Continue" for pose files)</li>
+            </ol>
+            <p class="tip"><strong>Tip:</strong> Pause briefly between each sign for better segmentation.</p>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         DEMO MODE CONTENT
+         ============================================================ -->
+    <div class="demo-mode-content" id="demo-mode-content" style="display: none;">
+        <!-- Reference Sentence (Read-only) -->
+        <div class="reference-input-section">
+            <h3>
+                <span class="ref-icon">&#128221;</span>
+                Reference Sentence (Ground Truth)
+            </h3>
+            <p class="helper-text">
+                The reference sentence is pre-set for demo samples.
+            </p>
+            <input type="text"
+                   id="demo-reference-sentence"
+                   class="reference-input-large reference-readonly"
+                   readonly
+                   placeholder="Select a demo sample below">
+        </div>
+
+        <!-- Sample Selection -->
+        <div class="sample-selection-section">
+            <h3>Select Demo Sample</h3>
+            <p class="helper-text">
+                Choose a pre-computed sample to demonstrate the pipeline without waiting for processing.
+            </p>
+
+            <div class="samples-grid" id="samples-grid">
+                <div class="sample-loading">
+                    <div class="spinner"></div>
+                    <p>Loading samples...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Continue Button -->
+        <div class="convert-action">
+            <button id="btn-demo-continue" class="btn btn-success btn-large" disabled>
+                Continue with Sample &rarr;
+            </button>
+            <p class="convert-hint" id="demo-hint">Select a demo sample above</p>
+        </div>
+
+        <!-- Demo Instructions -->
+        <div class="instructions-panel">
+            <h3>Demo Mode Instructions</h3>
+            <ol>
+                <li><strong>Select Sample:</strong> Click on a pre-computed demo sample</li>
+                <li><strong>Continue:</strong> Click "Continue with Sample" to proceed</li>
+                <li><strong>View Pipeline:</strong> Step through each phase to see the results</li>
+            </ol>
+            <p class="tip"><strong>Note:</strong> Demo mode uses pre-computed data - results appear instantly!</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/convert.js') }}"></script>
+{% endblock %}

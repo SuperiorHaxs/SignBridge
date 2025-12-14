@@ -1,0 +1,34 @@
+{
+  "id": "sample-id",
+  "name": "Sample Display Name",
+  "description": "Brief description of the sample",
+  "reference_sentence": "The English sentence being signed",
+  "created": "2024-01-15",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_1.pose",
+        "video_file": "segments/segment_1.mp4",
+        "start_frame": 0,
+        "end_frame": 45,
+        "top_1": "GLOSS",
+        "confidence": 0.89,
+        "top_k": [
+          {"gloss": "GLOSS", "confidence": 0.89},
+          {"gloss": "ALT1", "confidence": 0.07},
+          {"gloss": "ALT2", "confidence": 0.02}
+        ]
+      }
+    ],
+    "raw_sentence": "GLOSS GLOSS GLOSS",
+    "llm_sentence": "The constructed English sentence.",
+    "evaluation": {
+      "raw": {"bleu": 0.0, "bert": 0.0, "quality": 0.0, "composite": 0.0},
+      "llm": {"bleu": 0.0, "bert": 0.0, "quality": 0.0, "composite": 0.0}
+    }
+  }
+}
