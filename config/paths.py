@@ -137,28 +137,49 @@ class PathConfig:
         self.augmented_pool_index = self.augmented_pool_pickle / "pickle_index.json"
 
         # Dataset splits for different class counts
-        self.dataset_splits = {
-            20: {
-                'train_original': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/train",
-                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
-                'test': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/test",
-                'val': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/val",
-                'class_mapping': self.dataset_root / "dataset_splits/20_classes/20_class_mapping.json",
-            },
-            50: {
-                'train_original': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/train",
-                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
-                'test': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/test",
-                'val': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/val",
-                'class_mapping': self.dataset_root / "dataset_splits/50_classes/50_class_mapping.json",
-            },
-            100: {
-                'train_original': self.dataset_root / "conservative_split_100_class/train",
-                'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
-                'test': self.dataset_root / "pose_split_100_class/test",
-                'class_mapping': self.dataset_root / "dataset_splits/100_classes/100_class_mapping.json",
+        # Check if settings.json has dataset_splits defined (takes precedence)
+        if 'dataset_splits' in self.settings:
+            # Load from settings.json and convert relative paths to absolute
+            self.dataset_splits = {}
+            for num_classes_str, paths in self.settings['dataset_splits'].items():
+                num_classes = int(num_classes_str)
+                self.dataset_splits[num_classes] = {}
+                for key, path_str in paths.items():
+                    if key == 'train_augmented':
+                        # Special handling for augmented pool (can be relative)
+                        if path_str.startswith('../'):
+                            # Relative to data_root
+                            self.dataset_splits[num_classes][key] = self.dataset_root.parent / path_str.lstrip('../')
+                        else:
+                            self.dataset_splits[num_classes][key] = self.augmented_pool_pickle
+                    else:
+                        # Regular paths (relative to data_root)
+                        self.dataset_splits[num_classes][key] = self.dataset_root / path_str
+        else:
+            # Fallback to hardcoded defaults if not in settings.json
+            self.dataset_splits = {
+                20: {
+                    'train_original': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/train",
+                    'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
+                    'test': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/test",
+                    'val': self.dataset_root / "dataset_splits/20_classes/original/pickle_from_pose_split_20_class/val",
+                    'class_mapping': self.dataset_root / "dataset_splits/20_classes/20_class_mapping.json",
+                },
+                50: {
+                    'train_original': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/train",
+                    'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
+                    'test': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/test",
+                    'val': self.dataset_root / "dataset_splits/50_classes/original/pickle_from_pose_split_50_class/val",
+                    'class_mapping': self.dataset_root / "dataset_splits/50_classes/50_class_mapping.json",
+                },
+                100: {
+                    'train_original': self.dataset_root / "dataset_splits/100_classes/original/pickle_split_100_class/train",
+                    'train_augmented': self.augmented_pool_pickle,  # Use central augmented pool
+                    'test': self.dataset_root / "dataset_splits/100_classes/original/pickle_split_100_class/test",
+                    'val': self.dataset_root / "dataset_splits/100_classes/original/pickle_split_100_class/val",
+                    'class_mapping': self.dataset_root / "dataset_splits/100_classes/class_mapping.json",
+                }
             }
-        }
 
         # Pickle files directory
         self.pickle_files_dir = self.dataset_root / "pickle_files"
