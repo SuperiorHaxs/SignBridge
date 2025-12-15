@@ -38,7 +38,7 @@ class MotionBasedSegmenter:
         velocity_threshold: float = 0.02,
         min_sign_duration: int = 10,
         max_sign_duration: int = 120,
-        min_rest_duration: int = 5,
+        min_rest_duration: int = 45,
         padding_before: int = 5,
         padding_after: int = 5,
         smoothing_window: int = 5
@@ -84,20 +84,30 @@ class MotionBasedSegmenter:
             pose_sequence = pose_data
 
         # Extract 75-point subset if needed (pose + hands, exclude face)
-        # MediaPipe format: 33 pose + 468 face + 21 left hand + 21 right hand = 543 total
-        # We need: 33 pose + 21 left hand + 21 right hand = 75 keypoints
-        if pose_sequence.shape[1] == 543:
-            # Extract pose (0:33), left hand (501:522), right hand (522:543)
+        # We always want: 33 pose + 21 left hand + 21 right hand = 75 keypoints
+        num_keypoints = pose_sequence.shape[1]
+
+        if num_keypoints == 75:
+            # Already 75 keypoints
+            pose_75pt = pose_sequence
+        elif num_keypoints == 543:
+            # MediaPipe format: 33 pose + 468 face + 21 left hand + 21 right hand = 543
             pose_75pt = np.concatenate([
                 pose_sequence[:, 0:33, :],      # Pose landmarks
                 pose_sequence[:, 501:522, :],   # Left hand landmarks
                 pose_sequence[:, 522:543, :]    # Right hand landmarks
             ], axis=1)
-        elif pose_sequence.shape[1] == 75:
-            # Already 75 keypoints
-            pose_75pt = pose_sequence
+        elif num_keypoints == 576:
+            # MediaPipe with world coords: 33 pose + 468 face + 21 left + 21 right + 33 world = 576
+            # Same extraction as 543 (world coords are at the end)
+            pose_75pt = np.concatenate([
+                pose_sequence[:, 0:33, :],      # Pose landmarks
+                pose_sequence[:, 501:522, :],   # Left hand landmarks
+                pose_sequence[:, 522:543, :]    # Right hand landmarks
+            ], axis=1)
         else:
-            # Use as-is for other formats
+            # Unknown format - try to use as-is but warn
+            print(f"  WARNING: Unknown keypoint count ({num_keypoints}), using as-is")
             pose_75pt = pose_sequence
 
         return pose_75pt
@@ -106,23 +116,40 @@ class MotionBasedSegmenter:
         """
         Calculate hand velocity for each frame.
 
-        Uses hand keypoints (typically indices 4, 8, 12, 16, 20 for right hand,
-        and 25, 29, 33, 37, 41 for left hand in MediaPipe Holistic).
+        Expects 75-point format (converted by load_pose_file):
+        - Pose landmarks: indices 0-32 (33 points)
+        - Left hand landmarks: indices 33-53 (21 points)
+        - Right hand landmarks: indices 54-74 (21 points)
+
+        Hand keypoint mapping within each 21-point hand:
+        - 0=wrist, 4=thumb tip, 8=index tip, 12=middle tip, 16=ring tip, 20=pinky tip
 
         Args:
-            pose_sequence: Array of shape (num_frames, num_keypoints, 3)
+            pose_sequence: Array of shape (num_frames, 75, 3) - always 75 keypoints
 
         Returns:
             velocities: Array of shape (num_frames,) with average hand velocity per frame
         """
         num_frames = len(pose_sequence)
+        num_keypoints = pose_sequence.shape[1]
         velocities = np.zeros(num_frames)
 
-        # Hand keypoint indices (simplified - using wrist and fingertips)
-        # Adjust these based on your actual keypoint layout
-        right_hand_indices = [4, 8, 12, 16, 20]  # Right hand keypoints
-        left_hand_indices = [25, 29, 33, 37, 41]  # Left hand keypoints
-        hand_indices = right_hand_indices + left_hand_indices
+        # 75-point format: 33 pose + 21 left hand + 21 right hand
+        # Left hand: indices 33-53 (wrist=33, fingertips at 33+4, 33+8, 33+12, 33+16, 33+20)
+        # Right hand: indices 54-74 (wrist=54, fingertips at 54+4, 54+8, 54+12, 54+16, 54+20)
+        left_hand_indices = [33, 37, 41, 45, 49, 53]   # wrist + fingertips
+        right_hand_indices = [54, 58, 62, 66, 70, 74]  # wrist + fingertips
+        hand_indices = left_hand_indices + right_hand_indices
+
+        # Validate we have 75 keypoints (load_pose_file should ensure this)
+        if num_keypoints != 75:
+            print(f"  WARNING: Expected 75 keypoints but got {num_keypoints}")
+            # Adjust indices if needed for safety
+            hand_indices = [i for i in hand_indices if i < num_keypoints]
+
+        # Debug: check confidence values in first frame
+        sample_confidences = [pose_sequence[0, idx, 2] for idx in hand_indices if idx < num_keypoints]
+        print(f"  Sample hand confidences (frame 0): min={min(sample_confidences):.3f}, max={max(sample_confidences):.3f}")
 
         for i in range(1, num_frames):
             # Calculate displacement for each hand keypoint
@@ -136,7 +163,8 @@ class MotionBasedSegmenter:
                     confidence = pose_sequence[i, kp_idx, 2]
 
                     # Only use keypoints with sufficient confidence
-                    if confidence > 0.5:
+                    # Use > 0 instead of > 0.5 since some formats store 0/1 or have low confidence
+                    if confidence > 0 or np.any(prev_pos != 0) or np.any(curr_pos != 0):
                         displacement = np.linalg.norm(curr_pos - prev_pos)
                         displacements.append(displacement)
 
@@ -163,7 +191,22 @@ class MotionBasedSegmenter:
             segments: List of (start_frame, end_frame) tuples
         """
         num_frames = len(velocities)
-        is_moving = velocities > self.velocity_threshold
+
+        # Use adaptive threshold if velocity range is large
+        # This handles cases where pose coordinates are not normalized (0-1)
+        vel_max = np.max(velocities)
+        vel_median = np.median(velocities[velocities > 0]) if np.any(velocities > 0) else 0
+
+        if vel_max > 1.0:
+            # Non-normalized coordinates (pixel space)
+            # Use 20% of median velocity as threshold - robust to outliers
+            # This separates "at rest" (repeated frames, near-zero velocity) from actual motion
+            adaptive_threshold = max(vel_median * 0.2, vel_max * 0.02)
+            print(f"  Using adaptive threshold: {adaptive_threshold:.4f} (median={vel_median:.4f}, max={vel_max:.4f})")
+            is_moving = velocities > adaptive_threshold
+        else:
+            # Normalized coordinates (0-1 range) - use configured threshold
+            is_moving = velocities > self.velocity_threshold
 
         segments = []
         in_sign = False
@@ -199,11 +242,40 @@ class MotionBasedSegmenter:
 
         # Handle case where signing continues until end of video
         if in_sign:
-            sign_end = num_frames - 1
+            # Sign is still in progress at end - capture it
+            sign_end = num_frames - 1 - rest_counter  # Exclude trailing rest frames
             sign_duration = sign_end - sign_start
             if sign_duration >= self.min_sign_duration:
                 start_padded = max(0, sign_start - self.padding_before)
-                segments.append((start_padded, sign_end))
+                end_padded = min(num_frames - 1, sign_end + self.padding_after)
+                segments.append((start_padded, end_padded))
+
+        # Always check if there's uncaptured motion near the end
+        # This handles cases where the last sign wasn't detected due to rest duration requirements
+        last_segment_end = segments[-1][1] if segments else 0
+        remaining_frames = num_frames - last_segment_end
+
+        # Lower threshold for end detection - even short motion should be captured
+        min_end_duration = max(self.min_sign_duration // 2, 5)
+
+        if remaining_frames > min_end_duration:
+            # Check if there's significant motion after the last segment
+            motion_start = None
+            motion_end = None
+            motion_count = 0
+
+            for i in range(last_segment_end + 1, num_frames):
+                if is_moving[i]:
+                    if motion_start is None:
+                        motion_start = i
+                    motion_end = i
+                    motion_count += 1
+
+            # If we found any motion block, capture it
+            if motion_start is not None and motion_count >= min_end_duration:
+                start_padded = max(0, motion_start - self.padding_before)
+                end_padded = min(num_frames - 1, motion_end + self.padding_after)
+                segments.append((start_padded, end_padded))
 
         return segments
 

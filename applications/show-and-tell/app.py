@@ -40,7 +40,10 @@ sys.path.insert(0, str(MODELS_DIR / "openhands-modernized" / "src" / "util"))
 # IMPORTS FROM EXISTING LIBRARIES (no duplication)
 # ============================================================================
 
-# Import motion-based segmenter
+# Import segmenters
+# - Hybrid: uses pixel motion detection on video + pose slicing (preferred)
+# - Motion-based: uses pose keypoint velocity (fallback for pose-only uploads)
+from hybrid_segmenter import HybridSegmenter
 from motion_based_segmenter import MotionBasedSegmenter
 
 # Import model inference functions
@@ -554,8 +557,11 @@ def convert_video():
 @app.route('/api/segment', methods=['POST'])
 def segment_pose():
     """
-    Segment pose file using EXISTING MotionBasedSegmenter class
-    Predict using EXISTING predict_pose_file function
+    Segment pose file using hybrid segmentation:
+    1. Detect motion boundaries from original video (pixel-based)
+    2. Slice pose file at those boundaries
+
+    This is more robust than pose-keypoint-velocity-based segmentation.
     """
     try:
         session_dir = get_session_dir()
@@ -571,20 +577,51 @@ def segment_pose():
         for f in segments_dir.glob("*"):
             f.unlink()
 
-        # Use EXISTING MotionBasedSegmenter (from motion_based_segmenter.py)
-        segmenter = MotionBasedSegmenter(
-            velocity_threshold=0.02,
-            min_sign_duration=10,
-            min_rest_duration=5,
-            padding_before=3,
-            padding_after=3
-        )
+        # Find the original video file for motion detection
+        video_file = None
+        for ext in ['.webm', '.mp4', '.avi', '.mov']:
+            candidate = session_dir / f"capture{ext}"
+            if candidate.exists():
+                video_file = str(candidate)
+                break
 
-        segment_files = segmenter.segment_pose_file(
-            pose_file,
-            str(segments_dir),
-            verbose=True
-        )
+        if video_file:
+            # PREFERRED: Use hybrid segmenter (pixel motion detection + pose slicing)
+            # More robust since it uses actual pixel motion, not pose keypoint velocity
+            print("Using HYBRID segmentation (video motion + pose slicing)")
+            segmenter = HybridSegmenter(
+                motion_threshold=500000,   # Pixel sum threshold for motion
+                cooldown_frames=45,        # 1.5 seconds at 30 FPS to end sign
+                min_sign_frames=12,        # Minimum frames for valid sign
+                max_sign_frames=150,       # Maximum frames before splitting
+                padding_before=3,
+                padding_after=3
+            )
+
+            segment_files = segmenter.segment_video_and_pose(
+                video_file,
+                pose_file,
+                str(segments_dir),
+                verbose=True
+            )
+        else:
+            # FALLBACK: Use motion-based segmenter (pose keypoint velocity)
+            # Used when only a pose file is uploaded without source video
+            print("Using MOTION-BASED segmentation (pose keypoint velocity) - no source video available")
+            segmenter = MotionBasedSegmenter(
+                velocity_threshold=0.02,
+                min_sign_duration=10,
+                max_sign_duration=120,
+                min_rest_duration=45,  # 1.5 seconds at 30 FPS
+                padding_before=3,
+                padding_after=3
+            )
+
+            segment_files = segmenter.segment_pose_file(
+                pose_file,
+                str(segments_dir),
+                verbose=True
+            )
 
         if not segment_files:
             return jsonify({

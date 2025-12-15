@@ -52,7 +52,6 @@ checkpoints/
 models/wlasl_*_class_model/
 models/checkpoints/
 models/training-outputs/
-models/training-scripts/models/
 models/openhands-modernized/bin/
 
 # Dataset files (large, stored locally or external drive)
@@ -107,3 +106,4 @@ config/settings.json
 
 # Synthetic evaluation temporary results
 project-utilities/synthetic_evaluation/evaluation_results/
+config/settings.json.backup.*

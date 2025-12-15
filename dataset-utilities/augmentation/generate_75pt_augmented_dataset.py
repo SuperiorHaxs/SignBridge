@@ -85,25 +85,25 @@ AUGMENTATION_CONFIG = {
 # Calculate total augmentations (sum of all non-zero counts)
 NUM_AUGMENTATIONS = sum(count for count in AUGMENTATION_CONFIG.values() if count > 0)
 
-# Augmentation parameters (Updated for more aggressive augmentation)
-SHEAR_STD = 0.15                    # Increased from 0.1 (+50%)
-ROTATION_STD = 0.15                 # Increased from 0.1 (+50%, ~±7.5°)
-NOISE_LOW = 0.015                   # Increased from 0.01 (+50%)
-NOISE_MEDIUM = 0.025                # Increased from 0.02 (+25%)
-TRANSLATION_SMALL = 0.04            # Increased from 0.03 (+33%)
-TRANSLATION_MEDIUM = 0.08           # Increased from 0.05 (+60%)
-SCALE_SMALL = 0.90                  # Increased range from 0.95 (10% vs 5%)
-SCALE_LARGE = 1.10                  # Increased range from 1.05 (10% vs 5%)
-SPEED_SLOW = 0.75                   # Increased range from 0.85 (25% vs 15%)
-SPEED_FAST = 1.25                   # Increased range from 1.15 (25% vs 15%)
-SPEED_VERY_SLOW = 0.65              # NEW: Very slow variant
-SPEED_VERY_FAST = 1.35              # NEW: Very fast variant
+# Augmentation parameters (REDUCED intensity to avoid train/val distribution gap)
+SHEAR_STD = 0.08                    # Reduced from 0.15 (conservative)
+ROTATION_STD = 0.08                 # Reduced from 0.15 (~±4°)
+NOISE_LOW = 0.008                   # Reduced from 0.015
+NOISE_MEDIUM = 0.015                # Reduced from 0.025
+TRANSLATION_SMALL = 0.025           # Reduced from 0.04
+TRANSLATION_MEDIUM = 0.05           # Reduced from 0.08
+SCALE_SMALL = 0.93                  # Reduced range from 0.90 (7% vs 10%)
+SCALE_LARGE = 1.07                  # Reduced range from 1.10 (7% vs 10%)
+SPEED_SLOW = 0.85                   # Reduced range from 0.75 (15% vs 25%)
+SPEED_FAST = 1.15                   # Reduced range from 1.25 (15% vs 25%)
+SPEED_VERY_SLOW = 0.75              # Reduced from 0.65
+SPEED_VERY_FAST = 1.25              # Reduced from 1.35
 
-# Occlusion parameters (NEW)
-KEYPOINT_OCCLUSION_LOW = 0.10       # 10% keypoints dropped
-KEYPOINT_OCCLUSION_MEDIUM = 0.15    # 15% keypoints dropped
-KEYPOINT_OCCLUSION_HIGH = 0.20      # 20% keypoints dropped
-HAND_DROPOUT_PROB = 0.15            # 15% chance to drop entire hand
+# Occlusion parameters (REDUCED intensity)
+KEYPOINT_OCCLUSION_LOW = 0.05       # Reduced from 10% to 5%
+KEYPOINT_OCCLUSION_MEDIUM = 0.08    # Reduced from 15% to 8%
+KEYPOINT_OCCLUSION_HIGH = 0.12      # Reduced from 20% to 12%
+HAND_DROPOUT_PROB = 0.08            # Reduced from 15% to 8%
 
 # ============================================================================
 # DYNAMIC CLASS LOADING - No hardcoded lists!

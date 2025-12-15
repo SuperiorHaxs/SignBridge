@@ -45,6 +45,11 @@ function initialize() {
     displayGlossChips();
 
     elements.btnConstruct.addEventListener('click', constructSentence);
+
+    // Auto-trigger construction in demo mode
+    if (state.demoSample?.precomputed?.llm_sentence) {
+        constructSentence();
+    }
 }
 
 function displayGlossChips() {

@@ -82,7 +82,16 @@
                 <tr class="metric-row" data-metric="quality">
                     <td class="metric-name">
                         <span class="metric-title">Quality Score</span>
-                        <span class="metric-desc">Fluency (reference-free)</span>
+                        <span class="metric-desc">Fluency (GPT-2 perplexity)</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="gloss_accuracy">
+                    <td class="metric-name">
+                        <span class="metric-title">Gloss Accuracy</span>
+                        <span class="metric-desc">% glosses in sentence</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -101,7 +110,7 @@
         </table>
 
         <div class="metrics-note">
-            <strong>Metric Weights:</strong> Quality (40%), Coverage (25%), BERTScore (20%), BLEU (15%)
+            <strong>Metric Weights:</strong> Gloss Accuracy (35%), Quality (30%), BERTScore (20%), BLEU (15%)
         </div>
     </div>
 

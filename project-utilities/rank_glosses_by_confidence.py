@@ -2,19 +2,22 @@
 """
 rank_glosses_by_confidence.py
 
-Ranks glosses by their prediction confidence on test set samples.
-Runs model predictions on all test pickle files and ranks glosses by
-average confidence when the correct gloss appears in Top-3 predictions.
+Ranks glosses by their prediction accuracy and confidence on dataset samples.
+Runs model predictions on all pickle files in a split and ranks glosses by:
+  1) Top-1 accuracy (% of times gloss is correct in top-1)
+  2) Top-3 accuracy (% of times gloss is correct in top-3)
+  3) Average confidence when present in top-5
 
 Usage:
     python rank_glosses_by_confidence.py --dataset-path PATH --classes 100
+    python rank_glosses_by_confidence.py --dataset-path PATH --classes 100 --split val
     python rank_glosses_by_confidence.py --dataset-path PATH --classes 100 --checkpoint PATH
     python rank_glosses_by_confidence.py --dataset-path PATH --classes 100 --output results.json
 
 Example:
     python rank_glosses_by_confidence.py \
         --dataset-path "C:/Users/ashwi/Projects/WLASL-proj/asl-v1/datasets/wlasl_poses_complete/dataset_splits" \
-        --classes 100
+        --classes 100 --split val
 """
 
 import os
@@ -65,6 +68,12 @@ def main():
         default=None,
         help="Limit number of glosses to process (for testing)"
     )
+    parser.add_argument(
+        "--split", "-s",
+        default="test",
+        choices=["train", "val", "test"],
+        help="Dataset split to evaluate (default: test)"
+    )
 
     args = parser.parse_args()
 
@@ -85,17 +94,17 @@ def main():
         classes_dir / f"pickle_split_{args.classes}_class",
     ]
 
-    test_path = None
+    split_path = None
     for pickle_dir in possible_pickle_dirs:
-        candidate = pickle_dir / "test"
+        candidate = pickle_dir / args.split
         if candidate.exists():
-            test_path = candidate
+            split_path = candidate
             break
 
-    if test_path is None:
-        print(f"ERROR: Test path not found. Tried:")
+    if split_path is None:
+        print(f"ERROR: {args.split} path not found. Tried:")
         for p in possible_pickle_dirs:
-            print(f"  - {p / 'test'}")
+            print(f"  - {p / args.split}")
         sys.exit(1)
 
     # Auto-detect checkpoint if not provided
@@ -113,7 +122,8 @@ def main():
     print("=" * 70)
     print(f"Dataset path: {dataset_path}")
     print(f"Classes: {args.classes}")
-    print(f"Test path: {test_path}")
+    print(f"Split: {args.split}")
+    print(f"Split path: {split_path}")
     print(f"Checkpoint: {checkpoint_path}")
     print()
 
@@ -124,7 +134,7 @@ def main():
     print()
 
     # Get all gloss folders
-    gloss_folders = sorted([d for d in test_path.iterdir() if d.is_dir()])
+    gloss_folders = sorted([d for d in split_path.iterdir() if d.is_dir()])
     total_glosses = len(gloss_folders)
     print(f"Found {total_glosses} gloss folders")
 
@@ -144,108 +154,124 @@ def main():
             print(f"[{i}/{len(gloss_folders)}] {gloss_name}: No pickle files found")
             continue
 
-        correct_confidences = []
+        top1_correct = 0
+        top3_correct = 0
+        top5_confidences = []  # Confidence when present in top-5
         incorrect_predictions = []
-        total_correct = 0
         total_samples = len(pickle_files)
 
         for pkl_file in pickle_files:
             try:
                 result = predict_pose_file(str(pkl_file), model=model, tokenizer=tokenizer)
-                top_k_predictions = result['top_k_predictions'][:3]  # Top-3
+                top_k_predictions = result['top_k_predictions'][:5]  # Top-5
 
-                # Check if correct gloss is in Top-3
-                found_in_top_k = False
-                for pred in top_k_predictions:
+                # Check Top-1
+                if top_k_predictions and top_k_predictions[0]['gloss'].upper() == gloss_name:
+                    top1_correct += 1
+
+                # Check Top-3 and Top-5
+                found_in_top3 = False
+                found_in_top5 = False
+                for rank, pred in enumerate(top_k_predictions):
                     if pred['gloss'].upper() == gloss_name:
-                        correct_confidences.append(pred['confidence'])
-                        total_correct += 1
-                        found_in_top_k = True
+                        if rank < 3:
+                            found_in_top3 = True
+                        found_in_top5 = True
+                        top5_confidences.append(pred['confidence'])
                         break
 
-                if not found_in_top_k:
+                if found_in_top3:
+                    top3_correct += 1
+
+                if not found_in_top5:
                     incorrect_predictions.append({
                         'file': pkl_file.name,
-                        'top_3': [(p['gloss'], p['confidence']) for p in top_k_predictions]
+                        'top_5': [(p['gloss'], p['confidence']) for p in top_k_predictions]
                     })
             except Exception as e:
                 print(f"  Error processing {pkl_file.name}: {e}")
 
         # Calculate metrics
-        accuracy = total_correct / total_samples if total_samples > 0 else 0
-        avg_correct_conf = sum(correct_confidences) / len(correct_confidences) if correct_confidences else 0
-        weighted_score = accuracy * avg_correct_conf  # Weighted average of accuracy and confidence
+        top1_accuracy = top1_correct / total_samples if total_samples > 0 else 0
+        top3_accuracy = top3_correct / total_samples if total_samples > 0 else 0
+        avg_top5_conf = sum(top5_confidences) / len(top5_confidences) if top5_confidences else 0
 
         gloss_results[gloss_name] = {
             'gloss': gloss_name,
             'total_samples': total_samples,
-            'correct': total_correct,
-            'accuracy': accuracy,
-            'avg_correct_confidence': avg_correct_conf,
-            'weighted_score': weighted_score,
-            'correct_confidences': correct_confidences,
+            'top1_correct': top1_correct,
+            'top3_correct': top3_correct,
+            'top1_accuracy': top1_accuracy,
+            'top3_accuracy': top3_accuracy,
+            'avg_top5_confidence': avg_top5_conf,
+            'top5_confidences': top5_confidences,
             'incorrect_predictions': incorrect_predictions
         }
 
         # Progress output
-        conf_str = f"{avg_correct_conf:.1%}" if correct_confidences else "N/A"
-        print(f"[{i}/{len(gloss_folders)}] {gloss_name:15s} | Acc: {accuracy:.0%} ({total_correct}/{total_samples}) | Avg Conf: {conf_str}")
+        conf_str = f"{avg_top5_conf:.1%}" if top5_confidences else "N/A"
+        print(f"[{i}/{len(gloss_folders)}] {gloss_name:15s} | Top-1: {top1_accuracy:.0%} | Top-3: {top3_accuracy:.0%} | Avg Conf: {conf_str}")
 
     print()
-    print("=" * 70)
-    print("RANKING BY WEIGHTED SCORE (Accuracy x Confidence)")
-    print("=" * 70)
+    print("=" * 80)
+    print("RANKING BY: 1) Top-1 Accuracy, 2) Top-3 Accuracy, 3) Avg Top-5 Confidence")
+    print("=" * 80)
     print()
 
-    # Sort by weighted score (accuracy * confidence)
+    # Sort by: 1) top1_accuracy, 2) top3_accuracy, 3) avg_top5_confidence
     sorted_glosses = sorted(
         gloss_results.values(),
-        key=lambda x: x['weighted_score'],
+        key=lambda x: (x['top1_accuracy'], x['top3_accuracy'], x['avg_top5_confidence']),
         reverse=True
     )
 
-    print(f"{'Rank':<5} {'Gloss':<15} {'Top-3 Acc':<12} {'Avg Conf':<12} {'Weighted':<12} {'Samples':<10}")
-    print("-" * 70)
+    print(f"{'Rank':<5} {'Gloss':<15} {'Top-1 Acc':<12} {'Top-3 Acc':<12} {'Avg Conf':<12} {'Samples':<10}")
+    print("-" * 80)
 
     for rank, result in enumerate(sorted_glosses, 1):
-        acc_str = f"{result['accuracy']:.0%} ({result['correct']}/{result['total_samples']})"
-        conf_str = f"{result['avg_correct_confidence']:.1%}" if result['correct'] > 0 else "N/A"
-        weighted_str = f"{result['weighted_score']:.1%}" if result['correct'] > 0 else "N/A"
-        print(f"{rank:<5} {result['gloss']:<15} {acc_str:<12} {conf_str:<12} {weighted_str:<12} {result['total_samples']:<10}")
+        top1_str = f"{result['top1_accuracy']:.0%} ({result['top1_correct']}/{result['total_samples']})"
+        top3_str = f"{result['top3_accuracy']:.0%}"
+        conf_str = f"{result['avg_top5_confidence']:.1%}" if result['top5_confidences'] else "N/A"
+        print(f"{rank:<5} {result['gloss']:<15} {top1_str:<12} {top3_str:<12} {conf_str:<12} {result['total_samples']:<10}")
 
     # Summary statistics
     print()
-    print("=" * 70)
+    print("=" * 80)
     print("SUMMARY")
-    print("=" * 70)
+    print("=" * 80)
 
     total_samples = sum(r['total_samples'] for r in gloss_results.values())
-    total_correct = sum(r['correct'] for r in gloss_results.values())
-    overall_accuracy = total_correct / total_samples if total_samples > 0 else 0
+    total_top1_correct = sum(r['top1_correct'] for r in gloss_results.values())
+    total_top3_correct = sum(r['top3_correct'] for r in gloss_results.values())
+    overall_top1_accuracy = total_top1_correct / total_samples if total_samples > 0 else 0
+    overall_top3_accuracy = total_top3_correct / total_samples if total_samples > 0 else 0
 
     all_confidences = []
     for r in gloss_results.values():
-        all_confidences.extend(r['correct_confidences'])
+        all_confidences.extend(r['top5_confidences'])
 
     avg_confidence = sum(all_confidences) / len(all_confidences) if all_confidences else 0
 
     print(f"Total glosses: {len(gloss_results)}")
     print(f"Total samples: {total_samples}")
-    print(f"Overall Top-3 accuracy: {overall_accuracy:.1%} ({total_correct}/{total_samples})")
-    print(f"Average confidence (when in Top-3): {avg_confidence:.1%}")
+    print(f"Overall Top-1 accuracy: {overall_top1_accuracy:.1%} ({total_top1_correct}/{total_samples})")
+    print(f"Overall Top-3 accuracy: {overall_top3_accuracy:.1%} ({total_top3_correct}/{total_samples})")
+    print(f"Average confidence (when in Top-5): {avg_confidence:.1%}")
 
     # Top 10 and Bottom 10
     print()
-    print("Top 10 Best Glosses (by weighted score):")
+    print("Top 10 Best Glosses (by Top-1 accuracy):")
     for i, r in enumerate(sorted_glosses[:10], 1):
-        weighted_str = f"{r['weighted_score']:.1%}" if r['correct'] > 0 else "N/A"
-        print(f"  {i}. {r['gloss']} (weighted: {weighted_str})")
+        top1_str = f"{r['top1_accuracy']:.0%}"
+        top3_str = f"{r['top3_accuracy']:.0%}"
+        print(f"  {i}. {r['gloss']} (Top-1: {top1_str}, Top-3: {top3_str})")
 
     print()
-    print("Bottom 10 Worst Glosses (by weighted score):")
+    print("Bottom 10 Worst Glosses (by Top-1 accuracy):")
     for i, r in enumerate(sorted_glosses[-10:], 1):
-        weighted_str = f"{r['weighted_score']:.1%}" if r['correct'] > 0 else "N/A (0 correct)"
-        print(f"  {i}. {r['gloss']} (weighted: {weighted_str})")
+        top1_str = f"{r['top1_accuracy']:.0%}"
+        top3_str = f"{r['top3_accuracy']:.0%}"
+        print(f"  {i}. {r['gloss']} (Top-1: {top1_str}, Top-3: {top3_str})")
 
     # Save detailed results if output specified
     if args.output:
@@ -255,32 +281,37 @@ def main():
         output_data = {
             'summary': {
                 'classes': args.classes,
+                'split': args.split,
                 'total_glosses': len(gloss_results),
                 'total_samples': total_samples,
-                'total_correct': total_correct,
-                'overall_accuracy': overall_accuracy,
-                'avg_correct_confidence': avg_confidence
+                'total_top1_correct': total_top1_correct,
+                'total_top3_correct': total_top3_correct,
+                'overall_top1_accuracy': overall_top1_accuracy,
+                'overall_top3_accuracy': overall_top3_accuracy,
+                'avg_top5_confidence': avg_confidence
             },
             'ranking': [
                 {
                     'rank': i,
                     'gloss': r['gloss'],
-                    'accuracy': r['accuracy'],
-                    'correct': r['correct'],
+                    'top1_accuracy': r['top1_accuracy'],
+                    'top3_accuracy': r['top3_accuracy'],
+                    'top1_correct': r['top1_correct'],
+                    'top3_correct': r['top3_correct'],
                     'total_samples': r['total_samples'],
-                    'avg_correct_confidence': r['avg_correct_confidence'],
-                    'weighted_score': r['weighted_score']
+                    'avg_top5_confidence': r['avg_top5_confidence']
                 }
                 for i, r in enumerate(sorted_glosses, 1)
             ],
             'detailed_results': {
                 gloss: {
                     'gloss': data['gloss'],
-                    'accuracy': data['accuracy'],
-                    'correct': data['correct'],
+                    'top1_accuracy': data['top1_accuracy'],
+                    'top3_accuracy': data['top3_accuracy'],
+                    'top1_correct': data['top1_correct'],
+                    'top3_correct': data['top3_correct'],
                     'total_samples': data['total_samples'],
-                    'avg_correct_confidence': data['avg_correct_confidence'],
-                    'weighted_score': data['weighted_score'],
+                    'avg_top5_confidence': data['avg_top5_confidence'],
                     'incorrect_predictions': data['incorrect_predictions']
                 }
                 for gloss, data in gloss_results.items()

@@ -57,6 +57,11 @@ function initialize() {
     // Event listeners
     elements.btnEvaluate.addEventListener('click', evaluateSentences);
     elements.btnStartOver.addEventListener('click', startOver);
+
+    // Auto-trigger evaluation in demo mode
+    if (state.demoSample?.precomputed?.evaluation) {
+        evaluateSentences();
+    }
 }
 
 async function evaluateSentences() {
@@ -107,7 +112,7 @@ function useDemoEvaluation() {
 }
 
 function displayMetrics(rawMetrics, llmMetrics) {
-    const metrics = ['bleu', 'bert', 'quality', 'composite'];
+    const metrics = ['bleu', 'bert', 'quality', 'gloss_accuracy', 'composite'];
 
     metrics.forEach(metric => {
         const row = document.querySelector(`.metric-row[data-metric="${metric}"]`);

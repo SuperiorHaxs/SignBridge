@@ -1,0 +1,3589 @@
+{
+  "summary": {
+    "classes": 100,
+    "split": "test",
+    "total_glosses": 100,
+    "total_samples": 238,
+    "total_top1_correct": 94,
+    "total_top3_correct": 156,
+    "overall_top1_accuracy": 0.3949579831932773,
+    "overall_top3_accuracy": 0.6554621848739496,
+    "avg_top5_confidence": 0.46261561686162556
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "gloss": "DARK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9847748478253683
+    },
+    {
+      "rank": 2,
+      "gloss": "WALK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.98031218846639
+    },
+    {
+      "rank": 3,
+      "gloss": "CAN",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9626722633838654
+    },
+    {
+      "rank": 4,
+      "gloss": "BIRD",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9516393840312958
+    },
+    {
+      "rank": 5,
+      "gloss": "SON",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9383949041366577
+    },
+    {
+      "rank": 6,
+      "gloss": "STUDY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9149560332298279
+    },
+    {
+      "rank": 7,
+      "gloss": "WORK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9052651822566986
+    },
+    {
+      "rank": 8,
+      "gloss": "TABLE",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8888222873210907
+    },
+    {
+      "rank": 9,
+      "gloss": "FAMILY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8352635304133097
+    },
+    {
+      "rank": 10,
+      "gloss": "BLACK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8006866872310638
+    },
+    {
+      "rank": 11,
+      "gloss": "CHAIR",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.789042741060257
+    },
+    {
+      "rank": 12,
+      "gloss": "CHEAT",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.76922607421875
+    },
+    {
+      "rank": 13,
+      "gloss": "ENJOY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6908110082149506
+    },
+    {
+      "rank": 14,
+      "gloss": "TIME",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6107555627822876
+    },
+    {
+      "rank": 15,
+      "gloss": "WHITE",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5590671300888062
+    },
+    {
+      "rank": 16,
+      "gloss": "FORGET",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4809064567089081
+    },
+    {
+      "rank": 17,
+      "gloss": "THANKSGIVING",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.6138821641604105
+    },
+    {
+      "rank": 18,
+      "gloss": "BOWLING",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.6123258279015621
+    },
+    {
+      "rank": 19,
+      "gloss": "THIN",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9812712371349335
+    },
+    {
+      "rank": 20,
+      "gloss": "LAST",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8408513367176056
+    },
+    {
+      "rank": 21,
+      "gloss": "CHANGE",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8113074898719788
+    },
+    {
+      "rank": 22,
+      "gloss": "TALL",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.7494031190872192
+    },
+    {
+      "rank": 23,
+      "gloss": "ACCIDENT",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.525202880303065
+    },
+    {
+      "rank": 24,
+      "gloss": "MOTHER",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.4320387989282608
+    },
+    {
+      "rank": 25,
+      "gloss": "PAPER",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5366381481289864
+    },
+    {
+      "rank": 26,
+      "gloss": "FINE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5158669203519821
+    },
+    {
+      "rank": 27,
+      "gloss": "SECRETARY",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.43328432738780975
+    },
+    {
+      "rank": 28,
+      "gloss": "FULL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4230843558907509
+    },
+    {
+      "rank": 29,
+      "gloss": "DANCE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.414828110486269
+    },
+    {
+      "rank": 30,
+      "gloss": "CLOTHES",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.38267322815954685
+    },
+    {
+      "rank": 31,
+      "gloss": "COW",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.36990570556372404
+    },
+    {
+      "rank": 32,
+      "gloss": "EAT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.3097887486219406
+    },
+    {
+      "rank": 33,
+      "gloss": "SCHOOL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.22959889634512365
+    },
+    {
+      "rank": 34,
+      "gloss": "RIGHT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.17039912939071655
+    },
+    {
+      "rank": 35,
+      "gloss": "NOW",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9619300365447998
+    },
+    {
+      "rank": 36,
+      "gloss": "WAIT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.959589958190918
+    },
+    {
+      "rank": 37,
+      "gloss": "MEET",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9547467231750488
+    },
+    {
+      "rank": 38,
+      "gloss": "HOT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9528875350952148
+    },
+    {
+      "rank": 39,
+      "gloss": "ALL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9414979219436646
+    },
+    {
+      "rank": 40,
+      "gloss": "COOK",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9360864758491516
+    },
+    {
+      "rank": 41,
+      "gloss": "KISS",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8878358602523804
+    },
+    {
+      "rank": 42,
+      "gloss": "FINISH",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.7643739581108093
+    },
+    {
+      "rank": 43,
+      "gloss": "TELL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6869727373123169
+    },
+    {
+      "rank": 44,
+      "gloss": "WATER",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6035164594650269
+    },
+    {
+      "rank": 45,
+      "gloss": "CITY",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5882683396339417
+    },
+    {
+      "rank": 46,
+      "gloss": "GIVE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5038941502571106
+    },
+    {
+      "rank": 47,
+      "gloss": "DECIDE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5004465579986572
+    },
+    {
+      "rank": 48,
+      "gloss": "BOOK",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4416942596435547
+    },
+    {
+      "rank": 49,
+      "gloss": "BLUE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.43991742096841335
+    },
+    {
+      "rank": 50,
+      "gloss": "WRONG",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.31798484176397324
+    },
+    {
+      "rank": 51,
+      "gloss": "PURPLE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.24219148606061935
+    },
+    {
+      "rank": 52,
+      "gloss": "WHO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.38044481972853345
+    },
+    {
+      "rank": 53,
+      "gloss": "DEAF",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.33901865283648175
+    },
+    {
+      "rank": 54,
+      "gloss": "COMPUTER",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.2880092281848192
+    },
+    {
+      "rank": 55,
+      "gloss": "SHORT",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.26544617116451263
+    },
+    {
+      "rank": 56,
+      "gloss": "BASKETBALL",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.40026944666169584
+    },
+    {
+      "rank": 57,
+      "gloss": "MAN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.39408984407782555
+    },
+    {
+      "rank": 58,
+      "gloss": "WOMAN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3244009017944336
+    },
+    {
+      "rank": 59,
+      "gloss": "LETTER",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3157828239103158
+    },
+    {
+      "rank": 60,
+      "gloss": "DOG",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.24513210852940878
+    },
+    {
+      "rank": 61,
+      "gloss": "BED",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9063427448272705
+    },
+    {
+      "rank": 62,
+      "gloss": "GO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9036633372306824
+    },
+    {
+      "rank": 63,
+      "gloss": "DRINK",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.4915212392807007
+    },
+    {
+      "rank": 64,
+      "gloss": "NO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.479435533285141
+    },
+    {
+      "rank": 65,
+      "gloss": "SHIRT",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.41885894536972046
+    },
+    {
+      "rank": 66,
+      "gloss": "CORN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3868981720879674
+    },
+    {
+      "rank": 67,
+      "gloss": "PLAY",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.33185237521926564
+    },
+    {
+      "rank": 68,
+      "gloss": "LIKE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.34013472497463226
+    },
+    {
+      "rank": 69,
+      "gloss": "BROWN",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.272953137755394
+    },
+    {
+      "rank": 70,
+      "gloss": "BIRTHDAY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2656374052166939
+    },
+    {
+      "rank": 71,
+      "gloss": "YEAR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2585148587822914
+    },
+    {
+      "rank": 72,
+      "gloss": "COUSIN",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.13870353996753693
+    },
+    {
+      "rank": 73,
+      "gloss": "AFRICA",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.12747493386268616
+    },
+    {
+      "rank": 74,
+      "gloss": "LATER",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.0971981647113959
+    },
+    {
+      "rank": 75,
+      "gloss": "DOCTOR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.011358810821548104
+    },
+    {
+      "rank": 76,
+      "gloss": "CANDY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.10560380481183529
+    },
+    {
+      "rank": 77,
+      "gloss": "HAT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.34179720282554626
+    },
+    {
+      "rank": 78,
+      "gloss": "HEARING",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2893628478050232
+    },
+    {
+      "rank": 79,
+      "gloss": "SAME",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.1882845163345337
+    },
+    {
+      "rank": 80,
+      "gloss": "COLOR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.17781688272953033
+    },
+    {
+      "rank": 81,
+      "gloss": "PINK",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.1523391604423523
+    },
+    {
+      "rank": 82,
+      "gloss": "GRADUATE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.11658463254570961
+    },
+    {
+      "rank": 83,
+      "gloss": "BUT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.11434459686279297
+    },
+    {
+      "rank": 84,
+      "gloss": "JACKET",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.030958631075918674
+    },
+    {
+      "rank": 85,
+      "gloss": "WIFE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.018433427438139915
+    },
+    {
+      "rank": 86,
+      "gloss": "ORANGE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.014029997400939465
+    },
+    {
+      "rank": 87,
+      "gloss": "WANT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.01228264020755887
+    },
+    {
+      "rank": 88,
+      "gloss": "YES",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.21907637640833855
+    },
+    {
+      "rank": 89,
+      "gloss": "BEFORE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.1783660501241684
+    },
+    {
+      "rank": 90,
+      "gloss": "HELP",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.163202536602815
+    },
+    {
+      "rank": 91,
+      "gloss": "APPLE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.10586171597242355
+    },
+    {
+      "rank": 92,
+      "gloss": "COOL",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.07624833285808563
+    },
+    {
+      "rank": 93,
+      "gloss": "WHAT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.05943192169070244
+    },
+    {
+      "rank": 94,
+      "gloss": "PIZZA",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.04899299889802933
+    },
+    {
+      "rank": 95,
+      "gloss": "FISH",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.005564468447118998
+    },
+    {
+      "rank": 96,
+      "gloss": "MANY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.004278566688299179
+    },
+    {
+      "rank": 97,
+      "gloss": "LANGUAGE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0
+    },
+    {
+      "rank": 98,
+      "gloss": "NEED",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0
+    },
+    {
+      "rank": 99,
+      "gloss": "THURSDAY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 3,
+      "avg_top5_confidence": 0
+    },
+    {
+      "rank": 100,
+      "gloss": "YELLOW",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0
+    }
+  ],
+  "detailed_results": {
+    "ACCIDENT": {
+      "gloss": "ACCIDENT",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.525202880303065,
+      "incorrect_predictions": []
+    },
+    "AFRICA": {
+      "gloss": "AFRICA",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.12747493386268616,
+      "incorrect_predictions": []
+    },
+    "ALL": {
+      "gloss": "ALL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9414979219436646,
+      "incorrect_predictions": [
+        {
+          "file": "65043.pkl",
+          "top_5": [
+            [
+              "fish",
+              0.8440525531768799
+            ],
+            [
+              "help",
+              0.040932636708021164
+            ],
+            [
+              "doctor",
+              0.03746777027845383
+            ],
+            [
+              "cook",
+              0.02748611383140087
+            ],
+            [
+              "before",
+              0.018460748717188835
+            ]
+          ]
+        }
+      ]
+    },
+    "APPLE": {
+      "gloss": "APPLE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.10586171597242355,
+      "incorrect_predictions": [
+        {
+          "file": "65085.pkl",
+          "top_5": [
+            [
+              "kiss",
+              0.39992326498031616
+            ],
+            [
+              "right",
+              0.2696065604686737
+            ],
+            [
+              "cow",
+              0.1784556657075882
+            ],
+            [
+              "bowling",
+              0.1045350581407547
+            ],
+            [
+              "dog",
+              0.005572728347033262
+            ]
+          ]
+        },
+        {
+          "file": "65086.pkl",
+          "top_5": [
+            [
+              "cow",
+              0.3196163475513458
+            ],
+            [
+              "right",
+              0.27617907524108887
+            ],
+            [
+              "kiss",
+              0.24754169583320618
+            ],
+            [
+              "bowling",
+              0.10713747888803482
+            ],
+            [
+              "dog",
+              0.005976735148578882
+            ]
+          ]
+        }
+      ]
+    },
+    "BASKETBALL": {
+      "gloss": "BASKETBALL",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.40026944666169584,
+      "incorrect_predictions": [
+        {
+          "file": "65144.pkl",
+          "top_5": [
+            [
+              "corn",
+              0.9405232667922974
+            ],
+            [
+              "bird",
+              0.01844261772930622
+            ],
+            [
+              "can",
+              0.01019718311727047
+            ],
+            [
+              "apple",
+              0.007370057050138712
+            ],
+            [
+              "go",
+              0.004149673972278833
+            ]
+          ]
+        }
+      ]
+    },
+    "BED": {
+      "gloss": "BED",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9063427448272705,
+      "incorrect_predictions": [
+        {
+          "file": "65161.pkl",
+          "top_5": [
+            [
+              "drink",
+              0.7528784871101379
+            ],
+            [
+              "africa",
+              0.06472089886665344
+            ],
+            [
+              "mother",
+              0.04514170065522194
+            ],
+            [
+              "bird",
+              0.03690719977021217
+            ],
+            [
+              "brown",
+              0.025741739198565483
+            ]
+          ]
+        },
+        {
+          "file": "65163.pkl",
+          "top_5": [
+            [
+              "kiss",
+              0.32160109281539917
+            ],
+            [
+              "bowling",
+              0.2879093289375305
+            ],
+            [
+              "right",
+              0.27057763934135437
+            ],
+            [
+              "cow",
+              0.06594912707805634
+            ],
+            [
+              "fine",
+              0.005478841718286276
+            ]
+          ]
+        }
+      ]
+    },
+    "BEFORE": {
+      "gloss": "BEFORE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.1783660501241684,
+      "incorrect_predictions": [
+        {
+          "file": "05749.pkl",
+          "top_5": [
+            [
+              "shirt",
+              0.3370085060596466
+            ],
+            [
+              "tall",
+              0.13838347792625427
+            ],
+            [
+              "yellow",
+              0.09266297519207001
+            ],
+            [
+              "forget",
+              0.08587575703859329
+            ],
+            [
+              "short",
+              0.06581353396177292
+            ]
+          ]
+        },
+        {
+          "file": "05750.pkl",
+          "top_5": [
+            [
+              "paper",
+              0.30797943472862244
+            ],
+            [
+              "computer",
+              0.30475836992263794
+            ],
+            [
+              "school",
+              0.13877855241298676
+            ],
+            [
+              "table",
+              0.13014964759349823
+            ],
+            [
+              "wife",
+              0.04806860536336899
+            ]
+          ]
+        }
+      ]
+    },
+    "BIRD": {
+      "gloss": "BIRD",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9516393840312958,
+      "incorrect_predictions": []
+    },
+    "BIRTHDAY": {
+      "gloss": "BIRTHDAY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2656374052166939,
+      "incorrect_predictions": []
+    },
+    "BLACK": {
+      "gloss": "BLACK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8006866872310638,
+      "incorrect_predictions": []
+    },
+    "BLUE": {
+      "gloss": "BLUE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.43991742096841335,
+      "incorrect_predictions": []
+    },
+    "BOOK": {
+      "gloss": "BOOK",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4416942596435547,
+      "incorrect_predictions": [
+        {
+          "file": "69241.pkl",
+          "top_5": [
+            [
+              "fish",
+              0.8601746559143066
+            ],
+            [
+              "walk",
+              0.0252341590821743
+            ],
+            [
+              "cheat",
+              0.015157303772866726
+            ],
+            [
+              "bowling",
+              0.014230464585125446
+            ],
+            [
+              "want",
+              0.009798469953238964
+            ]
+          ]
+        }
+      ]
+    },
+    "BOWLING": {
+      "gloss": "BOWLING",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.6123258279015621,
+      "incorrect_predictions": []
+    },
+    "BROWN": {
+      "gloss": "BROWN",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.272953137755394,
+      "incorrect_predictions": []
+    },
+    "BUT": {
+      "gloss": "BUT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.11434459686279297,
+      "incorrect_predictions": [
+        {
+          "file": "08437.pkl",
+          "top_5": [
+            [
+              "can",
+              0.46416303515434265
+            ],
+            [
+              "walk",
+              0.42074400186538696
+            ],
+            [
+              "clothes",
+              0.054891038686037064
+            ],
+            [
+              "short",
+              0.014600989408791065
+            ],
+            [
+              "need",
+              0.0060575054958462715
+            ]
+          ]
+        }
+      ]
+    },
+    "CAN": {
+      "gloss": "CAN",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9626722633838654,
+      "incorrect_predictions": []
+    },
+    "CANDY": {
+      "gloss": "CANDY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.10560380481183529,
+      "incorrect_predictions": []
+    },
+    "CHAIR": {
+      "gloss": "CHAIR",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.789042741060257,
+      "incorrect_predictions": []
+    },
+    "CHANGE": {
+      "gloss": "CHANGE",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8113074898719788,
+      "incorrect_predictions": [
+        {
+          "file": "09970.pkl",
+          "top_5": [
+            [
+              "paper",
+              0.8177184462547302
+            ],
+            [
+              "school",
+              0.08462397009134293
+            ],
+            [
+              "full",
+              0.025147920474410057
+            ],
+            [
+              "meet",
+              0.01934690587222576
+            ],
+            [
+              "book",
+              0.01696022041141987
+            ]
+          ]
+        }
+      ]
+    },
+    "CHEAT": {
+      "gloss": "CHEAT",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.76922607421875,
+      "incorrect_predictions": []
+    },
+    "CITY": {
+      "gloss": "CITY",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5882683396339417,
+      "incorrect_predictions": [
+        {
+          "file": "65363.pkl",
+          "top_5": [
+            [
+              "blue",
+              0.42444849014282227
+            ],
+            [
+              "family",
+              0.10823307186365128
+            ],
+            [
+              "cousin",
+              0.09011048823595047
+            ],
+            [
+              "tall",
+              0.08598414808511734
+            ],
+            [
+              "before",
+              0.04645092785358429
+            ]
+          ]
+        }
+      ]
+    },
+    "CLOTHES": {
+      "gloss": "CLOTHES",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.38267322815954685,
+      "incorrect_predictions": []
+    },
+    "COLOR": {
+      "gloss": "COLOR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.17781688272953033,
+      "incorrect_predictions": [
+        {
+          "file": "69274.pkl",
+          "top_5": [
+            [
+              "bowling",
+              0.9541193842887878
+            ],
+            [
+              "right",
+              0.01604999601840973
+            ],
+            [
+              "kiss",
+              0.006943358574062586
+            ],
+            [
+              "now",
+              0.004137219395488501
+            ],
+            [
+              "dog",
+              0.00400471780449152
+            ]
+          ]
+        }
+      ]
+    },
+    "COMPUTER": {
+      "gloss": "COMPUTER",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.2880092281848192,
+      "incorrect_predictions": []
+    },
+    "COOK": {
+      "gloss": "COOK",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9360864758491516,
+      "incorrect_predictions": [
+        {
+          "file": "13167.pkl",
+          "top_5": [
+            [
+              "jacket",
+              0.5837857127189636
+            ],
+            [
+              "accident",
+              0.24071598052978516
+            ],
+            [
+              "full",
+              0.10871759057044983
+            ],
+            [
+              "secretary",
+              0.024013737216591835
+            ],
+            [
+              "but",
+              0.004812372848391533
+            ]
+          ]
+        }
+      ]
+    },
+    "COOL": {
+      "gloss": "COOL",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.07624833285808563,
+      "incorrect_predictions": [
+        {
+          "file": "65402.pkl",
+          "top_5": [
+            [
+              "cow",
+              0.5452590584754944
+            ],
+            [
+              "kiss",
+              0.15813572704792023
+            ],
+            [
+              "bowling",
+              0.13653965294361115
+            ],
+            [
+              "right",
+              0.11514690518379211
+            ],
+            [
+              "dog",
+              0.004851387348026037
+            ]
+          ]
+        },
+        {
+          "file": "69281.pkl",
+          "top_5": [
+            [
+              "bowling",
+              0.32502514123916626
+            ],
+            [
+              "kiss",
+              0.2390705943107605
+            ],
+            [
+              "right",
+              0.20583805441856384
+            ],
+            [
+              "cow",
+              0.17176145315170288
+            ],
+            [
+              "dog",
+              0.007913902401924133
+            ]
+          ]
+        }
+      ]
+    },
+    "CORN": {
+      "gloss": "CORN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3868981720879674,
+      "incorrect_predictions": [
+        {
+          "file": "65409.pkl",
+          "top_5": [
+            [
+              "kiss",
+              0.30952203273773193
+            ],
+            [
+              "shirt",
+              0.2592812478542328
+            ],
+            [
+              "last",
+              0.09943030029535294
+            ],
+            [
+              "thin",
+              0.05084899067878723
+            ],
+            [
+              "study",
+              0.04214617609977722
+            ]
+          ]
+        }
+      ]
+    },
+    "COUSIN": {
+      "gloss": "COUSIN",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.13870353996753693,
+      "incorrect_predictions": []
+    },
+    "COW": {
+      "gloss": "COW",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.36990570556372404,
+      "incorrect_predictions": []
+    },
+    "DANCE": {
+      "gloss": "DANCE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.414828110486269,
+      "incorrect_predictions": []
+    },
+    "DARK": {
+      "gloss": "DARK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9847748478253683,
+      "incorrect_predictions": []
+    },
+    "DEAF": {
+      "gloss": "DEAF",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.33901865283648175,
+      "incorrect_predictions": []
+    },
+    "DECIDE": {
+      "gloss": "DECIDE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5004465579986572,
+      "incorrect_predictions": [
+        {
+          "file": "65450.pkl",
+          "top_5": [
+            [
+              "go",
+              0.44139984250068665
+            ],
+            [
+              "can",
+              0.26092275977134705
+            ],
+            [
+              "corn",
+              0.17981550097465515
+            ],
+            [
+              "language",
+              0.04123034328222275
+            ],
+            [
+              "bird",
+              0.01219893991947174
+            ]
+          ]
+        }
+      ]
+    },
+    "DOCTOR": {
+      "gloss": "DOCTOR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.011358810821548104,
+      "incorrect_predictions": []
+    },
+    "DOG": {
+      "gloss": "DOG",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.24513210852940878,
+      "incorrect_predictions": []
+    },
+    "DRINK": {
+      "gloss": "DRINK",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.4915212392807007,
+      "incorrect_predictions": [
+        {
+          "file": "65540.pkl",
+          "top_5": [
+            [
+              "cow",
+              0.9587916135787964
+            ],
+            [
+              "computer",
+              0.013149081729352474
+            ],
+            [
+              "black",
+              0.009052627719938755
+            ],
+            [
+              "dark",
+              0.0035817173775285482
+            ],
+            [
+              "work",
+              0.0029290765523910522
+            ]
+          ]
+        }
+      ]
+    },
+    "EAT": {
+      "gloss": "EAT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.3097887486219406,
+      "incorrect_predictions": []
+    },
+    "ENJOY": {
+      "gloss": "ENJOY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6908110082149506,
+      "incorrect_predictions": []
+    },
+    "FAMILY": {
+      "gloss": "FAMILY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8352635304133097,
+      "incorrect_predictions": []
+    },
+    "FINE": {
+      "gloss": "FINE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5158669203519821,
+      "incorrect_predictions": []
+    },
+    "FINISH": {
+      "gloss": "FINISH",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.7643739581108093,
+      "incorrect_predictions": [
+        {
+          "file": "21951.pkl",
+          "top_5": [
+            [
+              "dog",
+              0.3064001202583313
+            ],
+            [
+              "fish",
+              0.25826895236968994
+            ],
+            [
+              "yellow",
+              0.2574183940887451
+            ],
+            [
+              "short",
+              0.07757417857646942
+            ],
+            [
+              "bowling",
+              0.024498382583260536
+            ]
+          ]
+        }
+      ]
+    },
+    "FISH": {
+      "gloss": "FISH",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.005564468447118998,
+      "incorrect_predictions": [
+        {
+          "file": "69325.pkl",
+          "top_5": [
+            [
+              "bowling",
+              0.6954105496406555
+            ],
+            [
+              "kiss",
+              0.14994868636131287
+            ],
+            [
+              "right",
+              0.10135605931282043
+            ],
+            [
+              "cow",
+              0.018779926002025604
+            ],
+            [
+              "dog",
+              0.008948944509029388
+            ]
+          ]
+        }
+      ]
+    },
+    "FORGET": {
+      "gloss": "FORGET",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4809064567089081,
+      "incorrect_predictions": []
+    },
+    "FULL": {
+      "gloss": "FULL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.4230843558907509,
+      "incorrect_predictions": []
+    },
+    "GIVE": {
+      "gloss": "GIVE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5038941502571106,
+      "incorrect_predictions": [
+        {
+          "file": "24660.pkl",
+          "top_5": [
+            [
+              "walk",
+              0.6119876503944397
+            ],
+            [
+              "clothes",
+              0.16404634714126587
+            ],
+            [
+              "cheat",
+              0.059345267713069916
+            ],
+            [
+              "shirt",
+              0.04832767695188522
+            ],
+            [
+              "study",
+              0.03001171350479126
+            ]
+          ]
+        }
+      ]
+    },
+    "GO": {
+      "gloss": "GO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9036633372306824,
+      "incorrect_predictions": [
+        {
+          "file": "24973.pkl",
+          "top_5": [
+            [
+              "can",
+              0.9371533989906311
+            ],
+            [
+              "need",
+              0.015647079795598984
+            ],
+            [
+              "language",
+              0.005606385413557291
+            ],
+            [
+              "walk",
+              0.0052154790610075
+            ],
+            [
+              "clothes",
+              0.0051727332174777985
+            ]
+          ]
+        },
+        {
+          "file": "65824.pkl",
+          "top_5": [
+            [
+              "same",
+              0.4112076759338379
+            ],
+            [
+              "walk",
+              0.2515190839767456
+            ],
+            [
+              "like",
+              0.17853930592536926
+            ],
+            [
+              "can",
+              0.054139211773872375
+            ],
+            [
+              "cheat",
+              0.025249915197491646
+            ]
+          ]
+        }
+      ]
+    },
+    "GRADUATE": {
+      "gloss": "GRADUATE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.11658463254570961,
+      "incorrect_predictions": []
+    },
+    "HAT": {
+      "gloss": "HAT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.34179720282554626,
+      "incorrect_predictions": [
+        {
+          "file": "69359.pkl",
+          "top_5": [
+            [
+              "cow",
+              0.42156171798706055
+            ],
+            [
+              "kiss",
+              0.320977121591568
+            ],
+            [
+              "bowling",
+              0.16766496002674103
+            ],
+            [
+              "right",
+              0.023652609437704086
+            ],
+            [
+              "thin",
+              0.01713327318429947
+            ]
+          ]
+        }
+      ]
+    },
+    "HEARING": {
+      "gloss": "HEARING",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2893628478050232,
+      "incorrect_predictions": [
+        {
+          "file": "26980.pkl",
+          "top_5": [
+            [
+              "tell",
+              0.4953441619873047
+            ],
+            [
+              "candy",
+              0.38554272055625916
+            ],
+            [
+              "drink",
+              0.027693655341863632
+            ],
+            [
+              "cool",
+              0.019140558317303658
+            ],
+            [
+              "pink",
+              0.014549341052770615
+            ]
+          ]
+        }
+      ]
+    },
+    "HELP": {
+      "gloss": "HELP",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.163202536602815,
+      "incorrect_predictions": []
+    },
+    "HOT": {
+      "gloss": "HOT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9528875350952148,
+      "incorrect_predictions": [
+        {
+          "file": "28125.pkl",
+          "top_5": [
+            [
+              "thanksgiving",
+              0.8885484933853149
+            ],
+            [
+              "woman",
+              0.05993648245930672
+            ],
+            [
+              "orange",
+              0.030687695369124413
+            ],
+            [
+              "who",
+              0.005868392065167427
+            ],
+            [
+              "thin",
+              0.0034743566066026688
+            ]
+          ]
+        }
+      ]
+    },
+    "JACKET": {
+      "gloss": "JACKET",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.030958631075918674,
+      "incorrect_predictions": []
+    },
+    "KISS": {
+      "gloss": "KISS",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8878358602523804,
+      "incorrect_predictions": [
+        {
+          "file": "65996.pkl",
+          "top_5": [
+            [
+              "but",
+              0.8372694849967957
+            ],
+            [
+              "no",
+              0.04272126778960228
+            ],
+            [
+              "blue",
+              0.026523632928729057
+            ],
+            [
+              "go",
+              0.01467980071902275
+            ],
+            [
+              "change",
+              0.011783543042838573
+            ]
+          ]
+        }
+      ]
+    },
+    "LANGUAGE": {
+      "gloss": "LANGUAGE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0,
+      "incorrect_predictions": [
+        {
+          "file": "66007.pkl",
+          "top_5": [
+            [
+              "walk",
+              0.47101977467536926
+            ],
+            [
+              "can",
+              0.35126543045043945
+            ],
+            [
+              "clothes",
+              0.1298832893371582
+            ],
+            [
+              "short",
+              0.012633242644369602
+            ],
+            [
+              "play",
+              0.009061228483915329
+            ]
+          ]
+        },
+        {
+          "file": "66008.pkl",
+          "top_5": [
+            [
+              "can",
+              0.3871133327484131
+            ],
+            [
+              "walk",
+              0.3757176399230957
+            ],
+            [
+              "clothes",
+              0.1403685212135315
+            ],
+            [
+              "short",
+              0.03831665590405464
+            ],
+            [
+              "need",
+              0.007230693940073252
+            ]
+          ]
+        }
+      ]
+    },
+    "LAST": {
+      "gloss": "LAST",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.8408513367176056,
+      "incorrect_predictions": [
+        {
+          "file": "32261.pkl",
+          "top_5": [
+            [
+              "forget",
+              0.4002058207988739
+            ],
+            [
+              "tall",
+              0.1792830228805542
+            ],
+            [
+              "white",
+              0.14625664055347443
+            ],
+            [
+              "shirt",
+              0.09032493084669113
+            ],
+            [
+              "short",
+              0.029100781306624413
+            ]
+          ]
+        }
+      ]
+    },
+    "LATER": {
+      "gloss": "LATER",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.0971981647113959,
+      "incorrect_predictions": []
+    },
+    "LETTER": {
+      "gloss": "LETTER",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3157828239103158,
+      "incorrect_predictions": []
+    },
+    "LIKE": {
+      "gloss": "LIKE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.34013472497463226,
+      "incorrect_predictions": []
+    },
+    "MAN": {
+      "gloss": "MAN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.39408984407782555,
+      "incorrect_predictions": [
+        {
+          "file": "69395.pkl",
+          "top_5": [
+            [
+              "bowling",
+              0.360493004322052
+            ],
+            [
+              "kiss",
+              0.3194788694381714
+            ],
+            [
+              "right",
+              0.18286214768886566
+            ],
+            [
+              "cow",
+              0.0778636634349823
+            ],
+            [
+              "dog",
+              0.007376215420663357
+            ]
+          ]
+        }
+      ]
+    },
+    "MANY": {
+      "gloss": "MANY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.004278566688299179,
+      "incorrect_predictions": [
+        {
+          "file": "69396.pkl",
+          "top_5": [
+            [
+              "now",
+              0.9467641711235046
+            ],
+            [
+              "what",
+              0.026235001161694527
+            ],
+            [
+              "want",
+              0.013066278770565987
+            ],
+            [
+              "bowling",
+              0.00325206620618701
+            ],
+            [
+              "cook",
+              0.0015775120118632913
+            ]
+          ]
+        }
+      ]
+    },
+    "MEET": {
+      "gloss": "MEET",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9547467231750488,
+      "incorrect_predictions": [
+        {
+          "file": "66112.pkl",
+          "top_5": [
+            [
+              "but",
+              0.7448390126228333
+            ],
+            [
+              "secretary",
+              0.07214529812335968
+            ],
+            [
+              "finish",
+              0.04654102772474289
+            ],
+            [
+              "jacket",
+              0.034483976662158966
+            ],
+            [
+              "language",
+              0.02382368966937065
+            ]
+          ]
+        }
+      ]
+    },
+    "MOTHER": {
+      "gloss": "MOTHER",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.4320387989282608,
+      "incorrect_predictions": [
+        {
+          "file": "69402.pkl",
+          "top_5": [
+            [
+              "right",
+              0.5365294814109802
+            ],
+            [
+              "kiss",
+              0.38662391901016235
+            ],
+            [
+              "cow",
+              0.030447525903582573
+            ],
+            [
+              "bowling",
+              0.00926866102963686
+            ],
+            [
+              "wife",
+              0.004488985054194927
+            ]
+          ]
+        }
+      ]
+    },
+    "NEED": {
+      "gloss": "NEED",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0,
+      "incorrect_predictions": [
+        {
+          "file": "37886.pkl",
+          "top_5": [
+            [
+              "short",
+              0.5851597785949707
+            ],
+            [
+              "dog",
+              0.10812951624393463
+            ],
+            [
+              "bowling",
+              0.08344357460737228
+            ],
+            [
+              "purple",
+              0.08314806967973709
+            ],
+            [
+              "fish",
+              0.03844491019845009
+            ]
+          ]
+        },
+        {
+          "file": "37894.pkl",
+          "top_5": [
+            [
+              "short",
+              0.8225372433662415
+            ],
+            [
+              "yellow",
+              0.04581467807292938
+            ],
+            [
+              "dog",
+              0.024388492107391357
+            ],
+            [
+              "purple",
+              0.023701906204223633
+            ],
+            [
+              "pizza",
+              0.017006704583764076
+            ]
+          ]
+        }
+      ]
+    },
+    "NO": {
+      "gloss": "NO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.479435533285141,
+      "incorrect_predictions": [
+        {
+          "file": "38544.pkl",
+          "top_5": [
+            [
+              "pizza",
+              0.3774036765098572
+            ],
+            [
+              "woman",
+              0.23653969168663025
+            ],
+            [
+              "cool",
+              0.06811638176441193
+            ],
+            [
+              "fine",
+              0.0624542236328125
+            ],
+            [
+              "thanksgiving",
+              0.05919871851801872
+            ]
+          ]
+        },
+        {
+          "file": "69411.pkl",
+          "top_5": [
+            [
+              "right",
+              0.8447830677032471
+            ],
+            [
+              "pizza",
+              0.07161708176136017
+            ],
+            [
+              "short",
+              0.029003039002418518
+            ],
+            [
+              "yellow",
+              0.012753227725625038
+            ],
+            [
+              "dog",
+              0.008678920567035675
+            ]
+          ]
+        }
+      ]
+    },
+    "NOW": {
+      "gloss": "NOW",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9619300365447998,
+      "incorrect_predictions": [
+        {
+          "file": "39006.pkl",
+          "top_5": [
+            [
+              "what",
+              0.34720489382743835
+            ],
+            [
+              "many",
+              0.24968576431274414
+            ],
+            [
+              "play",
+              0.14794082939624786
+            ],
+            [
+              "last",
+              0.13715937733650208
+            ],
+            [
+              "jacket",
+              0.02407885529100895
+            ]
+          ]
+        }
+      ]
+    },
+    "ORANGE": {
+      "gloss": "ORANGE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.014029997400939465,
+      "incorrect_predictions": [
+        {
+          "file": "69422.pkl",
+          "top_5": [
+            [
+              "bird",
+              0.9134299159049988
+            ],
+            [
+              "corn",
+              0.0480765663087368
+            ],
+            [
+              "drink",
+              0.008459123782813549
+            ],
+            [
+              "deaf",
+              0.00610790541395545
+            ],
+            [
+              "man",
+              0.003222390078008175
+            ]
+          ]
+        }
+      ]
+    },
+    "PAPER": {
+      "gloss": "PAPER",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5366381481289864,
+      "incorrect_predictions": []
+    },
+    "PINK": {
+      "gloss": "PINK",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.1523391604423523,
+      "incorrect_predictions": [
+        {
+          "file": "69430.pkl",
+          "top_5": [
+            [
+              "tell",
+              0.42922794818878174
+            ],
+            [
+              "cool",
+              0.24579522013664246
+            ],
+            [
+              "fine",
+              0.15460467338562012
+            ],
+            [
+              "finish",
+              0.0762605220079422
+            ],
+            [
+              "candy",
+              0.028302891179919243
+            ]
+          ]
+        }
+      ]
+    },
+    "PIZZA": {
+      "gloss": "PIZZA",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.04899299889802933,
+      "incorrect_predictions": [
+        {
+          "file": "42977.pkl",
+          "top_5": [
+            [
+              "forget",
+              0.24117864668369293
+            ],
+            [
+              "wrong",
+              0.22792312502861023
+            ],
+            [
+              "eat",
+              0.21182359755039215
+            ],
+            [
+              "white",
+              0.120153047144413
+            ],
+            [
+              "thanksgiving",
+              0.06134892255067825
+            ]
+          ]
+        },
+        {
+          "file": "69431.pkl",
+          "top_5": [
+            [
+              "color",
+              0.7565694451332092
+            ],
+            [
+              "wait",
+              0.10410813987255096
+            ],
+            [
+              "candy",
+              0.05385582521557808
+            ],
+            [
+              "pink",
+              0.04813799262046814
+            ],
+            [
+              "before",
+              0.010720687918365002
+            ]
+          ]
+        }
+      ]
+    },
+    "PLAY": {
+      "gloss": "PLAY",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.33185237521926564,
+      "incorrect_predictions": []
+    },
+    "PURPLE": {
+      "gloss": "PURPLE",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.24219148606061935,
+      "incorrect_predictions": []
+    },
+    "RIGHT": {
+      "gloss": "RIGHT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.17039912939071655,
+      "incorrect_predictions": []
+    },
+    "SAME": {
+      "gloss": "SAME",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.1882845163345337,
+      "incorrect_predictions": [
+        {
+          "file": "49183.pkl",
+          "top_5": [
+            [
+              "cheat",
+              0.8766380548477173
+            ],
+            [
+              "doctor",
+              0.026453400030732155
+            ],
+            [
+              "like",
+              0.01824798807501793
+            ],
+            [
+              "walk",
+              0.012762435711920261
+            ],
+            [
+              "white",
+              0.009895388036966324
+            ]
+          ]
+        }
+      ]
+    },
+    "SCHOOL": {
+      "gloss": "SCHOOL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.22959889634512365,
+      "incorrect_predictions": []
+    },
+    "SECRETARY": {
+      "gloss": "SECRETARY",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.43328432738780975,
+      "incorrect_predictions": []
+    },
+    "SHIRT": {
+      "gloss": "SHIRT",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.41885894536972046,
+      "incorrect_predictions": [
+        {
+          "file": "51067.pkl",
+          "top_5": [
+            [
+              "thursday",
+              0.5076364278793335
+            ],
+            [
+              "candy",
+              0.17077812552452087
+            ],
+            [
+              "yellow",
+              0.1081467866897583
+            ],
+            [
+              "go",
+              0.05274125561118126
+            ],
+            [
+              "apple",
+              0.04149823263287544
+            ]
+          ]
+        },
+        {
+          "file": "51068.pkl",
+          "top_5": [
+            [
+              "last",
+              0.4455679655075073
+            ],
+            [
+              "go",
+              0.18863539397716522
+            ],
+            [
+              "yellow",
+              0.1884652078151703
+            ],
+            [
+              "thursday",
+              0.04812631756067276
+            ],
+            [
+              "before",
+              0.021753614768385887
+            ]
+          ]
+        }
+      ]
+    },
+    "SHORT": {
+      "gloss": "SHORT",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.26544617116451263,
+      "incorrect_predictions": []
+    },
+    "SON": {
+      "gloss": "SON",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9383949041366577,
+      "incorrect_predictions": []
+    },
+    "STUDY": {
+      "gloss": "STUDY",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9149560332298279,
+      "incorrect_predictions": []
+    },
+    "TABLE": {
+      "gloss": "TABLE",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.8888222873210907,
+      "incorrect_predictions": []
+    },
+    "TALL": {
+      "gloss": "TALL",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.7494031190872192,
+      "incorrect_predictions": [
+        {
+          "file": "66591.pkl",
+          "top_5": [
+            [
+              "work",
+              0.5931353569030762
+            ],
+            [
+              "change",
+              0.1478831171989441
+            ],
+            [
+              "but",
+              0.08355408161878586
+            ],
+            [
+              "school",
+              0.03301624581217766
+            ],
+            [
+              "computer",
+              0.026560181751847267
+            ]
+          ]
+        }
+      ]
+    },
+    "TELL": {
+      "gloss": "TELL",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6869727373123169,
+      "incorrect_predictions": [
+        {
+          "file": "57291.pkl",
+          "top_5": [
+            [
+              "thanksgiving",
+              0.34628593921661377
+            ],
+            [
+              "woman",
+              0.12435094267129898
+            ],
+            [
+              "hot",
+              0.1113869696855545
+            ],
+            [
+              "pink",
+              0.10566423088312149
+            ],
+            [
+              "who",
+              0.07779476046562195
+            ]
+          ]
+        }
+      ]
+    },
+    "THANKSGIVING": {
+      "gloss": "THANKSGIVING",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.6138821641604105,
+      "incorrect_predictions": []
+    },
+    "THIN": {
+      "gloss": "THIN",
+      "top1_accuracy": 0.6666666666666666,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.9812712371349335,
+      "incorrect_predictions": [
+        {
+          "file": "66606.pkl",
+          "top_5": [
+            [
+              "wrong",
+              0.7732935547828674
+            ],
+            [
+              "thanksgiving",
+              0.09861956536769867
+            ],
+            [
+              "white",
+              0.03788059949874878
+            ],
+            [
+              "color",
+              0.027331236749887466
+            ],
+            [
+              "eat",
+              0.008993248455226421
+            ]
+          ]
+        }
+      ]
+    },
+    "THURSDAY": {
+      "gloss": "THURSDAY",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 3,
+      "avg_top5_confidence": 0,
+      "incorrect_predictions": [
+        {
+          "file": "66638.pkl",
+          "top_5": [
+            [
+              "fish",
+              0.31707391142845154
+            ],
+            [
+              "white",
+              0.28081896901130676
+            ],
+            [
+              "like",
+              0.24944455921649933
+            ],
+            [
+              "yellow",
+              0.03546953573822975
+            ],
+            [
+              "bowling",
+              0.03456786647439003
+            ]
+          ]
+        },
+        {
+          "file": "66639.pkl",
+          "top_5": [
+            [
+              "like",
+              0.6222572922706604
+            ],
+            [
+              "white",
+              0.23526671528816223
+            ],
+            [
+              "same",
+              0.03667708486318588
+            ],
+            [
+              "need",
+              0.011486356146633625
+            ],
+            [
+              "yellow",
+              0.009668138809502125
+            ]
+          ]
+        },
+        {
+          "file": "66640.pkl",
+          "top_5": [
+            [
+              "man",
+              0.6341190934181213
+            ],
+            [
+              "black",
+              0.3239375054836273
+            ],
+            [
+              "africa",
+              0.015046142973005772
+            ],
+            [
+              "cow",
+              0.005948388483375311
+            ],
+            [
+              "pizza",
+              0.003970130812376738
+            ]
+          ]
+        }
+      ]
+    },
+    "TIME": {
+      "gloss": "TIME",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6107555627822876,
+      "incorrect_predictions": []
+    },
+    "WAIT": {
+      "gloss": "WAIT",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.959589958190918,
+      "incorrect_predictions": [
+        {
+          "file": "62113.pkl",
+          "top_5": [
+            [
+              "now",
+              0.4444502890110016
+            ],
+            [
+              "want",
+              0.27904170751571655
+            ],
+            [
+              "bowling",
+              0.17076203227043152
+            ],
+            [
+              "fish",
+              0.05913862586021423
+            ],
+            [
+              "walk",
+              0.007024234626442194
+            ]
+          ]
+        }
+      ]
+    },
+    "WALK": {
+      "gloss": "WALK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 3,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.98031218846639,
+      "incorrect_predictions": []
+    },
+    "WANT": {
+      "gloss": "WANT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.01228264020755887,
+      "incorrect_predictions": []
+    },
+    "WATER": {
+      "gloss": "WATER",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.6035164594650269,
+      "incorrect_predictions": [
+        {
+          "file": "66752.pkl",
+          "top_5": [
+            [
+              "drink",
+              0.9301798939704895
+            ],
+            [
+              "mother",
+              0.0242781899869442
+            ],
+            [
+              "brown",
+              0.01264460664242506
+            ],
+            [
+              "bird",
+              0.006248941645026207
+            ],
+            [
+              "no",
+              0.0041756522841751575
+            ]
+          ]
+        }
+      ]
+    },
+    "WHAT": {
+      "gloss": "WHAT",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.05943192169070244,
+      "incorrect_predictions": [
+        {
+          "file": "62988.pkl",
+          "top_5": [
+            [
+              "last",
+              0.651479184627533
+            ],
+            [
+              "fine",
+              0.20808382332324982
+            ],
+            [
+              "tell",
+              0.03058469109237194
+            ],
+            [
+              "go",
+              0.015725111588835716
+            ],
+            [
+              "thin",
+              0.01557250041514635
+            ]
+          ]
+        },
+        {
+          "file": "66769.pkl",
+          "top_5": [
+            [
+              "fish",
+              0.9356369972229004
+            ],
+            [
+              "bowling",
+              0.026001913473010063
+            ],
+            [
+              "doctor",
+              0.009867195039987564
+            ],
+            [
+              "white",
+              0.005230531562119722
+            ],
+            [
+              "help",
+              0.0038873031735420227
+            ]
+          ]
+        }
+      ]
+    },
+    "WHITE": {
+      "gloss": "WHITE",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.5590671300888062,
+      "incorrect_predictions": []
+    },
+    "WHO": {
+      "gloss": "WHO",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 1.0,
+      "top1_correct": 1,
+      "top3_correct": 3,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.38044481972853345,
+      "incorrect_predictions": []
+    },
+    "WIFE": {
+      "gloss": "WIFE",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.5,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.018433427438139915,
+      "incorrect_predictions": []
+    },
+    "WOMAN": {
+      "gloss": "WOMAN",
+      "top1_accuracy": 0.3333333333333333,
+      "top3_accuracy": 0.6666666666666666,
+      "top1_correct": 1,
+      "top3_correct": 2,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.3244009017944336,
+      "incorrect_predictions": [
+        {
+          "file": "63679.pkl",
+          "top_5": [
+            [
+              "fine",
+              0.8597409129142761
+            ],
+            [
+              "tell",
+              0.0692545548081398
+            ],
+            [
+              "hot",
+              0.010722017847001553
+            ],
+            [
+              "white",
+              0.010590359568595886
+            ],
+            [
+              "birthday",
+              0.00740452716127038
+            ]
+          ]
+        }
+      ]
+    },
+    "WORK": {
+      "gloss": "WORK",
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 2,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.9052651822566986,
+      "incorrect_predictions": []
+    },
+    "WRONG": {
+      "gloss": "WRONG",
+      "top1_accuracy": 0.5,
+      "top3_accuracy": 0.5,
+      "top1_correct": 1,
+      "top3_correct": 1,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.31798484176397324,
+      "incorrect_predictions": []
+    },
+    "YEAR": {
+      "gloss": "YEAR",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 1.0,
+      "top1_correct": 0,
+      "top3_correct": 2,
+      "total_samples": 2,
+      "avg_top5_confidence": 0.2585148587822914,
+      "incorrect_predictions": []
+    },
+    "YELLOW": {
+      "gloss": "YELLOW",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.0,
+      "top1_correct": 0,
+      "top3_correct": 0,
+      "total_samples": 2,
+      "avg_top5_confidence": 0,
+      "incorrect_predictions": [
+        {
+          "file": "66819.pkl",
+          "top_5": [
+            [
+              "cool",
+              0.2286280393600464
+            ],
+            [
+              "thanksgiving",
+              0.1684795320034027
+            ],
+            [
+              "pizza",
+              0.11202961206436157
+            ],
+            [
+              "shirt",
+              0.09232793003320694
+            ],
+            [
+              "hearing",
+              0.0679561048746109
+            ]
+          ]
+        },
+        {
+          "file": "69545.pkl",
+          "top_5": [
+            [
+              "bowling",
+              0.6958493590354919
+            ],
+            [
+              "fish",
+              0.14216603338718414
+            ],
+            [
+              "dog",
+              0.08960225433111191
+            ],
+            [
+              "now",
+              0.05009014159440994
+            ],
+            [
+              "want",
+              0.004543547984212637
+            ]
+          ]
+        }
+      ]
+    },
+    "YES": {
+      "gloss": "YES",
+      "top1_accuracy": 0.0,
+      "top3_accuracy": 0.3333333333333333,
+      "top1_correct": 0,
+      "top3_correct": 1,
+      "total_samples": 3,
+      "avg_top5_confidence": 0.21907637640833855,
+      "incorrect_predictions": [
+        {
+          "file": "69546.pkl",
+          "top_5": [
+            [
+              "short",
+              0.48177188634872437
+            ],
+            [
+              "pizza",
+              0.2445569783449173
+            ],
+            [
+              "yellow",
+              0.072536900639534
+            ],
+            [
+              "need",
+              0.06052462384104729
+            ],
+            [
+              "language",
+              0.036268431693315506
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -45,6 +45,7 @@
 | OpenHands 50-Class | 50 | OpenHands (3-layer) | 27 | ~6754 | 9.38% | - | 18.27% | 2.0% | 4.7x | Success |
 | OpenHands 50-Class Large (Aug) | 50 | OpenHands (6-layer) | 75 | ~8,892 | 43.64% | - | 58.18% | 2.0% | 21.8x | Overfitting |
 | OpenHands 50-Class Small (Aug+D0.25) | 50 | OpenHands (3-layer) | 75 | ~9,234 | **47.27%** | - | 50.91% | 2.0% | **23.6x** | **BEST for 50** |
+| OpenHands 100-Class (Aug) | 100 | OpenHands (3-layer) | 75 | ~18,468 | **46.15%** | ~40% | ~64% | 1.0% | **46x** | **BEST for 100** |
 
 ### Architecture Specifications
 
@@ -65,3 +66,4 @@
 | 50-Class | ~175K | 64 | 3 | 8 | 256 | 0.1 |
 | 50-Class Large (Aug) | ~4.8M | 256 | 6 | 16 | 1024 | 0.25 |
 | 50-Class Small (Aug+D0.25) | ~175K | 64 | 3 | 8 | 256 | 0.25 |
+| 100-Class (Aug) | ~175K | 64 | 3 | 8 | 256 | 0.1 |

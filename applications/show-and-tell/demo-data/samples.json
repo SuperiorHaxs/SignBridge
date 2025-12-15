@@ -1,9 +1,25 @@
 {
   "samples": [
     {
-      "id": "fish-drinks-water",
-      "name": "Fish Drinks Water",
+      "id": "woman-accident-halloween",
+      "name": "Woman Accident Halloween",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "man-woman-like-thanksgiving",
+      "name": "Man Woman Like Thanksgiving",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "son-enjoy-work",
+      "name": "Son Enjoy Work",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "chair-black-table",
+      "name": "Chair Black Table",
       "thumbnail": "pose_video.mp4"
     }
+    
   ]
 }
