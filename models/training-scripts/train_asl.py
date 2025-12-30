@@ -78,7 +78,16 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
             default_hidden = 256  # Updated to match openhands-modernized design
             default_layers = 6
             default_heads = 16
-        else:  # small
+        elif model_size == "small":
+            default_hidden = 64
+            default_layers = 3
+            default_heads = 8
+        elif model_size == "tiny":
+            # Minimal model to combat overfitting
+            default_hidden = 32
+            default_layers = 2
+            default_heads = 4
+        else:  # default to small
             default_hidden = 64
             default_layers = 3
             default_heads = 8
@@ -903,8 +912,8 @@ if __name__ == "__main__":
                        help='Model architecture: transformer (default) or cnn_lstm')
     parser.add_argument('--early-stopping', type=int, default=None,
                        help='Early stopping patience (number of epochs without improvement). Default: no early stopping')
-    parser.add_argument('--model-size', choices=['small', 'large'], default='small',
-                       help='Model size: small (64 hidden, 3 layers) or large (128 hidden, 6 layers)')
+    parser.add_argument('--model-size', choices=['tiny', 'small', 'large'], default='small',
+                       help='Model size: tiny (32 hidden, 2 layers), small (64 hidden, 3 layers), or large (256 hidden, 6 layers)')
     parser.add_argument('--hidden-size', type=int, default=None,
                        help='Custom hidden size (overrides model-size)')
     parser.add_argument('--num-layers', type=int, default=None,

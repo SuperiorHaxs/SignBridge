@@ -16,7 +16,11 @@
       "Bash(/c/Users/ashwi/Projects/WLASL-proj/asl-v1/venv/Scripts/pose_info.exe:*)",
       "Bash(/c/Users/ashwi/Projects/WLASL-proj/asl-v1/venv/Scripts/videos_to_poses.exe:*)",
       "Bash(./venv/Scripts/python.exe:*)",
-      "Bash(../../venv/Scripts/python.exe -m py_compile:*)"
+      "Bash(../../venv/Scripts/python.exe -m py_compile:*)",
+      "Bash(../../venv/Scripts/python.exe -c:*)",
+      "Bash(\"C:/Users/ashwi/Projects/WLASL-proj/asl-v1/venv/Scripts/python.exe\" -m py_compile:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []

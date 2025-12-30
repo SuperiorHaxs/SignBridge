@@ -316,69 +316,79 @@ function motionDetectionLoop() {
         return;
     }
 
-    // Draw current frame to detection canvas
-    motionDetectionCtx.drawImage(webcamVideo, 0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
-    const currentFrame = motionDetectionCtx.getImageData(0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
+    try {
+        // Draw current frame to detection canvas
+        motionDetectionCtx.drawImage(webcamVideo, 0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
+        const currentFrame = motionDetectionCtx.getImageData(0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
 
-    let motionScore = 0;
-    if (previousFrame) {
-        motionScore = calculateMotionScore(previousFrame.data, currentFrame.data);
-    }
-    previousFrame = currentFrame;
-
-    // Update motion score display
-    if (motionScoreValue) {
-        motionScoreValue.textContent = motionScore.toFixed(0);
-    }
-
-    // Motion detection state machine
-    const config = liveConfig?.motion_config || {};
-    const motionThreshold = config.motion_area_threshold || 0.02;
-    const isMotionDetected = motionScore > motionThreshold * 10000;
-
-    const now = Date.now();
-
-    if (isMotionDetected) {
-        lastMotionTime = now;
-
-        if (!isSigning && !isProcessing) {
-            // Start signing
-            isSigning = true;
-            signStartTime = now;
-            updateLiveStatus('SIGNING', 'signing');
-            console.log('Sign started');
-            startSignRecording();
+        let motionScore = 0;
+        if (previousFrame) {
+            motionScore = calculateMotionScore(previousFrame.data, currentFrame.data);
         }
-    } else if (isSigning) {
-        const cooldownMs = config.cooldown_ms || 1000;
-        const timeSinceMotion = now - lastMotionTime;
+        previousFrame = currentFrame;
 
-        if (timeSinceMotion > cooldownMs) {
-            const signDuration = now - signStartTime;
-            const minSignMs = config.min_sign_ms || 500;
+        // Update motion score display
+        if (motionScoreValue) {
+            motionScoreValue.textContent = motionScore.toFixed(0);
+        }
 
-            if (signDuration >= minSignMs) {
-                console.log(`Sign ended after ${signDuration}ms`);
-                stopSignRecordingAndProcess();
-            } else {
-                console.log(`Sign too short (${signDuration}ms), ignoring`);
-                cancelSignRecording();
+        // Motion detection state machine
+        const config = liveConfig?.motion_config || {};
+        const motionThreshold = config.motion_area_threshold || 0.02;
+        const isMotionDetected = motionScore > motionThreshold * 10000;
+
+        const now = Date.now();
+
+        if (isMotionDetected) {
+            lastMotionTime = now;
+
+            if (!isSigning && !isProcessing) {
+                // Start signing
+                isSigning = true;
+                signStartTime = now;
+                updateLiveStatus('SIGNING', 'signing');
+                console.log('Sign started');
+                startSignRecording();
             }
+        } else if (isSigning) {
+            const cooldownMs = config.cooldown_ms || 1000;
+            const timeSinceMotion = now - lastMotionTime;
+
+            if (timeSinceMotion > cooldownMs) {
+                const signDuration = now - signStartTime;
+                const minSignMs = config.min_sign_ms || 500;
+
+                if (signDuration >= minSignMs) {
+                    console.log(`Sign ended after ${signDuration}ms`);
+                    stopSignRecordingAndProcess();
+                } else {
+                    console.log(`Sign too short (${signDuration}ms), ignoring`);
+                    cancelSignRecording();
+                }
+                isSigning = false;
+            }
+        }
+
+        // Check for max sign duration
+        if (isSigning) {
+            const maxSignMs = config.max_sign_ms || 5000;
+            const signDuration = now - signStartTime;
+            if (signDuration >= maxSignMs) {
+                console.log(`Sign max duration reached (${signDuration}ms)`);
+                stopSignRecordingAndProcess();
+                isSigning = false;
+            }
+        }
+    } catch (error) {
+        console.error('Error in motion detection loop:', error);
+        // Reset state on error to allow recovery
+        if (isSigning && !isProcessing) {
             isSigning = false;
+            cancelSignRecording();
         }
     }
 
-    // Check for max sign duration
-    if (isSigning) {
-        const maxSignMs = config.max_sign_ms || 5000;
-        const signDuration = now - signStartTime;
-        if (signDuration >= maxSignMs) {
-            console.log(`Sign max duration reached (${signDuration}ms)`);
-            stopSignRecordingAndProcess();
-            isSigning = false;
-        }
-    }
-
+    // Always schedule next frame, even after errors
     requestAnimationFrame(motionDetectionLoop);
 }
 
@@ -403,22 +413,38 @@ function calculateMotionScore(prevData, currData) {
 // ============================================================
 
 function startSignRecording() {
-    if (!stream) return;
+    if (!stream) {
+        console.error('Cannot start recording: no stream available');
+        isSigning = false;
+        return;
+    }
 
-    signChunks = [];
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : 'video/webm';
+    try {
+        signChunks = [];
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+            ? 'video/webm;codecs=vp9'
+            : 'video/webm';
 
-    signRecorder = new MediaRecorder(stream, { mimeType });
+        signRecorder = new MediaRecorder(stream, { mimeType });
 
-    signRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-            signChunks.push(event.data);
-        }
-    };
+        signRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                signChunks.push(event.data);
+            }
+        };
 
-    signRecorder.start(100);
+        signRecorder.onerror = (event) => {
+            console.error('MediaRecorder error:', event.error);
+            isSigning = false;
+            updateLiveStatus('READY', 'ready');
+        };
+
+        signRecorder.start(100);
+    } catch (error) {
+        console.error('Failed to start sign recording:', error);
+        isSigning = false;
+        updateLiveStatus('READY', 'ready');
+    }
 }
 
 function cancelSignRecording() {
@@ -440,16 +466,14 @@ async function stopSignRecordingAndProcess() {
 
     return new Promise((resolve) => {
         signRecorder.onstop = async () => {
-            if (signChunks.length === 0) {
-                isProcessing = false;
-                updateLiveStatus('READY', 'ready');
-                resolve();
-                return;
-            }
-
-            const signBlob = new Blob(signChunks, { type: 'video/webm' });
-
             try {
+                if (signChunks.length === 0) {
+                    console.log('No sign chunks recorded, skipping processing');
+                    return;
+                }
+
+                const signBlob = new Blob(signChunks, { type: 'video/webm' });
+
                 const formData = new FormData();
                 formData.append('video', signBlob, 'sign.webm');
 
@@ -502,11 +526,12 @@ async function stopSignRecordingAndProcess() {
 
             } catch (error) {
                 console.error('Sign processing error:', error);
+            } finally {
+                // Always reset state to allow next sign detection
+                isProcessing = false;
+                updateLiveStatus('READY', 'ready');
+                resolve();
             }
-
-            isProcessing = false;
-            updateLiveStatus('READY', 'ready');
-            resolve();
         };
 
         signRecorder.stop();

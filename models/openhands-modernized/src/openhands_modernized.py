@@ -66,7 +66,7 @@ class OpenHandsConfig:
 # =============================================================================
 
 class MediaPipeSubset:
-    """Extract 75-point pose+hands subset from full MediaPipe pose data."""
+    """Extract pose+hands subset from full MediaPipe pose data."""
 
     # MediaPipe Holistic layout (576 total points):
     # Indices 0-32:   Pose (33 points)
@@ -75,8 +75,15 @@ class MediaPipeSubset:
     # Indices 522-542: Right Hand (21 points)
     # Indices 543-575: Pose World 3D (33 points) - EXCLUDED for now
 
+    # Full pose (33) + hands (42) = 75 points
     POSE_HAND_INDICES = list(range(0, 33)) + list(range(501, 543))
-    # Total: 33 + 42 = 75 points
+
+    # Upper-body only pose (12) + hands (42) = 54 points
+    # Excludes: face landmarks (0-10), hips (23-24), legs (25-32)
+    # Includes: shoulders (11-12), elbows (13-14), wrists (15-16), hand connections (17-22)
+    UPPER_BODY_POSE_INDICES = list(range(11, 23))  # 12 upper body landmarks
+    UPPER_BODY_HAND_INDICES = list(range(501, 543))  # 42 hand landmarks
+    # Total: 12 + 42 = 54 points
 
     @staticmethod
     def extract_27_points(full_pose_data: np.ndarray) -> np.ndarray:
@@ -125,6 +132,46 @@ class MediaPipeSubset:
 
         return subset_data.astype(np.float32)
 
+    @staticmethod
+    def extract_upper_body_54(full_pose_data: np.ndarray) -> np.ndarray:
+        """
+        Extract 54-point upper-body + hands from full MediaPipe pose data.
+
+        Better for ASL: excludes face and lower body landmarks that vary
+        based on camera framing (full body vs upper body videos).
+
+        Extracts:
+        - Upper body: indices 11-22 (12 points) - shoulders to hand connections
+        - Left Hand: indices 501-521 (21 points)
+        - Right Hand: indices 522-542 (21 points)
+        - EXCLUDED: Face (0-10), Hips (23-24), Legs (25-32)
+
+        Args:
+            full_pose_data: (frames, 576, 2) or (frames, 576, 3)
+
+        Returns:
+            subset_data: (frames, 54, 2) - x, y coordinates only
+        """
+        frames, total_points, coords = full_pose_data.shape
+
+        # Extract only x, y coordinates (drop confidence if present)
+        if coords == 3:
+            full_pose_data = full_pose_data[:, :, :2]
+
+        if total_points < 543:
+            raise ValueError(f"Expected at least 543 keypoints, got {total_points}")
+
+        # Upper body pose (excludes face 0-10, hips 23-24, legs 25-32)
+        upper_body_indices = list(range(11, 23))     # 12 upper body points
+        left_hand_indices = list(range(501, 522))    # 21 left hand points
+        right_hand_indices = list(range(522, 543))   # 21 right hand points
+
+        all_indices = upper_body_indices + left_hand_indices + right_hand_indices
+
+        subset_data = full_pose_data[:, all_indices, :]  # (frames, 54, 2)
+
+        return subset_data.astype(np.float32)
+
 
 # =============================================================================
 # Data Preprocessing and Augmentation
@@ -133,40 +180,88 @@ class MediaPipeSubset:
 class PoseTransforms:
     """Pose data preprocessing and augmentation transforms."""
 
+    # Shoulder indices in 75-point format (indices 11-12 from original pose)
+    # In 75-point: pose is 0-32, so shoulders are at indices 11 and 12
+    LEFT_SHOULDER_IDX = 11
+    RIGHT_SHOULDER_IDX = 12
+
     @staticmethod
-    def center_and_scale_normalize(pose_data: np.ndarray) -> np.ndarray:
+    def center_and_scale_normalize(pose_data: np.ndarray, use_shoulder_center: bool = True) -> np.ndarray:
         """
         Center and scale normalize pose keypoints.
 
         Args:
-            pose_data: (frames, 75, 2) - x, y coordinates
+            pose_data: (frames, 75, 2) or (frames, 54, 2) - x, y coordinates
+            use_shoulder_center: If True, center on shoulders (robust to video framing).
+                                 If False, center on mean of all valid keypoints.
 
         Returns:
-            normalized_data: (frames, 75, 2)
+            normalized_data: same shape as input
         """
         frames, keypoints, channels = pose_data.shape
         normalized = pose_data.copy()
 
         for frame_idx in range(frames):
-            frame = normalized[frame_idx]  # (75, 2)
+            frame = normalized[frame_idx]  # (N, 2)
 
             # Extract x, y coordinates
-            xy_coords = frame[:, :]  # (75, 2)
+            xy_coords = frame[:, :]  # (N, 2)
 
             # Find valid keypoints (non-zero)
             valid_mask = (xy_coords != 0).any(axis=1)
 
             if valid_mask.sum() > 0:
-                valid_coords = xy_coords[valid_mask]
+                if use_shoulder_center and keypoints >= 33:
+                    # Use shoulder midpoint as center (robust to video framing)
+                    # Works for both 75-point and 54-point formats
+                    left_shoulder = xy_coords[PoseTransforms.LEFT_SHOULDER_IDX]
+                    right_shoulder = xy_coords[PoseTransforms.RIGHT_SHOULDER_IDX]
 
-                # Center around mean
-                center = valid_coords.mean(axis=0)
+                    # Only use shoulders if both are valid
+                    if (left_shoulder != 0).any() and (right_shoulder != 0).any():
+                        center = (left_shoulder + right_shoulder) / 2
+                    else:
+                        # Fallback to mean if shoulders not detected
+                        center = xy_coords[valid_mask].mean(axis=0)
+                elif use_shoulder_center and keypoints == 54:
+                    # For 54-point format, shoulders are at indices 0 and 1
+                    # (since we start from index 11 in original, which becomes 0)
+                    left_shoulder = xy_coords[0]  # Was index 11
+                    right_shoulder = xy_coords[1]  # Was index 12
+
+                    if (left_shoulder != 0).any() and (right_shoulder != 0).any():
+                        center = (left_shoulder + right_shoulder) / 2
+                    else:
+                        center = xy_coords[valid_mask].mean(axis=0)
+                else:
+                    # Fallback: center on mean of all valid keypoints
+                    center = xy_coords[valid_mask].mean(axis=0)
+
                 xy_coords = xy_coords - center
 
-                # Scale by standard deviation
-                std = valid_coords.std()
-                if std > 0:
-                    xy_coords = xy_coords / std
+                # Scale by shoulder width (more stable than std of all points)
+                if use_shoulder_center and keypoints >= 13:
+                    if keypoints >= 33:
+                        shoulder_dist = np.linalg.norm(
+                            xy_coords[PoseTransforms.LEFT_SHOULDER_IDX] -
+                            xy_coords[PoseTransforms.RIGHT_SHOULDER_IDX]
+                        )
+                    else:  # 54-point format
+                        shoulder_dist = np.linalg.norm(xy_coords[0] - xy_coords[1])
+
+                    if shoulder_dist > 0.01:  # Avoid division by tiny values
+                        xy_coords = xy_coords / shoulder_dist
+                    else:
+                        # Fallback to std if shoulders too close
+                        std = xy_coords[valid_mask].std()
+                        if std > 0:
+                            xy_coords = xy_coords / std
+                else:
+                    # Fallback: scale by standard deviation
+                    valid_coords = xy_coords[valid_mask]
+                    std = valid_coords.std()
+                    if std > 0:
+                        xy_coords = xy_coords / std
 
                 # Update normalized frame
                 normalized[frame_idx, :, :2] = xy_coords

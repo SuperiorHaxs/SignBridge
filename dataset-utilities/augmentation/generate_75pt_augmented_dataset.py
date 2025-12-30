@@ -171,9 +171,15 @@ def get_classes_from_directory(input_dir):
 # PICKLE FILE FUNCTIONS
 # ============================================================================
 
-def load_and_extract_75pt(pickle_path):
+def load_and_extract_75pt(pickle_path, normalize=True, use_shoulder_center=True):
     """
     Load pickle file and extract 75-point pose+hands representation.
+
+    Args:
+        pickle_path: Path to pickle file
+        normalize: Whether to apply normalization
+        use_shoulder_center: If True, use shoulder-based centering (robust to video framing)
+                            If False, use mean-based centering (legacy behavior)
 
     Returns:
         pose_data: (frames, 75, 2) - x, y coordinates
@@ -188,15 +194,23 @@ def load_and_extract_75pt(pickle_path):
     keypoints = data['keypoints']
 
     # Extract 75-point subset using MediaPipeSubset
-    from openhands_modernized import MediaPipeSubset
+    from openhands_modernized import MediaPipeSubset, PoseTransforms
     pose_75pt = MediaPipeSubset.extract_pose_hands_75(keypoints)
+
+    # Apply normalization if requested
+    if normalize:
+        pose_75pt = PoseTransforms.center_and_scale_normalize(
+            pose_75pt, use_shoulder_center=use_shoulder_center
+        )
 
     # Metadata
     metadata = {
         'gloss': data.get('gloss', 'unknown'),
         'video_id': data.get('video_id', 'unknown'),
         'split': data.get('split', 'train'),
-        'original_file': pickle_path
+        'original_file': pickle_path,
+        'normalized': normalize,
+        'shoulder_centered': use_shoulder_center
     }
 
     return pose_75pt, metadata
@@ -380,9 +394,8 @@ def apply_augmentation_pickle(pose_data, augmentation_id):
     # Determine augmentation strategy based on ID
     current_id = augmentation_id
 
-    # Phase 1: Geometric
+    # Phase 1: Geometric (normalization now done at load time)
     if AUGMENTATION_CONFIG['geometric'] > 0 and current_id < AUGMENTATION_CONFIG['geometric']:
-        augmented = transforms.center_and_scale_normalize(augmented)
         augmented = transforms.apply_shear(augmented, shear_std=SHEAR_STD)
         augmented = transforms.apply_rotation(augmented, rotation_std=ROTATION_STD)
         return augmented
@@ -882,7 +895,8 @@ def save_augmented_pose(pose_data, original_pose, metadata, output_path, augment
 # MAIN AUGMENTATION FUNCTION
 # ============================================================================
 
-def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=None, output_dir=None):
+def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=None, output_dir=None,
+                               use_shoulder_center=True):
     """
     Generate complete augmented dataset.
 
@@ -891,6 +905,8 @@ def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=No
         num_classes: number of classes (default 20)
         input_dir: custom input directory (overrides default path)
         output_dir: custom output directory (overrides default path)
+        use_shoulder_center: If True, use shoulder-based centering (robust to video framing)
+                            If False, use legacy mean-based centering
     """
     # Set paths based on input type
     global INPUT_DIR, OUTPUT_DIR
@@ -924,6 +940,9 @@ def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=No
     print(f"Number of classes: {num_classes}")
     print(f"Input directory:  {INPUT_DIR}")
     print(f"Output directory: {OUTPUT_DIR}")
+    print()
+    norm_mode = "Shoulder-based (robust to video framing)" if use_shoulder_center else "Mean-based (legacy)"
+    print(f"NORMALIZATION: {norm_mode}")
     print()
     print(f"AUGMENTATION CONFIG: {NUM_AUGMENTATIONS} total augmentations")
     for strategy, count in AUGMENTATION_CONFIG.items():
@@ -1007,8 +1026,10 @@ def generate_augmented_dataset(input_type='pickle', num_classes=20, input_dir=No
 
             try:
                 if input_type == 'pickle':
-                    # Load and extract 75-point data
-                    pose_data, metadata = load_and_extract_75pt(input_path)
+                    # Load and extract 75-point data with normalization
+                    pose_data, metadata = load_and_extract_75pt(
+                        input_path, normalize=True, use_shoulder_center=use_shoulder_center
+                    )
 
                     # Generate augmented versions
                     for aug_id in range(NUM_AUGMENTATIONS):
@@ -1112,7 +1133,17 @@ if __name__ == "__main__":
                         help='Custom input directory (overrides default path)')
     parser.add_argument('--output-dir', type=str, default=None,
                         help='Custom output directory (overrides default path)')
+    parser.add_argument('--shoulder-normalize', action='store_true', default=True,
+                        help='Use shoulder-based centering (default: True, robust to video framing)')
+    parser.add_argument('--no-shoulder-normalize', action='store_true',
+                        help='Use legacy mean-based centering instead of shoulder-based')
     args = parser.parse_args()
 
+    # Determine normalization mode
+    use_shoulder_center = not args.no_shoulder_normalize
+
+    print(f"Normalization: {'Shoulder-based (robust)' if use_shoulder_center else 'Mean-based (legacy)'}")
+
     generate_augmented_dataset(input_type=args.input_type, num_classes=args.classes,
-                              input_dir=args.input_dir, output_dir=args.output_dir)
+                              input_dir=args.input_dir, output_dir=args.output_dir,
+                              use_shoulder_center=use_shoulder_center)
