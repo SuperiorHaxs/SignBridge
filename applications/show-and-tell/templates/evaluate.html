@@ -8,6 +8,9 @@
 {% block phase4_class %}completed{% endblock %}
 {% block phase5_class %}active{% endblock %}
 
+{% block fast_phase1_class %}completed{% endblock %}
+{% block fast_phase2_class %}active{% endblock %}
+
 {% block content %}
 <div class="evaluate-container">
     <!-- Header -->
@@ -45,7 +48,7 @@
     <div class="loading-state" id="loading-state" style="display: none;">
         <div class="spinner-large"></div>
         <p>Calculating metrics...</p>
-        <p class="loading-detail">BLEU, BERTScore, Quality</p>
+        <p class="loading-detail">BLEU, BERTScore, Quality, Coverage</p>
     </div>
 
     <!-- Metrics Section -->
@@ -64,7 +67,7 @@
                 <tr class="metric-row" data-metric="bleu">
                     <td class="metric-name">
                         <span class="metric-title">BLEU Score</span>
-                        <span class="metric-desc">N-gram precision</span>
+                        <span class="metric-desc">How many exact words and phrases match the reference</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -73,7 +76,7 @@
                 <tr class="metric-row" data-metric="bert">
                     <td class="metric-name">
                         <span class="metric-title">BERTScore</span>
-                        <span class="metric-desc">Semantic similarity</span>
+                        <span class="metric-desc">How similar the meaning is, even with different words</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -82,16 +85,34 @@
                 <tr class="metric-row" data-metric="quality">
                     <td class="metric-name">
                         <span class="metric-title">Quality Score</span>
-                        <span class="metric-desc">Fluency (GPT-2 perplexity)</span>
+                        <span class="metric-desc">How natural and readable the sentence sounds</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
                     <td class="metric-delta">-</td>
                 </tr>
-                <tr class="metric-row" data-metric="gloss_accuracy">
+                <tr class="metric-row" data-metric="coverage_recall">
                     <td class="metric-name">
-                        <span class="metric-title">Gloss Accuracy</span>
-                        <span class="metric-desc">% glosses in sentence</span>
+                        <span class="metric-title">Coverage Recall</span>
+                        <span class="metric-desc">How many important words from the reference were included</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="coverage_precision">
+                    <td class="metric-name">
+                        <span class="metric-title">Coverage Precision</span>
+                        <span class="metric-desc">How many words in the output are actually relevant</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="coverage_f1">
+                    <td class="metric-name">
+                        <span class="metric-title">Coverage F1</span>
+                        <span class="metric-desc">Overall balance between capturing meaning and staying relevant</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -99,8 +120,8 @@
                 </tr>
                 <tr class="metric-row composite" data-metric="composite">
                     <td class="metric-name">
-                        <span class="metric-title">Composite Score</span>
-                        <span class="metric-desc">Weighted average</span>
+                        <span class="metric-title">Composite Translation Quality Index (CTQI)</span>
+                        <span class="metric-desc">Introduced by SignBridge - New combined score weighing all metrics together</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -110,12 +131,44 @@
         </table>
 
         <div class="metrics-note">
-            <strong>Metric Weights:</strong> Gloss Accuracy (35%), Quality (30%), BERTScore (20%), BLEU (15%)
+            <strong>Composite Score Weights:</strong> Quality (40%), Coverage F1 (25%), BERTScore (20%), BLEU (15%)
+        </div>
+
+        <!-- Coverage Details -->
+        <div class="coverage-details" id="coverage-details" style="display: none;">
+            <h4>Coverage Analysis</h4>
+            <div class="coverage-columns">
+                <div class="coverage-column">
+                    <h5>Raw Sentence</h5>
+                    <div class="word-list missing" id="raw-missing-words">
+                        <span class="list-label">Missing words:</span>
+                        <span class="words"></span>
+                    </div>
+                    <div class="word-list hallucinated" id="raw-hallucinated-words">
+                        <span class="list-label">Extra words:</span>
+                        <span class="words"></span>
+                    </div>
+                </div>
+                <div class="coverage-column">
+                    <h5>LLM Sentence</h5>
+                    <div class="word-list missing" id="llm-missing-words">
+                        <span class="list-label">Missing words:</span>
+                        <span class="words"></span>
+                    </div>
+                    <div class="word-list hallucinated" id="llm-hallucinated-words">
+                        <span class="list-label">Extra words:</span>
+                        <span class="words"></span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Final Actions -->
     <div class="final-actions" id="final-actions" style="display: none;">
+        <button id="btn-save-session" class="btn btn-secondary btn-large">
+            Save Session
+        </button>
         <button id="btn-start-over" class="btn btn-outline btn-large">
             Start Over
         </button>

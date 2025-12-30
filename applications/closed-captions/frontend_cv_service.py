@@ -18,7 +18,7 @@ import json
 from flask import Flask, request, jsonify
 
 # Add project paths
-sys.path.insert(0, str(Path(__file__).parent.parent / "models" / "openhands-modernized" / "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "models" / "openhands-modernized" / "src"))
 
 # Import OpenCV and dependencies
 try:
@@ -628,7 +628,7 @@ if __name__ == '__main__':
     import argparse
 
     # Default model path
-    DEFAULT_CHECKPOINT = str(Path(__file__).parent.parent / "models" / "training-scripts" / "models" / "wlasl_100_class_model")
+    DEFAULT_CHECKPOINT = str(Path(__file__).parent.parent.parent / "models" / "openhands-modernized" / "production-models" / "wlasl_100_class_model")
 
     parser = argparse.ArgumentParser(description="Frontend Computer Vision Service")
     parser.add_argument('--checkpoint', default=DEFAULT_CHECKPOINT, help='Path to model checkpoint')

@@ -335,13 +335,13 @@ This demonstrates that the LLM successfully leverages top-K predictions to impro
 4. **Examples**: Few-shot learning with correct/incorrect demonstrations
 5. **Output Format**: JSON with selections + sentence
 
-**Full prompt**: See `applications/llm_prompt_topk.txt` in project repository.
+**Full prompt**: See `project-utilities/llm_interface/prompts/llm_prompt_topk.txt` in project repository.
 
 ### 6.3 Code Integration
 
 **Key Files:**
 - `applications/predict_sentence.py`: Main pipeline implementation (lines 1-600)
-- `applications/llm_prompt_topk.txt`: Prompt engineering template
+- `project-utilities/llm_interface/prompts/llm_prompt_topk.txt`: Prompt engineering template
 - `project-utilities/synthetic_evaluation/evaluate_synthetic_dataset.py`: Evaluation framework
 
 **API Integration:**

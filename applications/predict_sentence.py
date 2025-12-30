@@ -820,15 +820,16 @@ class EndToEndPipeline:
     def _load_llm_prompt(self, prompt_type, **kwargs):
         """Load LLM prompt template from file and format with variables"""
         script_dir = os.path.dirname(os.path.abspath(__file__))
+        prompts_dir = os.path.join(script_dir, "..", "project-utilities", "llm_interface", "prompts")
 
         # Determine which prompt file to load
         if prompt_type == "simple":
-            prompt_file = os.path.join(script_dir, "llm_prompt_simple.txt")
+            prompt_file = os.path.join(prompts_dir, "llm_prompt_simple.txt")
         elif prompt_type == "topk":
             if self.no_confidence_scores:
-                prompt_file = os.path.join(script_dir, "llm_prompt_topk_no_confidence.txt")
+                prompt_file = os.path.join(prompts_dir, "llm_prompt_topk_no_confidence.txt")
             else:
-                prompt_file = os.path.join(script_dir, "llm_prompt_topk.txt")
+                prompt_file = os.path.join(prompts_dir, "llm_prompt_topk.txt")
         else:
             raise ValueError(f"Unknown prompt type: {prompt_type}")
 

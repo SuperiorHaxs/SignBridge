@@ -4,6 +4,8 @@
 
 {% block phase1_class %}active{% endblock %}
 
+{% block fast_phase1_class %}active{% endblock %}
+
 {% block content %}
 <div class="convert-container">
     <!-- ============================================================
@@ -60,6 +62,27 @@
                 <div class="webcam-mode" id="webcam-mode">
                     <div class="video-wrapper video-wrapper-large">
                         <video id="webcam-video" autoplay muted playsinline></video>
+
+                        <!-- Live Demo Status Overlay (top) - like closed-captions frontend -->
+                        <div class="live-status-overlay" id="live-status-overlay">
+                            <div class="status-indicator" id="live-status-indicator">
+                                <span class="status-dot" id="live-status-dot"></span>
+                                <span class="status-text" id="live-status-text">READY</span>
+                            </div>
+                            <div class="motion-score" id="motion-score-display">
+                                Motion: <span id="motion-score-value">0</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Demo Prediction Overlay (bottom) - shows detected glosses -->
+                        <div class="live-prediction-overlay" id="live-prediction-overlay">
+                            <div class="prediction-display" id="prediction-display">
+                                <div class="current-prediction" id="current-prediction"></div>
+                                <div class="prediction-confidence" id="prediction-confidence"></div>
+                                <div class="all-predictions" id="all-predictions"></div>
+                            </div>
+                        </div>
+
                         <div class="video-overlay" id="webcam-overlay">
                             <div class="overlay-content">
                                 <div class="spinner"></div>
@@ -68,11 +91,9 @@
                         </div>
                     </div>
                     <div class="panel-controls">
-                        <button id="btn-start" class="btn btn-primary">
-                            <span class="btn-icon">&#9679;</span> Start Recording
-                        </button>
-                        <button id="btn-stop" class="btn btn-danger" disabled>
-                            <span class="btn-icon">&#9632;</span> Stop Recording
+                        <button id="btn-record-toggle" class="btn btn-primary">
+                            <span class="btn-icon" id="record-icon">&#9679;</span>
+                            <span id="record-label">Start Recording</span>
                         </button>
                     </div>
                     <div class="recording-indicator" id="recording-indicator">
@@ -201,5 +222,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/convert.js') }}"></script>
+<script src="{{ url_for('static', filename='js/convert.js') }}?v=5"></script>
 {% endblock %}

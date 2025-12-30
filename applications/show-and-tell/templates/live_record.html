@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Step 3: Record Signs - Live Mode{% endblock %}
+
+{% block live_phase3_class %}active{% endblock %}
+
+{% block content %}
+<div class="live-record-container">
+    <!-- Header with Reference -->
+    <div class="record-header">
+        <h2>Step 3: Record Your Signs</h2>
+        <div class="reference-reminder">
+            <span class="label">Sign this sentence:</span>
+            <span class="reference-text" id="reference-display"></span>
+        </div>
+        <div class="glosses-reminder">
+            <span class="label">Signs:</span>
+            <span class="glosses-list" id="glosses-display"></span>
+        </div>
+    </div>
+
+    <!-- Webcam Panel -->
+    <div class="webcam-panel">
+        <div class="panel-header">
+            <h3>Webcam Recording</h3>
+            <span class="status-badge" id="record-status">Ready</span>
+        </div>
+
+        <div class="video-wrapper video-wrapper-large">
+            <video id="webcam-video" autoplay muted playsinline></video>
+
+            <!-- Live Status Overlay -->
+            <div class="live-status-overlay" id="live-status-overlay">
+                <div class="status-indicator" id="live-status-indicator">
+                    <span class="status-dot" id="live-status-dot"></span>
+                    <span class="status-text" id="live-status-text">READY</span>
+                </div>
+                <div class="motion-score" id="motion-score-display">
+                    Motion: <span id="motion-score-value">0</span>
+                </div>
+            </div>
+
+            <!-- Live Prediction Overlay -->
+            <div class="live-prediction-overlay" id="live-prediction-overlay">
+                <div class="prediction-display" id="prediction-display">
+                    <div class="current-prediction" id="current-prediction"></div>
+                    <div class="prediction-confidence" id="prediction-confidence"></div>
+                </div>
+                <div class="all-predictions" id="all-predictions"></div>
+            </div>
+        </div>
+
+        <!-- Recording Controls -->
+        <div class="recording-controls">
+            <button class="btn-record" id="start-btn">
+                <span class="record-icon">&#9899;</span>
+                Start Recording
+            </button>
+            <button class="btn-stop" id="stop-btn" disabled>
+                <span class="stop-icon">&#9632;</span>
+                Stop & Process
+            </button>
+        </div>
+        <div class="recording-controls secondary-controls">
+            <button class="btn-restart" id="restart-btn">
+                <span class="restart-icon">&#8635;</span>
+                Restart
+            </button>
+        </div>
+
+        <!-- Detected Signs -->
+        <div class="detected-signs" id="detected-signs-section" style="display: none;">
+            <h4>Detected Signs:</h4>
+            <div class="signs-list" id="detected-signs-list"></div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="recording-instructions">
+        <h4>Tips for best results:</h4>
+        <ul>
+            <li>Position yourself so your hands are clearly visible</li>
+            <li>Good lighting helps with detection accuracy</li>
+            <li>Sign each word clearly with a brief pause between signs</li>
+            <li>The system will detect when you start and stop each sign</li>
+        </ul>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation-buttons">
+        <button class="btn-nav btn-prev" id="back-btn">
+            <span class="arrow">&#8592;</span>
+            Back to Learn
+        </button>
+
+        <button class="btn-nav btn-next" id="finish-btn" disabled>
+            See Results
+            <span class="arrow">&#8594;</span>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live_record.js') }}"></script>
+{% endblock %}

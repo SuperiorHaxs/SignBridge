@@ -1,0 +1,1218 @@
+================================================================================
+GLOSS SELECTION DEBUG REPORT
+================================================================================
+
+Dataset: ../../datasets/synthetic_sentences/synthetic_gloss_to_sentence_llm_dataset_50_glosses.json
+Total entries: 25
+Successful: 25 (100.0%)
+Failed: 0 (0.0%)
+
+================================================================================
+1. MODEL GLOSS ACCURACY - TOP-1 (Before LLM Selection)
+================================================================================
+Overall Accuracy: 78/99 (78.8%)
+Perfect Predictions (all glosses correct): 5/25 entries (20.0%)
+Average Per Entry: 78.3%
+
+================================================================================
+2. EFFECTIVE GLOSS ACCURACY (After LLM Selection from Top-K)
+================================================================================
+Overall Accuracy: 86/99 (86.9%)
+Perfect Predictions (all glosses correct): 13/25 entries (52.0%)
+Average Per Entry: 86.2%
+
+Improvement from LLM Selection: +8.1% (78/99 -> 86/99)
+Perfect Predictions Gained: 8 entries
+
+================================================================================
+3. GLOSS SELECTION BREAKDOWN
+================================================================================
+Total Gloss Positions: 99
+Correctly Selected from Top-K: 86 (86.9%)
+Incorrectly Selected from Top-K: 13 (13.1%)
+
+================================================================================
+4. MISMATCH ANALYSIS
+================================================================================
+Total Mismatches: 13
+  - LLM Selection Errors (correct answer WAS in top-3): 9 (69.2%)
+  - Model Prediction Errors (correct answer NOT in top-3): 4 (30.8%)
+
+** POTENTIAL IMPROVEMENT: 9 glosses could be fixed with better LLM prompting **
+
+================================================================================
+5. ENTRIES WITH SELECTION ERRORS (Detailed Breakdown)
+================================================================================
+
+Entry 3: APPLE, EAT, NOW
+  Reference: The person eats an apple now
+  Predicted: The apple is wrong now.
+  Selected Glosses: apple, wrong, now
+  Mismatches (1):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 4: CHAIR, TABLE, BLUE
+  Reference: The blue chair is on the table
+  Predicted: The blue chair is near the computer table.
+  Selected Glosses: chair, computer, blue
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'computer' (WRONG)
+      Should Be: 'TABLE' (CORRECT)
+      Available in Top-3:
+        1. computer (71.1%)
+        2. table (27.8%) ← CORRECT!
+        3. year (0.3%)
+
+Entry 5: CANDY, GIVE, MAN
+  Reference: The man gives candy
+  Predicted: Now give the candy to the man.
+  Selected Glosses: candy, now, man
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 7: APPLE, EAT, MAN, NOW
+  Reference: The man eats an apple now
+  Predicted: The deaf man wants the apple now.
+  Selected Glosses: apple, deaf, man, now
+  Mismatches (1):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'deaf' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 10: CANDY, GIVE, MAN, WOMAN
+  Reference: The man gives candy to the woman
+  Predicted: Now give the man candy to the woman.
+  Selected Glosses: candy, now, man, woman
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 12: DOG, WALK, MAN, NOW, FINE
+  Reference: The man walks the dog now and it is fine
+  Predicted: The dog wants to walk with the man now like.
+  Selected Glosses: dog, walk, man, now, like
+  Mismatches (1):
+
+    Position 4: [LLM SELECTION ERROR]
+      LLM Selected: 'like' (WRONG)
+      Should Be: 'FINE' (CORRECT)
+      Available in Top-3:
+        1. like (90.4%)
+        2. fine (6.5%) ← CORRECT!
+        3. walk (1.7%)
+
+Entry 15: APPLE, BOOK, CHAIR, TABLE, BLUE, MAN, WOMAN, FINE
+  Reference: The blue book and apple are on the table with a chair for the man and woman on a fine day
+  Predicted: The book is on the chair table, what man, woman like?
+  Selected Glosses: apple, book, chair, table, what, man, woman, like
+  Mismatches (2):
+
+    Position 4: [LLM SELECTION ERROR]
+      LLM Selected: 'what' (WRONG)
+      Should Be: 'BLUE' (CORRECT)
+      Available in Top-3:
+        1. blue (58.1%) ← CORRECT!
+        2. what (19.2%)
+        3. who (5.6%)
+
+    Position 7: [LLM SELECTION ERROR]
+      LLM Selected: 'like' (WRONG)
+      Should Be: 'FINE' (CORRECT)
+      Available in Top-3:
+        1. like (90.4%)
+        2. fine (6.5%) ← CORRECT!
+        3. walk (1.7%)
+
+Entry 18: APPLE, EAT, NOW
+  Reference: The person eats an apple now
+  Predicted: The apple is wrong now.
+  Selected Glosses: apple, wrong, now
+  Mismatches (1):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 19: CHAIR, TABLE, BLUE
+  Reference: The blue chair is near the table
+  Predicted: The blue chair is near the computer table.
+  Selected Glosses: chair, computer, blue
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'computer' (WRONG)
+      Should Be: 'TABLE' (CORRECT)
+      Available in Top-3:
+        1. computer (71.1%)
+        2. table (27.8%) ← CORRECT!
+        3. year (0.3%)
+
+Entry 20: CANDY, GIVE, YES
+  Reference: Yes, give me candy
+  Predicted: Now give candy.
+  Selected Glosses: candy, now, yes
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 23: APPLE, BOOK, CHAIR, TABLE
+  Reference: The book and apple are on the table with a chair
+  Predicted: The book is on the table.
+  Selected Glosses: apple, book, graduation, table
+  Mismatches (1):
+
+    Position 2: [LLM SELECTION ERROR]
+      LLM Selected: 'graduation' (WRONG)
+      Should Be: 'CHAIR' (CORRECT)
+      Available in Top-3:
+        1. chair (87.2%) ← CORRECT!
+        2. walk (10.4%)
+        3. graduation (0.9%)
+
+Entry 24: CANDY, EAT, NOW, YES
+  Reference: Yes, eat candy now
+  Predicted: The candy is wrong now, yes?
+  Selected Glosses: candy, wrong, now, yes
+  Mismatches (1):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+
+
+================================================================================
+PERFORMANCE METRICS
+================================================================================
+
+BASELINE BLEU: 11.80
+MODEL BLEU: 35.28
+AVERAGE BLEU IMPROVEMENT: +23.48
+ENTRIES WITH BLEU IMPROVEMENT: 17/25 (68.0%)
+AVERAGE BLEU IMPROVEMENT (of improved entries): +36.22
+
+BASELINE BERTScore: 88.66
+MODEL BERTScore: 93.21
+AVERAGE BERTScore IMPROVEMENT: +4.56
+ENTRIES WITH BERTScore IMPROVEMENT: 24/25 (96.0%)
+AVERAGE BERTScore IMPROVEMENT (of improved entries): +4.79
+
+BASELINE QUALITY: 31.92
+MODEL QUALITY: 75.87
+AVERAGE QUALITY IMPROVEMENT: +43.96
+ENTRIES WITH QUALITY IMPROVEMENT: 24/25 (96.0%)
+AVERAGE QUALITY IMPROVEMENT (of improved entries): +46.30
+
+BASELINE COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 73.4%
+AVERAGE PRECISION: 78.3%
+AVERAGE F1: 75.5%
+MODEL COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 79.3%
+AVERAGE PRECISION: 83.1%
+AVERAGE F1: 79.1%
+PERFECT RECALL: 12/25 (48.0%)
+ENTRIES WITH MISSING WORDS: 13/25 (25 total)
+ENTRIES WITH HALLUCINATIONS: 15/25 (19 total)
+AVERAGE RECALL IMPROVEMENT: +5.9%
+AVERAGE PRECISION IMPROVEMENT: +4.9%
+AVERAGE F1 IMPROVEMENT: +3.5%
+ENTRIES WITH RECALL IMPROVEMENT: 10/25 (40.0%)
+
+BASELINE COMPOSITE: 51.15
+MODEL COMPOSITE: 74.05
+AVERAGE COMPOSITE IMPROVEMENT: +22.90
+ENTRIES WITH COMPOSITE IMPROVEMENT: 24/25 (96.0%)
+AVERAGE COMPOSITE IMPROVEMENT (of improved entries): +24.02
+
+GEMINI ALTERNATIVE USAGE (Top-2 or Top-3 instead of Top-1):
+TOTAL GLOSS POSITIONS: 99
+ALTERNATIVES USED: 13 (13.1%)
+ENTRIES WITH ALTERNATIVES: 11/25 (44.0%)
+
+
+DETAILED RESULTS:
+--------------------------------------------------------------------------------
+
+Entry 1:
+  Glosses: MOTHER, HELP, DEAF
+  Reference: The mother helps the deaf person
+  Predicted: The mother helps the deaf.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 2: 'wrong' vs 'DEAF'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: mother, help, deaf
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 10.12
+  Model BLEU: 81.87
+  BLEU Improvement: +71.75
+  Baseline BERTScore: 87.35
+  Model BERTScore: 97.37
+  BERTScore Improvement: +10.02
+  Baseline Quality: 36.38
+  Model Quality: 52.47
+  Quality Improvement: +16.10
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +28.6%
+  Missing Words: person
+  Baseline Composite: 47.82
+  Model Composite: 74.17
+  Composite Improvement: +26.35
+  LLM Alternatives Used: 1/3
+    Position 2: Used 'deaf' (top-3, 11.3%) instead of 'wrong' (top-1, 41.0%)
+  Status: success
+
+Entry 2:
+  Glosses: DOG, WALK, MAN
+  Reference: The man walks the dog
+  Predicted: The dog wants to walk with the man.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: dog, walk, man
+  Baseline BLEU: 17.80
+  Model BLEU: 15.62
+  BLEU Improvement: -2.18
+  Baseline BERTScore: 90.72
+  Model BERTScore: 92.53
+  BERTScore Improvement: +1.81
+  Baseline Quality: 52.62
+  Model Quality: 96.45
+  Quality Improvement: +43.83
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -25.0%
+  Coverage F1 Improvement: -14.3%
+  Hallucinated Words: wants
+  Baseline Composite: 66.86
+  Model Composite: 80.86
+  Composite Improvement: +14.00
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 3:
+  Glosses: APPLE, EAT, NOW
+  Reference: The person eats an apple now
+  Predicted: The apple is wrong now.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: apple, wrong, now
+  Effective Mismatches:
+    Position 1: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 12.75
+  Model BLEU: 11.51
+  BLEU Improvement: -1.24
+  Baseline BERTScore: 87.67
+  Model BERTScore: 89.44
+  BERTScore Improvement: +1.77
+  Baseline Quality: 56.82
+  Model Quality: 67.66
+  Quality Improvement: +10.84
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: person, eats
+  Hallucinated Words: wrong
+  Baseline Composite: 56.46
+  Model Composite: 60.97
+  Composite Improvement: +4.51
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 4:
+  Glosses: CHAIR, TABLE, BLUE
+  Reference: The blue chair is on the table
+  Predicted: The blue chair is near the computer table.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: chair, computer, blue
+  Effective Mismatches:
+    Position 1: LLM chose 'computer' but should be 'TABLE'
+      Available top-k predictions:
+        1. computer (71.1%)
+        2. table (27.8%) [CORRECT!]
+        3. year (0.3%)
+  Baseline BLEU: 9.14
+  Model BLEU: 38.26
+  BLEU Improvement: +29.12
+  Baseline BERTScore: 89.07
+  Model BERTScore: 95.50
+  BERTScore Improvement: +6.43
+  Baseline Quality: 19.45
+  Model Quality: 85.33
+  Quality Improvement: +65.88
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 60.0%
+  Model Coverage F1: 75.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: -6.7%
+  Coverage F1 Improvement: +8.3%
+  Hallucinated Words: near, computer
+  Baseline Composite: 43.63
+  Model Composite: 77.72
+  Composite Improvement: +34.09
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 5:
+  Glosses: CANDY, GIVE, MAN
+  Reference: The man gives candy
+  Predicted: Now give the candy to the man.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: candy, now, man
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 24.84
+  Model BLEU: 14.54
+  BLEU Improvement: -10.30
+  Baseline BERTScore: 85.17
+  Model BERTScore: 91.71
+  BERTScore Improvement: +6.54
+  Baseline Quality: 30.88
+  Model Quality: 94.53
+  Quality Improvement: +63.64
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +8.3%
+  Coverage F1 Improvement: +19.0%
+  Hallucinated Words: now
+  Baseline Composite: 49.78
+  Model Composite: 79.76
+  Composite Improvement: +29.98
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 6:
+  Glosses: DOG, WALK, MAN, NOW
+  Reference: The man walks the dog now
+  Predicted: The dog wants to walk the man now.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: dog, walk, man, now
+  Baseline BLEU: 12.75
+  Model BLEU: 16.52
+  BLEU Improvement: +3.77
+  Baseline BERTScore: 90.88
+  Model BERTScore: 93.03
+  BERTScore Improvement: +2.15
+  Baseline Quality: 48.06
+  Model Quality: 81.06
+  Quality Improvement: +33.00
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 80.0%
+  Model Coverage F1: 88.9%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -20.0%
+  Coverage F1 Improvement: -11.1%
+  Hallucinated Words: wants
+  Baseline Composite: 64.31
+  Model Composite: 75.73
+  Composite Improvement: +11.42
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 7:
+  Glosses: APPLE, EAT, MAN, NOW
+  Reference: The man eats an apple now
+  Predicted: The deaf man wants the apple now.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: apple, deaf, man, now
+  Effective Mismatches:
+    Position 1: LLM chose 'deaf' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 12.75
+  Model BLEU: 15.62
+  BLEU Improvement: +2.87
+  Baseline BERTScore: 88.46
+  Model BERTScore: 92.03
+  BERTScore Improvement: +3.58
+  Baseline Quality: 48.57
+  Model Quality: 59.74
+  Quality Improvement: +11.16
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 60.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -15.0%
+  Coverage F1 Improvement: -8.3%
+  Missing Words: eats
+  Hallucinated Words: deaf, wants
+  Baseline Composite: 57.78
+  Model Composite: 61.31
+  Composite Improvement: +3.53
+  LLM Alternatives Used: 1/4
+    Position 1: Used 'deaf' (top-3, 4.9%) instead of 'wrong' (top-1, 65.2%)
+  Status: success
+
+Entry 8:
+  Glosses: CHAIR, TABLE, BLUE, BOOK
+  Reference: The blue book is on the table with a chair
+  Predicted: The blue book is on the chair and table.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: chair, table, blue, book
+  Gloss Accuracy Improvement: +25.0%
+  Baseline BLEU: 7.89
+  Model BLEU: 56.48
+  BLEU Improvement: +48.59
+  Baseline BERTScore: 89.78
+  Model BERTScore: 96.38
+  BERTScore Improvement: +6.60
+  Baseline Quality: 36.78
+  Model Quality: 88.56
+  Quality Improvement: +51.77
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +25.0%
+  Coverage F1 Improvement: +25.0%
+  Baseline Composite: 52.60
+  Model Composite: 88.17
+  Composite Improvement: +35.57
+  LLM Alternatives Used: 1/4
+    Position 1: Used 'table' (top-2, 27.8%) instead of 'computer' (top-1, 71.1%)
+  Status: success
+
+Entry 9:
+  Glosses: MOTHER, HELP, DEAF, MAN
+  Reference: The mother helps the deaf man
+  Predicted: The mother helps the deaf man.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 2: 'wrong' vs 'DEAF'
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: mother, help, deaf, man
+  Gloss Accuracy Improvement: +25.0%
+  Baseline BLEU: 11.52
+  Model BLEU: 100.00
+  BLEU Improvement: +88.48
+  Baseline BERTScore: 90.33
+  Model BERTScore: 96.88
+  BERTScore Improvement: +6.56
+  Baseline Quality: 39.63
+  Model Quality: 68.43
+  Quality Improvement: +28.80
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +25.0%
+  Coverage F1 Improvement: +25.0%
+  Baseline Composite: 54.40
+  Model Composite: 86.75
+  Composite Improvement: +32.35
+  LLM Alternatives Used: 1/4
+    Position 2: Used 'deaf' (top-3, 11.3%) instead of 'wrong' (top-1, 41.0%)
+  Status: success
+
+Entry 10:
+  Glosses: CANDY, GIVE, MAN, WOMAN
+  Reference: The man gives candy to the woman
+  Predicted: Now give the man candy to the woman.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: candy, now, man, woman
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 9.93
+  Model BLEU: 41.11
+  BLEU Improvement: +31.18
+  Baseline BERTScore: 87.40
+  Model BERTScore: 93.92
+  BERTScore Improvement: +6.52
+  Baseline Quality: 19.70
+  Model Quality: 87.97
+  Quality Improvement: +68.27
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 80.0%
+  Model Coverage F1: 88.9%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +5.0%
+  Coverage F1 Improvement: +13.9%
+  Hallucinated Words: now
+  Baseline Composite: 45.60
+  Model Composite: 82.36
+  Composite Improvement: +36.76
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 11:
+  Glosses: APPLE, BOOK, CHAIR, TABLE, BLUE
+  Reference: The blue book and apple are on the table with a chair
+  Predicted: The book is on the chair table.
+  Model Gloss Accuracy (top-1): 4/5 (80.0%)
+  Top-1 Mismatches:
+    Position 3: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: apple, book, chair, table, blue
+  Gloss Accuracy Improvement: +20.0%
+  Baseline BLEU: 3.73
+  Model BLEU: 8.46
+  BLEU Improvement: +4.74
+  Baseline BERTScore: 88.92
+  Model BERTScore: 93.20
+  BERTScore Improvement: +4.28
+  Baseline Quality: 3.33
+  Model Quality: 83.06
+  Quality Improvement: +79.73
+  Baseline Coverage Recall: 80.0%
+  Baseline Coverage Precision: 80.0%
+  Baseline Coverage F1: 80.0%
+  Model Coverage Recall: 60.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 75.0%
+  Coverage Recall Improvement: -20.0%
+  Coverage Precision Improvement: +20.0%
+  Coverage F1 Improvement: -5.0%
+  Missing Words: blue, apple
+  Baseline Composite: 39.68
+  Model Composite: 71.88
+  Composite Improvement: +32.21
+  LLM Alternatives Used: 1/5
+    Position 3: Used 'table' (top-2, 27.8%) instead of 'computer' (top-1, 71.1%)
+  Status: success
+
+Entry 12:
+  Glosses: DOG, WALK, MAN, NOW, FINE
+  Reference: The man walks the dog now and it is fine
+  Predicted: The dog wants to walk with the man now like.
+  Model Gloss Accuracy (top-1): 4/5 (80.0%)
+  Top-1 Mismatches:
+    Position 4: 'like' vs 'FINE'
+  Effective Gloss Accuracy (LLM-selected): 4/5 (80.0%)
+  Effective Glosses: dog, walk, man, now, like
+  Effective Mismatches:
+    Position 4: LLM chose 'like' but should be 'FINE'
+      Available top-k predictions:
+        1. like (90.4%)
+        2. fine (6.5%) [CORRECT!]
+        3. walk (1.7%)
+  Baseline BLEU: 5.17
+  Model BLEU: 12.55
+  BLEU Improvement: +7.38
+  Baseline BERTScore: 88.20
+  Model BERTScore: 89.45
+  BERTScore Improvement: +1.25
+  Baseline Quality: 27.47
+  Model Quality: 80.39
+  Quality Improvement: +52.93
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 80.0%
+  Baseline Coverage F1: 72.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -13.3%
+  Coverage F1 Improvement: -6.1%
+  Missing Words: it, fine
+  Hallucinated Words: wants, like
+  Baseline Composite: 47.58
+  Model Composite: 68.60
+  Composite Improvement: +21.01
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 13:
+  Glosses: MOTHER, HELP, DEAF, MAN, NOW
+  Reference: The mother helps the deaf man now
+  Predicted: The mother helps the deaf man now.
+  Model Gloss Accuracy (top-1): 4/5 (80.0%)
+  Top-1 Mismatches:
+    Position 2: 'wrong' vs 'DEAF'
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: mother, help, deaf, man, now
+  Gloss Accuracy Improvement: +20.0%
+  Baseline BLEU: 15.85
+  Model BLEU: 100.00
+  BLEU Improvement: +84.15
+  Baseline BERTScore: 91.11
+  Model BERTScore: 97.12
+  BERTScore Improvement: +6.01
+  Baseline Quality: 41.50
+  Model Quality: 65.80
+  Quality Improvement: +24.30
+  Baseline Coverage Recall: 80.0%
+  Baseline Coverage Precision: 80.0%
+  Baseline Coverage F1: 80.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +20.0%
+  Coverage Precision Improvement: +20.0%
+  Coverage F1 Improvement: +20.0%
+  Baseline Composite: 57.20
+  Model Composite: 85.75
+  Composite Improvement: +28.55
+  LLM Alternatives Used: 1/5
+    Position 2: Used 'deaf' (top-3, 11.3%) instead of 'wrong' (top-1, 41.0%)
+  Status: success
+
+Entry 14:
+  Glosses: APPLE, BOOK, CHAIR, TABLE, BLUE, MAN
+  Reference: The blue book and apple are on the table with a chair for the man
+  Predicted: The book is on the chair table.
+  Model Gloss Accuracy (top-1): 5/6 (83.3%)
+  Top-1 Mismatches:
+    Position 3: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 6/6 (100.0%)
+  Effective Glosses: apple, book, chair, table, blue, man
+  Gloss Accuracy Improvement: +16.7%
+  Baseline BLEU: 2.71
+  Model BLEU: 5.51
+  BLEU Improvement: +2.80
+  Baseline BERTScore: 87.75
+  Model BERTScore: 92.60
+  BERTScore Improvement: +4.85
+  Baseline Quality: 4.59
+  Model Quality: 83.06
+  Quality Improvement: +78.47
+  Baseline Coverage Recall: 83.3%
+  Baseline Coverage Precision: 83.3%
+  Baseline Coverage F1: 83.3%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -33.3%
+  Coverage Precision Improvement: +16.7%
+  Coverage F1 Improvement: -16.7%
+  Missing Words: blue, apple, man
+  Baseline Composite: 40.63
+  Model Composite: 69.24
+  Composite Improvement: +28.61
+  LLM Alternatives Used: 1/6
+    Position 3: Used 'table' (top-2, 27.8%) instead of 'computer' (top-1, 71.1%)
+  Status: success
+
+Entry 15:
+  Glosses: APPLE, BOOK, CHAIR, TABLE, BLUE, MAN, WOMAN, FINE
+  Reference: The blue book and apple are on the table with a chair for the man and woman on a fine day
+  Predicted: The book is on the chair table, what man, woman like?
+  Model Gloss Accuracy (top-1): 6/8 (75.0%)
+  Top-1 Mismatches:
+    Position 3: 'computer' vs 'TABLE'
+    Position 7: 'like' vs 'FINE'
+  Effective Gloss Accuracy (LLM-selected): 6/8 (75.0%)
+  Effective Glosses: apple, book, chair, table, what, man, woman, like
+  Effective Mismatches:
+    Position 4: LLM chose 'what' but should be 'BLUE'
+      Available top-k predictions:
+        1. blue (58.1%) [CORRECT!]
+        2. what (19.2%)
+        3. who (5.6%)
+    Position 7: LLM chose 'like' but should be 'FINE'
+      Available top-k predictions:
+        1. like (90.4%)
+        2. fine (6.5%) [CORRECT!]
+        3. walk (1.7%)
+  Baseline BLEU: 1.70
+  Model BLEU: 4.27
+  BLEU Improvement: +2.57
+  Baseline BERTScore: 86.42
+  Model BERTScore: 89.44
+  BERTScore Improvement: +3.02
+  Baseline Quality: 5.83
+  Model Quality: 71.87
+  Quality Improvement: +66.04
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 70.6%
+  Model Coverage Recall: 55.6%
+  Model Coverage Precision: 71.4%
+  Model Coverage F1: 62.5%
+  Coverage Recall Improvement: -11.1%
+  Coverage Precision Improvement: -3.6%
+  Coverage F1 Improvement: -8.1%
+  Missing Words: blue, apple, fine, day
+  Hallucinated Words: what, like
+  Baseline Composite: 37.52
+  Model Composite: 62.90
+  Composite Improvement: +25.38
+  LLM Alternatives Used: 2/8
+    Position 3: Used 'table' (top-2, 27.8%) instead of 'computer' (top-1, 71.1%)
+    Position 4: Used 'what' (top-2, 19.2%) instead of 'blue' (top-1, 58.1%)
+  Status: success
+
+Entry 16:
+  Glosses: MOTHER, HELP, DEAF
+  Reference: The mother helps the deaf person
+  Predicted: The mother helps the deaf.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 2: 'wrong' vs 'DEAF'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: mother, help, deaf
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 10.12
+  Model BLEU: 81.87
+  BLEU Improvement: +71.75
+  Baseline BERTScore: 87.35
+  Model BERTScore: 97.37
+  BERTScore Improvement: +10.02
+  Baseline Quality: 36.38
+  Model Quality: 52.47
+  Quality Improvement: +16.10
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +28.6%
+  Missing Words: person
+  Baseline Composite: 47.82
+  Model Composite: 74.17
+  Composite Improvement: +26.35
+  LLM Alternatives Used: 1/3
+    Position 2: Used 'deaf' (top-3, 11.3%) instead of 'wrong' (top-1, 41.0%)
+  Status: success
+
+Entry 17:
+  Glosses: DOG, WALK, MAN
+  Reference: The man walks the dog
+  Predicted: The dog wants to walk with the man.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: dog, walk, man
+  Baseline BLEU: 17.80
+  Model BLEU: 15.62
+  BLEU Improvement: -2.18
+  Baseline BERTScore: 90.72
+  Model BERTScore: 92.53
+  BERTScore Improvement: +1.81
+  Baseline Quality: 52.62
+  Model Quality: 96.45
+  Quality Improvement: +43.83
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -25.0%
+  Coverage F1 Improvement: -14.3%
+  Hallucinated Words: wants
+  Baseline Composite: 66.86
+  Model Composite: 80.86
+  Composite Improvement: +14.00
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 18:
+  Glosses: APPLE, EAT, NOW
+  Reference: The person eats an apple now
+  Predicted: The apple is wrong now.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: apple, wrong, now
+  Effective Mismatches:
+    Position 1: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 12.75
+  Model BLEU: 11.51
+  BLEU Improvement: -1.24
+  Baseline BERTScore: 87.67
+  Model BERTScore: 89.44
+  BERTScore Improvement: +1.77
+  Baseline Quality: 56.82
+  Model Quality: 67.66
+  Quality Improvement: +10.84
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: person, eats
+  Hallucinated Words: wrong
+  Baseline Composite: 56.46
+  Model Composite: 60.97
+  Composite Improvement: +4.51
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 19:
+  Glosses: CHAIR, TABLE, BLUE
+  Reference: The blue chair is near the table
+  Predicted: The blue chair is near the computer table.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: chair, computer, blue
+  Effective Mismatches:
+    Position 1: LLM chose 'computer' but should be 'TABLE'
+      Available top-k predictions:
+        1. computer (71.1%)
+        2. table (27.8%) [CORRECT!]
+        3. year (0.3%)
+  Baseline BLEU: 9.14
+  Model BLEU: 70.71
+  BLEU Improvement: +61.57
+  Baseline BERTScore: 89.03
+  Model BERTScore: 97.45
+  BERTScore Improvement: +8.43
+  Baseline Quality: 19.45
+  Model Quality: 85.33
+  Quality Improvement: +65.88
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 80.0%
+  Model Coverage F1: 88.9%
+  Coverage Recall Improvement: +50.0%
+  Coverage Precision Improvement: +13.3%
+  Coverage F1 Improvement: +31.7%
+  Hallucinated Words: computer
+  Baseline Composite: 41.24
+  Model Composite: 86.45
+  Composite Improvement: +45.21
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 20:
+  Glosses: CANDY, GIVE, YES
+  Reference: Yes, give me candy
+  Predicted: Now give candy.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: candy, now, yes
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 24.84
+  Model BLEU: 24.84
+  BLEU Improvement: +0.00
+  Baseline BERTScore: 86.08
+  Model BERTScore: 91.52
+  BERTScore Improvement: +5.44
+  Baseline Quality: 34.79
+  Model Quality: 22.54
+  Quality Improvement: -12.25
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 57.1%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: yes, me
+  Hallucinated Words: now
+  Baseline Composite: 49.14
+  Model Composite: 45.33
+  Composite Improvement: -3.81
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 21:
+  Glosses: DOG, WALK, MAN, NOW
+  Reference: The man walks the dog now
+  Predicted: The dog wants to walk the man now.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: dog, walk, man, now
+  Baseline BLEU: 12.75
+  Model BLEU: 16.52
+  BLEU Improvement: +3.77
+  Baseline BERTScore: 90.88
+  Model BERTScore: 93.03
+  BERTScore Improvement: +2.15
+  Baseline Quality: 48.06
+  Model Quality: 81.06
+  Quality Improvement: +33.00
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 80.0%
+  Model Coverage F1: 88.9%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -20.0%
+  Coverage F1 Improvement: -11.1%
+  Hallucinated Words: wants
+  Baseline Composite: 64.31
+  Model Composite: 75.73
+  Composite Improvement: +11.42
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 22:
+  Glosses: MOTHER, HELP, DEAF, MAN
+  Reference: The mother helps the deaf man
+  Predicted: The mother helps the deaf man.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 2: 'wrong' vs 'DEAF'
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: mother, help, deaf, man
+  Gloss Accuracy Improvement: +25.0%
+  Baseline BLEU: 11.52
+  Model BLEU: 100.00
+  BLEU Improvement: +88.48
+  Baseline BERTScore: 90.33
+  Model BERTScore: 96.88
+  BERTScore Improvement: +6.56
+  Baseline Quality: 39.63
+  Model Quality: 68.43
+  Quality Improvement: +28.80
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +25.0%
+  Coverage F1 Improvement: +25.0%
+  Baseline Composite: 54.40
+  Model Composite: 86.75
+  Composite Improvement: +32.35
+  LLM Alternatives Used: 1/4
+    Position 2: Used 'deaf' (top-3, 11.3%) instead of 'wrong' (top-1, 41.0%)
+  Status: success
+
+Entry 23:
+  Glosses: APPLE, BOOK, CHAIR, TABLE
+  Reference: The book and apple are on the table with a chair
+  Predicted: The book is on the table.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 3: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: apple, book, graduation, table
+  Effective Mismatches:
+    Position 2: LLM chose 'graduation' but should be 'CHAIR'
+      Available top-k predictions:
+        1. chair (87.2%) [CORRECT!]
+        2. walk (10.4%)
+        3. graduation (0.9%)
+  Baseline BLEU: 3.65
+  Model BLEU: 16.51
+  BLEU Improvement: +12.86
+  Baseline BERTScore: 87.87
+  Model BERTScore: 93.89
+  BERTScore Improvement: +6.02
+  Baseline Quality: 17.28
+  Model Quality: 99.38
+  Quality Improvement: +82.10
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -25.0%
+  Coverage Precision Improvement: +25.0%
+  Coverage F1 Improvement: -8.3%
+  Missing Words: apple, chair
+  Baseline Composite: 43.78
+  Model Composite: 77.67
+  Composite Improvement: +33.89
+  LLM Alternatives Used: 2/4
+    Position 2: Used 'graduation' (top-3, 0.9%) instead of 'chair' (top-1, 87.2%)
+    Position 3: Used 'table' (top-2, 27.8%) instead of 'computer' (top-1, 71.1%)
+  Status: success
+
+Entry 24:
+  Glosses: CANDY, EAT, NOW, YES
+  Reference: Yes, eat candy now
+  Predicted: The candy is wrong now, yes?
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: candy, wrong, now, yes
+  Effective Mismatches:
+    Position 1: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 21.02
+  Model BLEU: 10.68
+  BLEU Improvement: -10.34
+  Baseline BERTScore: 87.26
+  Model BERTScore: 88.53
+  BERTScore Improvement: +1.27
+  Baseline Quality: 12.89
+  Model Quality: 74.82
+  Quality Improvement: +61.94
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 75.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: eat
+  Hallucinated Words: wrong
+  Baseline Composite: 44.51
+  Model Composite: 67.99
+  Composite Improvement: +23.48
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 25:
+  Glosses: COOL, WALK, MAN, BLUE
+  Reference: The cool man walks in blue
+  Predicted: The man can walk.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: cool, walk, man, blue
+  Baseline BLEU: 12.75
+  Model BLEU: 11.52
+  BLEU Improvement: -1.23
+  Baseline BERTScore: 90.03
+  Model BERTScore: 89.08
+  BERTScore Improvement: -0.95
+  Baseline Quality: 8.36
+  Model Quality: 82.29
+  Quality Improvement: +73.93
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -50.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: -33.3%
+  Missing Words: cool, blue
+  Baseline Composite: 48.26
+  Model Composite: 69.13
+  Composite Improvement: +20.86
+  LLM Alternatives Used: 0/4
+  Status: success

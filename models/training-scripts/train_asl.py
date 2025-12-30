@@ -262,7 +262,7 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
 
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
-                           label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False):
+                           label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -378,9 +378,13 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         if augmented_index:
             # Fast path: use index (trust index, don't check exists to avoid Windows file handle limits)
             for gloss_name in target_glosses:
-                if gloss_name in augmented_index:
-                    gloss_dir = augmented_pool_path / gloss_name.lower()
-                    for pkl_filename in augmented_index[gloss_name]:
+                # Try both lowercase and uppercase keys (index may have either)
+                gloss_key = gloss_name.lower()
+                if gloss_key not in augmented_index:
+                    gloss_key = gloss_name.upper()
+                if gloss_key in augmented_index:
+                    gloss_dir = augmented_pool_path / gloss_key
+                    for pkl_filename in augmented_index[gloss_key]:
                         # FILTER: Only include if original video ID is in train split (prevent data leakage)
                         # Augmented filename format: "aug_XX_VIDEOID.pkl"
                         # Extract original video ID
@@ -528,7 +532,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         # Optimized for balanced 50-class model
         batch_size = 32  # Larger batch for more stable gradients
         lr = 1e-4  # OpenHands methodology: lower learning rate
-        weight_decay = 0.001  # Reduced for larger model with AdamW
+        default_weight_decay = 0.001  # Reduced for larger model with AdamW
         scheduler_patience = 8 if num_classes >= 50 else 5  # More patience for 50+ classes
         # Use command line parameter or default for early stopping
         early_stopping_patience = early_stopping_patience if early_stopping_patience is not None else None
@@ -536,12 +540,11 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"HYPERPARAMS: Configured for large augmented dataset")
         print(f"  Batch size: {batch_size} (larger)")
         print(f"  Learning rate: {lr} (standard)")
-        print(f"  Weight decay: {weight_decay} (more regularization)")
     else:
         # Original hyperparams for small dataset
         batch_size = 16  # Optimized for CPU training speed
         lr = 1e-4  # OpenHands methodology: lower learning rate
-        weight_decay = 0.001  # Less weight decay
+        default_weight_decay = 0.01  # More weight decay for smaller dataset
         scheduler_patience = 3  # More aggressive
         # Use command line parameter or default for early stopping
         early_stopping_patience = early_stopping_patience if early_stopping_patience is not None else None
@@ -549,6 +552,10 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"HYPERPARAMS: Configured for small original dataset")
         print(f"  Batch size: {batch_size} (small)")
         print(f"  Learning rate: {lr} (higher)")
+
+    # Use command-line weight_decay if provided, otherwise use default
+    final_weight_decay = weight_decay if weight_decay is not None else default_weight_decay
+    print(f"  Weight decay: {final_weight_decay} {'(custom)' if weight_decay is not None else '(default)'}")
 
     # Print early stopping configuration
     if early_stopping_patience is not None:
@@ -572,8 +579,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
 
     # Use PyTorch's built-in optimizer (much faster than custom Python implementation)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay, betas=(0.9, 0.999))
-    print(f"OPTIMIZER: Using torch.optim.AdamW with lr={lr}, weight_decay={weight_decay}, betas=(0.9, 0.999)")
+    optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=final_weight_decay, betas=(0.9, 0.999))
+    print(f"OPTIMIZER: Using torch.optim.AdamW with lr={lr}, weight_decay={final_weight_decay}, betas=(0.9, 0.999)")
 
     # Learning rate warmup + cosine annealing scheduler
     if warmup_epochs is None:
@@ -633,7 +640,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         'num_layers': model_config.num_hidden_layers,
         'batch_size': batch_size,
         'lr': lr,
-        'weight_decay': weight_decay
+        'weight_decay': final_weight_decay
     }
 
     # Try to load checkpoint and resume if compatible
@@ -886,8 +893,8 @@ if __name__ == "__main__":
                        help='Test the trained model instead of training')
     parser.add_argument('--mode', choices=['train', 'test'], default='train',
                        help='Mode: train (default) or test the model')
-    parser.add_argument('--classes', type=int, choices=[20, 50, 100], default=20,
-                       help='Number of classes to train/test (20, 50, or 100)')
+    parser.add_argument('--classes', type=int, default=20,
+                       help='Number of classes to train/test (e.g., 20, 50, 100, 125)')
     parser.add_argument('--dataset', choices=['original', 'augmented'], default='original',
                        help='Dataset type: original or augmented')
     parser.add_argument('--augmented-path',
@@ -906,6 +913,8 @@ if __name__ == "__main__":
                        help='Dropout probability (default: 0.1). Increase to 0.2-0.3 to reduce overfitting')
     parser.add_argument('--label-smoothing', type=float, default=0.1,
                        help='Label smoothing factor (default: 0.1). Improves top-k accuracy by preventing overconfident predictions')
+    parser.add_argument('--weight-decay', type=float, default=None,
+                       help='Weight decay for AdamW optimizer (default: 0.001 for augmented, 0.01 for original). Increase to reduce overfitting')
     parser.add_argument('--warmup-epochs', type=int, default=None,
                        help='Number of warmup epochs (default: 10%% of total epochs). Set to 0 to disable warmup')
     parser.add_argument('--grad-clip', type=float, default=1.0,
@@ -973,7 +982,8 @@ if __name__ == "__main__":
                 label_smoothing=args.label_smoothing,
                 warmup_epochs=args.warmup_epochs,
                 grad_clip=args.grad_clip,
-                force_fresh=args.force_fresh
+                force_fresh=args.force_fresh,
+                weight_decay=args.weight_decay
             )
 
             print()

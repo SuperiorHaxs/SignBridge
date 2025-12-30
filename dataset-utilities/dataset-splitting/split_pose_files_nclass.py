@@ -45,6 +45,10 @@ TRAIN_RATIO = 0.7
 VAL_RATIO = 0.15
 TEST_RATIO = 0.15
 
+# Signer group detection threshold
+# Video IDs with gaps larger than this are assumed to be from different signers/recording sessions
+SIGNER_GROUP_GAP_THRESHOLD = 100  # Gap > 100 between video IDs = new signer group
+
 
 # ============================================================================
 # DYNAMIC CLASS SELECTION - No hardcoded lists!
@@ -249,17 +253,306 @@ def get_pose_files_by_class(video_to_gloss):
     return files_by_class
 
 
-def split_files(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
-    """Split files into train/val/test."""
+def group_files_by_signer(files, gap_threshold=SIGNER_GROUP_GAP_THRESHOLD):
+    """
+    Group files by video ID proximity to infer signer/recording session.
+
+    Consecutive video IDs (small gaps) are likely from the same signer.
+    Large gaps indicate different recording sessions/signers.
+
+    Args:
+        files: List of filenames (e.g., ['07068.pose', '07069.pose', ...])
+        gap_threshold: Maximum gap between video IDs in same group
+
+    Returns:
+        List of groups, where each group is a list of files from same signer
+    """
+    if not files:
+        return []
+
+    # Extract video IDs and sort
+    file_ids = []
+    for f in files:
+        try:
+            vid_id = int(f.replace('.pose', '').replace('.pkl', ''))
+            file_ids.append((vid_id, f))
+        except ValueError:
+            # Non-numeric filename, treat as separate group
+            file_ids.append((float('inf'), f))
+
+    file_ids.sort(key=lambda x: x[0])
+
+    # Group by proximity
+    groups = []
+    current_group = [file_ids[0][1]]
+    prev_id = file_ids[0][0]
+
+    for vid_id, filename in file_ids[1:]:
+        if vid_id == float('inf') or prev_id == float('inf'):
+            # Non-numeric ID, start new group
+            groups.append(current_group)
+            current_group = [filename]
+        elif vid_id - prev_id > gap_threshold:
+            # Large gap, start new group (different signer)
+            groups.append(current_group)
+            current_group = [filename]
+        else:
+            # Small gap, same signer
+            current_group.append(filename)
+        prev_id = vid_id
+
+    # Don't forget the last group
+    if current_group:
+        groups.append(current_group)
+
+    return groups
+
+
+def split_files_signer_aware(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+    """
+    Split files into train/val/test while keeping signer groups together.
+
+    This ensures that different signers appear in each split, improving
+    generalization testing. Videos from the same signer stay in the same split
+    to prevent data leakage.
+
+    Strategy:
+    1. Handle small datasets (n<=3) with minimum sample guarantees
+    2. Group files by video ID proximity (inferred signer groups)
+    3. Distribute groups across splits to achieve target ratios
+    4. Ensure each split has representation from different signer groups
+
+    Args:
+        files: List of filenames
+        train_ratio, val_ratio, test_ratio: Target split ratios
+
+    Returns:
+        Dict with 'train', 'val', 'test' lists
+    """
     n = len(files)
-    n_train = int(n * train_ratio)
-    n_val = int(n * val_ratio)
+
+    # Handle small datasets with minimum sample constraints
+    if n == 0:
+        return {'train': [], 'val': [], 'test': []}
+
+    if n == 1:
+        # Only 1 file: put in train, copy to val and test
+        return {
+            'train': [files[0]],
+            'val': [files[0]],  # Copy
+            'test': [files[0]]  # Copy
+        }
+
+    if n == 2:
+        # 2 files: 1 train, 1 val, copy val to test
+        # Try to put different signer groups in different splits if possible
+        groups = group_files_by_signer(files)
+        if len(groups) == 2:
+            # Different signers - put one in train, one in test/val
+            return {
+                'train': groups[0],
+                'val': groups[1],
+                'test': groups[1].copy()  # Copy from val
+            }
+        else:
+            # Same signer - use positional split
+            return {
+                'train': [files[0]],
+                'val': [files[1]],
+                'test': [files[1]]  # Copy from val
+            }
+
+    if n == 3:
+        # 3 files: 1 each - try to distribute signer groups
+        groups = group_files_by_signer(files)
+        if len(groups) >= 3:
+            # 3+ groups: one from each
+            return {
+                'train': groups[0],
+                'val': groups[1],
+                'test': groups[2]
+            }
+        elif len(groups) == 2:
+            # 2 groups: larger to train, smaller split between val/test
+            if len(groups[0]) >= len(groups[1]):
+                larger, smaller = groups[0], groups[1]
+            else:
+                larger, smaller = groups[1], groups[0]
+
+            if len(larger) >= 2:
+                return {
+                    'train': larger[:-1],
+                    'val': [larger[-1]],
+                    'test': smaller
+                }
+            else:
+                return {
+                    'train': larger,
+                    'val': smaller,
+                    'test': smaller.copy()
+                }
+        else:
+            # 1 group: positional split
+            return {
+                'train': [files[0]],
+                'val': [files[1]],
+                'test': [files[2]]
+            }
+
+    # n >= 4: Use signer-aware grouping
+    groups = group_files_by_signer(files)
+    n_groups = len(groups)
+
+    # If only 1 group, fall back to simple splitting within the group
+    if n_groups == 1:
+        return split_files_simple(files, train_ratio, val_ratio, test_ratio)
+
+    # If 2 groups: train gets larger, test/val share smaller
+    if n_groups == 2:
+        # Put larger group in train, smaller in test (copy to val)
+        if len(groups[0]) >= len(groups[1]):
+            train_files = groups[0]
+            test_files = groups[1]
+        else:
+            train_files = groups[1]
+            test_files = groups[0]
+
+        # For val, take some from train if possible, otherwise copy from test
+        if len(train_files) >= 3:
+            val_files = [train_files.pop()]  # Take 1 from train for val
+        else:
+            val_files = test_files.copy()  # Copy test to val
+
+        return {
+            'train': train_files,
+            'val': val_files,
+            'test': test_files
+        }
+
+    # 3+ groups: distribute groups across splits
+    # Sort groups by size (largest first) for better distribution
+    groups_with_size = [(len(g), i, g) for i, g in enumerate(groups)]
+    groups_with_size.sort(reverse=True)
+
+    # Calculate target counts
+    target_train = int(n * train_ratio)
+    target_val = int(n * val_ratio)
+    target_test = n - target_train - target_val
+
+    # Distribute groups to splits
+    train_files = []
+    val_files = []
+    test_files = []
+
+    train_count = 0
+    val_count = 0
+    test_count = 0
+
+    for size, _, group in groups_with_size:
+        # Assign to the split that needs files most (relative to target)
+        train_need = target_train - train_count
+        val_need = target_val - val_count
+        test_need = target_test - test_count
+
+        # Ensure at least one group goes to each split
+        if not val_files and len(groups_with_size) - groups_with_size.index((size, _, group)) <= 2:
+            val_files.extend(group)
+            val_count += size
+        elif not test_files and len(groups_with_size) - groups_with_size.index((size, _, group)) <= 1:
+            test_files.extend(group)
+            test_count += size
+        elif train_need >= max(val_need, test_need) or not train_files:
+            train_files.extend(group)
+            train_count += size
+        elif val_need >= test_need:
+            val_files.extend(group)
+            val_count += size
+        else:
+            test_files.extend(group)
+            test_count += size
+
+    # Ensure all splits have at least some files
+    if not val_files and train_files:
+        # Move last file from train to val
+        val_files.append(train_files.pop())
+    if not test_files and train_files:
+        # Move last file from train to test
+        test_files.append(train_files.pop())
+
+    return {
+        'train': train_files,
+        'val': val_files,
+        'test': test_files
+    }
+
+
+def split_files_simple(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+    """
+    Simple positional split (original behavior) for fallback.
+
+    Used when there's only one signer group.
+    """
+    n = len(files)
+
+    if n == 0:
+        return {'train': [], 'val': [], 'test': []}
+
+    if n == 1:
+        return {
+            'train': [files[0]],
+            'val': [files[0]],
+            'test': [files[0]]
+        }
+
+    if n == 2:
+        return {
+            'train': [files[0]],
+            'val': [files[1]],
+            'test': [files[1]]
+        }
+
+    if n == 3:
+        return {
+            'train': [files[0]],
+            'val': [files[1]],
+            'test': [files[2]]
+        }
+
+    n_train = max(1, int(n * train_ratio))
+    n_val = max(1, int(n * val_ratio))
+    n_test = max(1, n - n_train - n_val)
+
+    while n_train + n_val + n_test > n:
+        if n_train > 1:
+            n_train -= 1
+        elif n_val > 1:
+            n_val -= 1
+        elif n_test > 1:
+            n_test -= 1
 
     return {
         'train': files[:n_train],
         'val': files[n_train:n_train + n_val],
-        'test': files[n_train + n_val:]
+        'test': files[n_train + n_val:n_train + n_val + n_test]
     }
+
+
+def split_files(files, train_ratio=0.7, val_ratio=0.15, test_ratio=0.15):
+    """
+    Split files into train/val/test using signer-aware grouping.
+
+    This is the main entry point that uses signer-aware splitting by default.
+    Falls back to simple splitting for very small datasets.
+
+    Ensures at least 1 sample in each split when possible:
+    - n=1: 1 train, copy to val, copy to test
+    - n=2: 1 train, 1 val, copy val to test
+    - n=3: 1 train, 1 val, 1 test
+    - n>=4: use signer-aware ratios but ensure at least 1 in each split
+    """
+    # Use signer-aware splitting for all cases
+    # It handles small datasets gracefully by falling back to simple split
+    return split_files_signer_aware(files, train_ratio, val_ratio, test_ratio)
 
 
 def create_split_directories(output_dir, target_classes):
@@ -271,24 +564,53 @@ def create_split_directories(output_dir, target_classes):
 
 
 def copy_files_to_splits(files_by_class, output_dir):
-    """Copy pose files to appropriate split directories."""
+    """Copy pose files to appropriate split directories using signer-aware splitting."""
     stats = {'train': 0, 'val': 0, 'test': 0}
+    signer_group_stats = {'total_groups': 0, 'multi_group_classes': 0}
 
     for gloss, files in sorted(files_by_class.items()):
-        print(f"\n{gloss}: {len(files)} files")
+        # Analyze signer groups for this class
+        groups = group_files_by_signer(files)
+        n_groups = len(groups)
+        signer_group_stats['total_groups'] += n_groups
 
-        # Split files
+        if n_groups > 1:
+            signer_group_stats['multi_group_classes'] += 1
+            group_sizes = [len(g) for g in groups]
+            print(f"\n{gloss}: {len(files)} files in {n_groups} signer groups {group_sizes}")
+        else:
+            print(f"\n{gloss}: {len(files)} files (1 signer group)")
+
+        # Split files using signer-aware logic
         splits = split_files(files, TRAIN_RATIO, VAL_RATIO, TEST_RATIO)
 
-        # Copy to appropriate directories
+        # Show split details with video ID ranges
         for split_name, files_in_split in splits.items():
-            print(f"  {split_name}: {len(files_in_split)} files")
+            if files_in_split:
+                # Extract video IDs for summary
+                try:
+                    ids = sorted([int(f.replace('.pose', '').replace('.pkl', '')) for f in files_in_split])
+                    if len(ids) > 3:
+                        id_summary = f"[{ids[0]}...{ids[-1]}]"
+                    else:
+                        id_summary = str(ids)
+                except:
+                    id_summary = ""
+                print(f"  {split_name}: {len(files_in_split)} files {id_summary}")
+            else:
+                print(f"  {split_name}: 0 files")
 
             for pose_file in files_in_split:
                 src_path = os.path.join(POSE_FILES_DIR, pose_file)
                 dst_path = os.path.join(output_dir, split_name, gloss, pose_file)
                 shutil.copy2(src_path, dst_path)
                 stats[split_name] += 1
+
+    # Print signer group summary
+    print(f"\n--- Signer Group Summary ---")
+    print(f"Total signer groups detected: {signer_group_stats['total_groups']}")
+    print(f"Classes with multiple signer groups: {signer_group_stats['multi_group_classes']}/{len(files_by_class)}")
+    print(f"(Gap threshold for new group: {SIGNER_GROUP_GAP_THRESHOLD} video IDs)")
 
     return stats
 

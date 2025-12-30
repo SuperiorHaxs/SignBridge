@@ -1,25 +1,30 @@
 {
   "samples": [
     {
-      "id": "woman-accident-halloween",
-      "name": "Woman Accident Halloween",
-      "thumbnail": "pose_video.mp4"
-    },
-    {
-      "id": "man-woman-like-thanksgiving",
-      "name": "Man Woman Like Thanksgiving",
-      "thumbnail": "pose_video.mp4"
-    },
-    {
-      "id": "son-enjoy-work",
+      "id": "son-enjoy-work-vid",
       "name": "Son Enjoy Work",
       "thumbnail": "pose_video.mp4"
     },
+  
     {
-      "id": "chair-black-table",
-      "name": "Chair Black Table",
+      "id": "what-time-finish-basketball-k",
+      "name": "what time finish basketball",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "chair-black-tall-k",
+      "name": "chair black tall",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "time-son-go-bed-k",
+      "name": "time son go bed",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "work-full-time-doctor-k",
+      "name": "work full time doctor",
       "thumbnail": "pose_video.mp4"
     }
-    
   ]
 }

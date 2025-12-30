@@ -20,7 +20,8 @@ const elements = {
     loadingState: document.getElementById('loading-state'),
     metricsSection: document.getElementById('metrics-section'),
     finalActions: document.getElementById('final-actions'),
-    btnStartOver: document.getElementById('btn-start-over')
+    btnStartOver: document.getElementById('btn-start-over'),
+    btnSaveSession: document.getElementById('btn-save-session')
 };
 
 document.addEventListener('DOMContentLoaded', initialize);
@@ -37,6 +38,9 @@ function initialize() {
         state.demoSample = getSelectedSample();
     }
 
+    // Check if coming from fast mode (Live mode)
+    const isFast = isFastMode();
+
     if (!state.referenceSentence) {
         alert('No reference sentence found. Please start from the beginning.');
         window.location.href = '/';
@@ -44,8 +48,13 @@ function initialize() {
     }
 
     if (!state.rawSentence || !state.llmSentence) {
-        alert('No sentences to evaluate. Please complete previous steps.');
-        window.location.href = '/construct';
+        if (isFast) {
+            alert('Processing did not complete. Please try again.');
+            window.location.href = '/';
+        } else {
+            alert('No sentences to evaluate. Please complete previous steps.');
+            window.location.href = '/construct';
+        }
         return;
     }
 
@@ -57,9 +66,12 @@ function initialize() {
     // Event listeners
     elements.btnEvaluate.addEventListener('click', evaluateSentences);
     elements.btnStartOver.addEventListener('click', startOver);
+    if (elements.btnSaveSession) {
+        elements.btnSaveSession.addEventListener('click', saveSession);
+    }
 
-    // Auto-trigger evaluation in demo mode
-    if (state.demoSample?.precomputed?.evaluation) {
+    // Auto-trigger evaluation in fast mode or demo mode with precomputed
+    if (isFast || state.demoSample?.precomputed?.evaluation) {
         evaluateSentences();
     }
 }
@@ -112,7 +124,7 @@ function useDemoEvaluation() {
 }
 
 function displayMetrics(rawMetrics, llmMetrics) {
-    const metrics = ['bleu', 'bert', 'quality', 'gloss_accuracy', 'composite'];
+    const metrics = ['bleu', 'bert', 'quality', 'coverage_recall', 'coverage_precision', 'coverage_f1', 'composite'];
 
     metrics.forEach(metric => {
         const row = document.querySelector(`.metric-row[data-metric="${metric}"]`);
@@ -140,7 +152,43 @@ function displayMetrics(rawMetrics, llmMetrics) {
         }
     });
 
+    // Display coverage details (missing/hallucinated words)
+    displayCoverageDetails(rawMetrics, llmMetrics);
+
     showResults();
+}
+
+function displayCoverageDetails(rawMetrics, llmMetrics) {
+    const coverageDetails = document.getElementById('coverage-details');
+    if (!coverageDetails) return;
+
+    const rawMissing = rawMetrics.missing_words || [];
+    const rawHallucinated = rawMetrics.hallucinated_words || [];
+    const llmMissing = llmMetrics.missing_words || [];
+    const llmHallucinated = llmMetrics.hallucinated_words || [];
+
+    // Check if there's anything to show
+    const hasDetails = rawMissing.length > 0 || rawHallucinated.length > 0 ||
+                       llmMissing.length > 0 || llmHallucinated.length > 0;
+
+    if (!hasDetails) {
+        coverageDetails.style.display = 'none';
+        return;
+    }
+
+    // Update raw sentence details
+    const rawMissingEl = document.querySelector('#raw-missing-words .words');
+    const rawHallucinatedEl = document.querySelector('#raw-hallucinated-words .words');
+    if (rawMissingEl) rawMissingEl.textContent = rawMissing.length > 0 ? rawMissing.join(', ') : 'None';
+    if (rawHallucinatedEl) rawHallucinatedEl.textContent = rawHallucinated.length > 0 ? rawHallucinated.join(', ') : 'None';
+
+    // Update LLM sentence details
+    const llmMissingEl = document.querySelector('#llm-missing-words .words');
+    const llmHallucinatedEl = document.querySelector('#llm-hallucinated-words .words');
+    if (llmMissingEl) llmMissingEl.textContent = llmMissing.length > 0 ? llmMissing.join(', ') : 'None';
+    if (llmHallucinatedEl) llmHallucinatedEl.textContent = llmHallucinated.length > 0 ? llmHallucinated.join(', ') : 'None';
+
+    coverageDetails.style.display = 'block';
 }
 
 function formatScore(value) {
@@ -164,6 +212,60 @@ async function startOver() {
 
     sessionStorage.clear();
     window.location.href = '/';
+}
+
+async function saveSession() {
+    const btn = elements.btnSaveSession;
+    const originalText = btn.textContent;
+
+    try {
+        btn.textContent = 'Saving...';
+        btn.disabled = true;
+
+        const response = await fetch('/api/save-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                reference: state.referenceSentence,
+                raw_sentence: state.rawSentence,
+                llm_sentence: state.llmSentence
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            btn.textContent = 'Saved!';
+            btn.classList.add('btn-success');
+
+            let message = `Session saved!\n\nFolder: ${data.session_name}`;
+            message += `\nSegments: ${data.segment_count || 0}`;
+
+            if (data.needs_resegment) {
+                message += `\n\nNote: No segment files found. The video/pose will need to be re-segmented.`;
+                message += `\n\nUse with prepare_demo_sample.py (will re-segment):`;
+                message += `\npython prepare_demo_sample.py --video "${data.saved_path}\\capture.mp4" --reference "YOUR REFERENCE" --name "NAME"`;
+            } else {
+                message += `\n\nUse with prepare_demo_sample.py:`;
+                message += `\npython prepare_demo_sample.py --from-session "${data.saved_path}" --reference "YOUR REFERENCE" --name "NAME"`;
+            }
+
+            alert(message);
+        } else {
+            throw new Error(data.error || 'Save failed');
+        }
+    } catch (e) {
+        console.error('Save session failed:', e);
+        btn.textContent = 'Save Failed';
+        btn.classList.add('btn-danger');
+        alert('Failed to save session: ' + e.message);
+    } finally {
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.disabled = false;
+            btn.classList.remove('btn-success', 'btn-danger');
+        }, 3000);
+    }
 }
 
 function showLoading() {

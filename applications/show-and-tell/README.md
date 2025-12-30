@@ -85,7 +85,7 @@ This application is a **thin Flask wrapper** around existing project libraries:
 | Motion Segmentation | `motion_based_segmenter.py` |
 | Model Inference | `openhands_modernized_inference.py` |
 | LLM Interface | `llm_factory.py` (Google AI Studio) |
-| LLM Prompt | `llm_prompt_topk.txt` |
+| LLM Prompt | `project-utilities/llm_interface/prompts/llm_prompt_topk.txt` |
 | Evaluation | `evaluate_synthetic_dataset.py` |
 
 **No business logic is duplicated** - all calls go to existing libraries.

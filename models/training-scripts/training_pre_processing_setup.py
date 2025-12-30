@@ -118,6 +118,48 @@ except Exception as e:
     print(f"WARNING: Could not import augmentation utilities: {e}")
 
 
+def load_glosses_from_file(gloss_file_path):
+    """
+    Load a list of glosses from a JSON file.
+
+    Supports two formats:
+    1. {"gloss_list": ["gloss1", "gloss2", ...]} - from find_distinct_glosses.py
+    2. {"classes": ["gloss1", "gloss2", ...]} - standard class_mapping format
+    3. ["gloss1", "gloss2", ...] - simple list
+
+    Args:
+        gloss_file_path: Path to JSON file containing gloss list
+
+    Returns:
+        List of gloss names
+    """
+    gloss_file = Path(gloss_file_path)
+    if not gloss_file.exists():
+        raise FileNotFoundError(f"Gloss file not found: {gloss_file}")
+
+    with open(gloss_file, 'r') as f:
+        data = json.load(f)
+
+    # Try different formats
+    if isinstance(data, list):
+        glosses = data
+    elif isinstance(data, dict):
+        if 'gloss_list' in data:
+            glosses = data['gloss_list']
+        elif 'classes' in data:
+            glosses = data['classes']
+        elif 'selected_glosses' in data:
+            # Extract gloss names from detailed format
+            glosses = [g['gloss'] for g in data['selected_glosses']]
+        else:
+            raise ValueError(f"Unrecognized JSON format. Expected 'gloss_list', 'classes', or 'selected_glosses' key.")
+    else:
+        raise ValueError(f"Unrecognized JSON format. Expected list or dict.")
+
+    print(f"Loaded {len(glosses)} glosses from {gloss_file}")
+    return glosses
+
+
 def print_section(title):
     """Print a section header."""
     print("\n" + "=" * 70)
@@ -498,6 +540,8 @@ def generate_augmented_dataset(num_classes, config, force=False):
     """
     Generate augmented dataset using 40x variants with occlusion.
 
+    Directly augments pickle files (75-point format) for efficiency.
+
     Args:
         num_classes: Number of classes to augment
         config: PathConfig instance
@@ -640,6 +684,137 @@ def generate_augmented_dataset(num_classes, config, force=False):
     print_status(f"Total augmented files: {total_augmented}", "INFO")
     print_status(f"Skipped (already done): {skipped_files}", "INFO")
     print_status(f"Augmentation factor: {NUM_AUGMENTATIONS}x (40 variants)", "INFO")
+    print_status("="*70, "INFO")
+    print()
+
+    return True
+
+
+# ============================================================================
+# VAL AUGMENTATION (in-place)
+# ============================================================================
+
+# Val augmentation count (fewer than train to keep val smaller)
+VAL_AUGMENTATION_COUNT = 10  # 10x for val vs 40x for train
+
+
+def generate_augmented_val(num_classes, config, force=False):
+    """
+    Generate augmented validation dataset (10x variants) in-place.
+
+    Augments val pickle files directly in the val folder, so the training
+    script automatically picks them up.
+
+    Args:
+        num_classes: Number of classes to augment
+        config: PathConfig instance
+        force: If True, regenerate even if already exists
+
+    Returns:
+        bool: Success status
+    """
+    if not AUGMENTATION_UTILS_AVAILABLE:
+        print_status("Augmentation utilities not available", "ERROR")
+        return False
+
+    print_section(f"Step 4b: Generate Augmented Val Dataset ({num_classes} classes)")
+
+    # Paths - augment val in-place
+    pkl_val_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/val"
+
+    # Check if pickle val directory exists
+    if not pkl_val_dir.exists():
+        print_status(f"Pickle val directory not found: {pkl_val_dir}", "ERROR")
+        return False
+
+    # Get class list
+    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
+    try:
+        with open(class_mapping_path, 'r') as f:
+            mapping = json.load(f)
+        target_classes = mapping.get('classes', [])
+    except:
+        print_status("Could not load class mapping", "ERROR")
+        return False
+
+    print_status(f"Target classes: {len(target_classes)}", "INFO")
+    print_status(f"Val augmentation variants: {VAL_AUGMENTATION_COUNT} (10x)", "INFO")
+    print_status(f"Output: In-place in val folder", "INFO")
+    print()
+
+    # Track statistics
+    total_files = 0
+    total_augmented = 0
+    skipped_files = 0
+
+    # Process each class
+    for class_name in target_classes:
+        class_lower = class_name.lower()
+
+        val_class_dir = pkl_val_dir / class_lower
+        if not val_class_dir.exists():
+            # Try original case
+            val_class_dir = pkl_val_dir / class_name
+            if not val_class_dir.exists():
+                # Class might not have val samples (empty classes)
+                continue
+
+        # Get ORIGINAL pickle files only (not augmented ones)
+        original_files = sorted([f for f in val_class_dir.iterdir()
+                                  if f.suffix == '.pkl' and not f.name.startswith('aug_')])
+
+        if not original_files:
+            continue
+
+        print(f"Processing val: {class_name} ({len(original_files)} original files)")
+
+        # Process each original file
+        for input_file in original_files:
+            base_name = input_file.stem
+            first_aug_filename = f"aug_00_{base_name}.pkl"
+
+            # Check if already augmented (unless force=True)
+            if not force and (val_class_dir / first_aug_filename).exists():
+                # Check if it has all variants
+                variant_count = len(list(val_class_dir.glob(f"aug_*_{base_name}.pkl")))
+                if variant_count >= VAL_AUGMENTATION_COUNT:
+                    skipped_files += 1
+                    total_augmented += VAL_AUGMENTATION_COUNT
+                    total_files += 1
+                    continue
+
+            try:
+                # Load and extract 75-point data
+                pose_data, metadata = load_and_extract_75pt(str(input_file))
+
+                # Generate augmented variants (10x for val)
+                for aug_id in range(VAL_AUGMENTATION_COUNT):
+                    # Apply augmentation
+                    augmented_pose = apply_augmentation_pickle(pose_data, aug_id)
+
+                    # Create output filename - store in same directory
+                    output_filename = f"aug_{aug_id:02d}_{base_name}.pkl"
+                    output_path = val_class_dir / output_filename
+
+                    # Save augmented pickle
+                    save_augmented_pickle(augmented_pose, metadata, str(output_path), aug_id)
+
+                    total_augmented += 1
+
+                total_files += 1
+
+            except Exception as e:
+                print(f"  ERROR processing {input_file.name}: {e}")
+                continue
+
+    # Print summary
+    print()
+    print_status("="*70, "INFO")
+    print_status(f"Val augmentation complete!", "SUCCESS")
+    print_status(f"Original val files processed: {total_files}", "INFO")
+    print_status(f"Augmented val files created: {total_augmented}", "INFO")
+    print_status(f"Skipped (already done): {skipped_files}", "INFO")
+    print_status(f"Val augmentation factor: {VAL_AUGMENTATION_COUNT}x (10 variants)", "INFO")
     print_status("="*70, "INFO")
     print()
 
@@ -801,12 +976,12 @@ def cleanup_for_fresh_start(num_classes, config):
 # COMPLETE SETUP ORCHESTRATION
 # ============================================================================
 
-def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
+def run_complete_setup(num_classes, config, resume=True, force_fresh=False, gloss_file=None):
     """
     Run complete end-to-end setup for specified class count.
 
     Steps:
-        1. Class selection (from pose files)
+        1. Class selection (from pose files or gloss file)
         2. Split pose files (train/val/test)
         3. Convert pose to pickle (all 3 splits)
         4. Generate augmented dataset (40x variants)
@@ -818,6 +993,7 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
         config: PathConfig instance
         resume: If True, skip completed steps
         force_fresh: If True, delete and restart from scratch
+        gloss_file: Optional path to JSON file with custom gloss list
 
     Returns:
         bool: Success status
@@ -825,6 +1001,10 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
     print_section(f"Complete Setup - {num_classes} Classes")
     print()
     print(f"Mode: {'Force Fresh (Delete & Restart)' if force_fresh else 'Resume (Skip completed steps)'}")
+    if gloss_file:
+        print(f"Gloss source: Custom file ({gloss_file})")
+    else:
+        print(f"Gloss source: Frequency-based selection")
     print()
 
     # Step 0: Cleanup if force_fresh
@@ -870,18 +1050,24 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
     # Steps 1-2: Create pose splits (handled by create_dataset_splits)
     if 1 in steps_to_run or 2 in steps_to_run or 3 in steps_to_run:
         print_status("Running Steps 1-3: Create pose splits and convert to pickle", "INFO")
-        success = create_dataset_splits(num_classes, config)
+        success = create_dataset_splits(num_classes, config, gloss_file=gloss_file)
         if not success:
             print_status("Failed to create dataset splits", "ERROR")
             return False
     else:
         print_status("Steps 1-3: Skipping (already complete)", "SUCCESS")
 
-    # Step 4: Generate augmented dataset
+    # Step 4: Generate augmented train dataset
     if 4 in steps_to_run:
         success = generate_augmented_dataset(num_classes, config, force=force_fresh)
         if not success:
-            print_status("Failed to generate augmented dataset", "ERROR")
+            print_status("Failed to generate augmented train dataset", "ERROR")
+            return False
+
+        # Step 4b: Generate augmented val dataset (10x in-place)
+        success = generate_augmented_val(num_classes, config, force=force_fresh)
+        if not success:
+            print_status("Failed to generate augmented val dataset", "ERROR")
             return False
     else:
         print_status("Step 4: Skipping augmentation (already complete)", "SUCCESS")
@@ -925,8 +1111,15 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False):
 # ORCHESTRATION - Create complete dataset splits using imported utilities
 # ============================================================================
 
-def create_dataset_splits(num_classes, config):
-    """Create complete dataset splits from .pose files using imported utilities."""
+def create_dataset_splits(num_classes, config, gloss_file=None):
+    """
+    Create complete dataset splits from .pose files using imported utilities.
+
+    Args:
+        num_classes: Number of classes
+        config: PathConfig instance
+        gloss_file: Optional path to JSON file with custom gloss list
+    """
     if not SPLITTING_UTILS_AVAILABLE or not CONVERSION_UTILS_AVAILABLE:
         print_status("Required utilities not available", "ERROR")
         return False
@@ -939,21 +1132,37 @@ def create_dataset_splits(num_classes, config):
     pkl_base_dir = os.path.join(output_base, "original", f"pickle_split_{num_classes}_class")
     class_mapping_path = os.path.join(output_base, "class_mapping.json")
 
-    # Determine previous tier's class mapping path
-    previous_mapping_path = None
-    if num_classes == 50:
-        previous_mapping_path = os.path.join(str(config.dataset_root), "dataset_splits/20_classes/class_mapping.json")
-    elif num_classes == 100:
-        previous_mapping_path = os.path.join(str(config.dataset_root), "dataset_splits/50_classes/class_mapping.json")
+    # Determine class selection method
+    if gloss_file:
+        # Use custom gloss list from file
+        print_status(f"Using custom gloss list from: {gloss_file}", "INFO")
+        target_classes = load_glosses_from_file(gloss_file)
 
-    # Select classes using imported utility
-    print_status("Selecting classes using frequency-based incremental strategy", "INFO")
-    target_classes = select_classes_incrementally(
-        num_classes=num_classes,
-        metadata_file=str(config.video_to_gloss_mapping),
-        class_mapping_path=class_mapping_path,
-        previous_mapping_path=previous_mapping_path
-    )
+        # Validate that num_classes matches
+        if len(target_classes) != num_classes:
+            print_status(f"WARNING: --classes={num_classes} but gloss file has {len(target_classes)} glosses", "WARNING")
+            print_status(f"Using {len(target_classes)} glosses from file", "INFO")
+            num_classes = len(target_classes)
+
+        # Save the class mapping for this configuration
+        save_class_mapping(class_mapping_path, target_classes)
+    else:
+        # Use frequency-based selection (original behavior)
+        # Determine previous tier's class mapping path
+        previous_mapping_path = None
+        if num_classes == 50:
+            previous_mapping_path = os.path.join(str(config.dataset_root), "dataset_splits/20_classes/class_mapping.json")
+        elif num_classes == 100:
+            previous_mapping_path = os.path.join(str(config.dataset_root), "dataset_splits/50_classes/class_mapping.json")
+
+        # Select classes using imported utility
+        print_status("Selecting classes using frequency-based incremental strategy", "INFO")
+        target_classes = select_classes_incrementally(
+            num_classes=num_classes,
+            metadata_file=str(config.video_to_gloss_mapping),
+            class_mapping_path=class_mapping_path,
+            previous_mapping_path=previous_mapping_path
+        )
     print()
 
     # Step 1: Split .pose files into train/val/test
@@ -1035,6 +1244,9 @@ Examples:
   # Complete end-to-end setup (recommended)
   python training_pre_processing_setup.py --classes 100 --setup
 
+  # Setup with custom gloss list (auto-detects class count)
+  python training_pre_processing_setup.py --gloss-file distinct_glosses.json --setup
+
   # Force fresh start (delete and regenerate)
   python training_pre_processing_setup.py --classes 100 --setup --force-fresh
 
@@ -1048,9 +1260,15 @@ Examples:
     parser.add_argument(
         '--classes',
         type=int,
-        required=True,
-        choices=[20, 50, 100],
-        help='Number of classes (20, 50, or 100)'
+        default=None,
+        help='Number of classes (e.g., 20, 50, 100, 125). Required unless --gloss-file is provided.'
+    )
+    parser.add_argument(
+        '--gloss-file',
+        type=str,
+        default=None,
+        help='Path to JSON file containing list of glosses to use (e.g., distinct_glosses.json). '
+             'Auto-detects class count from file. Overrides frequency-based class selection.'
     )
     parser.add_argument(
         '--setup',
@@ -1085,6 +1303,24 @@ Examples:
         print("ERROR: --force-fresh can only be used with --setup")
         sys.exit(1)
 
+    # Handle class count: auto-detect from gloss file if provided
+    if args.gloss_file:
+        try:
+            glosses = load_glosses_from_file(args.gloss_file)
+            detected_count = len(glosses)
+            if args.classes is None:
+                args.classes = detected_count
+                print(f"Auto-detected {args.classes} classes from {args.gloss_file}")
+            elif args.classes != detected_count:
+                print(f"Note: --classes={args.classes} overridden by gloss file ({detected_count} glosses)")
+                args.classes = detected_count
+        except Exception as e:
+            print(f"ERROR: Failed to load gloss file: {e}")
+            sys.exit(1)
+    elif args.classes is None:
+        print("ERROR: Must provide either --classes or --gloss-file")
+        sys.exit(1)
+
     # Determine mode
     if args.setup:
         mode = "Complete Setup (with --force-fresh)" if args.force_fresh else "Complete Setup (resume mode)"
@@ -1117,13 +1353,14 @@ Examples:
             num_classes=args.classes,
             config=config,
             resume=(not args.force_fresh),
-            force_fresh=args.force_fresh
+            force_fresh=args.force_fresh,
+            gloss_file=args.gloss_file
         )
         sys.exit(0 if success else 1)
 
     elif args.create_splits:
         # Create splits only (legacy mode)
-        success = create_dataset_splits(args.classes, config)
+        success = create_dataset_splits(args.classes, config, gloss_file=args.gloss_file)
         if success:
             print_status("NEXT STEP: Run complete setup to add augmentation and update config", "WARNING")
             print(f"  python training_pre_processing_setup.py --classes {args.classes} --setup")

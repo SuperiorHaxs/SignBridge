@@ -18,7 +18,19 @@ const state = {
     hasRecording: false,
     // Demo mode state
     samples: [],
-    selectedSample: null
+    selectedSample: null,
+    // Live demo state
+    liveDemoActive: false,
+    liveConfig: null,
+    previousFrame: null,
+    motionDetectionCanvas: null,
+    motionDetectionCtx: null,
+    isSigning: false,
+    signStartTime: null,
+    signFrames: [],
+    lastMotionTime: 0,
+    detectedGlosses: [],
+    isProcessing: false
 };
 
 // DOM Elements - Live Mode
@@ -35,8 +47,9 @@ const liveElements = {
     webcamVideo: document.getElementById('webcam-video'),
     webcamOverlay: document.getElementById('webcam-overlay'),
     overlayText: document.getElementById('overlay-text'),
-    btnStart: document.getElementById('btn-start'),
-    btnStop: document.getElementById('btn-stop'),
+    btnRecordToggle: document.getElementById('btn-record-toggle'),
+    recordIcon: document.getElementById('record-icon'),
+    recordLabel: document.getElementById('record-label'),
     recordingIndicator: document.getElementById('recording-indicator'),
     recordingTime: document.getElementById('recording-time'),
     uploadArea: document.getElementById('upload-area'),
@@ -53,7 +66,16 @@ const liveElements = {
     btnConvert: document.getElementById('btn-convert'),
     btnContinuePose: document.getElementById('btn-continue-pose'),
     convertHint: document.getElementById('convert-hint'),
-    inputStatus: document.getElementById('input-status')
+    inputStatus: document.getElementById('input-status'),
+    // Live demo overlay elements
+    liveStatusOverlay: document.getElementById('live-status-overlay'),
+    livePredictionOverlay: document.getElementById('live-prediction-overlay'),
+    liveStatusDot: document.getElementById('live-status-dot'),
+    liveStatusText: document.getElementById('live-status-text'),
+    motionScoreValue: document.getElementById('motion-score-value'),
+    currentPrediction: document.getElementById('current-prediction'),
+    predictionConfidence: document.getElementById('prediction-confidence'),
+    allPredictions: document.getElementById('all-predictions')
 };
 
 // DOM Elements - Demo Mode
@@ -84,6 +106,7 @@ function setupForMode(mode) {
     if (mode === 'demo') {
         setupDemoMode();
     } else {
+        // Both 'live' and 'live_detailed' use live mode UI
         setupLiveMode();
     }
 }
@@ -96,6 +119,27 @@ async function setupLiveMode() {
     // Show/hide appropriate content
     liveElements.container.style.display = 'block';
     demoElements.container.style.display = 'none';
+
+    // Check mode to show/hide appropriate input options
+    const isLiveDetailed = typeof isLiveDetailedMode === 'function' && isLiveDetailedMode();
+    const isFast = typeof isFastMode === 'function' && isFastMode();
+
+    if (isFast) {
+        // Live (fast) mode: Only webcam for real-time detection
+        liveElements.modeWebcam.style.display = '';
+        liveElements.modeUpload.style.display = 'none';
+        liveElements.modePose.style.display = 'none';
+    } else if (isLiveDetailed) {
+        // Live Demo mode: Hide webcam, show upload and pose
+        liveElements.modeWebcam.style.display = 'none';
+        liveElements.modeUpload.style.display = '';
+        liveElements.modePose.style.display = '';
+    } else {
+        // Show all options
+        liveElements.modeWebcam.style.display = '';
+        liveElements.modeUpload.style.display = '';
+        liveElements.modePose.style.display = '';
+    }
 
     // Load saved reference sentence if exists
     const savedRef = sessionStorage.getItem('referenceSentence');
@@ -113,9 +157,8 @@ async function setupLiveMode() {
     liveElements.modeUpload.addEventListener('click', () => switchInputMode('upload'));
     liveElements.modePose.addEventListener('click', () => switchInputMode('pose'));
 
-    // Webcam controls
-    liveElements.btnStart.addEventListener('click', startRecording);
-    liveElements.btnStop.addEventListener('click', stopRecording);
+    // Webcam controls - single toggle button
+    liveElements.btnRecordToggle.addEventListener('click', toggleRecording);
 
     // Upload controls
     liveElements.uploadArea.addEventListener('click', () => liveElements.uploadInput.click());
@@ -137,8 +180,15 @@ async function setupLiveMode() {
     liveElements.btnConvert.addEventListener('click', convertVideo);
     liveElements.btnContinuePose.addEventListener('click', continueToPoseFile);
 
-    // Initialize webcam by default
-    await initializeWebcam();
+    // Load live demo configuration (for Live mode + webcam)
+    await loadLiveConfig();
+
+    // In Live Demo mode, default to upload; in Live mode, default to webcam
+    if (isLiveDetailed) {
+        await switchInputMode('upload');
+    } else {
+        await initializeWebcam();
+    }
 }
 
 async function switchInputMode(mode) {
@@ -190,7 +240,7 @@ async function initializeWebcam() {
         liveElements.webcamVideo.srcObject = state.stream;
 
         updateStatus('Ready', 'success');
-        liveElements.btnStart.disabled = false;
+        liveElements.btnRecordToggle.disabled = false;
 
     } catch (error) {
         console.error('Webcam initialization failed:', error);
@@ -206,12 +256,42 @@ function stopWebcam() {
     }
 }
 
+function toggleRecording() {
+    // Toggle between start and stop based on current state
+    if (state.isRecording || state.liveDemoActive) {
+        stopRecording();
+    } else {
+        startRecording();
+    }
+}
+
+function updateRecordButton(isRecording) {
+    if (isRecording) {
+        liveElements.btnRecordToggle.classList.remove('btn-primary');
+        liveElements.btnRecordToggle.classList.add('btn-danger');
+        liveElements.recordIcon.innerHTML = '&#9632;'; // Stop icon (square)
+        liveElements.recordLabel.textContent = 'Stop Recording';
+    } else {
+        liveElements.btnRecordToggle.classList.remove('btn-danger');
+        liveElements.btnRecordToggle.classList.add('btn-primary');
+        liveElements.recordIcon.innerHTML = '&#9679;'; // Record icon (circle)
+        liveElements.recordLabel.textContent = 'Start Recording';
+    }
+}
+
 function startRecording() {
     if (!state.stream) {
         alert('Webcam not initialized');
         return;
     }
 
+    // In Live mode (fast mode) + webcam, use real-time sign detection
+    if (typeof isFastMode === 'function' && isFastMode() && state.inputMode === 'webcam') {
+        startLiveDemo();
+        return;
+    }
+
+    // Normal recording mode for Live Detailed and Demo modes
     state.recordedChunks = [];
 
     const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
@@ -237,8 +317,7 @@ function startRecording() {
     state.recordingStartTime = Date.now();
 
     // Update UI
-    liveElements.btnStart.disabled = true;
-    liveElements.btnStop.disabled = false;
+    updateRecordButton(true);
     liveElements.btnConvert.disabled = true;
     liveElements.recordingIndicator.classList.add('active');
     updateStatus('Recording', 'recording');
@@ -248,14 +327,19 @@ function startRecording() {
 }
 
 function stopRecording() {
+    // If in live demo mode, stop it
+    if (state.liveDemoActive) {
+        stopLiveDemo();
+        return;
+    }
+
     if (!state.mediaRecorder || !state.isRecording) return;
 
     state.mediaRecorder.stop();
     state.isRecording = false;
 
     // Update UI
-    liveElements.btnStart.disabled = false;
-    liveElements.btnStop.disabled = true;
+    updateRecordButton(false);
     liveElements.recordingIndicator.classList.remove('active');
     updateStatus('Recorded', 'success');
 
@@ -415,8 +499,64 @@ async function convertVideo() {
         return;
     }
 
-    showOverlay('Converting video to pose keypoints...');
     liveElements.btnConvert.disabled = true;
+
+    // Check if fast mode (Live) - use full pipeline endpoint
+    const fastMode = typeof isFastMode === 'function' ? isFastMode() : false;
+    console.log('Convert - Mode:', getMode(), 'Fast mode:', fastMode);
+
+    if (fastMode) {
+        await processFullPipeline(reference);
+    } else {
+        await convertVideoDetailed();
+    }
+}
+
+async function processFullPipeline(reference) {
+    showOverlay('Processing full pipeline...');
+    liveElements.convertHint.textContent = 'Converting → Segmenting → Predicting → Constructing...';
+
+    try {
+        const formData = new FormData();
+
+        if (state.inputMode === 'webcam') {
+            const blob = new Blob(state.recordedChunks, { type: 'video/webm' });
+            formData.append('video', blob, 'recording.webm');
+        } else {
+            formData.append('video', state.uploadedFile);
+        }
+
+        const response = await fetch('/api/process-full', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store all results for evaluate page
+            sessionStorage.setItem('rawSentence', result.raw_sentence);
+            sessionStorage.setItem('llmSentence', result.llm_sentence);
+            sessionStorage.setItem('segments', JSON.stringify(result.predictions));
+            sessionStorage.setItem('segmentCount', result.segment_count);
+
+            // Go directly to evaluate page
+            window.location.href = '/evaluate';
+        } else {
+            throw new Error(result.error || 'Pipeline failed');
+        }
+
+    } catch (error) {
+        console.error('Pipeline error:', error);
+        hideOverlay();
+        showOverlay('Processing failed: ' + error.message);
+        liveElements.btnConvert.disabled = false;
+        liveElements.convertHint.textContent = 'Processing failed. Try again.';
+    }
+}
+
+async function convertVideoDetailed() {
+    showOverlay('Converting video to pose keypoints...');
     liveElements.convertHint.textContent = 'Converting...';
 
     try {
@@ -428,6 +568,9 @@ async function convertVideo() {
         } else {
             formData.append('video', state.uploadedFile);
         }
+
+        // Not fast mode - do visualization
+        formData.append('fast_mode', 'false');
 
         const response = await fetch('/api/convert', {
             method: 'POST',
@@ -461,8 +604,58 @@ async function continueToPoseFile() {
         return;
     }
 
-    showOverlay('Uploading pose file...');
     liveElements.btnContinuePose.disabled = true;
+
+    // Check if fast mode (Live) - use full pipeline endpoint
+    const fastMode = typeof isFastMode === 'function' ? isFastMode() : false;
+    console.log('Pose upload - Mode:', getMode(), 'Fast mode:', fastMode);
+
+    if (fastMode) {
+        await processPoseFullPipeline(reference);
+    } else {
+        await uploadPoseDetailed();
+    }
+}
+
+async function processPoseFullPipeline(reference) {
+    showOverlay('Processing full pipeline...');
+    liveElements.convertHint.textContent = 'Segmenting → Predicting → Constructing...';
+
+    try {
+        const formData = new FormData();
+        formData.append('pose_file', state.uploadedPoseFile);
+
+        const response = await fetch('/api/process-pose-full', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store all results for evaluate page
+            sessionStorage.setItem('rawSentence', result.raw_sentence);
+            sessionStorage.setItem('llmSentence', result.llm_sentence);
+            sessionStorage.setItem('segments', JSON.stringify(result.predictions));
+            sessionStorage.setItem('segmentCount', result.segment_count);
+
+            // Go directly to evaluate page
+            window.location.href = '/evaluate';
+        } else {
+            throw new Error(result.error || 'Pipeline failed');
+        }
+
+    } catch (error) {
+        console.error('Pipeline error:', error);
+        hideOverlay();
+        showOverlay('Processing failed: ' + error.message);
+        liveElements.btnContinuePose.disabled = false;
+        liveElements.convertHint.textContent = 'Processing failed. Try again.';
+    }
+}
+
+async function uploadPoseDetailed() {
+    showOverlay('Uploading pose file...');
 
     try {
         const formData = new FormData();
@@ -562,9 +755,16 @@ function renderSamples() {
         card.className = 'sample-card';
         card.dataset.sampleId = sample.id;
 
+        // Use original video if available, otherwise fall back to pose video
+        const videoFile = sample.has_original_video && sample.original_video
+            ? sample.original_video
+            : 'pose_video.mp4';
+        const isOriginalVideo = sample.has_original_video && sample.original_video;
+
         card.innerHTML = `
-            <div class="sample-thumbnail">
-                <video src="/demo-data/samples/${sample.id}/pose_video.mp4" muted loop></video>
+            <div class="sample-thumbnail ${isOriginalVideo ? 'has-original' : 'pose-only'}">
+                <video src="/demo-data/samples/${sample.id}/${videoFile}" muted loop playsinline></video>
+                ${isOriginalVideo ? '<span class="video-badge">Video</span>' : '<span class="video-badge pose-badge">Pose</span>'}
             </div>
             <div class="sample-info">
                 <h4 class="sample-name">${sample.name}</h4>
@@ -628,7 +828,408 @@ function continueWithSample() {
     window.location.href = '/segment';
 }
 
+// ============================================================================
+// LIVE DEMO MODE
+// Real-time sign detection and gloss prediction (no LLM)
+// ============================================================================
+
+async function loadLiveConfig() {
+    try {
+        const response = await fetch('/api/live-config');
+        state.liveConfig = await response.json();
+        console.log('Live config loaded:', state.liveConfig);
+    } catch (error) {
+        console.error('Failed to load live config:', error);
+        // Use defaults
+        state.liveConfig = {
+            segmentation_type: 'motion',
+            motion_config: {
+                cooldown_ms: 1000,
+                min_sign_ms: 500,
+                max_sign_ms: 5000,
+                motion_threshold: 30,
+                motion_area_threshold: 0.02
+            }
+        };
+    }
+}
+
+async function startLiveDemo() {
+    if (!state.stream) {
+        alert('Please wait for webcam to initialize');
+        return;
+    }
+
+    console.log('Starting live demo mode (Live mode + Webcam)...');
+
+    // Reset live demo state on backend (clears previous segments)
+    try {
+        await fetch('/api/live-reset', { method: 'POST' });
+    } catch (e) {
+        console.log('Live reset failed, continuing anyway');
+    }
+
+    state.liveDemoActive = true;
+    state.detectedGlosses = [];
+    state.isSigning = false;
+    state.isProcessing = false;
+
+    // Initialize motion detection canvas
+    initMotionDetection();
+
+    // Update UI - use toggle button
+    document.querySelector('.live-mode-content').classList.add('live-demo-active');
+    updateRecordButton(true);
+    liveElements.btnConvert.style.display = 'none';
+    liveElements.convertHint.textContent = 'Real-time sign detection active';
+
+    updateStatus('Live Demo', 'recording');
+    updateLiveStatus('READY', 'ready');
+    liveElements.currentPrediction.textContent = '';
+    liveElements.predictionConfidence.textContent = 'Waiting for signing...';
+    liveElements.allPredictions.textContent = '';
+
+    // Start motion detection loop
+    requestAnimationFrame(motionDetectionLoop);
+}
+
+async function stopLiveDemo() {
+    console.log('Stopping live demo mode...');
+    state.liveDemoActive = false;
+
+    // Cancel any in-progress sign recording
+    cancelSignRecording();
+
+    // Check if we have detected glosses to process
+    if (state.detectedGlosses.length > 0) {
+        // Process detected glosses through LLM
+        await processDetectedGlossesWithLLM();
+        return;
+    }
+
+    // No glosses detected - restore normal UI
+    restoreLiveDemoUI();
+}
+
+function restoreLiveDemoUI() {
+    // Update UI - restore normal button states
+    document.querySelector('.live-mode-content').classList.remove('live-demo-active');
+    updateRecordButton(false);
+    liveElements.btnConvert.style.display = 'inline-block';
+
+    updateLiveButtonState();
+    updateStatus('Ready', 'success');
+    liveElements.convertHint.textContent = 'Record a video first';
+}
+
+async function processDetectedGlossesWithLLM() {
+    console.log('Processing detected glosses with LLM...', state.detectedGlosses);
+
+    // Show processing overlay
+    showOverlay('Constructing sentence with LLM...');
+    liveElements.convertHint.textContent = 'Processing Top-3 predictions with LLM...';
+    updateStatus('Processing', 'pending');
+
+    try {
+        // Convert detected glosses to the format expected by /api/construct
+        // The API expects: { predictions: [{ top_1: string, top_k: [...] }] }
+        const predictions = state.detectedGlosses.map(g => ({
+            top_1: g.gloss,
+            confidence: g.confidence,
+            top_k: g.top_k || [{ gloss: g.gloss, confidence: g.confidence }]
+        }));
+
+        // Call the construct API
+        const response = await fetch('/api/construct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ predictions: predictions })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Store results in sessionStorage for evaluate page
+            sessionStorage.setItem('rawSentence', result.raw_sentence);
+            sessionStorage.setItem('llmSentence', result.llm_sentence);
+            sessionStorage.setItem('segments', JSON.stringify(predictions));
+            sessionStorage.setItem('segmentCount', predictions.length.toString());
+
+            console.log('LLM processing complete:', {
+                raw: result.raw_sentence,
+                llm: result.llm_sentence
+            });
+
+            // Navigate to evaluate page
+            window.location.href = '/evaluate';
+        } else {
+            throw new Error(result.error || 'LLM construction failed');
+        }
+
+    } catch (error) {
+        console.error('LLM processing error:', error);
+        hideOverlay();
+        alert('Failed to construct sentence: ' + error.message);
+
+        // Restore UI on error
+        restoreLiveDemoUI();
+    }
+}
+
+function initMotionDetection() {
+    // Create offscreen canvas for motion detection
+    state.motionDetectionCanvas = document.createElement('canvas');
+    state.motionDetectionCanvas.width = 160;  // Downscale for performance
+    state.motionDetectionCanvas.height = 120;
+    state.motionDetectionCtx = state.motionDetectionCanvas.getContext('2d', { willReadFrequently: true });
+    state.previousFrame = null;
+}
+
+function motionDetectionLoop() {
+    if (!state.liveDemoActive) return;
+
+    const video = liveElements.webcamVideo;
+    if (!video || video.readyState < 2) {
+        requestAnimationFrame(motionDetectionLoop);
+        return;
+    }
+
+    // Draw current frame to detection canvas
+    const ctx = state.motionDetectionCtx;
+    const canvas = state.motionDetectionCanvas;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let motionScore = 0;
+
+    if (state.previousFrame) {
+        // Calculate motion score
+        motionScore = calculateMotionScore(state.previousFrame.data, currentFrame.data);
+    }
+
+    state.previousFrame = currentFrame;
+
+    // Update motion score display
+    if (liveElements.motionScoreValue) {
+        liveElements.motionScoreValue.textContent = motionScore.toFixed(0);
+    }
+
+    // Motion detection state machine
+    const config = state.liveConfig?.motion_config || {};
+    const motionThreshold = config.motion_area_threshold || 0.02;
+    const isMotionDetected = motionScore > motionThreshold * 10000;
+
+    const now = Date.now();
+
+    if (isMotionDetected) {
+        state.lastMotionTime = now;
+
+        if (!state.isSigning && !state.isProcessing) {
+            // Start signing
+            state.isSigning = true;
+            state.signStartTime = now;
+            state.signFrames = [];
+            updateLiveStatus('SIGNING', 'signing');
+            console.log('Sign started');
+
+            // Start recording the sign
+            startSignRecording();
+        }
+    } else if (state.isSigning) {
+        const cooldownMs = config.cooldown_ms || 1000;
+        const timeSinceMotion = now - state.lastMotionTime;
+
+        if (timeSinceMotion > cooldownMs) {
+            // Sign ended
+            const signDuration = now - state.signStartTime;
+            const minSignMs = config.min_sign_ms || 500;
+
+            if (signDuration >= minSignMs) {
+                console.log(`Sign ended after ${signDuration}ms`);
+                stopSignRecordingAndProcess();
+            } else {
+                console.log(`Sign too short (${signDuration}ms), ignoring`);
+                cancelSignRecording();
+            }
+            state.isSigning = false;
+        }
+    }
+
+    // Force end if sign too long
+    if (state.isSigning) {
+        const maxSignMs = config.max_sign_ms || 5000;
+        const signDuration = now - state.signStartTime;
+
+        if (signDuration >= maxSignMs) {
+            console.log('Sign too long, forcing end');
+            stopSignRecordingAndProcess();
+            state.isSigning = false;
+        }
+    }
+
+    requestAnimationFrame(motionDetectionLoop);
+}
+
+function calculateMotionScore(prev, curr) {
+    let diff = 0;
+    // Compare pixels (grayscale approximation)
+    for (let i = 0; i < prev.length; i += 4) {
+        const prevGray = (prev[i] + prev[i + 1] + prev[i + 2]) / 3;
+        const currGray = (curr[i] + curr[i + 1] + curr[i + 2]) / 3;
+        const pixelDiff = Math.abs(prevGray - currGray);
+
+        if (pixelDiff > (state.liveConfig?.motion_config?.motion_threshold || 30)) {
+            diff++;
+        }
+    }
+    return diff;
+}
+
+let signMediaRecorder = null;
+let signChunks = [];
+
+function startSignRecording() {
+    if (!state.stream) return;
+
+    signChunks = [];
+
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+        ? 'video/webm;codecs=vp9'
+        : 'video/webm';
+
+    signMediaRecorder = new MediaRecorder(state.stream, { mimeType });
+
+    signMediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+            signChunks.push(event.data);
+        }
+    };
+
+    signMediaRecorder.start(100);
+}
+
+function cancelSignRecording() {
+    if (signMediaRecorder && signMediaRecorder.state !== 'inactive') {
+        signMediaRecorder.stop();
+    }
+    signChunks = [];
+    updateLiveStatus('READY', 'ready');
+}
+
+async function stopSignRecordingAndProcess() {
+    if (!signMediaRecorder || signMediaRecorder.state === 'inactive') {
+        updateLiveStatus('READY', 'ready');
+        return;
+    }
+
+    state.isProcessing = true;
+    updateLiveStatus('PROCESSING', 'processing');
+    liveElements.currentPrediction.textContent = 'Processing';
+    liveElements.currentPrediction.classList.add('processing');
+
+    // Stop recording and wait for data
+    return new Promise((resolve) => {
+        signMediaRecorder.onstop = async () => {
+            if (signChunks.length === 0) {
+                state.isProcessing = false;
+                updateLiveStatus('READY', 'ready');
+                liveElements.currentPrediction.classList.remove('processing');
+                resolve();
+                return;
+            }
+
+            const blob = new Blob(signChunks, { type: 'video/webm' });
+            signChunks = [];
+
+            try {
+                const result = await sendSignForPrediction(blob);
+
+                if (result.success) {
+                    displayPrediction(result);
+                } else {
+                    console.error('Prediction failed:', result.error);
+                    liveElements.currentPrediction.textContent = 'Error';
+                    liveElements.currentPrediction.classList.remove('processing');
+                }
+            } catch (error) {
+                console.error('Failed to process sign:', error);
+                liveElements.currentPrediction.textContent = 'Error';
+                liveElements.currentPrediction.classList.remove('processing');
+            }
+
+            state.isProcessing = false;
+            updateLiveStatus('READY', 'ready');
+            resolve();
+        };
+
+        signMediaRecorder.stop();
+    });
+}
+
+async function sendSignForPrediction(videoBlob) {
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'sign.webm');
+
+    const response = await fetch('/api/process-sign', {
+        method: 'POST',
+        body: formData
+    });
+
+    return await response.json();
+}
+
+function displayPrediction(result) {
+    liveElements.currentPrediction.classList.remove('processing');
+
+    // Add to detected glosses
+    state.detectedGlosses.push({
+        gloss: result.gloss,
+        confidence: result.confidence,
+        top_k: result.top_k
+    });
+
+    // Show current prediction with animation
+    liveElements.currentPrediction.textContent = result.gloss;
+    liveElements.currentPrediction.classList.add('new');
+    setTimeout(() => liveElements.currentPrediction.classList.remove('new'), 300);
+
+    // Show confidence
+    const confPercent = (result.confidence * 100).toFixed(1);
+    liveElements.predictionConfidence.textContent = `Confidence: ${confPercent}%`;
+
+    // Show top-k alternatives if available
+    if (result.top_k && result.top_k.length > 1) {
+        const alts = result.top_k.slice(1).map(p =>
+            `${p.gloss} (${(p.confidence * 100).toFixed(0)}%)`
+        ).join(', ');
+        liveElements.predictionConfidence.textContent += ` | Alt: ${alts}`;
+    }
+
+    // Show all detected glosses
+    const allGlossesHtml = state.detectedGlosses.map(g =>
+        `<span class="gloss">${g.gloss}</span>`
+    ).join('');
+    liveElements.allPredictions.innerHTML = allGlossesHtml;
+
+    console.log('Prediction:', result.gloss, `(${confPercent}%)`);
+}
+
+function updateLiveStatus(text, statusClass) {
+    if (liveElements.liveStatusText) {
+        liveElements.liveStatusText.textContent = text;
+    }
+    if (liveElements.liveStatusDot) {
+        liveElements.liveStatusDot.className = 'status-dot';
+        if (statusClass) {
+            liveElements.liveStatusDot.classList.add(statusClass);
+        }
+    }
+}
+
 // Cleanup on page unload
 window.addEventListener('beforeunload', () => {
+    if (state.liveDemoActive) {
+        stopLiveDemo();
+    }
     stopWebcam();
 });

@@ -3,63 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}ASL Show & Tell{% endblock %}</title>
+    <title>{% block title %}SignBridge - Show And Tell Demo{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <header class="app-header">
-        <div class="header-left">
-            <div class="header-content">
-                <h1 class="app-title">ASL Show & Tell</h1>
-                <p class="app-subtitle">American Sign Language to English Translation Demo</p>
-            </div>
-            <div class="mode-toggle">
-                <span class="mode-label-text">Mode:</span>
-                <div class="toggle-switch" id="mode-toggle">
-                    <input type="checkbox" id="mode-switch" class="toggle-input">
-                    <label for="mode-switch" class="toggle-label">
-                        <span class="toggle-option live">Live</span>
-                        <span class="toggle-slider"></span>
-                        <span class="toggle-option demo">Demo</span>
-                    </label>
+        <div class="header-row">
+            <div class="header-left">
+                <div class="header-content">
+                    <h1 class="app-title">SignBridge - Show And Tell Demo</h1>
+                    <p class="app-subtitle">Real-Time ASL Translation with LLM-Augmented Contextual Selection</p>
                 </div>
-                <button id="btn-play-all" class="btn-play-all" style="display: none;" title="Auto-play through all phases">
-                    &#9654; Play All
-                </button>
+                <div class="mode-toggle">
+                    <span class="mode-label-text">Mode:</span>
+                    <div class="mode-buttons" id="mode-toggle">
+                        <button class="mode-btn" data-mode="demo" id="mode-btn-demo">Preset Demo</button>
+                        <button class="mode-btn" data-mode="live_detailed" id="mode-btn-live-detailed">Upload</button>
+                        <button class="mode-btn" data-mode="live" id="mode-btn-live">Live</button>
+                    </div>
+                </div>
             </div>
+            <!-- Detailed Mode Breadcrumb (5 steps) -->
+            <nav class="phase-breadcrumb detailed-breadcrumb" id="detailed-breadcrumb">
+                <a href="/" class="phase {% block phase1_class %}{% endblock %}" data-phase="1">
+                    <span class="phase-number">1</span>
+                    <span class="phase-label">Convert</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/segment" class="phase {% block phase2_class %}{% endblock %}" data-phase="2">
+                    <span class="phase-number">2</span>
+                    <span class="phase-label">Segment</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/predict" class="phase {% block phase3_class %}{% endblock %}" data-phase="3">
+                    <span class="phase-number">3</span>
+                    <span class="phase-label">Predict</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/construct" class="phase {% block phase4_class %}{% endblock %}" data-phase="4">
+                    <span class="phase-number">4</span>
+                    <span class="phase-label">Construct</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/evaluate" class="phase {% block phase5_class %}{% endblock %}" data-phase="5">
+                    <span class="phase-number">5</span>
+                    <span class="phase-label">Evaluate</span>
+                </a>
+            </nav>
+            <!-- Live Mode Breadcrumb (4 steps) -->
+            <nav class="phase-breadcrumb live-breadcrumb" id="live-breadcrumb" style="display: none;">
+                <a href="/live-setup" class="phase {% block live_phase1_class %}{% endblock %}" data-phase="1">
+                    <span class="phase-number">1</span>
+                    <span class="phase-label">Setup</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/live-learn" class="phase {% block live_phase2_class %}{% endblock %}" data-phase="2">
+                    <span class="phase-number">2</span>
+                    <span class="phase-label">Learn</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/live-record" class="phase {% block live_phase3_class %}{% endblock %}" data-phase="3">
+                    <span class="phase-number">3</span>
+                    <span class="phase-label">Record</span>
+                </a>
+                <div class="phase-connector"></div>
+                <a href="/evaluate" class="phase {% block live_phase4_class %}{% endblock %}" data-phase="4">
+                    <span class="phase-number">4</span>
+                    <span class="phase-label">Results</span>
+                </a>
+            </nav>
         </div>
-        <nav class="phase-breadcrumb">
-            <a href="/" class="phase {% block phase1_class %}{% endblock %}" data-phase="1">
-                <span class="phase-number">1</span>
-                <span class="phase-label">Convert</span>
-                <span class="phase-desc">Video to Pose</span>
-            </a>
-            <div class="phase-connector"></div>
-            <a href="/segment" class="phase {% block phase2_class %}{% endblock %}" data-phase="2">
-                <span class="phase-number">2</span>
-                <span class="phase-label">Segment</span>
-                <span class="phase-desc">Isolate Signs</span>
-            </a>
-            <div class="phase-connector"></div>
-            <a href="/predict" class="phase {% block phase3_class %}{% endblock %}" data-phase="3">
-                <span class="phase-number">3</span>
-                <span class="phase-label">Predict</span>
-                <span class="phase-desc">Top-K Glosses</span>
-            </a>
-            <div class="phase-connector"></div>
-            <a href="/construct" class="phase {% block phase4_class %}{% endblock %}" data-phase="4">
-                <span class="phase-number">4</span>
-                <span class="phase-label">Construct</span>
-                <span class="phase-desc">LLM Sentence</span>
-            </a>
-            <div class="phase-connector"></div>
-            <a href="/evaluate" class="phase {% block phase5_class %}{% endblock %}" data-phase="5">
-                <span class="phase-number">5</span>
-                <span class="phase-label">Evaluate</span>
-                <span class="phase-desc">Metrics</span>
-            </a>
-        </nav>
     </header>
 
     <main class="main-content">
@@ -70,7 +84,7 @@
         <p>Science Fair Demo - ASL Translation Pipeline</p>
     </footer>
 
-    <script src="{{ url_for('static', filename='js/mode.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mode.js') }}?v=3"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

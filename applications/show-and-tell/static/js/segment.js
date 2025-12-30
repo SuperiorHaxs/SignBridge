@@ -81,7 +81,7 @@ async function segmentPose() {
         const response = await fetch('/api/segment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ pose_file: state.poseFile })
+            body: JSON.stringify({ pose_file: state.poseFile, fast_mode: isFastMode() })
         });
 
         const result = await response.json();
@@ -129,10 +129,23 @@ function displaySegments(segments) {
     segments.forEach((segment, index) => {
         const item = document.createElement('div');
         item.className = 'segment-timeline-item';
+
+        // Handle fast mode (no video preview)
+        let previewContent;
+        if (segment.video_url) {
+            previewContent = `<video src="${segment.video_url}?t=${cacheBuster}" autoplay loop muted playsinline></video>`;
+        } else {
+            // Fast mode - show placeholder with segment number
+            previewContent = `<div class="segment-placeholder">
+                <span class="placeholder-icon">⚡</span>
+                <span class="placeholder-text">Fast Mode</span>
+            </div>`;
+        }
+
         item.innerHTML = `
             <div class="segment-number-badge">${segment.segment_id}</div>
             <div class="segment-preview">
-                <video src="${segment.video_url}?t=${cacheBuster}" autoplay loop muted playsinline></video>
+                ${previewContent}
             </div>
             <div class="segment-info-mini">
                 <span class="segment-frames">Segment ${segment.segment_id}</span>

@@ -1,0 +1,1150 @@
+================================================================================
+GLOSS SELECTION DEBUG REPORT
+================================================================================
+
+Dataset: ../../datasets/synthetic_sentences/synthetic_gloss_to_sentence_llm_dataset_50_glosses.json
+Total entries: 25
+Successful: 25 (100.0%)
+Failed: 0 (0.0%)
+
+================================================================================
+1. MODEL GLOSS ACCURACY - TOP-1 (Before LLM Selection)
+================================================================================
+Overall Accuracy: 86/99 (86.9%)
+Perfect Predictions (all glosses correct): 14/25 entries (56.0%)
+Average Per Entry: 86.8%
+
+================================================================================
+2. EFFECTIVE GLOSS ACCURACY (After LLM Selection from Top-K)
+================================================================================
+Overall Accuracy: 87/99 (87.9%)
+Perfect Predictions (all glosses correct): 15/25 entries (60.0%)
+Average Per Entry: 88.2%
+
+Improvement from LLM Selection: +1.0% (86/99 -> 87/99)
+Perfect Predictions Gained: 1 entries
+
+================================================================================
+3. GLOSS SELECTION BREAKDOWN
+================================================================================
+Total Gloss Positions: 99
+Correctly Selected from Top-K: 87 (87.9%)
+Incorrectly Selected from Top-K: 12 (12.1%)
+
+================================================================================
+4. MISMATCH ANALYSIS
+================================================================================
+Total Mismatches: 12
+  - LLM Selection Errors (correct answer WAS in top-3): 6 (50.0%)
+  - Model Prediction Errors (correct answer NOT in top-3): 6 (50.0%)
+
+** POTENTIAL IMPROVEMENT: 6 glosses could be fixed with better LLM prompting **
+
+================================================================================
+5. ENTRIES WITH SELECTION ERRORS (Detailed Breakdown)
+================================================================================
+
+Entry 2: WOMAN, EAT, APPLE
+  Reference: The woman is eating an apple.
+  Predicted: The woman is wrong about the apple.
+  Selected Glosses: woman, wrong, apple
+  Mismatches (1):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 7: BOOK, TABLE, NOW
+  Reference: The book is on table now.
+  Predicted: Now, book computer.
+  Selected Glosses: book, computer, now
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'computer' (WRONG)
+      Should Be: 'TABLE' (CORRECT)
+      Available in Top-3:
+        1. computer (71.1%)
+        2. table (27.8%) ← CORRECT!
+        3. year (0.3%)
+
+Entry 9: APPLE, ORANGE, EAT
+  Reference: I will eat apple or orange.
+  Predicted: The apple is wrong about the hearing.
+  Selected Glosses: apple, apple, wrong
+  Mismatches (2):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'apple' (WRONG)
+      Should Be: 'ORANGE' (CORRECT)
+      Available in Top-3:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+
+    Position 2: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 11: MOTHER, GIVE, BOOK, NOW
+  Reference: The mother will give a book now.
+  Predicted: The mother gives the book now.
+  Selected Glosses: mother, now, book, now
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 15: CHAIR, BLACK, NOW, FINE, YES
+  Reference: The black chair is fine now, yes?
+  Predicted: The black chair is like now.
+  Selected Glosses: chair, black, now, like, yes
+  Mismatches (1):
+
+    Position 3: [LLM SELECTION ERROR]
+      LLM Selected: 'like' (WRONG)
+      Should Be: 'FINE' (CORRECT)
+      Available in Top-3:
+        1. like (90.4%)
+        2. fine (6.5%) ← CORRECT!
+        3. walk (1.7%)
+
+Entry 16: APPLE, ORANGE, EAT, NOW, LIKE, YES, NO
+  Reference: I will eat apple or orange now, do you like it, yes or no?
+  Predicted: The apple hearing is wrong now like no.
+  Selected Glosses: apple, apple, wrong, now, like, yes, no
+  Mismatches (2):
+
+    Position 1: [MODEL PREDICTION ERROR]
+      LLM Selected: 'apple' (WRONG)
+      Should Be: 'ORANGE' (CORRECT)
+      Available in Top-3:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+
+    Position 2: [MODEL PREDICTION ERROR]
+      LLM Selected: 'wrong' (WRONG)
+      Should Be: 'EAT' (CORRECT)
+      Available in Top-3:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+
+Entry 17: MAN, LIKE, APPLE, NOW, WOMAN, LIKE, ORANGE
+  Reference: The man likes apple now, but the woman likes orange.
+  Predicted: The man like apple now woman like apple.
+  Selected Glosses: man, like, apple, now, woman, like, apple
+  Mismatches (1):
+
+    Position 6: [MODEL PREDICTION ERROR]
+      LLM Selected: 'apple' (WRONG)
+      Should Be: 'ORANGE' (CORRECT)
+      Available in Top-3:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+
+Entry 21: DOCTOR, GIVE, APPLE
+  Reference: The doctor is giving an apple.
+  Predicted: The doctor can help now with the apple.
+  Selected Glosses: doctor, now, apple
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 22: MOTHER, GIVE, APPLE, NOW
+  Reference: The mother is giving an apple now.
+  Predicted: The mother gives the apple now.
+  Selected Glosses: mother, now, apple, now
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+Entry 25: MOTHER, GIVE, APPLE, FORGET, DRINK, NOW
+  Reference: The mother is giving an apple, but forgot to drink now.
+  Predicted: Now the mother gives apple now.
+  Selected Glosses: mother, now, apple, forget, drink, now
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'now' (WRONG)
+      Should Be: 'GIVE' (CORRECT)
+      Available in Top-3:
+        1. now (50.7%)
+        2. give (40.0%) ← CORRECT!
+        3. dog (6.1%)
+
+
+
+================================================================================
+PERFORMANCE METRICS
+================================================================================
+
+BASELINE BLEU: 18.36
+MODEL BLEU: 25.92
+AVERAGE BLEU IMPROVEMENT: +7.57
+ENTRIES WITH BLEU IMPROVEMENT: 16/25 (64.0%)
+AVERAGE BLEU IMPROVEMENT (of improved entries): +15.99
+
+BASELINE BERTScore: 90.71
+MODEL BERTScore: 93.97
+AVERAGE BERTScore IMPROVEMENT: +3.26
+ENTRIES WITH BERTScore IMPROVEMENT: 20/25 (80.0%)
+AVERAGE BERTScore IMPROVEMENT (of improved entries): +4.49
+
+BASELINE QUALITY: 36.94
+MODEL QUALITY: 63.60
+AVERAGE QUALITY IMPROVEMENT: +26.66
+ENTRIES WITH QUALITY IMPROVEMENT: 20/25 (80.0%)
+AVERAGE QUALITY IMPROVEMENT (of improved entries): +38.15
+
+BASELINE COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 85.2%
+AVERAGE PRECISION: 92.0%
+AVERAGE F1: 87.9%
+MODEL COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 85.0%
+AVERAGE PRECISION: 86.3%
+AVERAGE F1: 84.9%
+PERFECT RECALL: 14/25 (56.0%)
+ENTRIES WITH MISSING WORDS: 11/25 (19 total)
+ENTRIES WITH HALLUCINATIONS: 12/25 (14 total)
+AVERAGE RECALL IMPROVEMENT: -0.2%
+AVERAGE PRECISION IMPROVEMENT: -5.7%
+AVERAGE F1 IMPROVEMENT: -2.9%
+ENTRIES WITH RECALL IMPROVEMENT: 3/25 (12.0%)
+
+BASELINE COMPOSITE: 57.64
+MODEL COMPOSITE: 69.36
+AVERAGE COMPOSITE IMPROVEMENT: +11.72
+ENTRIES WITH COMPOSITE IMPROVEMENT: 20/25 (80.0%)
+AVERAGE COMPOSITE IMPROVEMENT (of improved entries): +16.76
+
+GEMINI ALTERNATIVE USAGE (Top-2 or Top-3 instead of Top-1):
+TOTAL GLOSS POSITIONS: 99
+ALTERNATIVES USED: 1 (1.0%)
+ENTRIES WITH ALTERNATIVES: 1/25 (4.0%)
+
+
+DETAILED RESULTS:
+--------------------------------------------------------------------------------
+
+Entry 1:
+  Glosses: MAN, WALK, NOW
+  Reference: The man is walking now.
+  Predicted: The man walks now.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: man, walk, now
+  Baseline BLEU: 17.80
+  Model BLEU: 27.53
+  BLEU Improvement: +9.74
+  Baseline BERTScore: 94.53
+  Model BERTScore: 97.87
+  BERTScore Improvement: +3.34
+  Baseline Quality: 56.11
+  Model Quality: 59.14
+  Quality Improvement: +3.03
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 69.02
+  Model Composite: 72.36
+  Composite Improvement: +3.34
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 2:
+  Glosses: WOMAN, EAT, APPLE
+  Reference: The woman is eating an apple.
+  Predicted: The woman is wrong about the apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: woman, wrong, apple
+  Effective Mismatches:
+    Position 1: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 12.75
+  Model BLEU: 26.27
+  BLEU Improvement: +13.52
+  Baseline BERTScore: 88.68
+  Model BERTScore: 91.83
+  BERTScore Improvement: +3.15
+  Baseline Quality: 7.45
+  Model Quality: 82.66
+  Quality Improvement: +75.21
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: eating
+  Hallucinated Words: wrong
+  Baseline Composite: 39.30
+  Model Composite: 72.04
+  Composite Improvement: +32.74
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 3:
+  Glosses: MOTHER, GIVE, APPLE
+  Reference: The mother will give an apple.
+  Predicted: The mother will give the apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: mother, give, apple
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 12.75
+  Model BLEU: 53.73
+  BLEU Improvement: +40.97
+  Baseline BERTScore: 88.62
+  Model BERTScore: 98.45
+  BERTScore Improvement: +9.83
+  Baseline Quality: 16.00
+  Model Quality: 70.15
+  Quality Improvement: +54.15
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Composite: 42.70
+  Model Composite: 80.81
+  Composite Improvement: +38.11
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'give' (top-2, 40.0%) instead of 'now' (top-1, 50.7%)
+  Status: success
+
+Entry 4:
+  Glosses: COUSIN, LIKE, CANDY
+  Reference: The cousin likes candy.
+  Predicted: My cousin likes candy.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: cousin, like, candy
+  Baseline BLEU: 24.84
+  Model BLEU: 59.46
+  BLEU Improvement: +34.62
+  Baseline BERTScore: 94.17
+  Model BERTScore: 99.81
+  BERTScore Improvement: +5.64
+  Baseline Quality: 75.88
+  Model Quality: 52.56
+  Quality Improvement: -23.31
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -25.0%
+  Coverage F1 Improvement: -14.3%
+  Hallucinated Words: my
+  Baseline Composite: 77.91
+  Model Composite: 71.33
+  Composite Improvement: -6.58
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 5:
+  Glosses: DOCTOR, HELP, MAN
+  Reference: The doctor is helping the man.
+  Predicted: The doctor helps the man.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: doctor, help, man
+  Baseline BLEU: 12.75
+  Model BLEU: 24.74
+  BLEU Improvement: +11.98
+  Baseline BERTScore: 90.10
+  Model BERTScore: 97.90
+  BERTScore Improvement: +7.80
+  Baseline Quality: 59.41
+  Model Quality: 77.83
+  Quality Improvement: +18.43
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 68.70
+  Model Composite: 79.42
+  Composite Improvement: +10.73
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 6:
+  Glosses: FORGET, GRADUATION, YEAR
+  Reference: I forgot my graduation year.
+  Predicted: I forget graduation year.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: forget, graduation, year
+  Baseline BLEU: 28.25
+  Model BLEU: 27.53
+  BLEU Improvement: -0.72
+  Baseline BERTScore: 92.84
+  Model BERTScore: 96.57
+  BERTScore Improvement: +3.73
+  Baseline Quality: 22.00
+  Model Quality: 22.68
+  Quality Improvement: +0.68
+  Baseline Coverage Recall: 80.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 88.9%
+  Model Coverage Recall: 80.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 88.9%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: my
+  Baseline Composite: 53.83
+  Model Composite: 54.74
+  Composite Improvement: +0.91
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 7:
+  Glosses: BOOK, TABLE, NOW
+  Reference: The book is on table now.
+  Predicted: Now, book computer.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'computer' vs 'TABLE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: book, computer, now
+  Effective Mismatches:
+    Position 1: LLM chose 'computer' but should be 'TABLE'
+      Available top-k predictions:
+        1. computer (71.1%)
+        2. table (27.8%) [CORRECT!]
+        3. year (0.3%)
+  Baseline BLEU: 12.75
+  Model BLEU: 12.75
+  BLEU Improvement: +0.00
+  Baseline BERTScore: 90.48
+  Model BERTScore: 88.20
+  BERTScore Improvement: -2.28
+  Baseline Quality: 56.86
+  Model Quality: 25.45
+  Quality Improvement: -31.41
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: table
+  Hallucinated Words: computer
+  Baseline Composite: 59.42
+  Model Composite: 46.40
+  Composite Improvement: -13.02
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 8:
+  Glosses: CHAIR, BLACK, NOW
+  Reference: The chair is black now.
+  Predicted: Now the black chair.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: chair, black, now
+  Baseline BLEU: 32.34
+  Model BLEU: 17.59
+  BLEU Improvement: -14.75
+  Baseline BERTScore: 93.61
+  Model BERTScore: 92.74
+  BERTScore Improvement: -0.87
+  Baseline Quality: 55.14
+  Model Quality: 69.10
+  Quality Improvement: +13.96
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 70.63
+  Model Composite: 73.83
+  Composite Improvement: +3.20
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 9:
+  Glosses: APPLE, ORANGE, EAT
+  Reference: I will eat apple or orange.
+  Predicted: The apple is wrong about the hearing.
+  Model Gloss Accuracy (top-1): 1/3 (33.3%)
+  Top-1 Mismatches:
+    Position 1: 'apple' vs 'ORANGE'
+    Position 2: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 1/3 (33.3%)
+  Effective Glosses: apple, apple, wrong
+  Effective Mismatches:
+    Position 1: LLM chose 'apple' but should be 'ORANGE'
+      Available top-k predictions:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+    Position 2: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 10.12
+  Model BLEU: 6.57
+  BLEU Improvement: -3.56
+  Baseline BERTScore: 87.62
+  Model BERTScore: 86.47
+  BERTScore Improvement: -1.15
+  Baseline Quality: 24.13
+  Model Quality: 72.49
+  Quality Improvement: +48.35
+  Baseline Coverage Recall: 25.0%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 36.4%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +20.8%
+  Missing Words: eat, orange
+  Hallucinated Words: wrong
+  Baseline Composite: 37.79
+  Model Composite: 61.56
+  Composite Improvement: +23.77
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 10:
+  Glosses: MAN, LIKE, APPLE, NOW
+  Reference: The man will like an apple now.
+  Predicted: The man likes the apple now.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: man, like, apple, now
+  Baseline BLEU: 17.95
+  Model BLEU: 19.43
+  BLEU Improvement: +1.49
+  Baseline BERTScore: 92.76
+  Model BERTScore: 95.29
+  BERTScore Improvement: +2.53
+  Baseline Quality: 39.68
+  Model Quality: 59.35
+  Quality Improvement: +19.67
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 62.12
+  Model Composite: 70.72
+  Composite Improvement: +8.60
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 11:
+  Glosses: MOTHER, GIVE, BOOK, NOW
+  Reference: The mother will give a book now.
+  Predicted: The mother gives the book now.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: mother, now, book, now
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 16.70
+  Model BLEU: 19.43
+  BLEU Improvement: +2.73
+  Baseline BERTScore: 87.42
+  Model BERTScore: 96.20
+  BERTScore Improvement: +8.78
+  Baseline Quality: 49.20
+  Model Quality: 71.46
+  Quality Improvement: +22.26
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 85.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +14.3%
+  Baseline Composite: 61.10
+  Model Composite: 75.74
+  Composite Improvement: +14.64
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 12:
+  Glosses: COUSIN, LIKE, CANDY, MANY
+  Reference: The cousin likes many candies.
+  Predicted: My cousin likes candy a lot.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: cousin, like, candy, many
+  Baseline BLEU: 14.79
+  Model BLEU: 16.23
+  BLEU Improvement: +1.44
+  Baseline BERTScore: 91.45
+  Model BERTScore: 96.08
+  BERTScore Improvement: +4.63
+  Baseline Quality: 38.48
+  Model Quality: 80.82
+  Quality Improvement: +42.33
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 60.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -25.0%
+  Coverage Precision Improvement: -40.0%
+  Coverage F1 Improvement: -33.3%
+  Missing Words: many
+  Hallucinated Words: my, lot
+  Baseline Composite: 60.90
+  Model Composite: 70.64
+  Composite Improvement: +9.74
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 13:
+  Glosses: DOCTOR, HELP, MAN, NOW
+  Reference: The doctor will help man now.
+  Predicted: The doctor helps the man now.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: doctor, help, man, now
+  Baseline BLEU: 38.75
+  Model BLEU: 22.96
+  BLEU Improvement: -15.80
+  Baseline BERTScore: 93.50
+  Model BERTScore: 95.05
+  BERTScore Improvement: +1.55
+  Baseline Quality: 55.54
+  Model Quality: 75.18
+  Quality Improvement: +19.64
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 71.73
+  Model Composite: 77.52
+  Composite Improvement: +5.80
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 14:
+  Glosses: COMPUTER, COOL, NOW, YES, NO
+  Reference: The computer is cool now, yes or no?
+  Predicted: Now the computer is cool, yes?
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: computer, cool, now, yes, no
+  Baseline BLEU: 24.80
+  Model BLEU: 40.29
+  BLEU Improvement: +15.50
+  Baseline BERTScore: 90.87
+  Model BERTScore: 92.77
+  BERTScore Improvement: +1.90
+  Baseline Quality: 28.86
+  Model Quality: 93.42
+  Quality Improvement: +64.56
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 58.44
+  Model Composite: 86.97
+  Composite Improvement: +28.53
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 15:
+  Glosses: CHAIR, BLACK, NOW, FINE, YES
+  Reference: The black chair is fine now, yes?
+  Predicted: The black chair is like now.
+  Model Gloss Accuracy (top-1): 4/5 (80.0%)
+  Top-1 Mismatches:
+    Position 3: 'like' vs 'FINE'
+  Effective Gloss Accuracy (LLM-selected): 4/5 (80.0%)
+  Effective Glosses: chair, black, now, like, yes
+  Effective Mismatches:
+    Position 3: LLM chose 'like' but should be 'FINE'
+      Available top-k predictions:
+        1. like (90.4%)
+        2. fine (6.5%) [CORRECT!]
+        3. walk (1.7%)
+  Baseline BLEU: 10.13
+  Model BLEU: 45.48
+  BLEU Improvement: +35.35
+  Baseline BERTScore: 89.62
+  Model BERTScore: 91.74
+  BERTScore Improvement: +2.12
+  Baseline Quality: 34.63
+  Model Quality: 70.47
+  Quality Improvement: +35.84
+  Baseline Coverage Recall: 80.0%
+  Baseline Coverage Precision: 80.0%
+  Baseline Coverage F1: 80.0%
+  Model Coverage Recall: 60.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -20.0%
+  Coverage Precision Improvement: -5.0%
+  Coverage F1 Improvement: -13.3%
+  Missing Words: fine, yes
+  Hallucinated Words: like
+  Baseline Composite: 53.30
+  Model Composite: 70.02
+  Composite Improvement: +16.73
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 16:
+  Glosses: APPLE, ORANGE, EAT, NOW, LIKE, YES, NO
+  Reference: I will eat apple or orange now, do you like it, yes or no?
+  Predicted: The apple hearing is wrong now like no.
+  Model Gloss Accuracy (top-1): 5/7 (71.4%)
+  Top-1 Mismatches:
+    Position 1: 'apple' vs 'ORANGE'
+    Position 2: 'wrong' vs 'EAT'
+  Effective Gloss Accuracy (LLM-selected): 5/7 (71.4%)
+  Effective Glosses: apple, apple, wrong, now, like, yes, no
+  Effective Mismatches:
+    Position 1: LLM chose 'apple' but should be 'ORANGE'
+      Available top-k predictions:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+    Position 2: LLM chose 'wrong' but should be 'EAT'
+      Available top-k predictions:
+        1. wrong (65.2%)
+        2. hot (8.4%)
+        3. deaf (4.9%)
+  Baseline BLEU: 3.61
+  Model BLEU: 3.69
+  BLEU Improvement: +0.08
+  Baseline BERTScore: 86.50
+  Model BERTScore: 85.22
+  BERTScore Improvement: -1.28
+  Baseline Quality: 34.19
+  Model Quality: 24.09
+  Quality Improvement: -10.10
+  Baseline Coverage Recall: 60.0%
+  Baseline Coverage Precision: 85.7%
+  Baseline Coverage F1: 70.6%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 83.3%
+  Model Coverage F1: 62.5%
+  Coverage Recall Improvement: -10.0%
+  Coverage Precision Improvement: -2.4%
+  Coverage F1 Improvement: -8.1%
+  Missing Words: eat, orange, you, it, yes
+  Hallucinated Words: wrong
+  Baseline Composite: 49.17
+  Model Composite: 42.86
+  Composite Improvement: -6.31
+  LLM Alternatives Used: 0/7
+  Status: success
+
+Entry 17:
+  Glosses: MAN, LIKE, APPLE, NOW, WOMAN, LIKE, ORANGE
+  Reference: The man likes apple now, but the woman likes orange.
+  Predicted: The man like apple now woman like apple.
+  Model Gloss Accuracy (top-1): 6/7 (85.7%)
+  Top-1 Mismatches:
+    Position 6: 'apple' vs 'ORANGE'
+  Effective Gloss Accuracy (LLM-selected): 6/7 (85.7%)
+  Effective Glosses: man, like, apple, now, woman, like, apple
+  Effective Mismatches:
+    Position 6: LLM chose 'apple' but should be 'ORANGE'
+      Available top-k predictions:
+        1. apple (49.6%)
+        2. hearing (18.0%)
+        3. cool (6.9%)
+  Baseline BLEU: 10.18
+  Model BLEU: 12.86
+  BLEU Improvement: +2.69
+  Baseline BERTScore: 91.26
+  Model BERTScore: 92.88
+  BERTScore Improvement: +1.62
+  Baseline Quality: 50.65
+  Model Quality: 48.52
+  Quality Improvement: -2.14
+  Baseline Coverage Recall: 85.7%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 92.3%
+  Model Coverage Recall: 85.7%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 92.3%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: orange
+  Baseline Composite: 63.12
+  Model Composite: 62.99
+  Composite Improvement: -0.13
+  LLM Alternatives Used: 0/7
+  Status: success
+
+Entry 18:
+  Glosses: HALLOWEEN, BEFORE, THANKSGIVING
+  Reference: Halloween is before Thanksgiving.
+  Predicted: Before Halloween, thanks giving.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: halloween, before, thanksgiving
+  Baseline BLEU: 45.14
+  Model BLEU: 19.00
+  BLEU Improvement: -26.14
+  Baseline BERTScore: 89.89
+  Model BERTScore: 87.10
+  BERTScore Improvement: -2.79
+  Baseline Quality: 57.25
+  Model Quality: 27.83
+  Quality Improvement: -29.42
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 72.65
+  Model Composite: 56.40
+  Composite Improvement: -16.25
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 19:
+  Glosses: MAN, KISS, WOMAN, THANKSGIVING
+  Reference: The man kissed the woman on Thanksgiving.
+  Predicted: The man kiss the woman for thanksgiving.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: man, kiss, woman, thanksgiving
+  Baseline BLEU: 9.93
+  Model BLEU: 19.64
+  BLEU Improvement: +9.71
+  Baseline BERTScore: 91.59
+  Model BERTScore: 95.95
+  BERTScore Improvement: +4.36
+  Baseline Quality: 21.03
+  Model Quality: 64.74
+  Quality Improvement: +43.71
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 53.22
+  Model Composite: 73.03
+  Composite Improvement: +19.81
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 20:
+  Glosses: DOG, LIKE, BATH
+  Reference: The dog likes a bath.
+  Predicted: The dog does not like a bath.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: dog, like, bath
+  Baseline BLEU: 17.80
+  Model BLEU: 18.58
+  BLEU Improvement: +0.78
+  Baseline BERTScore: 92.84
+  Model BERTScore: 97.39
+  BERTScore Improvement: +4.55
+  Baseline Quality: 14.36
+  Model Quality: 88.44
+  Quality Improvement: +74.08
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -25.0%
+  Coverage F1 Improvement: -14.3%
+  Hallucinated Words: not
+  Baseline Composite: 51.98
+  Model Composite: 79.07
+  Composite Improvement: +27.09
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 21:
+  Glosses: DOCTOR, GIVE, APPLE
+  Reference: The doctor is giving an apple.
+  Predicted: The doctor can help now with the apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: doctor, now, apple
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 12.75
+  Model BLEU: 12.22
+  BLEU Improvement: -0.53
+  Baseline BERTScore: 88.83
+  Model BERTScore: 91.46
+  BERTScore Improvement: +2.64
+  Baseline Quality: 14.09
+  Model Quality: 76.39
+  Quality Improvement: +62.30
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -16.7%
+  Coverage F1 Improvement: -9.5%
+  Missing Words: giving
+  Hallucinated Words: help, now
+  Baseline Composite: 41.98
+  Model Composite: 64.97
+  Composite Improvement: +22.99
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 22:
+  Glosses: MOTHER, GIVE, APPLE, NOW
+  Reference: The mother is giving an apple now.
+  Predicted: The mother gives the apple now.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: mother, now, apple, now
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 16.70
+  Model BLEU: 19.43
+  BLEU Improvement: +2.73
+  Baseline BERTScore: 89.18
+  Model BERTScore: 96.23
+  BERTScore Improvement: +7.05
+  Baseline Quality: 20.61
+  Model Quality: 57.40
+  Quality Improvement: +36.79
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 85.7%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 75.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -25.0%
+  Coverage F1 Improvement: -10.7%
+  Missing Words: giving
+  Hallucinated Words: gives
+  Baseline Composite: 50.02
+  Model Composite: 63.87
+  Composite Improvement: +13.86
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 23:
+  Glosses: WHO, LIKE, BLACK, DOG
+  Reference: Who likes the black dog?
+  Predicted: Who likes the black dog?
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: who, like, black, dog
+  Baseline BLEU: 27.53
+  Model BLEU: 100.00
+  BLEU Improvement: +72.47
+  Baseline BERTScore: 93.24
+  Model BERTScore: 100.00
+  BERTScore Improvement: +6.76
+  Baseline Quality: 47.28
+  Model Quality: 80.35
+  Quality Improvement: +33.07
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Composite: 66.69
+  Model Composite: 92.14
+  Composite Improvement: +25.45
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 24:
+  Glosses: COMPUTER, COOL, MAN, LIKE, ALL
+  Reference: The cool man likes all computers.
+  Predicted: The man likes the cool computer all the time.
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: computer, cool, man, like, all
+  Baseline BLEU: 19.36
+  Model BLEU: 14.26
+  BLEU Improvement: -5.10
+  Baseline BERTScore: 90.50
+  Model BERTScore: 93.54
+  BERTScore Improvement: +3.04
+  Baseline Quality: 42.26
+  Model Quality: 87.74
+  Quality Improvement: +45.48
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 83.3%
+  Model Coverage F1: 90.9%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -16.7%
+  Coverage F1 Improvement: -9.1%
+  Hallucinated Words: time
+  Baseline Composite: 62.91
+  Model Composite: 78.67
+  Composite Improvement: +15.76
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 25:
+  Glosses: MOTHER, GIVE, APPLE, FORGET, DRINK, NOW
+  Reference: The mother is giving an apple, but forgot to drink now.
+  Predicted: Now the mother gives apple now.
+  Model Gloss Accuracy (top-1): 5/6 (83.3%)
+  Top-1 Mismatches:
+    Position 1: 'now' vs 'GIVE'
+  Effective Gloss Accuracy (LLM-selected): 5/6 (83.3%)
+  Effective Glosses: mother, now, apple, forget, drink, now
+  Effective Mismatches:
+    Position 1: LLM chose 'now' but should be 'GIVE'
+      Available top-k predictions:
+        1. now (50.7%)
+        2. give (40.0%) [CORRECT!]
+        3. dog (6.1%)
+  Baseline BLEU: 8.39
+  Model BLEU: 8.39
+  BLEU Improvement: +0.00
+  Baseline BERTScore: 87.66
+  Model BERTScore: 92.45
+  BERTScore Improvement: +4.79
+  Baseline Quality: 2.31
+  Model Quality: 51.72
+  Quality Improvement: +49.41
+  Baseline Coverage Recall: 83.3%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 90.9%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 80.0%
+  Model Coverage F1: 61.5%
+  Coverage Recall Improvement: -33.3%
+  Coverage Precision Improvement: -20.0%
+  Coverage F1 Improvement: -29.4%
+  Missing Words: giving, forgot, drink
+  Hallucinated Words: gives
+  Baseline Composite: 42.44
+  Model Composite: 55.82
+  Composite Improvement: +13.38
+  LLM Alternatives Used: 0/6
+  Status: success

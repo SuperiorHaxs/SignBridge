@@ -1,0 +1,86 @@
+TASK: Generate a grammatically correct English sentence from ASL video sign predictions.
+
+HOW TO SELECT WORDS:
+
+ 1. SEMANTIC COHERENCE + GRAMMAR: Choose words that create a grammatically correct, coherent sentence      
+     - Confidence scores matter less than grammar and meaning
+     - Try alternatives from top-k if your first choice creates awkward grammar
+     - Examples: chair+table (furniture), mother+help+deaf (caregiving), "is fine" not "is like"
+
+2. ITERATE MENTALLY: Try different combinations. If one sounds unnatural, go back and pick different words.
+
+3. POSITION FLEXIBILITY: Position numbers are just labels. You can arrange selected words in ANY grammatical order in your sentence.
+
+4. RELATIONAL NOUNS AS SUBJECTS: When a family relation or personal relationship word
+   (e.g., mother, father, son, daughter, brother, sister, grandmother, friend) appears
+   as the subject of the sentence, add a possessive prefix like "my" or "the" as appropriate.
+   - Example: "mother help deaf" → "My mother helps the deaf person."
+   - Example: "son go school" → "My son goes to school."
+
+5. VERB COMPLEMENTATION: Use correct verb patterns when adding filler verbs:
+   - Verbs like 'enjoy', 'avoid', 'finish' require gerunds (-ing): "enjoys playing" NOT "enjoys to play"
+   - Verbs like 'want', 'hope', 'decide' require infinitives: "wants to play" NOT "wants playing"
+
+INPUT FORMAT:
+- You'll get word options with confidence scores for each position
+- Confidence scores = model's prediction certainty, NOT relevance to your sentence
+- Select EXACTLY ONE word from EACH position
+- Only add grammatical filler words (articles like 'the/a/an', prepositions like 'on/in/with',
+  conjunctions like 'and/or')
+- DO NOT add filler words that are: negations (not/never/no), modals that change meaning (might/could/should), or any words     
+  that alter the semantic meaning unless they are an explicit position word in the list provided to you.
+
+CRITICAL RULES:
+1. Select EXACTLY ONE word from EACH position (must use all positions)
+2. NO MIXING: Cannot use multiple words from the same position's alternatives
+   - Example: If Position 1 = ['now', 'give', 'dog'] and you select 'now', you CANNOT also use 'give' or 'dog'
+3. ALL SELECTED WORDS must appear in your final sentence
+ 4. MANDATORY DUPLICATE CHECK: Before finalizing selections, scan for duplicate words
+     - If ANY word appears twice, you MUST change one of them to a different alternative
+     - Priority: Keep the duplicate where it has higher confidence, change the other position
+     - Example: Position 1 has ['now' 50.7%, 'give' 40%], Position 5 has ['now' 99%]
+       → Keep 'now' for Position 5 (99%), choose 'give' for Position 1 (40%)
+     - Using the same word twice is almost always grammatically wrong - avoid at all costs
+5. Your "selections" array must match the words actually used in your "sentence"
+
+Word Predictions:
+{gloss_details}
+
+EXAMPLES:
+
+Example 1 - Semantic coherence over confidence (3 positions):
+Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
+Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
+Position 3: 'wrong' (41%), 'candy' (16%), 'deaf' (11%)
+
+✓ CORRECT: {{"selections": ["mother", "help", "deaf"], "sentence": "The mother helps the deaf person."}}
+   Why: Chose 'deaf' (11%) over 'wrong' (41%) for semantic coherence
+
+❌ WRONG: {{"selections": ["mother", "help", "wrong"], "sentence": "The mother helps wrong person."}}
+   Why: 'wrong' doesn't make grammatical sense despite high confidence
+
+❌ VIOLATION: {{"selections": ["mother", "help", "deaf"], "sentence": "The mother helps the deaf and candy person."}}
+   Why: Used 'candy' from Position 3 when only 'deaf' was selected
+
+Example 2 - Related objects + 4 positions:
+Position 1: 'chair' (85%), 'computer' (10%), 'year' (5%)
+Position 2: 'table' (28%), 'computer' (71%), 'year' (1%)
+Position 3: 'blue' (60%), 'happy' (30%), 'sad' (10%)
+Position 4: 'book' (50%), 'apple' (30%), 'dog' (20%)
+
+✓ CORRECT: {{"selections": ["chair", "table", "blue", "book"], "sentence": "The blue book is on the table with a chair."}}
+   Why: chair+table+book = furniture theme, position reordering is allowed
+
+❌ VIOLATION: {{"selections": ["chair", "table", "blue", "book"], "sentence": "The blue chair is on the table and computer."}}
+   Why: Used 'computer' from Position 2 when only 'table' was selected
+
+OUTPUT FORMAT (JSON only - no other text):
+{{
+  "selections": ["word1", "word2", "word3"],
+  "sentence": "Your complete grammatical sentence here."
+}}
+
+Requirements:
+- "selections" = one word from each position, in order (Position 1, Position 2, etc.)
+- "sentence" = uses ALL selected words + only filler words (articles/prepositions/conjunctions)
+- Output ONLY the JSON object, nothing before or after

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Step 1: Setup - Live Mode{% endblock %}
+
+{% block live_phase1_class %}active{% endblock %}
+
+{% block content %}
+<div class="live-setup-container">
+    <div class="setup-header">
+        <h2>Step 1: Set Up Your Reference Sentence</h2>
+        <p class="helper-text">
+            Choose a preset sentence or build your own from available signs.
+            This sentence will be used to evaluate your signing accuracy.
+        </p>
+    </div>
+
+    <!-- Preset Sentences Dropdown -->
+    <div class="setup-section preset-section">
+        <h3>
+            <span class="section-icon">&#128218;</span>
+            Select a Preset Sentence
+        </h3>
+        <p class="section-desc">Choose from sentences we've prepared with tutorial videos</p>
+
+        <select id="preset-dropdown" class="preset-dropdown">
+            <option value="">-- Select a preset sentence --</option>
+        </select>
+
+        <div class="preset-info" id="preset-info" style="display: none;">
+            <div class="preset-glosses">
+                <span class="label">Signs:</span>
+                <span id="preset-glosses-list"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div class="section-divider">
+        <span>OR</span>
+    </div>
+
+    <!-- Build Your Own Section -->
+    <div class="setup-section build-section">
+        <h3>
+            <span class="section-icon">&#128295;</span>
+            Build Your Own Sentence
+        </h3>
+        <p class="section-desc">Select words by category to create a custom sentence</p>
+
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="category-tabs">
+            <!-- Categories will be populated by JS -->
+        </div>
+
+        <!-- Words Grid -->
+        <div class="words-grid" id="words-grid">
+            <!-- Words will be populated by JS based on selected category -->
+        </div>
+
+        <!-- Selected Words -->
+        <div class="selected-words-section">
+            <h4>Selected Words:</h4>
+            <div class="selected-words" id="selected-words">
+                <span class="placeholder-text">Click words above to add them</span>
+            </div>
+            <div class="selected-actions">
+                <button class="btn-secondary" id="clear-words-btn" disabled>Clear All</button>
+                <button class="btn-secondary" id="remove-last-btn" disabled>Remove Last</button>
+                <button class="btn-primary" id="generate-btn" disabled>Generate Reference</button>
+            </div>
+        </div>
+
+        <!-- Generated Reference -->
+        <div class="generated-reference" id="generated-reference" style="display: none;">
+            <h4>Generated Reference Sentence:</h4>
+            <div class="reference-display">
+                <input type="text" id="generated-sentence" class="generated-sentence-input" readonly>
+                <div class="reference-actions">
+                    <button class="btn-secondary" id="regenerate-btn">Regenerate</button>
+                    <button class="btn-secondary" id="edit-btn">Edit</button>
+                    <button class="btn-primary" id="use-generated-btn">Use This</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Selection Display -->
+    <div class="final-selection" id="final-selection" style="display: none;">
+        <div class="selection-card">
+            <h3>Your Reference Sentence</h3>
+            <p class="final-sentence" id="final-sentence"></p>
+            <p class="final-glosses">
+                <span class="label">Signs to learn:</span>
+                <span id="final-glosses"></span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation-buttons">
+        <button class="btn-nav btn-next" id="continue-btn" disabled>
+            Continue to Learn Signs
+            <span class="arrow">&#8594;</span>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live_setup.js') }}"></script>
+{% endblock %}

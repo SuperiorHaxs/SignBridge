@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Step 2: Learn Signs - Live Mode{% endblock %}
+
+{% block live_phase2_class %}active{% endblock %}
+
+{% block content %}
+<div class="live-learn-container">
+    <div class="learn-header">
+        <h2>Step 2: Learn How to Sign</h2>
+        <p class="reference-display">
+            <span class="label">Your sentence:</span>
+            <span id="reference-sentence-display"></span>
+        </p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="learn-progress">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text">
+            Sign <span id="current-index">1</span> of <span id="total-signs">0</span>
+        </div>
+    </div>
+
+    <!-- Tutorial Display -->
+    <div class="tutorial-display">
+        <!-- Current Sign Info -->
+        <div class="current-sign-info">
+            <h3 class="current-gloss" id="current-gloss">Loading...</h3>
+            <p class="sign-instruction">Watch and learn this sign</p>
+        </div>
+
+        <!-- Video/Pose Player -->
+        <div class="tutorial-player">
+            <div class="video-container" id="video-container">
+                <video id="tutorial-video" controls autoplay loop muted playsinline>
+                    Your browser does not support video playback.
+                </video>
+                <div class="video-loading" id="video-loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading tutorial...</p>
+                </div>
+                <div class="video-unavailable" id="video-unavailable" style="display: none;">
+                    <span class="unavailable-icon">&#9888;</span>
+                    <p>Tutorial video not available for this sign</p>
+                </div>
+            </div>
+
+            <!-- Video Controls -->
+            <div class="video-controls">
+                <button class="control-btn" id="replay-btn" title="Replay">
+                    <span>&#128257;</span> Replay
+                </button>
+                <button class="control-btn" id="slow-btn" title="Play Slower">
+                    <span>&#128034;</span> Slow
+                </button>
+                <button class="control-btn" id="normal-btn" title="Normal Speed">
+                    <span>&#9654;</span> Normal
+                </button>
+            </div>
+        </div>
+
+        <!-- Sign Queue Preview -->
+        <div class="sign-queue">
+            <h4>All Signs:</h4>
+            <div class="queue-items" id="queue-items">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation-buttons learn-nav">
+        <button class="btn-nav btn-prev" id="prev-btn" disabled>
+            <span class="arrow">&#8592;</span>
+            Previous Sign
+        </button>
+
+        <button class="btn-nav btn-skip" id="skip-btn">
+            Skip to Record
+            <span class="arrow">&#8608;</span>
+        </button>
+
+        <button class="btn-nav btn-next" id="next-btn">
+            Next Sign
+            <span class="arrow">&#8594;</span>
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/live_learn.js') }}"></script>
+{% endblock %}

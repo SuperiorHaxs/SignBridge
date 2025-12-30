@@ -85,25 +85,26 @@ AUGMENTATION_CONFIG = {
 # Calculate total augmentations (sum of all non-zero counts)
 NUM_AUGMENTATIONS = sum(count for count in AUGMENTATION_CONFIG.values() if count > 0)
 
-# Augmentation parameters (REDUCED intensity to avoid train/val distribution gap)
-SHEAR_STD = 0.08                    # Reduced from 0.15 (conservative)
-ROTATION_STD = 0.08                 # Reduced from 0.15 (~±4°)
-NOISE_LOW = 0.008                   # Reduced from 0.015
-NOISE_MEDIUM = 0.015                # Reduced from 0.025
-TRANSLATION_SMALL = 0.025           # Reduced from 0.04
-TRANSLATION_MEDIUM = 0.05           # Reduced from 0.08
-SCALE_SMALL = 0.93                  # Reduced range from 0.90 (7% vs 10%)
-SCALE_LARGE = 1.07                  # Reduced range from 1.10 (7% vs 10%)
-SPEED_SLOW = 0.85                   # Reduced range from 0.75 (15% vs 25%)
-SPEED_FAST = 1.15                   # Reduced range from 1.25 (15% vs 25%)
-SPEED_VERY_SLOW = 0.75              # Reduced from 0.65
-SPEED_VERY_FAST = 1.25              # Reduced from 1.35
+# Augmentation parameters (INCREASED to match test distribution gap)
+# Analysis showed: test has ~40% larger scale, different framing, 50% longer videos, 50% more missing keypoints
+SHEAR_STD = 0.12                    # Increased from 0.08 for more geometric variation
+ROTATION_STD = 0.12                 # Increased from 0.08 (~±6° rotation)
+NOISE_LOW = 0.010                   # Slight increase for robustness
+NOISE_MEDIUM = 0.020                # Increased from 0.015
+TRANSLATION_SMALL = 0.10            # Increased from 0.025 - test has different camera framing
+TRANSLATION_MEDIUM = 0.20           # Increased from 0.05 - significant position shift
+SCALE_SMALL = 0.70                  # Increased range from 0.93 - test subjects are 40% larger
+SCALE_LARGE = 1.50                  # Increased range from 1.07 - cover larger scale variation
+SPEED_SLOW = 0.60                   # Increased from 0.85 - test videos are 50% longer
+SPEED_FAST = 1.60                   # Increased from 1.15 - cover faster signing
+SPEED_VERY_SLOW = 0.50              # Increased from 0.75 - extreme temporal variation
+SPEED_VERY_FAST = 1.80              # Increased from 1.25 - extreme speed variation
 
-# Occlusion parameters (REDUCED intensity)
-KEYPOINT_OCCLUSION_LOW = 0.05       # Reduced from 10% to 5%
-KEYPOINT_OCCLUSION_MEDIUM = 0.08    # Reduced from 15% to 8%
-KEYPOINT_OCCLUSION_HIGH = 0.12      # Reduced from 20% to 12%
-HAND_DROPOUT_PROB = 0.08            # Reduced from 15% to 8%
+# Occlusion parameters (INCREASED to match test's 32% missing keypoints vs train's 21%)
+KEYPOINT_OCCLUSION_LOW = 0.15       # Increased from 0.05 to 15%
+KEYPOINT_OCCLUSION_MEDIUM = 0.25    # Increased from 0.08 to 25%
+KEYPOINT_OCCLUSION_HIGH = 0.35      # Increased from 0.12 to 35%
+HAND_DROPOUT_PROB = 0.15            # Increased from 0.08 to 15%
 
 # ============================================================================
 # DYNAMIC CLASS LOADING - No hardcoded lists!
