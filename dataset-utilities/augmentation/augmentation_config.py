@@ -19,13 +19,24 @@ from collections import defaultdict
 
 # Target number of samples per class after augmentation
 # This ensures all classes have equal representation in training
-TARGET_SAMPLES_PER_CLASS = 200
+#
+# IMPORTANT: Family-based splitting reserves 3 families for val/test (1 each).
+# For classes with few originals (e.g., 5-6 videos), only 2-3 families go to train.
+# To achieve ~200 samples in train for ALL classes including smallest:
+#   - Smallest class has ~5 originals -> 2 families in train after reserving 3
+#   - Need 200 samples from 2 families -> 100 samples per family
+#   - Each family = 1 original + augmentations -> need ~99 augmentations per video
+#   - Set pool target high enough so smallest classes get enough per-family samples
+#
+# With 5 originals, 2 train families, need 100 samples each = 200 total train
+# Pool needs: 5 videos × 100 samples/video = 500 total pool
+TARGET_SAMPLES_PER_CLASS = 500
 
 # Minimum augmentations per video (even for classes with many samples)
-MIN_AUGMENTATIONS_PER_VIDEO = 5
+MIN_AUGMENTATIONS_PER_VIDEO = 10
 
-# Maximum augmentations per video (matches target to ensure smallest classes can reach it)
-MAX_AUGMENTATIONS_PER_VIDEO = 200
+# Maximum augmentations per video (high to allow small classes to reach target)
+MAX_AUGMENTATIONS_PER_VIDEO = 150
 
 # Split ratios for stratified splitting
 SPLIT_RATIOS = {

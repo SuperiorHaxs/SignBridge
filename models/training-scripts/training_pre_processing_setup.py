@@ -17,8 +17,11 @@ Usage:
     # Complete end-to-end setup (recommended)
     python training_pre_processing_setup.py --classes 100 --setup
 
-    # Force fresh start (ensures all classes have 40x augmentation)
+    # Force fresh start (regenerates splits and manifests, keeps augmented data)
     python training_pre_processing_setup.py --classes 100 --setup --force-fresh
+
+    # Truly fresh start (deletes ALL augmented data and regenerates everything)
+    python training_pre_processing_setup.py --classes 100 --setup --force-fresh --clean-pool
 
     # Only verify existing setup
     python training_pre_processing_setup.py --classes 50 --verify-only
@@ -708,7 +711,7 @@ def update_config_file(num_classes, config):
 # CLEANUP FOR FRESH START
 # ============================================================================
 
-def cleanup_for_fresh_start(num_classes, config):
+def cleanup_for_fresh_start(num_classes, config, clean_pool=False):
     """
     Clean up existing pickle splits and balanced splits for fresh regeneration.
     Preserves pose splits (source of truth).
@@ -716,6 +719,7 @@ def cleanup_for_fresh_start(num_classes, config):
     Args:
         num_classes: Number of classes
         config: PathConfig instance
+        clean_pool: If True, also delete the augmented_pool/pickle/ directory
 
     Returns:
         bool: Success status
@@ -735,8 +739,11 @@ def cleanup_for_fresh_start(num_classes, config):
     if splits_dir.exists():
         items_to_delete.append(("Split manifests", splits_dir))
 
-    # Note: We don't delete the pickle pool (augmented_pool/pickle/) as it's shared
-    # across class configurations and regenerating is expensive
+    # Optionally delete the pickle pool (use --clean-pool for truly fresh augmentation)
+    if clean_pool:
+        pickle_pool_dir = augmented_pool_root / "pickle"
+        if pickle_pool_dir.exists():
+            items_to_delete.append(("Augmented pickle pool (ALL augmented data)", pickle_pool_dir))
 
     if not items_to_delete:
         print_status("Nothing to clean up (fresh state)", "SUCCESS")
@@ -779,7 +786,7 @@ def cleanup_for_fresh_start(num_classes, config):
 # COMPLETE SETUP ORCHESTRATION
 # ============================================================================
 
-def run_complete_setup(num_classes, config, resume=True, force_fresh=False, gloss_file=None):
+def run_complete_setup(num_classes, config, resume=True, force_fresh=False, clean_pool=False, gloss_file=None):
     """
     Run complete end-to-end setup for specified class count.
 
@@ -798,6 +805,7 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
         config: PathConfig instance
         resume: If True, skip completed steps
         force_fresh: If True, delete and restart from scratch
+        clean_pool: If True, also delete augmented_pool/pickle/ (use with force_fresh)
         gloss_file: Optional path to JSON file with custom gloss list
 
     Returns:
@@ -805,7 +813,12 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
     """
     print_section(f"Complete Setup - {num_classes} Classes")
     print()
-    print(f"Mode: {'Force Fresh (Delete & Restart)' if force_fresh else 'Resume (Skip completed steps)'}")
+    mode_str = 'Force Fresh (Delete & Restart)'
+    if force_fresh and clean_pool:
+        mode_str += ' + Clean Pool (delete ALL augmented data)'
+    elif not force_fresh:
+        mode_str = 'Resume (Skip completed steps)'
+    print(f"Mode: {mode_str}")
     if gloss_file:
         print(f"Gloss source: Custom file ({gloss_file})")
     else:
@@ -814,7 +827,7 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
 
     # Step 0: Cleanup if force_fresh
     if force_fresh:
-        if not cleanup_for_fresh_start(num_classes, config):
+        if not cleanup_for_fresh_start(num_classes, config, clean_pool=clean_pool):
             print_status("Setup cancelled", "ERROR")
             return False
 
@@ -1080,6 +1093,11 @@ Examples:
         help='Delete existing data and start fresh (use with --setup)'
     )
     parser.add_argument(
+        '--clean-pool',
+        action='store_true',
+        help='Also delete augmented_pool/pickle/ for truly fresh augmentation (use with --force-fresh)'
+    )
+    parser.add_argument(
         '--verify-only',
         action='store_true',
         help='Only verify existing setup, do not create anything'
@@ -1100,6 +1118,10 @@ Examples:
 
     if args.force_fresh and not args.setup:
         print("ERROR: --force-fresh can only be used with --setup")
+        sys.exit(1)
+
+    if args.clean_pool and not args.force_fresh:
+        print("ERROR: --clean-pool can only be used with --force-fresh")
         sys.exit(1)
 
     # Handle class count: auto-detect from gloss file if provided
@@ -1153,6 +1175,7 @@ Examples:
             config=config,
             resume=(not args.force_fresh),
             force_fresh=args.force_fresh,
+            clean_pool=args.clean_pool,
             gloss_file=args.gloss_file
         )
         sys.exit(0 if success else 1)
