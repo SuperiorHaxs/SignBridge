@@ -97,20 +97,30 @@ except Exception as e:
     print(f"WARNING: Could not import conversion utilities: {e}")
 
 try:
-    # Import augmentation utilities
-    augmentation_module_path = project_root / "dataset-utilities" / "augmentation" / "generate_75pt_augmented_dataset.py"
-    spec = importlib.util.spec_from_file_location("generate_75pt_augmented_dataset", augmentation_module_path)
+    # Import augmentation config
+    aug_config_path = project_root / "dataset-utilities" / "augmentation" / "augmentation_config.py"
+    spec = importlib.util.spec_from_file_location("augmentation_config", aug_config_path)
+    aug_config_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(aug_config_module)
+
+    # Import augmentation utilities (new balanced approach)
+    augmentation_module_path = project_root / "dataset-utilities" / "augmentation" / "generate_augmented_dataset.py"
+    spec = importlib.util.spec_from_file_location("generate_augmented_dataset", augmentation_module_path)
     augmentation_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(augmentation_module)
 
-    # Extract configuration and functions
-    NUM_AUGMENTATIONS = augmentation_module.NUM_AUGMENTATIONS
-    AUGMENTATION_CONFIG = augmentation_module.AUGMENTATION_CONFIG
-    load_class_mapping = augmentation_module.load_class_mapping
-    get_classes_from_directory = augmentation_module.get_classes_from_directory
-    load_and_extract_75pt = augmentation_module.load_and_extract_75pt
-    apply_augmentation_pickle = augmentation_module.apply_augmentation_pickle
-    save_augmented_pickle = augmentation_module.save_augmented_pickle
+    # Import stratified splitting utilities
+    splitting_module_path = project_root / "dataset-utilities" / "dataset-splitting" / "stratified_family_split.py"
+    spec = importlib.util.spec_from_file_location("stratified_family_split", splitting_module_path)
+    splitting_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(splitting_module)
+
+    # Extract configuration
+    TARGET_SAMPLES_PER_CLASS = aug_config_module.TARGET_SAMPLES_PER_CLASS
+
+    # Extract main functions
+    generate_balanced_dataset = augmentation_module.generate_balanced_dataset
+    run_stratified_split = splitting_module.run_stratified_split
 
     AUGMENTATION_UTILS_AVAILABLE = True
 except Exception as e:
@@ -441,16 +451,14 @@ def check_setup_state(num_classes, config):
             {
                 'pose_splits': bool,
                 'pickle_splits': bool,
-                'augmented_pool': bool,
-                'augmented_index': bool,
+                'balanced_splits': bool,
                 'config_updated': bool
             }
     """
     state = {
         'pose_splits': False,
         'pickle_splits': False,
-        'augmented_pool': False,
-        'augmented_index': False,
+        'balanced_splits': False,
         'config_updated': False
     }
 
@@ -470,26 +478,14 @@ def check_setup_state(num_classes, config):
         test_exists = (pkl_split_dir / "test").exists()
         state['pickle_splits'] = train_exists and val_exists and test_exists
 
-    # Check augmented pool (check if classes exist in pool)
-    augmented_pool = config.augmented_pool_pickle
-    if augmented_pool.exists():
-        # Load class mapping to get expected classes
-        class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
-        if class_mapping_path.exists():
-            try:
-                with open(class_mapping_path, 'r') as f:
-                    mapping = json.load(f)
-                expected_classes = mapping.get('classes', [])
-
-                # Check if all classes exist in augmented pool
-                classes_in_pool = [d.name for d in augmented_pool.iterdir() if d.is_dir()]
-                state['augmented_pool'] = all(cls.upper() in [c.upper() for c in classes_in_pool] for cls in expected_classes)
-            except:
-                state['augmented_pool'] = False
-
-    # Check augmented index
-    index_path = config.augmented_pool_index
-    state['augmented_index'] = index_path.exists()
+    # Check balanced splits (new family-based approach)
+    balanced_split_dir = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
+    if balanced_split_dir.exists():
+        train_exists = (balanced_split_dir / "train").exists()
+        val_exists = (balanced_split_dir / "val").exists()
+        test_exists = (balanced_split_dir / "test").exists()
+        manifest_exists = (balanced_split_dir / "split_manifest.json").exists()
+        state['balanced_splits'] = train_exists and val_exists and test_exists and manifest_exists
 
     # Check if config is updated
     settings_path = config.project_root / "config" / "settings.json"
@@ -509,16 +505,14 @@ def print_setup_state(num_classes, state):
     """Print the current setup state in a formatted way."""
     print_section(f"Setup State - {num_classes} Classes")
 
-    status_map = {True: "✓ Complete", False: "✗ Missing"}
+    status_map = {True: "[OK] Complete", False: "[X] Missing"}
 
     print_status(f"Pose splits (train/val/test):        {status_map[state['pose_splits']]}",
                 "SUCCESS" if state['pose_splits'] else "ERROR")
     print_status(f"Pickle splits (train/val/test):      {status_map[state['pickle_splits']]}",
                 "SUCCESS" if state['pickle_splits'] else "ERROR")
-    print_status(f"Augmented dataset (40x variants):    {status_map[state['augmented_pool']]}",
-                "SUCCESS" if state['augmented_pool'] else "ERROR")
-    print_status(f"Augmentation index:                  {status_map[state['augmented_index']]}",
-                "SUCCESS" if state['augmented_index'] else "ERROR")
+    print_status(f"Balanced splits (family-based):      {status_map[state['balanced_splits']]}",
+                "SUCCESS" if state['balanced_splits'] else "ERROR")
     print_status(f"Config/settings.json updated:        {status_map[state['config_updated']]}",
                 "SUCCESS" if state['config_updated'] else "ERROR")
 
@@ -533,19 +527,24 @@ def print_setup_state(num_classes, state):
 
 
 # ============================================================================
-# AUGMENTATION GENERATION
+# AUGMENTATION GENERATION (Balanced Approach)
 # ============================================================================
 
-def generate_augmented_dataset(num_classes, config, force=False):
+def generate_augmented_dataset_balanced(num_classes, config, force=False, landmark_config='83pt'):
     """
-    Generate augmented dataset using 40x variants with occlusion.
+    Generate class-balanced augmented dataset.
 
-    Directly augments pickle files (75-point format) for efficiency.
+    Uses the new balanced augmentation approach:
+    1. Scans all original samples from train/val/test
+    2. Calculates per-class augmentation counts (target: 200/class)
+    3. Generates augmentations grouped as families
+    4. Runs stratified family-based splitting
 
     Args:
         num_classes: Number of classes to augment
         config: PathConfig instance
         force: If True, regenerate even if already exists
+        landmark_config: Landmark configuration ('75pt', '83pt', etc.)
 
     Returns:
         bool: Success status
@@ -554,271 +553,74 @@ def generate_augmented_dataset(num_classes, config, force=False):
         print_status("Augmentation utilities not available", "ERROR")
         return False
 
-    print_section(f"Step 4: Generate Augmented Dataset ({num_classes} classes)")
+    print_section(f"Step 4: Generate Balanced Augmented Dataset ({num_classes} classes)")
 
-    # Paths
-    pkl_train_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/train"
-    augmented_pool = config.augmented_pool_pickle
-    index_path = config.augmented_pool_index
+    # Output paths
+    output_base = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
+    all_families_dir = output_base / "all_families"
 
-    # Check if pickle train directory exists
-    if not pkl_train_dir.exists():
-        print_status(f"Pickle train directory not found: {pkl_train_dir}", "ERROR")
-        return False
-
-    # Get class list
-    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
-    try:
-        with open(class_mapping_path, 'r') as f:
-            mapping = json.load(f)
-        target_classes = mapping.get('classes', [])
-    except:
-        print_status("Could not load class mapping", "ERROR")
-        return False
-
-    print_status(f"Target classes: {len(target_classes)}", "INFO")
-    print_status(f"Augmentation variants: {NUM_AUGMENTATIONS} (40x)", "INFO")
-    print_status(f"Output directory: {augmented_pool}", "INFO")
+    print_status(f"Target samples per class: {TARGET_SAMPLES_PER_CLASS}", "INFO")
+    print_status(f"Landmark config: {landmark_config}", "INFO")
+    print_status(f"Output: {output_base}", "INFO")
     print()
 
-    # Create output directory
-    augmented_pool.mkdir(parents=True, exist_ok=True)
+    # Check if already generated (unless force=True)
+    if not force and all_families_dir.exists():
+        family_count = sum(1 for d in all_families_dir.iterdir() if d.is_dir())
+        if family_count >= num_classes:
+            print_status(f"Augmented families already exist ({family_count} classes)", "SUCCESS")
+            print_status("Use --force-fresh to regenerate", "INFO")
+            return True
 
-    # Track statistics
-    total_files = 0
-    total_augmented = 0
-    skipped_files = 0
-
-    # Process each class
-    for class_name in target_classes:
-        class_upper = class_name.upper()
-        print(f"Processing: {class_name}")
-
-        input_class_dir = pkl_train_dir / class_name
-        output_class_dir = augmented_pool / class_upper
-
-        if not input_class_dir.exists():
-            print(f"  WARNING: Class directory not found: {input_class_dir}")
-            continue
-
-        # Create output class directory
-        output_class_dir.mkdir(parents=True, exist_ok=True)
-
-        # Get all pickle files in this class
-        input_files = sorted([f for f in input_class_dir.iterdir() if f.suffix == '.pkl'])
-
-        if not input_files:
-            print(f"  WARNING: No pickle files found")
-            continue
-
-        print(f"  Files: {len(input_files)}")
-
-        # Process each file
-        for input_file in tqdm(input_files, desc=f"  {class_name}", ncols=80):
-            # Check if already augmented (unless force=True)
-            base_name = input_file.stem
-            first_aug_filename = f"aug_00_{base_name}.pkl"
-
-            if not force and (output_class_dir / first_aug_filename).exists():
-                # Check if it has all 40 variants
-                variant_count = len(list(output_class_dir.glob(f"aug_*_{base_name}.pkl")))
-                if variant_count >= NUM_AUGMENTATIONS:
-                    skipped_files += 1
-                    total_augmented += NUM_AUGMENTATIONS
-                    total_files += 1
-                    continue
-                else:
-                    # Has some but not all variants, regenerate
-                    print(f"    Incomplete augmentation for {base_name} ({variant_count}/{NUM_AUGMENTATIONS}), regenerating...")
-
-            try:
-                # Load and extract 75-point data
-                pose_data, metadata = load_and_extract_75pt(str(input_file))
-
-                # Generate all 40 augmented variants
-                for aug_id in range(NUM_AUGMENTATIONS):
-                    # Apply augmentation
-                    augmented_pose = apply_augmentation_pickle(pose_data, aug_id)
-
-                    # Create output filename
-                    output_filename = f"aug_{aug_id:02d}_{base_name}.pkl"
-                    output_path = output_class_dir / output_filename
-
-                    # Save augmented pickle
-                    save_augmented_pickle(augmented_pose, metadata, str(output_path), aug_id)
-
-                    total_augmented += 1
-
-                total_files += 1
-
-            except Exception as e:
-                print(f"\n  ERROR processing {input_file.name}: {e}")
-                continue
-
-        print(f"  Completed: {len(input_files)} files -> {len(input_files) * NUM_AUGMENTATIONS} augmented")
-
-    # Generate index file
-    print()
-    print_status("Generating augmentation index...", "INFO")
-
-    index_data = {}
-    for class_dir in augmented_pool.iterdir():
-        if class_dir.is_dir():
-            class_name = class_dir.name
-            pkl_files = [f.name for f in class_dir.glob("*.pkl")]
-            index_data[class_name] = sorted(pkl_files)
-
+    # Step 4a: Generate balanced augmented dataset
+    print_status("Generating balanced augmented dataset...", "INFO")
     try:
-        with open(index_path, 'w') as f:
-            json.dump(index_data, f, indent=2)
-        print_status(f"Index saved: {index_path}", "SUCCESS")
+        result = generate_balanced_dataset(
+            num_classes=num_classes,
+            landmark_config=landmark_config,
+            target_per_class=TARGET_SAMPLES_PER_CLASS,
+            dry_run=False,
+            output_base=output_base,
+        )
+        print_status("Augmentation generation complete!", "SUCCESS")
     except Exception as e:
-        print_status(f"Error saving index: {e}", "ERROR")
+        print_status(f"Error generating augmented dataset: {e}", "ERROR")
         return False
 
-    # Print summary
-    print()
-    print_status("="*70, "INFO")
-    print_status(f"Augmentation complete!", "SUCCESS")
-    print_status(f"Total original files: {total_files}", "INFO")
-    print_status(f"Total augmented files: {total_augmented}", "INFO")
-    print_status(f"Skipped (already done): {skipped_files}", "INFO")
-    print_status(f"Augmentation factor: {NUM_AUGMENTATIONS}x (40 variants)", "INFO")
-    print_status("="*70, "INFO")
-    print()
+    # Step 4b: Run stratified family-based splitting
+    print_section("Step 4b: Stratified Family-Based Splitting")
 
-    return True
-
-
-# ============================================================================
-# VAL AUGMENTATION (in-place)
-# ============================================================================
-
-# Val augmentation count (fewer than train to keep val smaller)
-VAL_AUGMENTATION_COUNT = 10  # 10x for val vs 40x for train
-
-
-def generate_augmented_val(num_classes, config, force=False):
-    """
-    Generate augmented validation dataset (10x variants) in-place.
-
-    Augments val pickle files directly in the val folder, so the training
-    script automatically picks them up.
-
-    Args:
-        num_classes: Number of classes to augment
-        config: PathConfig instance
-        force: If True, regenerate even if already exists
-
-    Returns:
-        bool: Success status
-    """
-    if not AUGMENTATION_UTILS_AVAILABLE:
-        print_status("Augmentation utilities not available", "ERROR")
-        return False
-
-    print_section(f"Step 4b: Generate Augmented Val Dataset ({num_classes} classes)")
-
-    # Paths - augment val in-place
-    pkl_val_dir = config.dataset_root / f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/val"
-
-    # Check if pickle val directory exists
-    if not pkl_val_dir.exists():
-        print_status(f"Pickle val directory not found: {pkl_val_dir}", "ERROR")
-        return False
-
-    # Get class list
-    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
+    print_status("Splitting augmented families into train/val/test...", "INFO")
     try:
-        with open(class_mapping_path, 'r') as f:
-            mapping = json.load(f)
-        target_classes = mapping.get('classes', [])
-    except:
-        print_status("Could not load class mapping", "ERROR")
+        splits, manifest = run_stratified_split(
+            input_dir=all_families_dir,
+            output_dir=output_base,
+            seed=42,
+            dry_run=False,
+        )
+        print_status("Stratified splitting complete!", "SUCCESS")
+    except Exception as e:
+        print_status(f"Error during stratified splitting: {e}", "ERROR")
         return False
-
-    print_status(f"Target classes: {len(target_classes)}", "INFO")
-    print_status(f"Val augmentation variants: {VAL_AUGMENTATION_COUNT} (10x)", "INFO")
-    print_status(f"Output: In-place in val folder", "INFO")
-    print()
-
-    # Track statistics
-    total_files = 0
-    total_augmented = 0
-    skipped_files = 0
-
-    # Process each class
-    for class_name in target_classes:
-        class_lower = class_name.lower()
-
-        val_class_dir = pkl_val_dir / class_lower
-        if not val_class_dir.exists():
-            # Try original case
-            val_class_dir = pkl_val_dir / class_name
-            if not val_class_dir.exists():
-                # Class might not have val samples (empty classes)
-                continue
-
-        # Get ORIGINAL pickle files only (not augmented ones)
-        original_files = sorted([f for f in val_class_dir.iterdir()
-                                  if f.suffix == '.pkl' and not f.name.startswith('aug_')])
-
-        if not original_files:
-            continue
-
-        print(f"Processing val: {class_name} ({len(original_files)} original files)")
-
-        # Process each original file
-        for input_file in original_files:
-            base_name = input_file.stem
-            first_aug_filename = f"aug_00_{base_name}.pkl"
-
-            # Check if already augmented (unless force=True)
-            if not force and (val_class_dir / first_aug_filename).exists():
-                # Check if it has all variants
-                variant_count = len(list(val_class_dir.glob(f"aug_*_{base_name}.pkl")))
-                if variant_count >= VAL_AUGMENTATION_COUNT:
-                    skipped_files += 1
-                    total_augmented += VAL_AUGMENTATION_COUNT
-                    total_files += 1
-                    continue
-
-            try:
-                # Load and extract 75-point data
-                pose_data, metadata = load_and_extract_75pt(str(input_file))
-
-                # Generate augmented variants (10x for val)
-                for aug_id in range(VAL_AUGMENTATION_COUNT):
-                    # Apply augmentation
-                    augmented_pose = apply_augmentation_pickle(pose_data, aug_id)
-
-                    # Create output filename - store in same directory
-                    output_filename = f"aug_{aug_id:02d}_{base_name}.pkl"
-                    output_path = val_class_dir / output_filename
-
-                    # Save augmented pickle
-                    save_augmented_pickle(augmented_pose, metadata, str(output_path), aug_id)
-
-                    total_augmented += 1
-
-                total_files += 1
-
-            except Exception as e:
-                print(f"  ERROR processing {input_file.name}: {e}")
-                continue
 
     # Print summary
     print()
-    print_status("="*70, "INFO")
-    print_status(f"Val augmentation complete!", "SUCCESS")
-    print_status(f"Original val files processed: {total_files}", "INFO")
-    print_status(f"Augmented val files created: {total_augmented}", "INFO")
-    print_status(f"Skipped (already done): {skipped_files}", "INFO")
-    print_status(f"Val augmentation factor: {VAL_AUGMENTATION_COUNT}x (10 variants)", "INFO")
-    print_status("="*70, "INFO")
+    print_status("=" * 70, "INFO")
+    print_status("Balanced Dataset Generation Complete!", "SUCCESS")
+    print_status(f"Output directory: {output_base}", "INFO")
+    print_status(f"  - train/: Training samples", "INFO")
+    print_status(f"  - val/: Validation samples", "INFO")
+    print_status(f"  - test/: Test samples", "INFO")
+    print_status(f"  - all_families/: All augmented families (for reference)", "INFO")
+    print_status("=" * 70, "INFO")
     print()
 
     return True
+
+
+# NOTE: Val augmentation is no longer needed as a separate step.
+# The new balanced approach handles val through family-based stratified splitting,
+# which ensures proper data distribution without leakage.
 
 
 # ============================================================================
@@ -857,11 +659,12 @@ def update_config_file(num_classes, config):
         return False
 
     # Prepare new paths (relative to data_root)
+    # New balanced approach uses family-based splits with augmented data included
     new_paths = {
         "train_original": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/train",
-        "val": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/val",
-        "test": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/test",
-        "train_augmented": "../augmented_pool/pickle",  # Relative to data_root
+        "train": f"balanced_splits/{num_classes}_classes/train",  # Balanced augmented train
+        "val": f"balanced_splits/{num_classes}_classes/val",      # Balanced augmented val
+        "test": f"balanced_splits/{num_classes}_classes/test",    # Balanced augmented test
         "class_mapping": f"dataset_splits/{num_classes}_classes/class_mapping.json"
     }
 
@@ -894,7 +697,7 @@ def update_config_file(num_classes, config):
 
 def cleanup_for_fresh_start(num_classes, config):
     """
-    Clean up existing pickle splits and augmented data for fresh regeneration.
+    Clean up existing pickle splits and balanced splits for fresh regeneration.
     Preserves pose splits (source of truth).
 
     Args:
@@ -913,27 +716,10 @@ def cleanup_for_fresh_start(num_classes, config):
     if pkl_split_dir.exists():
         items_to_delete.append(("Pickle splits", pkl_split_dir))
 
-    # Augmented pool classes
-    class_mapping_path = config.dataset_root / f"dataset_splits/{num_classes}_classes/class_mapping.json"
-    if class_mapping_path.exists():
-        try:
-            with open(class_mapping_path, 'r') as f:
-                mapping = json.load(f)
-            target_classes = mapping.get('classes', [])
-
-            augmented_pool = config.augmented_pool_pickle
-            for class_name in target_classes:
-                class_upper = class_name.upper()
-                class_dir = augmented_pool / class_upper
-                if class_dir.exists():
-                    items_to_delete.append((f"Augmented class '{class_name}'", class_dir))
-        except:
-            pass
-
-    # Augmented index (will be regenerated)
-    index_path = config.augmented_pool_index
-    if index_path.exists():
-        items_to_delete.append(("Augmentation index", index_path))
+    # Balanced splits (new family-based approach)
+    balanced_split_dir = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
+    if balanced_split_dir.exists():
+        items_to_delete.append(("Balanced splits (family-based)", balanced_split_dir))
 
     if not items_to_delete:
         print_status("Nothing to clean up (fresh state)", "SUCCESS")
@@ -984,7 +770,9 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
         1. Class selection (from pose files or gloss file)
         2. Split pose files (train/val/test)
         3. Convert pose to pickle (all 3 splits)
-        4. Generate augmented dataset (40x variants)
+        4. Generate balanced augmented dataset (class-balanced, family-based)
+           - Targets 200 samples per class
+           - Uses stratified family-based splitting (no data leakage)
         5. Update config/settings.json
         6. Verify complete setup
 
@@ -1026,8 +814,8 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
     if not state['pickle_splits'] or not resume:
         steps_to_run.append(3)  # Pickle conversion
 
-    if not state['augmented_pool'] or not state['augmented_index'] or not resume:
-        steps_to_run.append(4)  # Augmentation
+    if not state['balanced_splits'] or not resume:
+        steps_to_run.append(4)  # Balanced augmentation with family splitting
 
     if not state['config_updated'] or not resume:
         steps_to_run.append(5)  # Config update
@@ -1057,17 +845,11 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, glos
     else:
         print_status("Steps 1-3: Skipping (already complete)", "SUCCESS")
 
-    # Step 4: Generate augmented train dataset
+    # Step 4: Generate balanced augmented dataset with family-based splitting
     if 4 in steps_to_run:
-        success = generate_augmented_dataset(num_classes, config, force=force_fresh)
+        success = generate_augmented_dataset_balanced(num_classes, config, force=force_fresh)
         if not success:
-            print_status("Failed to generate augmented train dataset", "ERROR")
-            return False
-
-        # Step 4b: Generate augmented val dataset (10x in-place)
-        success = generate_augmented_val(num_classes, config, force=force_fresh)
-        if not success:
-            print_status("Failed to generate augmented val dataset", "ERROR")
+            print_status("Failed to generate balanced augmented dataset", "ERROR")
             return False
     else:
         print_status("Step 4: Skipping augmentation (already complete)", "SUCCESS")
