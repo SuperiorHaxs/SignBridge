@@ -478,14 +478,14 @@ def check_setup_state(num_classes, config):
         test_exists = (pkl_split_dir / "test").exists()
         state['pickle_splits'] = train_exists and val_exists and test_exists
 
-    # Check balanced splits (new family-based approach)
-    balanced_split_dir = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
-    if balanced_split_dir.exists():
-        train_exists = (balanced_split_dir / "train").exists()
-        val_exists = (balanced_split_dir / "val").exists()
-        test_exists = (balanced_split_dir / "test").exists()
-        manifest_exists = (balanced_split_dir / "split_manifest.json").exists()
-        state['balanced_splits'] = train_exists and val_exists and test_exists and manifest_exists
+    # Check balanced splits (manifest-based) - now in augmented_pool/splits/
+    augmented_pool_root = config.dataset_root.parent / "augmented_pool"
+    splits_dir = augmented_pool_root / "splits" / f"{num_classes}_classes"
+    if splits_dir.exists():
+        train_manifest = (splits_dir / "train_manifest.json").exists()
+        val_manifest = (splits_dir / "val_manifest.json").exists()
+        test_manifest = (splits_dir / "test_manifest.json").exists()
+        state['balanced_splits'] = train_manifest and val_manifest and test_manifest
 
     # Check if config is updated
     settings_path = config.project_root / "config" / "settings.json"
@@ -534,11 +534,14 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
     """
     Generate class-balanced augmented dataset.
 
-    Uses the new balanced augmentation approach:
-    1. Scans all original samples from train/val/test
-    2. Calculates per-class augmentation counts (target: 200/class)
-    3. Generates augmentations grouped as families
-    4. Runs stratified family-based splitting
+    Uses a flat structure in augmented_pool/pickle/{gloss}/ that allows
+    reuse across different class configurations (100, 125, 200 classes).
+
+    Steps:
+    1. Generate augmented samples to augmented_pool/pickle/{gloss}/
+       (skips glosses that already have augmented data unless force=True)
+    2. Run stratified family-based splitting to create manifests
+       (manifests point to files in the pickle pool, no file copying)
 
     Args:
         num_classes: Number of classes to augment
@@ -555,63 +558,71 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
 
     print_section(f"Step 4: Generate Balanced Augmented Dataset ({num_classes} classes)")
 
-    # Output paths
-    output_base = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
-    all_families_dir = output_base / "all_families"
+    # Output paths - flat structure in augmented_pool/pickle/
+    augmented_pool_root = config.dataset_root.parent / "augmented_pool"
+    pickle_pool_dir = augmented_pool_root / "pickle"
+    splits_dir = augmented_pool_root / "splits" / f"{num_classes}_classes"
 
     print_status(f"Target samples per class: {TARGET_SAMPLES_PER_CLASS}", "INFO")
     print_status(f"Landmark config: {landmark_config}", "INFO")
-    print_status(f"Output: {output_base}", "INFO")
+    print_status(f"Pickle pool: {pickle_pool_dir}", "INFO")
+    print_status(f"Splits output: {splits_dir}", "INFO")
     print()
 
-    # Check if already generated (unless force=True)
-    if not force and all_families_dir.exists():
-        family_count = sum(1 for d in all_families_dir.iterdir() if d.is_dir())
-        if family_count >= num_classes:
-            print_status(f"Augmented families already exist ({family_count} classes)", "SUCCESS")
-            print_status("Use --force-fresh to regenerate", "INFO")
-            return True
-
-    # Step 4a: Generate balanced augmented dataset
-    print_status("Generating balanced augmented dataset...", "INFO")
+    # Step 4a: Generate balanced augmented dataset to flat pickle pool
+    print_status("Generating augmented samples to pickle pool...", "INFO")
+    print_status("(Existing glosses will be skipped unless --force-fresh)", "INFO")
     try:
         result = generate_balanced_dataset(
             num_classes=num_classes,
             landmark_config=landmark_config,
             target_per_class=TARGET_SAMPLES_PER_CLASS,
             dry_run=False,
-            output_base=output_base,
+            output_base=pickle_pool_dir,
+            skip_existing=not force,
         )
         print_status("Augmentation generation complete!", "SUCCESS")
+
+        # Show what was processed vs skipped
+        if 'skipped' in result and result['skipped']:
+            print_status(f"  Skipped {len(result['skipped'])} existing glosses", "INFO")
+        if 'processed' in result and result['processed']:
+            print_status(f"  Processed {len(result['processed'])} new glosses", "INFO")
+
     except Exception as e:
         print_status(f"Error generating augmented dataset: {e}", "ERROR")
+        import traceback
+        traceback.print_exc()
         return False
 
-    # Step 4b: Run stratified family-based splitting
+    # Step 4b: Run stratified family-based splitting (manifest-based)
     print_section("Step 4b: Stratified Family-Based Splitting")
 
-    print_status("Splitting augmented families into train/val/test...", "INFO")
+    print_status("Creating train/val/test manifests...", "INFO")
     try:
         splits, manifest = run_stratified_split(
-            input_dir=all_families_dir,
-            output_dir=output_base,
+            input_dir=pickle_pool_dir,
+            output_dir=splits_dir,
             seed=42,
             dry_run=False,
+            use_manifests=True,  # Generate manifests, don't copy files
         )
         print_status("Stratified splitting complete!", "SUCCESS")
     except Exception as e:
         print_status(f"Error during stratified splitting: {e}", "ERROR")
+        import traceback
+        traceback.print_exc()
         return False
 
     # Print summary
     print()
     print_status("=" * 70, "INFO")
     print_status("Balanced Dataset Generation Complete!", "SUCCESS")
-    print_status(f"Output directory: {output_base}", "INFO")
-    print_status(f"  - train/: Training samples", "INFO")
-    print_status(f"  - val/: Validation samples", "INFO")
-    print_status(f"  - test/: Test samples", "INFO")
-    print_status(f"  - all_families/: All augmented families (for reference)", "INFO")
+    print_status(f"Pickle pool: {pickle_pool_dir}", "INFO")
+    print_status(f"Split manifests: {splits_dir}", "INFO")
+    print_status(f"  - train_manifest.json", "INFO")
+    print_status(f"  - val_manifest.json", "INFO")
+    print_status(f"  - test_manifest.json", "INFO")
     print_status("=" * 70, "INFO")
     print()
 
@@ -658,13 +669,15 @@ def update_config_file(num_classes, config):
         print_status(f"Error reading config file: {e}", "ERROR")
         return False
 
-    # Prepare new paths (relative to data_root)
-    # New balanced approach uses family-based splits with augmented data included
+    # Prepare new paths
+    # Note: augmented_pool is a sibling directory to wlasl_poses_complete
+    # Manifest-based approach: manifests in splits/, data in pickle/
     new_paths = {
         "train_original": f"dataset_splits/{num_classes}_classes/original/pickle_split_{num_classes}_class/train",
-        "train": f"balanced_splits/{num_classes}_classes/train",  # Balanced augmented train
-        "val": f"balanced_splits/{num_classes}_classes/val",      # Balanced augmented val
-        "test": f"balanced_splits/{num_classes}_classes/test",    # Balanced augmented test
+        "pickle_pool": f"../augmented_pool/pickle",  # Shared across class configs
+        "train_manifest": f"../augmented_pool/splits/{num_classes}_classes/train_manifest.json",
+        "val_manifest": f"../augmented_pool/splits/{num_classes}_classes/val_manifest.json",
+        "test_manifest": f"../augmented_pool/splits/{num_classes}_classes/test_manifest.json",
         "class_mapping": f"dataset_splits/{num_classes}_classes/class_mapping.json"
     }
 
@@ -716,10 +729,14 @@ def cleanup_for_fresh_start(num_classes, config):
     if pkl_split_dir.exists():
         items_to_delete.append(("Pickle splits", pkl_split_dir))
 
-    # Balanced splits (new family-based approach)
-    balanced_split_dir = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
-    if balanced_split_dir.exists():
-        items_to_delete.append(("Balanced splits (family-based)", balanced_split_dir))
+    # Split manifests - in augmented_pool/splits/
+    augmented_pool_root = config.dataset_root.parent / "augmented_pool"
+    splits_dir = augmented_pool_root / "splits" / f"{num_classes}_classes"
+    if splits_dir.exists():
+        items_to_delete.append(("Split manifests", splits_dir))
+
+    # Note: We don't delete the pickle pool (augmented_pool/pickle/) as it's shared
+    # across class configurations and regenerating is expensive
 
     if not items_to_delete:
         print_status("Nothing to clean up (fresh state)", "SUCCESS")

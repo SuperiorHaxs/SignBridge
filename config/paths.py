@@ -145,13 +145,14 @@ class PathConfig:
                 num_classes = int(num_classes_str)
                 self.dataset_splits[num_classes] = {}
                 for key, path_str in paths.items():
-                    if key == 'train_augmented':
-                        # Special handling for augmented pool (can be relative)
-                        if path_str.startswith('../'):
-                            # Relative to data_root
-                            self.dataset_splits[num_classes][key] = self.dataset_root.parent / path_str.lstrip('../')
-                        else:
-                            self.dataset_splits[num_classes][key] = self.augmented_pool_pickle
+                    if path_str.startswith('../'):
+                        # Relative path (e.g., ../augmented_pool/splits/100_classes/train_manifest.json)
+                        # Resolve relative to data_root's parent (datasets/)
+                        relative_path = path_str.replace('../', '')
+                        self.dataset_splits[num_classes][key] = self.dataset_root.parent / relative_path
+                    elif key == 'train_augmented':
+                        # Legacy: special handling for old augmented pool path
+                        self.dataset_splits[num_classes][key] = self.augmented_pool_pickle
                     else:
                         # Regular paths (relative to data_root)
                         self.dataset_splits[num_classes][key] = self.dataset_root / path_str

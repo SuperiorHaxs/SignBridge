@@ -608,7 +608,7 @@ class WLASLPoseProcessor:
             elif len(keypoints.shape) == 4:
                 keypoints = keypoints[:, 0, :, :]  # Remove person dimension
 
-            # Check if already 75-point format (from augmented_75pt_20_class dataset)
+            # Check keypoint format and convert to 75-point as needed
             frames, num_keypoints, coords = keypoints.shape
             if num_keypoints == 75:
                 # Already in 75-point format, just ensure 2D coords
@@ -616,6 +616,13 @@ class WLASLPoseProcessor:
                     pose_75 = keypoints[:, :, :2]
                 else:
                     pose_75 = keypoints
+            elif num_keypoints == 83:
+                # 83-point format: 33 pose + 21 left hand + 21 right hand + 8 face
+                # Extract 75 points by dropping the 8 face landmarks (indices 75-82)
+                if coords == 3:
+                    pose_75 = keypoints[:, :75, :2]
+                else:
+                    pose_75 = keypoints[:, :75, :]
             else:
                 # Extract 75-point pose+hands from 576-point format
                 pose_75 = self.mediapipe_subset.extract_27_points(keypoints)  # Redirects to extract_pose_hands_75

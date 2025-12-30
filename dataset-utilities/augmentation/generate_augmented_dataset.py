@@ -675,21 +675,28 @@ def generate_family(
 # =============================================================================
 
 def generate_balanced_dataset(
-    num_classes: int,
+    num_classes: int = None,
+    gloss_list: List[str] = None,
     landmark_config: str = '83pt',
     target_per_class: int = TARGET_SAMPLES_PER_CLASS,
     dry_run: bool = False,
     output_base: Optional[Path] = None,
+    skip_existing: bool = True,
 ) -> Dict:
     """
     Generate a balanced augmented dataset.
 
+    Outputs to a flat structure: augmented_pool/pickle/{gloss}/*.pkl
+    This allows reuse across different class configurations (100, 125, 200, etc.)
+
     Args:
-        num_classes: Number of classes to process
+        num_classes: Number of classes (used to load class_mapping if gloss_list not provided)
+        gloss_list: Explicit list of glosses to process (takes precedence over num_classes)
         landmark_config: Landmark extraction config ('75pt', '83pt', etc.)
         target_per_class: Target samples per class
         dry_run: If True, only compute plan without generating files
-        output_base: Base output directory (default: datasets/wlasl_poses_complete/balanced_splits)
+        output_base: Base output directory (default: datasets/augmented_pool/pickle)
+        skip_existing: If True, skip glosses that already have augmented data
 
     Returns:
         Generation summary dict
@@ -698,19 +705,14 @@ def generate_balanced_dataset(
     print("BALANCED DATASET GENERATION")
     print("=" * 70)
     print(f"\nConfiguration:")
-    print(f"  Classes: {num_classes}")
     print(f"  Landmark config: {landmark_config}")
     print(f"  Target per class: {target_per_class}")
     print(f"  Dry run: {dry_run}")
+    print(f"  Skip existing: {skip_existing}")
 
     # Get landmark info
     landmark_info = get_landmark_info(landmark_config)
     print(f"  Landmarks: {landmark_info['total_points']} points = {landmark_info['feature_count_xy']} features")
-
-    # Set up paths
-    dataset_paths = config.dataset_splits.get(num_classes)
-    if not dataset_paths:
-        raise ValueError(f"No dataset configuration for {num_classes} classes")
 
     # Use pose_files_by_gloss as the clean-slate source (no contamination from previous splits)
     pose_by_gloss_dir = config.dataset_root / "pose_files_by_gloss"
@@ -718,26 +720,63 @@ def generate_balanced_dataset(
         raise ValueError(f"pose_files_by_gloss directory not found: {pose_by_gloss_dir}")
     print(f"  Source (clean): {pose_by_gloss_dir}")
 
+    # Output to flat structure: augmented_pool/pickle/{gloss}/
     if output_base is None:
-        output_base = config.dataset_root / "balanced_splits" / f"{num_classes}_classes"
-    output_dir = output_base / "all_families"
+        output_base = config.dataset_root.parent / "augmented_pool" / "pickle"
+    output_dir = output_base  # Flat structure, glosses directly under pickle/
     print(f"  Output: {output_dir}")
 
-    # Load class list from mapping (required for filtering which classes to include)
-    class_mapping_path = dataset_paths.get('class_mapping')
-    if not class_mapping_path or not Path(class_mapping_path).exists():
-        raise ValueError(f"class_mapping.json required but not found: {class_mapping_path}")
+    # Determine which glosses to process
+    if gloss_list is not None:
+        class_list = gloss_list
+        print(f"  Glosses provided: {len(class_list)}")
+    elif num_classes is not None:
+        # Load class list from mapping
+        dataset_paths = config.dataset_splits.get(num_classes)
+        if not dataset_paths:
+            raise ValueError(f"No dataset configuration for {num_classes} classes")
+        class_mapping_path = dataset_paths.get('class_mapping')
+        if not class_mapping_path or not Path(class_mapping_path).exists():
+            raise ValueError(f"class_mapping.json required but not found: {class_mapping_path}")
+        with open(class_mapping_path, 'r') as f:
+            class_mapping = json.load(f)
+        class_list = class_mapping.get('classes', [])
+        print(f"  Classes from {num_classes}-class mapping: {len(class_list)}")
+    else:
+        raise ValueError("Must provide either num_classes or gloss_list")
 
-    with open(class_mapping_path, 'r') as f:
-        class_mapping = json.load(f)
-    class_list = class_mapping.get('classes', [])
-    print(f"  Classes to include: {len(class_list)}")
+    # Check which glosses already have augmented data (if skip_existing)
+    glosses_to_process = class_list
+    skipped_glosses = []
+    if skip_existing:
+        glosses_to_process = []
+        for gloss in class_list:
+            gloss_dir = output_dir / gloss.lower()
+            if gloss_dir.exists():
+                # Check if it has augmented files (not just original)
+                aug_files = list(gloss_dir.glob("*_aug_*.pkl"))
+                if aug_files:
+                    skipped_glosses.append(gloss)
+                    continue
+            glosses_to_process.append(gloss)
+
+        if skipped_glosses:
+            print(f"  Skipping {len(skipped_glosses)} glosses with existing augmentations")
+            print(f"  Processing {len(glosses_to_process)} new glosses")
+
+    if not glosses_to_process:
+        print("\n[INFO] All glosses already have augmented data. Nothing to do.")
+        return {
+            'skipped': skipped_glosses,
+            'processed': [],
+            'output_dir': output_dir,
+        }
 
     # Scan dataset from clean source (pose_files_by_gloss)
     print("\n" + "-" * 70)
     dataset_info = scan_pose_files_by_gloss(
         pose_by_gloss_dir,
-        class_list,
+        glosses_to_process,
         landmark_config,
     )
     print(f"Found {sum(len(v) for v in dataset_info.values())} original samples across {len(dataset_info)} classes")
@@ -752,10 +791,10 @@ def generate_balanced_dataset(
     # Print plan summary
     print_augmentation_plan(augmentation_plan)
 
-    # Save plan
-    plan_path = output_base / "augmentation_plan.json"
+    # Save plan (per-gloss metadata stored in index)
+    plan_path = output_dir / "augmentation_plan.json"
     if not dry_run:
-        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        output_dir.mkdir(parents=True, exist_ok=True)
         save_augmentation_plan(augmentation_plan, plan_path)
 
     if dry_run:
@@ -764,6 +803,7 @@ def generate_balanced_dataset(
             'plan': augmentation_plan,
             'dataset_info': dataset_info,
             'output_dir': output_dir,
+            'skipped': skipped_glosses,
         }
 
     # Generate augmented samples
@@ -772,7 +812,7 @@ def generate_balanced_dataset(
     print("-" * 70)
 
     total_generated = 0
-    family_info = {}  # Track family info for splitting
+    family_info = {}  # Track family info for index
 
     for class_name, samples in tqdm(dataset_info.items(), desc="Processing classes"):
         class_plan = augmentation_plan[class_name]
@@ -807,27 +847,40 @@ def generate_balanced_dataset(
 
         family_info[class_name] = class_families
 
-    # Save family info for splitting phase
-    family_info_path = output_base / "family_info.json"
-    with open(family_info_path, 'w') as f:
-        json.dump(family_info, f, indent=2)
-    print(f"\nSaved family info to: {family_info_path}")
+    # Save/update the global pickle index
+    index_path = output_dir / "pickle_index.json"
+    existing_index = {}
+    if index_path.exists():
+        with open(index_path, 'r') as f:
+            existing_index = json.load(f)
+
+    # Merge new family info into existing index
+    existing_index.update(family_info)
+
+    with open(index_path, 'w') as f:
+        json.dump(existing_index, f, indent=2)
+    print(f"\nUpdated pickle index: {index_path}")
+    print(f"  Total glosses in index: {len(existing_index)}")
 
     # Summary
     print("\n" + "=" * 70)
     print("GENERATION COMPLETE")
     print("=" * 70)
     print(f"Total files generated: {total_generated}")
+    print(f"Glosses processed: {len(family_info)}")
+    if skipped_glosses:
+        print(f"Glosses skipped (existing): {len(skipped_glosses)}")
     print(f"Output directory: {output_dir}")
-    print(f"Family info: {family_info_path}")
-    print(f"Augmentation plan: {plan_path}")
-    print("\nNext step: Run stratified_family_split.py to create train/val/test splits")
+    print(f"Pickle index: {index_path}")
+    print("\nNext step: Run stratified_family_split.py to create train/val/test manifests")
 
     return {
         'total_generated': total_generated,
         'family_info': family_info,
         'output_dir': output_dir,
-        'plan_path': plan_path,
+        'index_path': index_path,
+        'skipped': skipped_glosses,
+        'processed': list(family_info.keys()),
     }
 
 
@@ -856,8 +909,12 @@ Examples:
     )
 
     parser.add_argument(
-        '--classes', type=int, required=True,
-        help='Number of classes (e.g., 20, 50, 100, 125)'
+        '--classes', type=int, default=None,
+        help='Number of classes (e.g., 20, 50, 100, 125) - loads from class_mapping'
+    )
+    parser.add_argument(
+        '--gloss-file', type=Path, default=None,
+        help='JSON file containing list of glosses to process'
     )
     parser.add_argument(
         '--landmark-config', type=str, default='83pt',
@@ -873,19 +930,43 @@ Examples:
         help='Compute plan without generating files'
     )
     parser.add_argument(
+        '--no-skip', action='store_true',
+        help='Regenerate even if glosses already have augmented data'
+    )
+    parser.add_argument(
         '--output', type=Path, default=None,
-        help='Output base directory (default: datasets/wlasl_poses_complete/balanced_splits/)'
+        help='Output base directory (default: datasets/augmented_pool/pickle/)'
     )
 
     args = parser.parse_args()
 
+    # Validate arguments
+    if args.classes is None and args.gloss_file is None:
+        parser.error("Must provide either --classes or --gloss-file")
+
+    # Load gloss list from file if provided
+    gloss_list = None
+    if args.gloss_file:
+        with open(args.gloss_file, 'r') as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            gloss_list = data
+        elif 'classes' in data:
+            gloss_list = data['classes']
+        elif 'gloss_list' in data:
+            gloss_list = data['gloss_list']
+        else:
+            parser.error(f"Cannot parse gloss list from {args.gloss_file}")
+
     # Run generation
     result = generate_balanced_dataset(
         num_classes=args.classes,
+        gloss_list=gloss_list,
         landmark_config=args.landmark_config,
         target_per_class=args.target,
         dry_run=args.dry_run,
         output_base=args.output,
+        skip_existing=not args.no_skip,
     )
 
     return 0 if result else 1

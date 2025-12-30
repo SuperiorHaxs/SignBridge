@@ -56,17 +56,59 @@ def get_dataset_paths(num_classes):
                         f"Available: {list(config.dataset_splits.keys())}")
 
     splits = config.dataset_splits[num_classes]
-    paths = {
-        'train_original': str(splits['train_original']),
-        'train_augmented': str(splits['train_augmented']),
-        'test': str(splits['test']),
-    }
+    paths = {}
 
-    # Add val path if it exists in config
-    if 'val' in splits:
-        paths['val'] = str(splits['val'])
+    # Check for manifest-based paths (new structure)
+    if 'train_manifest' in splits:
+        paths['train_manifest'] = str(splits['train_manifest'])
+        paths['val_manifest'] = str(splits['val_manifest'])
+        paths['test_manifest'] = str(splits['test_manifest'])
+        paths['pickle_pool'] = str(splits['pickle_pool'])
+        paths['use_manifests'] = True
+    else:
+        # Legacy structure with directory paths
+        paths['train_original'] = str(splits['train_original'])
+        if 'train_augmented' in splits:
+            paths['train_augmented'] = str(splits['train_augmented'])
+        paths['test'] = str(splits['test'])
+        if 'val' in splits:
+            paths['val'] = str(splits['val'])
+        paths['use_manifests'] = False
+
+    # Class mapping is always present
+    if 'class_mapping' in splits:
+        paths['class_mapping'] = str(splits['class_mapping'])
 
     return paths
+
+
+def load_from_manifest(manifest_path, pickle_pool_path):
+    """
+    Load file paths and labels from a manifest file.
+
+    Args:
+        manifest_path: Path to manifest JSON file
+        pickle_pool_path: Path to augmented_pool/pickle/ directory
+
+    Returns:
+        Tuple of (file_paths, labels)
+    """
+    with open(manifest_path, 'r') as f:
+        manifest = json.load(f)
+
+    pickle_pool = Path(pickle_pool_path)
+    file_paths = []
+    labels = []
+
+    for gloss, families in manifest['classes'].items():
+        gloss_dir = pickle_pool / gloss.lower()
+        for family in families:
+            for filename in family['files']:
+                file_path = gloss_dir / filename
+                file_paths.append(str(file_path))
+                labels.append(gloss.upper())
+
+    return file_paths, labels
 # ============================================================================
 
 # Architecture selection
@@ -303,12 +345,38 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     # Load dataset based on type
     all_pose_files = []
     all_labels = []
+    val_pose_files = []
+    val_labels = []
 
-    if dataset_type == 'augmented':
-        print(f"LOADING: Loading from BOTH original train AND augmented datasets")
+    dataset_paths = get_dataset_paths(num_classes)
+
+    # Check if using manifest-based loading (new structure)
+    if dataset_paths.get('use_manifests'):
+        print(f"LOADING: Using manifest-based loading (new scalable structure)")
+        pickle_pool = dataset_paths['pickle_pool']
+
+        # Load train data from train manifest
+        train_manifest_path = dataset_paths['train_manifest']
+        print(f"LOADING: Reading train manifest from {train_manifest_path}")
+        all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool)
+        print(f"FOUND: {len(all_pose_files)} train files")
+
+        # Load val data from val manifest
+        val_manifest_path = dataset_paths['val_manifest']
+        print(f"LOADING: Reading val manifest from {val_manifest_path}")
+        val_pose_files, val_labels = load_from_manifest(val_manifest_path, pickle_pool)
+        print(f"FOUND: {len(val_pose_files)} val files")
+
+        # Get target glosses from train manifest
+        with open(train_manifest_path, 'r') as f:
+            train_manifest = json.load(f)
+        target_glosses = set(g.upper() for g in train_manifest['classes'].keys())
+        print(f"TARGET: {len(target_glosses)} target classes from manifest")
+
+    elif dataset_type == 'augmented':
+        print(f"LOADING: Loading from BOTH original train AND augmented datasets (legacy)")
 
         # OPTIMIZED: Load class mapping to determine target classes
-        dataset_paths = get_dataset_paths(num_classes)
         class_mapping_path = dataset_paths.get('class_mapping')
         if class_mapping_path and Path(class_mapping_path).exists():
             print(f"LOADING: Reading class mapping from {class_mapping_path}")
@@ -490,9 +558,14 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     train_files = filtered_files
     train_labels = filtered_labels
 
-    # Load validation data if available
-    dataset_paths = get_dataset_paths(num_classes)
-    if 'val' in dataset_paths:
+    # Handle validation data based on loading method
+    if val_pose_files:
+        # Already loaded from manifest
+        val_files = val_pose_files
+        # val_labels already set above
+        print(f"VALIDATION: Using pre-loaded validation from manifest ({len(val_files)} files)")
+    elif 'val' in dataset_paths:
+        # Legacy: Load from val directory
         val_path = dataset_paths['val']
         val_files = []
         val_labels = []
@@ -777,28 +850,37 @@ def test_multi_class_model(num_classes=20, architecture="openhands", model_size=
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Load from the configured TEST directory
-    test_dir = get_dataset_paths(num_classes)['test']
-    print(f"LOADING: Loading test data from {test_dir}")
-
+    # Get dataset paths
+    dataset_paths = get_dataset_paths(num_classes)
     test_files = []
     test_labels = []
 
-    # Load from class subdirectories in test split
-    for class_dir in Path(test_dir).iterdir():
-        if class_dir.is_dir():
-            class_name = class_dir.name
-            for pkl_file in class_dir.glob("*.pkl"):
-                try:
-                    with open(pkl_file, 'rb') as f:
-                        pickle_data = pickle.load(f)
+    # Check if using manifest-based loading
+    if dataset_paths.get('use_manifests'):
+        test_manifest_path = dataset_paths['test_manifest']
+        pickle_pool = dataset_paths['pickle_pool']
+        print(f"LOADING: Loading test data from manifest {test_manifest_path}")
+        test_files, test_labels = load_from_manifest(test_manifest_path, pickle_pool)
+    else:
+        # Legacy: Load from test directory
+        test_dir = dataset_paths['test']
+        print(f"LOADING: Loading test data from {test_dir}")
 
-                    if isinstance(pickle_data, dict) and 'gloss' in pickle_data:
-                        gloss_label = pickle_data['gloss'].upper()
-                        test_files.append(str(pkl_file))
-                        test_labels.append(gloss_label)
-                except:
-                    continue
+        # Load from class subdirectories in test split
+        for class_dir in Path(test_dir).iterdir():
+            if class_dir.is_dir():
+                class_name = class_dir.name
+                for pkl_file in class_dir.glob("*.pkl"):
+                    try:
+                        with open(pkl_file, 'rb') as f:
+                            pickle_data = pickle.load(f)
+
+                        if isinstance(pickle_data, dict) and 'gloss' in pickle_data:
+                            gloss_label = pickle_data['gloss'].upper()
+                            test_files.append(str(pkl_file))
+                            test_labels.append(gloss_label)
+                    except:
+                        continue
 
     print(f"TEST SET: {len(test_files)} files for testing")
     print(f"CLASSES: {len(set(test_labels))} unique classes in test set")
@@ -935,7 +1017,14 @@ if __name__ == "__main__":
 
     # Auto-generate augmented path from config if not provided
     if args.dataset == 'augmented' and not args.augmented_path:
-        args.augmented_path = get_dataset_paths(args.classes)['train_augmented']
+        dataset_paths = get_dataset_paths(args.classes)
+        # Use pickle_pool for manifest-based structure, fall back to train_augmented for legacy
+        if dataset_paths.get('use_manifests'):
+            args.augmented_path = dataset_paths['pickle_pool']
+        elif 'train_augmented' in dataset_paths:
+            args.augmented_path = dataset_paths['train_augmented']
+        else:
+            args.augmented_path = None  # Will use manifest-based loading
 
     try:
         if args.test or args.mode == 'test':

@@ -147,6 +147,7 @@ def stratified_split_families(
     families_by_class: Dict[str, Dict[str, PoseFamily]],
     split_ratios: Dict[str, float] = None,
     seed: int = 42,
+    guarantee_class_coverage: bool = True,
 ) -> Dict[str, List[PoseFamily]]:
     """
     Split families into train/val/test sets with stratification.
@@ -159,6 +160,8 @@ def stratified_split_families(
         families_by_class: Dict mapping class_name -> {video_id -> PoseFamily}
         split_ratios: Dict with train/val/test ratios (default from config)
         seed: Random seed for reproducibility
+        guarantee_class_coverage: If True, ensures every class has at least
+            one family in each split (train/val/test) before distributing rest
 
     Returns:
         Dict mapping split_name -> List[PoseFamily]
@@ -174,37 +177,88 @@ def stratified_split_families(
         'test': [],
     }
 
+    # Track which classes have coverage in each split
+    class_coverage = {
+        'train': set(),
+        'val': set(),
+        'test': set(),
+    }
+
     # Process each class
     for class_name in sorted(families_by_class.keys()):
         class_families = list(families_by_class[class_name].values())
 
-        # Group families by frame bucket for stratification
-        by_bucket = defaultdict(list)
-        for family in class_families:
-            by_bucket[family.frame_bucket].append(family)
+        # Shuffle all families for this class
+        np.random.shuffle(class_families)
 
-        # Split each bucket proportionally
-        for bucket_name, bucket_families in by_bucket.items():
-            # Shuffle for randomness
-            np.random.shuffle(bucket_families)
+        n_total = len(class_families)
 
-            n_total = len(bucket_families)
-            n_train = max(1, int(n_total * split_ratios['train']))
-            n_val = max(0, int(n_total * split_ratios['val']))
+        if guarantee_class_coverage and n_total >= 3:
+            # PHASE 1: Guarantee at least one family per split for this class
+            # Take first 3 families and assign one to each split
+            splits['train'].append(class_families[0])
+            splits['val'].append(class_families[1])
+            splits['test'].append(class_families[2])
+            class_coverage['train'].add(class_name)
+            class_coverage['val'].add(class_name)
+            class_coverage['test'].add(class_name)
 
-            # Ensure at least 1 in train if we have any samples
-            if n_total == 1:
-                # Single sample goes to train
-                splits['train'].append(bucket_families[0])
-            elif n_total == 2:
-                # Two samples: one train, one val (for minimal validation)
-                splits['train'].append(bucket_families[0])
-                splits['val'].append(bucket_families[1])
-            else:
-                # Normal split
-                splits['train'].extend(bucket_families[:n_train])
-                splits['val'].extend(bucket_families[n_train:n_train + n_val])
-                splits['test'].extend(bucket_families[n_train + n_val:])
+            # PHASE 2: Distribute remaining families by ratio
+            remaining_families = class_families[3:]
+            if remaining_families:
+                # Group remaining by frame bucket for stratified distribution
+                by_bucket = defaultdict(list)
+                for family in remaining_families:
+                    by_bucket[family.frame_bucket].append(family)
+
+                for bucket_name, bucket_families in by_bucket.items():
+                    np.random.shuffle(bucket_families)
+                    n_bucket = len(bucket_families)
+
+                    # Calculate proportional split
+                    n_train = int(n_bucket * split_ratios['train'])
+                    n_val = int(n_bucket * split_ratios['val'])
+
+                    splits['train'].extend(bucket_families[:n_train])
+                    splits['val'].extend(bucket_families[n_train:n_train + n_val])
+                    splits['test'].extend(bucket_families[n_train + n_val:])
+
+        elif n_total == 2:
+            # Only 2 families: prioritize train and val coverage
+            splits['train'].append(class_families[0])
+            splits['val'].append(class_families[1])
+            class_coverage['train'].add(class_name)
+            class_coverage['val'].add(class_name)
+            # Note: test will be missing this class
+
+        elif n_total == 1:
+            # Only 1 family: must go to train (most important)
+            splits['train'].append(class_families[0])
+            class_coverage['train'].add(class_name)
+            # Note: val and test will be missing this class
+
+        else:
+            # No guarantee mode or fallback: use original bucket-based logic
+            by_bucket = defaultdict(list)
+            for family in class_families:
+                by_bucket[family.frame_bucket].append(family)
+
+            for bucket_name, bucket_families in by_bucket.items():
+                np.random.shuffle(bucket_families)
+
+                n_bucket = len(bucket_families)
+                n_train = max(1, int(n_bucket * split_ratios['train']))
+                n_val = max(0, int(n_bucket * split_ratios['val']))
+
+                if n_bucket == 1:
+                    splits['train'].append(bucket_families[0])
+                elif n_bucket == 2:
+                    splits['train'].append(bucket_families[0])
+                    splits['val'].append(bucket_families[1])
+                else:
+                    splits['train'].extend(bucket_families[:n_train])
+                    splits['val'].extend(bucket_families[n_train:n_train + n_val])
+                    splits['test'].extend(bucket_families[n_train + n_val:])
 
     return splits
 
@@ -364,22 +418,82 @@ def print_split_summary(
     print("=" * 70 + "\n")
 
 
+def generate_split_manifests(
+    splits: Dict[str, List[PoseFamily]],
+    output_dir: Path,
+    pickle_pool_dir: Path,
+) -> Dict[str, Path]:
+    """
+    Generate manifest files for each split (train/val/test).
+
+    Instead of copying files, manifests contain paths to files in the
+    central augmented_pool/pickle/ directory.
+
+    Args:
+        splits: Dict mapping split_name -> List[PoseFamily]
+        output_dir: Directory to save manifest files
+        pickle_pool_dir: Path to augmented_pool/pickle/ (for relative paths)
+
+    Returns:
+        Dict mapping split_name -> manifest_path
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest_paths = {}
+
+    for split_name, families in splits.items():
+        manifest = {
+            'split': split_name,
+            'pickle_pool': str(pickle_pool_dir),
+            'total_samples': sum(f.total_samples for f in families),
+            'total_families': len(families),
+            'classes': {},
+        }
+
+        # Group by class
+        for family in families:
+            gloss = family.gloss
+            if gloss not in manifest['classes']:
+                manifest['classes'][gloss] = []
+
+            # Store relative paths from pickle_pool
+            family_entry = {
+                'video_id': family.video_id,
+                'frame_bucket': family.frame_bucket,
+                'files': [p.name for p in family.all_paths],  # Just filenames
+            }
+            manifest['classes'][gloss].append(family_entry)
+
+        # Add class count
+        manifest['num_classes'] = len(manifest['classes'])
+
+        # Save manifest
+        manifest_path = output_dir / f"{split_name}_manifest.json"
+        with open(manifest_path, 'w') as f:
+            json.dump(manifest, f, indent=2)
+
+        manifest_paths[split_name] = manifest_path
+
+    return manifest_paths
+
+
 def run_stratified_split(
     input_dir: Path,
     output_dir: Path,
     split_ratios: Dict[str, float] = None,
     seed: int = 42,
     dry_run: bool = False,
+    use_manifests: bool = True,
 ) -> Tuple[Dict, Dict]:
     """
     Run the complete stratified family-based splitting process.
 
     Args:
-        input_dir: Directory containing augmented pose data
-        output_dir: Output directory for splits
+        input_dir: Directory containing augmented pose data (augmented_pool/pickle/)
+        output_dir: Output directory for splits/manifests
         split_ratios: Custom split ratios (optional)
         seed: Random seed
-        dry_run: If True, don't copy files
+        dry_run: If True, don't create files
+        use_manifests: If True, generate manifests instead of copying files
 
     Returns:
         Tuple of (splits dict, manifest dict)
@@ -389,6 +503,7 @@ def run_stratified_split(
     print("=" * 70)
     print(f"\nInput directory: {input_dir}")
     print(f"Output directory: {output_dir}")
+    print(f"Mode: {'Manifest-based (no file copying)' if use_manifests else 'Copy files'}")
     print(f"Dry run: {dry_run}")
     print(f"Random seed: {seed}")
 
@@ -412,24 +527,32 @@ def run_stratified_split(
         n_samples = sum(f.total_samples for f in families)
         print(f"  {split_name}: {len(families)} families, {n_samples} samples")
 
-    # Step 3: Copy files to split directories
-    print("\n[Step 3] Copying files to split directories...")
+    # Step 3: Generate manifests or copy files
+    if use_manifests:
+        print("\n[Step 3] Generating split manifests...")
+        if not dry_run:
+            manifest_paths = generate_split_manifests(splits, output_dir, input_dir)
+            for split_name, path in manifest_paths.items():
+                print(f"  {split_name}: {path}")
+        else:
+            print("  (Dry run - no manifests created)")
+    else:
+        print("\n[Step 3] Copying files to split directories...")
+        if dry_run:
+            print("  (Dry run - no files will be copied)")
 
-    if dry_run:
-        print("  (Dry run - no files will be copied)")
+        for split_name, families in splits.items():
+            files_copied = 0
+            for family in families:
+                files_copied += copy_family_to_split(
+                    family, split_name, output_dir, dry_run=dry_run
+                )
 
-    for split_name, families in splits.items():
-        files_copied = 0
-        for family in families:
-            files_copied += copy_family_to_split(
-                family, split_name, output_dir, dry_run=dry_run
-            )
+            action = "would copy" if dry_run else "copied"
+            print(f"  {split_name}: {action} {files_copied} files")
 
-        action = "would copy" if dry_run else "copied"
-        print(f"  {split_name}: {action} {files_copied} files")
-
-    # Step 4: Generate and save manifest
-    print("\n[Step 4] Generating manifest...")
+    # Step 4: Generate and save overall manifest
+    print("\n[Step 4] Generating summary manifest...")
     manifest = generate_split_manifest(splits, output_dir)
 
     manifest_path = output_dir / "split_manifest.json"
@@ -477,7 +600,11 @@ def main():
     )
     parser.add_argument(
         '--dry-run', action='store_true',
-        help='Print what would happen without copying files'
+        help='Print what would happen without creating files'
+    )
+    parser.add_argument(
+        '--copy-files', action='store_true',
+        help='Copy files instead of generating manifests (legacy mode)'
     )
 
     args = parser.parse_args()
@@ -505,12 +632,14 @@ def main():
         split_ratios=split_ratios,
         seed=args.seed,
         dry_run=args.dry_run,
+        use_manifests=not args.copy_files,
     )
 
     if args.dry_run:
         print("Dry run complete. Use without --dry-run to perform actual splitting.")
     else:
-        print("Splitting complete!")
+        mode = "file copying" if args.copy_files else "manifest generation"
+        print(f"Splitting complete! (Mode: {mode})")
 
 
 if __name__ == "__main__":
