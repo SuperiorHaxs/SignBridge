@@ -215,9 +215,10 @@ def stratified_split_families(
                     np.random.shuffle(bucket_families)
                     n_bucket = len(bucket_families)
 
-                    # Calculate proportional split
-                    n_train = int(n_bucket * split_ratios['train'])
+                    # Calculate proportional split - train gets remainder (most important)
                     n_val = int(n_bucket * split_ratios['val'])
+                    n_test = int(n_bucket * split_ratios['test'])
+                    n_train = n_bucket - n_val - n_test  # Train gets remainder
 
                     splits['train'].extend(bucket_families[:n_train])
                     splits['val'].extend(bucket_families[n_train:n_train + n_val])
@@ -247,8 +248,6 @@ def stratified_split_families(
                 np.random.shuffle(bucket_families)
 
                 n_bucket = len(bucket_families)
-                n_train = max(1, int(n_bucket * split_ratios['train']))
-                n_val = max(0, int(n_bucket * split_ratios['val']))
 
                 if n_bucket == 1:
                     splits['train'].append(bucket_families[0])
@@ -256,6 +255,11 @@ def stratified_split_families(
                     splits['train'].append(bucket_families[0])
                     splits['val'].append(bucket_families[1])
                 else:
+                    # Train gets remainder (most important)
+                    n_val = max(0, int(n_bucket * split_ratios['val']))
+                    n_test = max(0, int(n_bucket * split_ratios['test']))
+                    n_train = n_bucket - n_val - n_test
+
                     splits['train'].extend(bucket_families[:n_train])
                     splits['val'].extend(bucket_families[n_train:n_train + n_val])
                     splits['test'].extend(bucket_families[n_train + n_val:])
@@ -570,9 +574,353 @@ def run_stratified_split(
     return splits, manifest
 
 
+# =============================================================================
+# PHASE 2: TRAIN BALANCING
+# =============================================================================
+
+def analyze_train_split(
+    splits: Dict[str, List[PoseFamily]],
+) -> Tuple[Dict[str, int], Dict[str, int]]:
+    """
+    Analyze the train split to get sample counts and family counts per class.
+
+    Args:
+        splits: Dict mapping split_name -> List[PoseFamily]
+
+    Returns:
+        Tuple of (train_samples_per_class, train_families_per_class)
+    """
+    train_families = splits.get('train', [])
+
+    samples_per_class = {}
+    families_per_class = {}
+
+    for family in train_families:
+        gloss = family.gloss
+        if gloss not in samples_per_class:
+            samples_per_class[gloss] = 0
+            families_per_class[gloss] = 0
+
+        samples_per_class[gloss] += family.total_samples
+        families_per_class[gloss] += 1
+
+    return samples_per_class, families_per_class
+
+
+def balance_train_split(
+    splits: Dict[str, List[PoseFamily]],
+    pool_dir: Path,
+    output_dir: Path,
+    target_train_samples: int = 200,
+    dry_run: bool = False,
+    landmark_config: str = '83pt',
+    include_z: bool = True,
+) -> Dict[str, Dict]:
+    """
+    Balance train split by generating additional augmentations for under-represented classes.
+
+    This is Phase 2 of the two-phase approach:
+    - Phase 1 created base pool with moderate augmentations
+    - Phase 2 (this) generates additional augmentations ONLY for train families
+      to ensure each class has exactly target_train_samples in train
+
+    Files are saved to the pool directory (alongside base augmentations) and
+    the train manifest is updated to include them.
+
+    Args:
+        splits: Dict from stratified_split_families()
+        pool_dir: Directory containing the augmented pool (where new files are added)
+        output_dir: Directory where manifests are stored
+        target_train_samples: Target samples per class in train
+        dry_run: If True, calculate but don't generate files
+        landmark_config: Landmark extraction configuration
+        include_z: Whether to include z-coordinate (default True for 3D poses)
+
+    Returns:
+        Balancing summary dict with per-class statistics
+    """
+    print("\n" + "=" * 70)
+    print("PHASE 2: TRAIN SPLIT BALANCING")
+    print("=" * 70)
+    print(f"\nTarget train samples per class: {target_train_samples}")
+
+    # Import augmentation functions
+    sys.path.insert(0, str(script_dir.parent / 'augmentation'))
+    from augmentation_config import (
+        calculate_train_balancing_augmentations,
+        BASE_AUGMENTATIONS_PER_VIDEO,
+        MAX_TOTAL_AUGMENTATIONS_PER_VIDEO,
+        get_augmentation_sequence,
+    )
+    from generate_augmented_dataset import (
+        generate_augmented_sample,
+        load_pose_file_as_keypoints,
+    )
+
+    # Analyze current train split
+    train_samples, train_families = analyze_train_split(splits)
+    print(f"\nCurrent train split analysis:")
+    print(f"  Classes: {len(train_samples)}")
+    print(f"  Total samples: {sum(train_samples.values())}")
+    print(f"  Sample range: {min(train_samples.values())} - {max(train_samples.values())}")
+
+    # Calculate balancing plan
+    balancing_plan = calculate_train_balancing_augmentations(
+        train_class_samples=train_samples,
+        train_families=train_families,
+        target_train_samples=target_train_samples,
+        max_total_per_video=MAX_TOTAL_AUGMENTATIONS_PER_VIDEO,
+        existing_augs_per_video=BASE_AUGMENTATIONS_PER_VIDEO,
+    )
+
+    # Summarize balancing plan
+    classes_needing_balance = [c for c, p in balancing_plan.items() if p['samples_needed'] > 0]
+    total_additional_samples = sum(
+        p['additional_augs_per_video'] * p.get('train_families', 0)
+        for p in balancing_plan.values()
+    )
+
+    print(f"\nBalancing plan:")
+    print(f"  Classes needing balancing: {len(classes_needing_balance)}")
+    print(f"  Additional samples to generate: {total_additional_samples}")
+
+    if dry_run:
+        print("\n[DRY RUN] Would generate additional augmentations:")
+        for class_name in sorted(classes_needing_balance)[:5]:
+            plan = balancing_plan[class_name]
+            print(f"  {class_name}: {plan['current_samples']} -> {plan['final_samples']} "
+                  f"(+{plan['additional_augs_per_video']}/family × {plan['train_families']} families)")
+        if len(classes_needing_balance) > 5:
+            print(f"  ... and {len(classes_needing_balance) - 5} more classes")
+        return {'balancing_plan': balancing_plan, 'new_files_by_class': {}}
+
+    # Track new files generated for manifest update
+    new_files_by_class = defaultdict(lambda: defaultdict(list))  # class -> video_id -> [files]
+
+    # Generate additional augmentations for train families
+    print("\nGenerating additional augmentations for train...")
+
+    total_generated = 0
+
+    for family in splits['train']:
+        gloss = family.gloss
+        plan = balancing_plan.get(gloss, {})
+        additional_per_video = plan.get('additional_augs_per_video', 0)
+
+        if additional_per_video <= 0:
+            continue
+
+        # Load original to generate more augmentations
+        try:
+            # Determine source format
+            original_path = family.original_path
+            if original_path.suffix == '.pose':
+                keypoints, metadata = load_pose_file_as_keypoints(original_path)
+                original_data = {
+                    'keypoints': keypoints,
+                    'video_id': metadata['video_id'],
+                    'gloss': metadata['gloss'],
+                }
+            else:
+                with open(original_path, 'rb') as f:
+                    original_data = pickle.load(f)
+
+            # Get existing augmentation count to continue numbering
+            existing_aug_count = len(family.augmented_paths)
+            start_aug_id = existing_aug_count
+
+            # Generate augmentation sequence
+            aug_sequence = get_augmentation_sequence(additional_per_video)
+
+            # Output directory: same pool directory structure (class folder)
+            class_output_dir = pool_dir / gloss
+            class_output_dir.mkdir(parents=True, exist_ok=True)
+
+            for i, aug_config in enumerate(aug_sequence):
+                aug_id = start_aug_id + i
+                aug_config['id'] = aug_id
+
+                aug_sample = generate_augmented_sample(
+                    original_data,
+                    aug_config,
+                    landmark_config,
+                    include_z=include_z,
+                )
+
+                # Save with unique ID (continuing from existing), marked as balance aug
+                video_id = original_data.get('video_id', family.video_id)
+                aug_filename = f"{video_id}_aug{aug_id:02d}_balance.pkl"
+                aug_path = class_output_dir / aug_filename
+
+                with open(aug_path, 'wb') as f:
+                    pickle.dump(aug_sample, f)
+
+                # Track for manifest update
+                new_files_by_class[gloss][video_id].append(aug_filename)
+                total_generated += 1
+
+        except Exception as e:
+            print(f"  Warning: Error balancing {family.video_id}: {e}")
+
+    # Update train manifest with new files
+    print("\nUpdating train manifest with balancing augmentations...")
+    train_manifest_path = output_dir / "train_manifest.json"
+
+    if train_manifest_path.exists():
+        with open(train_manifest_path, 'r') as f:
+            train_manifest = json.load(f)
+
+        # Add new files to each family in the manifest
+        files_added_to_manifest = 0
+        for gloss, families in train_manifest.get('classes', {}).items():
+            for family_entry in families:
+                video_id = family_entry.get('video_id')
+                if video_id and gloss in new_files_by_class:
+                    new_files = new_files_by_class[gloss].get(video_id, [])
+                    if new_files:
+                        family_entry['files'].extend(new_files)
+                        files_added_to_manifest += len(new_files)
+
+        # Update total samples count
+        train_manifest['total_samples'] = sum(
+            len(fam['files'])
+            for families in train_manifest['classes'].values()
+            for fam in families
+        )
+
+        # Save updated manifest
+        with open(train_manifest_path, 'w') as f:
+            json.dump(train_manifest, f, indent=2)
+
+        print(f"  Added {files_added_to_manifest} files to train manifest")
+    else:
+        print(f"  Warning: Train manifest not found at {train_manifest_path}")
+
+    # Calculate final statistics
+    final_stats = {}
+    for class_name, plan in balancing_plan.items():
+        final_stats[class_name] = {
+            'before': plan['current_samples'],
+            'after': plan['final_samples'],
+            'target': target_train_samples,
+            'achieved': plan['final_samples'] >= target_train_samples,
+        }
+
+    achieved_count = sum(1 for s in final_stats.values() if s['achieved'])
+    final_min = min(s['after'] for s in final_stats.values())
+    final_max = max(s['after'] for s in final_stats.values())
+
+    print(f"\nBalancing complete!")
+    print(f"  Additional samples generated: {total_generated}")
+    print(f"  Classes achieving target: {achieved_count}/{len(final_stats)}")
+    print(f"  Final sample range: {final_min} - {final_max}")
+
+    return {
+        'balancing_plan': balancing_plan,
+        'final_stats': final_stats,
+        'total_generated': total_generated,
+        'achieved_count': achieved_count,
+        'new_files_by_class': dict(new_files_by_class),
+    }
+
+
+def run_two_phase_pipeline(
+    input_dir: Path,
+    output_dir: Path,
+    target_train_samples: int = 200,
+    split_ratios: Dict[str, float] = None,
+    seed: int = 42,
+    dry_run: bool = False,
+    landmark_config: str = '83pt',
+    include_z: bool = True,
+) -> Dict:
+    """
+    Run complete two-phase pipeline: split then balance train.
+
+    Phase 1: Stratified family-based splitting (manifest-based, no file copying)
+    Phase 2: Balance train split by generating additional augmentations in pool
+             and updating train manifest
+
+    Args:
+        input_dir: Directory containing augmented pose data (the pool)
+        output_dir: Output directory for manifests
+        target_train_samples: Target samples per class in train
+        split_ratios: Custom split ratios
+        seed: Random seed
+        dry_run: If True, don't generate files
+        landmark_config: Landmark extraction config
+        include_z: Whether to include z-coordinate (default True for 3D poses)
+
+    Returns:
+        Complete pipeline results
+    """
+    print("=" * 70)
+    print("TWO-PHASE BALANCED SPLITTING PIPELINE")
+    print("=" * 70)
+    print(f"\nPhase 1: Stratified family-based splitting (manifest-based)")
+    print(f"Phase 2: Balance train to {target_train_samples} samples/class")
+    print(f"         (new files added to pool, manifest updated)")
+
+    # Phase 1: Stratified split with manifests (no file copying)
+    splits, manifest = run_stratified_split(
+        input_dir=input_dir,
+        output_dir=output_dir,
+        split_ratios=split_ratios,
+        seed=seed,
+        dry_run=dry_run,
+        use_manifests=True,  # Manifest-based, no file copying
+    )
+
+    # Phase 2: Balance train (generates files in pool, updates train manifest)
+    balancing_results = balance_train_split(
+        splits=splits,
+        pool_dir=input_dir,  # New files go into the pool
+        output_dir=output_dir,  # Manifests are here
+        target_train_samples=target_train_samples,
+        dry_run=dry_run,
+        landmark_config=landmark_config,
+        include_z=include_z,
+    )
+
+    # Summary
+    print("\n" + "=" * 70)
+    print("PIPELINE COMPLETE")
+    print("=" * 70)
+
+    if not dry_run:
+        final_stats = balancing_results.get('final_stats', {})
+        if final_stats:
+            samples = [s['after'] for s in final_stats.values()]
+            print(f"\nFinal train samples per class:")
+            print(f"  Min: {min(samples)}")
+            print(f"  Max: {max(samples)}")
+            print(f"  Target: {target_train_samples}")
+
+    return {
+        'splits': splits,
+        'manifest': manifest,
+        'balancing': balancing_results,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Stratified family-based dataset splitting"
+        description="Stratified family-based dataset splitting",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+    # Basic splitting (no train balancing)
+    python stratified_family_split.py --input-dir /path/to/pool --output-dir /path/to/splits
+
+    # Two-phase pipeline: split + balance train to 200 samples/class
+    python stratified_family_split.py --input-dir /path/to/pool --output-dir /path/to/splits --balance-train
+
+    # Custom train target
+    python stratified_family_split.py --input-dir /path/to/pool --output-dir /path/to/splits --balance-train --train-target 150
+
+    # Dry run to see plan
+    python stratified_family_split.py --input-dir /path/to/pool --output-dir /path/to/splits --balance-train --dry-run
+        """
     )
     parser.add_argument(
         '--input-dir', type=Path, required=True,
@@ -606,6 +954,18 @@ def main():
         '--copy-files', action='store_true',
         help='Copy files instead of generating manifests (legacy mode)'
     )
+    parser.add_argument(
+        '--balance-train', action='store_true',
+        help='Run two-phase pipeline: split then balance train to target samples/class'
+    )
+    parser.add_argument(
+        '--train-target', type=int, default=200,
+        help='Target samples per class in train split (default: 200, requires --balance-train)'
+    )
+    parser.add_argument(
+        '--landmark-config', type=str, default='83pt',
+        help='Landmark config for additional augmentations (default: 83pt)'
+    )
 
     args = parser.parse_args()
 
@@ -625,21 +985,35 @@ def main():
         print(f"Error: Input directory not found: {args.input_dir}")
         sys.exit(1)
 
-    # Run splitting
-    splits, manifest = run_stratified_split(
-        input_dir=args.input_dir,
-        output_dir=args.output_dir,
-        split_ratios=split_ratios,
-        seed=args.seed,
-        dry_run=args.dry_run,
-        use_manifests=not args.copy_files,
-    )
-
-    if args.dry_run:
-        print("Dry run complete. Use without --dry-run to perform actual splitting.")
+    if args.balance_train:
+        # Two-phase pipeline
+        results = run_two_phase_pipeline(
+            input_dir=args.input_dir,
+            output_dir=args.output_dir,
+            target_train_samples=args.train_target,
+            split_ratios=split_ratios,
+            seed=args.seed,
+            dry_run=args.dry_run,
+            landmark_config=args.landmark_config,
+        )
+        if args.dry_run:
+            print("\nDry run complete. Use without --dry-run to execute.")
     else:
-        mode = "file copying" if args.copy_files else "manifest generation"
-        print(f"Splitting complete! (Mode: {mode})")
+        # Standard splitting only
+        splits, manifest = run_stratified_split(
+            input_dir=args.input_dir,
+            output_dir=args.output_dir,
+            split_ratios=split_ratios,
+            seed=args.seed,
+            dry_run=args.dry_run,
+            use_manifests=not args.copy_files,
+        )
+
+        if args.dry_run:
+            print("Dry run complete. Use without --dry-run to perform actual splitting.")
+        else:
+            mode = "file copying" if args.copy_files else "manifest generation"
+            print(f"Splitting complete! (Mode: {mode})")
 
 
 if __name__ == "__main__":

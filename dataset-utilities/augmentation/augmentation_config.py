@@ -14,29 +14,44 @@ from collections import defaultdict
 
 
 # =============================================================================
-# CLASS BALANCING CONFIGURATION
+# CLASS BALANCING CONFIGURATION (Two-Phase Approach)
 # =============================================================================
 
-# Target number of samples per class after augmentation
-# This ensures all classes have equal representation in training
-#
-# IMPORTANT: Family-based splitting reserves 3 families for val/test (1 each).
-# For classes with few originals (e.g., 5-6 videos), only 2-3 families go to train.
-# To achieve ~200 samples in train for ALL classes including smallest:
-#   - Smallest class has ~5 originals -> 2 families in train after reserving 3
-#   - Need 200 samples from 2 families -> 100 samples per family
-#   - Each family = 1 original + augmentations -> need ~99 augmentations per video
-#   - Set pool target high enough so smallest classes get enough per-family samples
-#
-# With 5 originals, 2 train families, need 100 samples each = 200 total train
-# Pool needs: 5 videos × 100 samples/video = 500 total pool
-TARGET_SAMPLES_PER_CLASS = 500
+# Target number of samples per class IN THE TRAIN SPLIT (not pool)
+# The two-phase approach ensures exactly this many samples in train:
+#   Phase 1: Generate base augmentations for pool (enough for val/test)
+#   Phase 2: After splitting, augment train families to reach this target
+TARGET_TRAIN_SAMPLES_PER_CLASS = 200
 
-# Minimum augmentations per video (even for classes with many samples)
-MIN_AUGMENTATIONS_PER_VIDEO = 10
+# Legacy setting (kept for backward compatibility)
+TARGET_SAMPLES_PER_CLASS = TARGET_TRAIN_SAMPLES_PER_CLASS
 
-# Maximum augmentations per video (high to allow small classes to reach target)
-MAX_AUGMENTATIONS_PER_VIDEO = 150
+# -----------------------------------------------------------------------------
+# Phase 1: Base Pool Generation
+# -----------------------------------------------------------------------------
+# Generate enough augmentations so val/test have reasonable data
+# Val+Test get ~30% of families, each family needs some samples
+# Base augmentations: moderate amount, not trying to hit train target yet
+BASE_AUGMENTATIONS_PER_VIDEO = 15  # Creates families of size 16 (1 orig + 15 aug)
+
+# Minimum base augmentations (ensures some variety even for large classes)
+MIN_BASE_AUGMENTATIONS = 5
+
+# Maximum base augmentations in phase 1 (will add more in phase 2 for train)
+MAX_BASE_AUGMENTATIONS = 30
+
+# -----------------------------------------------------------------------------
+# Phase 2: Train Balancing
+# -----------------------------------------------------------------------------
+# After splitting, augment train families to reach TARGET_TRAIN_SAMPLES_PER_CLASS
+# This phase generates augmentations ONLY for train split
+
+# Maximum total augmentations per video (base + train balancing combined)
+MAX_TOTAL_AUGMENTATIONS_PER_VIDEO = 200
+
+# Legacy settings (kept for backward compatibility)
+MIN_AUGMENTATIONS_PER_VIDEO = MIN_BASE_AUGMENTATIONS
+MAX_AUGMENTATIONS_PER_VIDEO = MAX_BASE_AUGMENTATIONS
 
 # Split ratios for stratified splitting
 SPLIT_RATIOS = {
@@ -224,6 +239,113 @@ def calculate_augmentation_counts(
     return augmentation_plan
 
 
+def calculate_base_augmentation_counts(
+    class_sample_counts: Dict[str, int],
+    base_per_video: int = BASE_AUGMENTATIONS_PER_VIDEO,
+    min_per_video: int = MIN_BASE_AUGMENTATIONS,
+    max_per_video: int = MAX_BASE_AUGMENTATIONS,
+) -> Dict[str, Dict]:
+    """
+    Calculate base augmentations for Phase 1 (pool generation).
+
+    In Phase 1, we generate a fixed number of augmentations per video
+    to create a pool that can be split. The goal is to have enough
+    samples for val/test, not to reach the train target yet.
+
+    Args:
+        class_sample_counts: Dict mapping class name to number of original samples
+        base_per_video: Base augmentations per video
+        min_per_video: Minimum augmentations per video
+        max_per_video: Maximum augmentations per video
+
+    Returns:
+        Dict mapping class name to augmentation plan
+    """
+    augmentation_plan = {}
+
+    for class_name, original_count in class_sample_counts.items():
+        # Use fixed base augmentations (within min/max bounds)
+        aug_per_video = max(min_per_video, min(max_per_video, base_per_video))
+
+        # Calculate pool total
+        pool_total = original_count * (1 + aug_per_video)
+
+        augmentation_plan[class_name] = {
+            'original_count': original_count,
+            'augmentations_per_video': aug_per_video,
+            'family_size': 1 + aug_per_video,
+            'pool_total': pool_total,
+            'phase': 'base_pool',
+        }
+
+    return augmentation_plan
+
+
+def calculate_train_balancing_augmentations(
+    train_class_samples: Dict[str, int],
+    train_families: Dict[str, int],
+    target_train_samples: int = TARGET_TRAIN_SAMPLES_PER_CLASS,
+    max_total_per_video: int = MAX_TOTAL_AUGMENTATIONS_PER_VIDEO,
+    existing_augs_per_video: int = BASE_AUGMENTATIONS_PER_VIDEO,
+) -> Dict[str, Dict]:
+    """
+    Calculate additional augmentations needed for Phase 2 (train balancing).
+
+    After splitting, some classes may have fewer than target samples in train.
+    This calculates how many additional augmentations to generate for train families.
+
+    Args:
+        train_class_samples: Dict mapping class name to current train sample count
+        train_families: Dict mapping class name to number of families in train
+        target_train_samples: Target samples per class in train split
+        max_total_per_video: Maximum total augmentations per video
+        existing_augs_per_video: Augmentations already generated in Phase 1
+
+    Returns:
+        Dict mapping class name to balancing plan
+    """
+    balancing_plan = {}
+
+    for class_name, current_samples in train_class_samples.items():
+        samples_needed = target_train_samples - current_samples
+        n_families = train_families.get(class_name, 0)
+
+        if samples_needed <= 0 or n_families == 0:
+            # Already at or above target, no balancing needed
+            balancing_plan[class_name] = {
+                'current_samples': current_samples,
+                'target_samples': target_train_samples,
+                'samples_needed': 0,
+                'additional_augs_per_video': 0,
+                'final_samples': current_samples,
+                'status': 'already_balanced' if samples_needed <= 0 else 'no_families',
+            }
+            continue
+
+        # Calculate additional augmentations needed per family (video)
+        additional_per_video = samples_needed // n_families
+
+        # Check against max total augmentations
+        max_additional = max_total_per_video - existing_augs_per_video - 1  # -1 for original
+        additional_per_video = min(additional_per_video, max_additional)
+        additional_per_video = max(0, additional_per_video)
+
+        # Calculate final sample count
+        final_samples = current_samples + (n_families * additional_per_video)
+
+        balancing_plan[class_name] = {
+            'current_samples': current_samples,
+            'target_samples': target_train_samples,
+            'samples_needed': samples_needed,
+            'train_families': n_families,
+            'additional_augs_per_video': additional_per_video,
+            'final_samples': final_samples,
+            'status': 'balanced' if final_samples >= target_train_samples else 'partial',
+        }
+
+    return balancing_plan
+
+
 def get_augmentation_sequence(aug_count: int) -> List[Dict]:
     """
     Generate a sequence of augmentation configurations for a video.
@@ -285,16 +407,30 @@ def get_augmentation_sequence(aug_count: int) -> List[Dict]:
 
 
 def print_augmentation_plan(augmentation_plan: Dict[str, Dict]) -> None:
-    """Print a summary of the augmentation plan."""
+    """Print a summary of the augmentation plan.
+
+    Handles both formats:
+    - Legacy: 'actual_total' key (target-based approach)
+    - New: 'pool_total' key (base augmentation approach)
+    """
     print("\n" + "=" * 70)
     print("AUGMENTATION PLAN SUMMARY")
     print("=" * 70)
 
-    total_original = sum(p['original_count'] for p in augmentation_plan.values())
-    total_augmented = sum(p['actual_total'] for p in augmentation_plan.values())
+    # Detect format and get total
+    sample_plan = next(iter(augmentation_plan.values()))
+    is_base_format = 'pool_total' in sample_plan
 
-    print(f"\nClasses: {len(augmentation_plan)}")
-    print(f"Target per class: {TARGET_SAMPLES_PER_CLASS}")
+    total_original = sum(p['original_count'] for p in augmentation_plan.values())
+
+    if is_base_format:
+        total_augmented = sum(p['pool_total'] for p in augmentation_plan.values())
+        print(f"\nMode: Base augmentation (Phase 1)")
+    else:
+        total_augmented = sum(p['actual_total'] for p in augmentation_plan.values())
+        print(f"\nMode: Target-based")
+
+    print(f"Classes: {len(augmentation_plan)}")
     print(f"Total original samples: {total_original}")
     print(f"Total after augmentation: {total_augmented}")
     print(f"Augmentation factor: {total_augmented / total_original:.1f}x")
@@ -314,9 +450,10 @@ def print_augmentation_plan(augmentation_plan: Dict[str, Dict]) -> None:
     indices = [0, len(sorted_plan) // 2, -1]
     for idx in indices:
         class_name, plan = sorted_plan[idx]
+        total_key = 'pool_total' if is_base_format else 'actual_total'
         print(f"  {class_name}: {plan['original_count']} original -> "
               f"{plan['augmentations_per_video']} aug/video -> "
-              f"{plan['actual_total']} total")
+              f"{plan[total_key]} total")
 
     print("=" * 70 + "\n")
 

@@ -120,10 +120,12 @@ try:
 
     # Extract configuration
     TARGET_SAMPLES_PER_CLASS = aug_config_module.TARGET_SAMPLES_PER_CLASS
+    TARGET_TRAIN_SAMPLES_PER_CLASS = aug_config_module.TARGET_TRAIN_SAMPLES_PER_CLASS
 
     # Extract main functions
     generate_balanced_dataset = augmentation_module.generate_balanced_dataset
     run_stratified_split = splitting_module.run_stratified_split
+    run_two_phase_pipeline = splitting_module.run_two_phase_pipeline
 
     AUGMENTATION_UTILS_AVAILABLE = True
 except Exception as e:
@@ -598,21 +600,33 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
         traceback.print_exc()
         return False
 
-    # Step 4b: Run stratified family-based splitting (manifest-based)
-    print_section("Step 4b: Stratified Family-Based Splitting")
+    # Step 4b: Run two-phase splitting and train balancing
+    print_section("Step 4b: Two-Phase Splitting + Train Balancing")
 
-    print_status("Creating train/val/test manifests...", "INFO")
+    print_status("Phase 1: Splitting families into train/val/test...", "INFO")
+    print_status("Phase 2: Balancing train to exactly 200 samples/class...", "INFO")
     try:
-        splits, manifest = run_stratified_split(
+        results = run_two_phase_pipeline(
             input_dir=pickle_pool_dir,
             output_dir=splits_dir,
+            target_train_samples=TARGET_TRAIN_SAMPLES_PER_CLASS,
             seed=42,
             dry_run=False,
-            use_manifests=True,  # Generate manifests, don't copy files
+            landmark_config=landmark_config,
         )
-        print_status("Stratified splitting complete!", "SUCCESS")
+
+        # Report balancing results
+        balancing = results.get('balancing', {})
+        final_stats = balancing.get('final_stats', {})
+        if final_stats:
+            samples = [s['after'] for s in final_stats.values()]
+            print_status(f"Train samples per class: {min(samples)} - {max(samples)}", "INFO")
+            achieved = sum(1 for s in final_stats.values() if s['achieved'])
+            print_status(f"Classes at target (200): {achieved}/{len(final_stats)}", "SUCCESS")
+
+        print_status("Two-phase pipeline complete!", "SUCCESS")
     except Exception as e:
-        print_status(f"Error during stratified splitting: {e}", "ERROR")
+        print_status(f"Error during splitting/balancing: {e}", "ERROR")
         import traceback
         traceback.print_exc()
         return False
@@ -622,10 +636,10 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
     print_status("=" * 70, "INFO")
     print_status("Balanced Dataset Generation Complete!", "SUCCESS")
     print_status(f"Pickle pool: {pickle_pool_dir}", "INFO")
-    print_status(f"Split manifests: {splits_dir}", "INFO")
-    print_status(f"  - train_manifest.json", "INFO")
-    print_status(f"  - val_manifest.json", "INFO")
-    print_status(f"  - test_manifest.json", "INFO")
+    print_status(f"Balanced splits: {splits_dir}", "INFO")
+    print_status(f"  - train/ (balanced to {TARGET_TRAIN_SAMPLES_PER_CLASS}/class)", "INFO")
+    print_status(f"  - val/", "INFO")
+    print_status(f"  - test/", "INFO")
     print_status("=" * 70, "INFO")
     print()
 

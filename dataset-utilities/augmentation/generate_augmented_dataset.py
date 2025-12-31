@@ -47,11 +47,16 @@ from extract_landmarks import extract_landmarks, get_landmark_info
 # Import augmentation config
 from augmentation_config import (
     TARGET_SAMPLES_PER_CLASS,
+    TARGET_TRAIN_SAMPLES_PER_CLASS,
     MIN_AUGMENTATIONS_PER_VIDEO,
     MAX_AUGMENTATIONS_PER_VIDEO,
+    BASE_AUGMENTATIONS_PER_VIDEO,
+    MIN_BASE_AUGMENTATIONS,
+    MAX_BASE_AUGMENTATIONS,
     AUGMENTATION_TECHNIQUES,
     FRAME_BUCKETS,
     calculate_augmentation_counts,
+    calculate_base_augmentation_counts,
     get_augmentation_sequence,
     get_frame_bucket,
     print_augmentation_plan,
@@ -465,6 +470,7 @@ def generate_augmented_sample(
     original_data: dict,
     aug_config: dict,
     landmark_config: str = '83pt',
+    include_z: bool = True,
 ) -> dict:
     """
     Generate a single augmented sample from original data.
@@ -473,17 +479,35 @@ def generate_augmented_sample(
         original_data: Original pickle data dict
         aug_config: Augmentation configuration
         landmark_config: Landmark extraction config ('75pt', '83pt', etc.)
+        include_z: Whether to include z-coordinate (default True for 3D poses)
 
     Returns:
         Augmented sample dict ready for saving
     """
-    # Extract landmarks from original
+    # Get keypoints from original data
     full_keypoints = original_data['keypoints']
-    landmarks = extract_landmarks(
-        full_keypoints,
-        config=landmark_config,
-        normalize=False,  # We'll normalize after augmentation
-    )
+
+    # Check if data is already extracted (has expected number of keypoints)
+    # or if it's full MediaPipe data that needs extraction
+    expected_points = LANDMARK_CONFIGS[landmark_config]['total_points']
+    current_points = full_keypoints.shape[1]
+
+    if current_points == expected_points:
+        # Data already has the correct number of keypoints, skip extraction
+        landmarks = full_keypoints.copy()
+    elif current_points > expected_points:
+        # Full data, extract landmarks
+        landmarks = extract_landmarks(
+            full_keypoints,
+            config=landmark_config,
+            include_z=include_z,
+            normalize=False,  # We'll normalize after augmentation
+        )
+    else:
+        raise ValueError(
+            f"Data has {current_points} keypoints, but config '{landmark_config}' "
+            f"expects {expected_points}. Cannot extract from smaller dataset."
+        )
 
     # Apply augmentation
     technique = aug_config['technique']
@@ -572,6 +596,7 @@ def generate_family(
     landmark_config: str = '83pt',
     dry_run: bool = False,
     input_format: str = 'auto',
+    include_z: bool = True,
 ) -> List[Path]:
     """
     Generate a family of samples (original + augmentations) for one video.
@@ -583,6 +608,7 @@ def generate_family(
         landmark_config: Landmark extraction config
         dry_run: If True, don't actually save files
         input_format: 'pkl', 'pose', or 'auto' (detect from extension)
+        include_z: Whether to include z-coordinate (default True for 3D poses)
 
     Returns:
         List of paths to generated files (including processed original)
@@ -616,6 +642,7 @@ def generate_family(
     original_landmarks = extract_landmarks(
         original_keypoints,
         config=landmark_config,
+        include_z=include_z,
         normalize=True,
     )
 
@@ -655,6 +682,7 @@ def generate_family(
                 original_data_for_aug,
                 aug_config,
                 landmark_config,
+                include_z=include_z,
             )
 
             # Save augmented sample
@@ -682,37 +710,52 @@ def generate_balanced_dataset(
     dry_run: bool = False,
     output_base: Optional[Path] = None,
     skip_existing: bool = True,
+    use_base_augmentation: bool = True,
+    include_z: bool = True,
 ) -> Dict:
     """
-    Generate a balanced augmented dataset.
+    Generate a balanced augmented dataset (Phase 1 of two-phase approach).
 
     Outputs to a flat structure: augmented_pool/pickle/{gloss}/*.pkl
     This allows reuse across different class configurations (100, 125, 200, etc.)
+
+    Two-Phase Approach:
+        Phase 1 (this function): Generate base pool with fixed augmentations per video
+        Phase 2 (balance_train_split): After splitting, augment train to exact target
 
     Args:
         num_classes: Number of classes (used to load class_mapping if gloss_list not provided)
         gloss_list: Explicit list of glosses to process (takes precedence over num_classes)
         landmark_config: Landmark extraction config ('75pt', '83pt', etc.)
-        target_per_class: Target samples per class
+        target_per_class: Target samples per class (only used if use_base_augmentation=False)
         dry_run: If True, only compute plan without generating files
         output_base: Base output directory (default: datasets/augmented_pool/pickle)
         skip_existing: If True, skip glosses that already have augmented data
+        use_base_augmentation: If True, use fixed augmentations per video (recommended for two-phase)
+        include_z: Whether to include z-coordinate (default True for 3D poses)
 
     Returns:
         Generation summary dict
     """
     print("=" * 70)
-    print("BALANCED DATASET GENERATION")
+    print("BALANCED DATASET GENERATION (Phase 1: Base Pool)")
     print("=" * 70)
     print(f"\nConfiguration:")
     print(f"  Landmark config: {landmark_config}")
-    print(f"  Target per class: {target_per_class}")
+    if use_base_augmentation:
+        print(f"  Mode: Base augmentation ({BASE_AUGMENTATIONS_PER_VIDEO} per video)")
+        print(f"  Note: Train balancing (Phase 2) will achieve {TARGET_TRAIN_SAMPLES_PER_CLASS}/class")
+    else:
+        print(f"  Mode: Target-based ({target_per_class} per class)")
     print(f"  Dry run: {dry_run}")
     print(f"  Skip existing: {skip_existing}")
+    print(f"  Include Z: {include_z}")
 
     # Get landmark info
     landmark_info = get_landmark_info(landmark_config)
-    print(f"  Landmarks: {landmark_info['total_points']} points = {landmark_info['feature_count_xy']} features")
+    coords = 3 if include_z else 2
+    feature_count = landmark_info['total_points'] * coords
+    print(f"  Landmarks: {landmark_info['total_points']} points x {coords} coords = {feature_count} features")
 
     # Use pose_files_by_gloss as the clean-slate source (no contamination from previous splits)
     pose_by_gloss_dir = config.dataset_root / "pose_files_by_gloss"
@@ -783,10 +826,22 @@ def generate_balanced_dataset(
 
     # Calculate augmentation plan
     class_sample_counts = {k: len(v) for k, v in dataset_info.items()}
-    augmentation_plan = calculate_augmentation_counts(
-        class_sample_counts,
-        target_per_class=target_per_class,
-    )
+
+    if use_base_augmentation:
+        # Phase 1: Fixed augmentations per video for base pool
+        augmentation_plan = calculate_base_augmentation_counts(
+            class_sample_counts,
+            base_per_video=BASE_AUGMENTATIONS_PER_VIDEO,
+            min_per_video=MIN_BASE_AUGMENTATIONS,
+            max_per_video=MAX_BASE_AUGMENTATIONS,
+        )
+        print(f"\n[Phase 1] Base pool: {BASE_AUGMENTATIONS_PER_VIDEO} augmentations per video")
+    else:
+        # Legacy: Try to reach target per class
+        augmentation_plan = calculate_augmentation_counts(
+            class_sample_counts,
+            target_per_class=target_per_class,
+        )
 
     # Print plan summary
     print_augmentation_plan(augmentation_plan)
@@ -833,6 +888,7 @@ def generate_balanced_dataset(
                 landmark_config=landmark_config,
                 dry_run=False,
                 input_format=input_format,
+                include_z=include_z,
             )
 
             total_generated += len(family_files)
