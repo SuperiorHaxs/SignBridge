@@ -93,6 +93,21 @@ HAND_LANDMARK_NAMES = {
     20: 'pinky_tip',
 }
 
+# Finger indices grouped by finger (within 21-point hand)
+FINGER_INDICES = {
+    'thumb': [1, 2, 3, 4],      # CMC, MCP, IP, TIP
+    'index': [5, 6, 7, 8],      # MCP, PIP, DIP, TIP
+    'middle': [9, 10, 11, 12],  # MCP, PIP, DIP, TIP
+    'ring': [13, 14, 15, 16],   # MCP, PIP, DIP, TIP
+    'pinky': [17, 18, 19, 20],  # MCP, PIP, DIP, TIP
+}
+
+# Fingertip indices (within 21-point hand)
+FINGERTIP_INDICES = [4, 8, 12, 16, 20]  # thumb, index, middle, ring, pinky
+
+# Finger base (MCP) indices (within 21-point hand)
+FINGER_MCP_INDICES = [1, 5, 9, 13, 17]  # thumb CMC, index, middle, ring, pinky
+
 
 # =============================================================================
 # FACE LANDMARKS (Minimal subset - 8 points for ASL disambiguation)
@@ -206,3 +221,28 @@ COORDINATE_MODES = {
 }
 
 DEFAULT_COORDINATE_MODE = 'xy'
+
+
+# =============================================================================
+# FINGER FEATURE SETTINGS
+# =============================================================================
+
+FINGER_FEATURE_CONFIG = {
+    'total_features': 30,  # 15 per hand × 2 hands
+    'features_per_hand': 15,
+    'breakdown': {
+        'extension_ratios': 5,      # How extended each finger is (0-1)
+        'spread_angles': 4,         # Angles between adjacent fingers
+        'fingertip_distances': 5,   # Normalized tip-to-wrist distances
+        'openness_score': 1,        # Overall hand openness (0-1)
+    },
+    'description': 'Position-invariant hand shape features for ASL recognition',
+}
+
+# Hand positions within extracted landmarks (for 75pt and 83pt configs)
+HAND_POSITIONS = {
+    '75pt': {'left_start': 33, 'right_start': 54},
+    '83pt': {'left_start': 33, 'right_start': 54},
+    '54pt': {'left_start': 12, 'right_start': 33},
+    '62pt': {'left_start': 12, 'right_start': 33},
+}

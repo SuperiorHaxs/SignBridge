@@ -16,8 +16,14 @@ Themes analyzed:
 - THEME 6: Motion Complexity (static vs dynamic signs)
 
 Usage:
-    python analyze_signer_errors.py --predictions-file results/predictions.json
-    python analyze_signer_errors.py --model-path models/best.pt --classes 125
+    # From a predictions JSON file
+    python analyze_training_errors.py --predictions-file results/predictions.json
+
+    # Directly from a model checkpoint (can run while training continues)
+    python analyze_training_errors.py --model-path models/wlasl_125_class_model --classes 125
+
+    # With output saved
+    python analyze_training_errors.py --model-path models/wlasl_125_class_model --classes 125 --output analysis.json
 """
 
 import sys
@@ -38,6 +44,14 @@ sys.path.insert(0, str(project_root))
 # Add pose_utils to path
 pose_utils_dir = project_root / "project-utilities" / "pose_utils"
 sys.path.insert(0, str(pose_utils_dir))
+
+# Add training scripts to path for model imports
+training_scripts_dir = project_root / "models" / "training-scripts"
+sys.path.insert(0, str(training_scripts_dir))
+
+# Add openhands model to path
+openhands_dir = project_root / "models" / "openhands-modernized" / "src"
+sys.path.insert(0, str(openhands_dir))
 
 
 # =============================================================================
@@ -121,6 +135,200 @@ def severity_level(value: float, thresholds: Tuple[float, float, float]) -> str:
     elif value < thresholds[2]:
         return 'high'
     return 'critical'
+
+
+# =============================================================================
+# MODEL PREDICTION GENERATION
+# =============================================================================
+
+def generate_predictions_from_checkpoint(
+    checkpoint_path: Path,
+    num_classes: int,
+    split: str = 'val',
+    config_path: Optional[Path] = None,
+) -> Tuple[List[PredictionRecord], Path]:
+    """
+    Generate predictions from a model checkpoint.
+
+    Args:
+        checkpoint_path: Path to checkpoint.pth or pytorch_model.bin
+        num_classes: Number of classes
+        split: Which split to evaluate ('val' or 'test')
+        config_path: Optional path to config.json (auto-detected if not provided)
+
+    Returns:
+        Tuple of (list of PredictionRecords, pickle_pool_path)
+    """
+    import torch
+    from torch.utils.data import DataLoader
+
+    # Import model classes
+    from openhands_modernized import OpenHandsConfig, OpenHandsModel, WLASLOpenHandsDataset
+    from config import get_config
+
+    print(f"\n{'=' * 60}")
+    print("GENERATING PREDICTIONS FROM CHECKPOINT")
+    print('=' * 60)
+
+    # Determine paths
+    checkpoint_path = Path(checkpoint_path)
+    if checkpoint_path.is_dir():
+        # It's a model directory
+        model_dir = checkpoint_path
+        checkpoint_file = model_dir / "checkpoint.pth"
+        if not checkpoint_file.exists():
+            checkpoint_file = model_dir / "pytorch_model.bin"
+    else:
+        checkpoint_file = checkpoint_path
+        model_dir = checkpoint_file.parent
+
+    if not checkpoint_file.exists():
+        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_file}")
+
+    print(f"Checkpoint: {checkpoint_file}")
+
+    # Find config
+    if config_path is None:
+        config_path = model_dir / "config.json"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config not found: {config_path}")
+
+    print(f"Config: {config_path}")
+
+    # Load config
+    with open(config_path, 'r') as f:
+        config_dict = json.load(f)
+
+    config = OpenHandsConfig(**config_dict)
+    print(f"Model: {config.num_hidden_layers} layers, {config.hidden_size} hidden size")
+
+    # Create model
+    model = OpenHandsModel(config)
+
+    # Load weights
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Device: {device}")
+
+    checkpoint = torch.load(checkpoint_file, map_location=device)
+
+    # Handle different checkpoint formats
+    if 'model_state_dict' in checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        epoch = checkpoint.get('epoch', 'unknown')
+        best_acc = checkpoint.get('best_val_acc', 0)
+        print(f"Loaded from epoch {epoch}, best val acc: {best_acc:.2f}%")
+    else:
+        model.load_state_dict(checkpoint)
+        print("Loaded model weights (no epoch info)")
+
+    model.to(device)
+    model.eval()
+
+    # Load dataset paths
+    app_config = get_config()
+
+    # Get dataset paths from config
+    dataset_splits = app_config.dataset_splits.get(num_classes)
+    if not dataset_splits:
+        raise ValueError(f"No dataset configuration for {num_classes} classes")
+
+    # Load manifest
+    if split == 'val':
+        manifest_path = Path(str(dataset_splits.get('val_manifest', '')))
+    else:
+        manifest_path = Path(str(dataset_splits.get('test_manifest', '')))
+
+    pickle_pool = Path(str(dataset_splits.get('pickle_pool', '')))
+    class_mapping_path = Path(str(dataset_splits.get('class_mapping', '')))
+
+    if not manifest_path.exists():
+        raise FileNotFoundError(f"Manifest not found: {manifest_path}")
+
+    print(f"\nLoading {split} data from: {manifest_path}")
+
+    # Load manifest
+    with open(manifest_path, 'r') as f:
+        manifest = json.load(f)
+
+    # Load class mapping
+    with open(class_mapping_path, 'r') as f:
+        class_mapping = json.load(f)
+
+    classes = class_mapping.get('classes', [])
+    gloss_to_id = {g.upper(): i for i, g in enumerate(classes)}
+    id_to_gloss = {i: g.upper() for i, g in enumerate(classes)}
+
+    # Build file list from manifest
+    file_paths = []
+    labels = []
+
+    for gloss, families in manifest['classes'].items():
+        gloss_dir = pickle_pool / gloss.lower()
+        for family in families:
+            for filename in family['files']:
+                file_path = gloss_dir / filename
+                file_paths.append(str(file_path))
+                labels.append(gloss.upper())
+
+    print(f"Found {len(file_paths)} samples in {split} split")
+
+    # Create dataset
+    MAX_SEQ_LENGTH = 128  # Match training
+    dataset = WLASLOpenHandsDataset(
+        file_paths, labels, gloss_to_id,
+        MAX_SEQ_LENGTH, augment=False
+    )
+
+    loader = DataLoader(dataset, batch_size=32, shuffle=False, num_workers=0)
+
+    # Generate predictions
+    print("\nGenerating predictions...")
+    predictions = []
+    all_file_paths = file_paths  # Keep reference
+
+    sample_idx = 0
+    with torch.no_grad():
+        for batch in loader:
+            pose_sequences = batch['pose_sequence'].to(device)
+            attention_masks = batch['attention_mask'].to(device)
+            batch_labels = batch['label']
+
+            # Forward pass
+            outputs = model(pose_sequences, attention_masks)
+
+            # Get predictions
+            probs = torch.softmax(outputs, dim=1)
+            pred_indices = outputs.argmax(dim=1).cpu().numpy()
+            confidences = probs.max(dim=1).values.cpu().numpy()
+
+            # Record predictions
+            for i in range(len(batch_labels)):
+                true_idx = batch_labels[i].item()
+                pred_idx = pred_indices[i]
+
+                video_id = Path(all_file_paths[sample_idx]).stem
+                true_label = id_to_gloss[true_idx]
+                pred_label = id_to_gloss[pred_idx]
+
+                predictions.append(PredictionRecord(
+                    video_id=video_id,
+                    true_label=true_label,
+                    predicted_label=pred_label,
+                    correct=(true_idx == pred_idx),
+                    confidence=float(confidences[i]),
+                    file_path=all_file_paths[sample_idx],
+                ))
+
+                sample_idx += 1
+
+    # Summary
+    correct = sum(1 for p in predictions if p.correct)
+    accuracy = correct / len(predictions)
+    print(f"\nGenerated {len(predictions)} predictions")
+    print(f"Accuracy: {accuracy:.2%} ({correct}/{len(predictions)})")
+
+    return predictions, pickle_pool
 
 
 # =============================================================================
@@ -935,21 +1143,30 @@ def main():
     args = parser.parse_args()
 
     # Load predictions
+    pickle_pool_path = args.pickle_pool
+
     if args.predictions_file:
         print(f"Loading predictions from {args.predictions_file}...")
         predictions = load_predictions_from_file(args.predictions_file)
+        print(f"Loaded {len(predictions)} predictions")
+
     elif args.model_path:
-        print("Model-based prediction generation not yet implemented")
-        print("Please provide a --predictions-file")
-        sys.exit(1)
+        print(f"Generating predictions from checkpoint: {args.model_path}")
+        predictions, auto_pickle_pool = generate_predictions_from_checkpoint(
+            checkpoint_path=args.model_path,
+            num_classes=args.classes,
+            split=args.split,
+        )
+        # Use auto-detected pickle pool if not provided
+        if pickle_pool_path is None:
+            pickle_pool_path = auto_pickle_pool
+
     else:
         print("Error: Must provide --predictions-file or --model-path")
         sys.exit(1)
 
-    print(f"Loaded {len(predictions)} predictions")
-
     # Run analysis
-    analyses = run_comprehensive_analysis(predictions, args.pickle_pool)
+    analyses = run_comprehensive_analysis(predictions, pickle_pool_path)
 
     # Print report
     print_analysis_report(analyses)

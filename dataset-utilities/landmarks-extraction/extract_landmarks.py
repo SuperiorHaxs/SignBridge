@@ -2,6 +2,7 @@
 Landmark Extraction Functions
 
 Core functions for extracting landmark subsets from full MediaPipe pose data.
+Includes optional finger feature extraction for position-invariant hand shape encoding.
 """
 
 import numpy as np
@@ -16,6 +17,14 @@ try:
         DEFAULT_CONFIG,
         DEFAULT_COORDINATE_MODE,
         COORDINATE_MODES,
+        FINGER_FEATURE_CONFIG,
+        HAND_POSITIONS,
+    )
+    from .finger_features import (
+        extract_finger_features_from_sequence,
+        extract_hand_features,
+        get_finger_feature_names,
+        FINGER_FEATURE_COUNT,
     )
 except ImportError:
     from landmark_config import (
@@ -23,6 +32,14 @@ except ImportError:
         DEFAULT_CONFIG,
         DEFAULT_COORDINATE_MODE,
         COORDINATE_MODES,
+        FINGER_FEATURE_CONFIG,
+        HAND_POSITIONS,
+    )
+    from finger_features import (
+        extract_finger_features_from_sequence,
+        extract_hand_features,
+        get_finger_feature_names,
+        FINGER_FEATURE_COUNT,
     )
 
 
@@ -269,3 +286,130 @@ def unflatten_landmarks(
     """
     frames = flattened.shape[0]
     return flattened.reshape(frames, num_points, coords)
+
+
+def extract_landmarks_with_finger_features(
+    full_pose_data: np.ndarray,
+    config: str = DEFAULT_CONFIG,
+    include_z: bool = False,
+    normalize: bool = True,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Extract landmarks AND finger features from full MediaPipe pose data.
+
+    This function returns both the standard landmark coordinates and
+    derived finger features (extension, spread, distances) that encode
+    hand shape in a position-invariant way.
+
+    Args:
+        full_pose_data: Full pose array with shape (frames, 576, 2) or (frames, 576, 3)
+        config: Configuration name ('75pt', '83pt', '54pt', '62pt')
+        include_z: Whether to include z-coordinate (if available)
+        normalize: Whether to apply normalization (shoulder-centered, scaled)
+
+    Returns:
+        Tuple of:
+        - landmarks: (frames, N, 2 or 3) extracted landmark coordinates
+        - finger_features: (frames, 30) derived finger features
+
+    Example:
+        >>> landmarks, finger_feats = extract_landmarks_with_finger_features(pose_data)
+        >>> print(landmarks.shape)  # (100, 83, 2)
+        >>> print(finger_feats.shape)  # (100, 30)
+    """
+    # Extract standard landmarks
+    landmarks = extract_landmarks(
+        full_pose_data,
+        config=config,
+        include_z=include_z,
+        normalize=normalize,
+    )
+
+    # Get hand positions for this config
+    if config not in HAND_POSITIONS:
+        raise ValueError(f"Finger features not supported for config '{config}'")
+
+    hand_pos = HAND_POSITIONS[config]
+
+    # Extract finger features from the landmarks
+    finger_features = extract_finger_features_from_sequence(
+        landmarks,
+        left_hand_start=hand_pos['left_start'],
+        right_hand_start=hand_pos['right_start'],
+    )
+
+    return landmarks, finger_features
+
+
+def extract_combined_features(
+    full_pose_data: np.ndarray,
+    config: str = DEFAULT_CONFIG,
+    include_z: bool = False,
+    normalize: bool = True,
+) -> np.ndarray:
+    """
+    Extract landmarks and finger features, returning as a single flattened array.
+
+    Combines landmark coordinates with derived finger features into a single
+    feature vector suitable for model input.
+
+    Args:
+        full_pose_data: Full pose array with shape (frames, 576, 2) or (frames, 576, 3)
+        config: Configuration name ('75pt', '83pt', '54pt', '62pt')
+        include_z: Whether to include z-coordinate (if available)
+        normalize: Whether to apply normalization
+
+    Returns:
+        (frames, landmark_features + 30) array where:
+        - First part: flattened landmark coordinates
+        - Last 30: finger features
+
+    Example:
+        >>> features = extract_combined_features(pose_data, config='83pt')
+        >>> # 83 points × 2 coords + 30 finger features = 196 features
+        >>> print(features.shape)  # (100, 196)
+    """
+    landmarks, finger_features = extract_landmarks_with_finger_features(
+        full_pose_data,
+        config=config,
+        include_z=include_z,
+        normalize=normalize,
+    )
+
+    # Flatten landmarks
+    flattened_landmarks = flatten_landmarks(landmarks)
+
+    # Concatenate with finger features
+    combined = np.concatenate([flattened_landmarks, finger_features], axis=1)
+
+    return combined.astype(np.float32)
+
+
+def get_combined_feature_info(config: str = DEFAULT_CONFIG, include_z: bool = False) -> Dict:
+    """
+    Get information about combined features (landmarks + finger features).
+
+    Args:
+        config: Configuration name
+        include_z: Whether z-coordinate is included
+
+    Returns:
+        Dictionary with feature counts and descriptions
+    """
+    landmark_info = get_landmark_info(config)
+    coords = 3 if include_z else 2
+
+    landmark_features = landmark_info['total_points'] * coords
+    finger_features = FINGER_FEATURE_CONFIG['total_features']
+    total_features = landmark_features + finger_features
+
+    return {
+        'config': config,
+        'landmark_points': landmark_info['total_points'],
+        'landmark_coords': coords,
+        'landmark_features': landmark_features,
+        'finger_features': finger_features,
+        'total_features': total_features,
+        'finger_feature_breakdown': FINGER_FEATURE_CONFIG['breakdown'],
+        'description': f'{landmark_features} landmark coords + {finger_features} finger features',
+    }

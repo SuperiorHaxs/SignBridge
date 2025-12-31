@@ -3,18 +3,24 @@
 openhands_modernized.py
 
 OpenHands Architecture Implementation - ENHANCED
-Upgraded to use full pose + hands representation for better handshape recognition.
+Upgraded to use full pose + hands + face + z-coordinate + finger features.
 
 Key Architecture Components:
-1. Pose Flattener Encoder: 75-point (Pose+Hands) MediaPipe → 150 features
-   - Full body pose: 33 points (vs 11 in original)
-   - Full hand skeletons: 42 points (vs 10 in original)
-   - Face excluded: 0 points (noisy, removed)
-2. Enhanced Transformer: 6 layers, 256 dim, 16 heads (vs 3/64/8)
-3. Long training: 1500 epochs with cosine annealing
-4. Minimal augmentation: shear + rotation only
+1. Pose Flattener Encoder: 83-point MediaPipe xyz → 249 features
+   - Full body pose: 33 points
+   - Full hand skeletons: 42 points (21 per hand)
+   - Minimal face: 8 points (for disambiguation)
+   - Z-coordinate: depth information
+2. Finger Feature Encoder: 30 derived features
+   - Extension ratios: 5 per hand (finger straightness)
+   - Spread angles: 4 per hand (between adjacent fingers)
+   - Fingertip distances: 5 per hand (normalized)
+   - Openness score: 1 per hand
+3. Combined Features: 249 + 30 = 279 features per frame
+4. Enhanced Transformer: 6 layers, 256 dim, 16 heads
+5. Long training: 1500 epochs with cosine annealing
 
-Expected Improvement: +10-15% accuracy from better hand detail
+Expected Improvement: Better handshape recognition from explicit finger features
 """
 
 import os
@@ -31,6 +37,25 @@ from torch.utils.data import Dataset, DataLoader
 from dataclasses import dataclass
 import math
 
+# Add landmarks-extraction to path for finger features
+_script_dir = Path(__file__).resolve().parent
+_project_root = _script_dir.parent.parent.parent
+_landmarks_dir = _project_root / "dataset-utilities" / "landmarks-extraction"
+if str(_landmarks_dir) not in sys.path:
+    sys.path.insert(0, str(_landmarks_dir))
+
+# Import finger feature extraction
+try:
+    from finger_features import (
+        extract_finger_features_from_sequence,
+        FINGER_FEATURE_COUNT,
+    )
+    FINGER_FEATURES_AVAILABLE = True
+except ImportError:
+    print("WARNING: finger_features module not found, finger features disabled")
+    FINGER_FEATURES_AVAILABLE = False
+    FINGER_FEATURE_COUNT = 0
+
 
 # =============================================================================
 # Configuration Classes
@@ -40,10 +65,17 @@ import math
 class OpenHandsConfig:
     """Configuration for OpenHands model architecture - ENHANCED."""
 
-    # Pose representation - UPGRADED to full pose + hands
-    num_pose_keypoints: int = 75  # Full MediaPipe Pose (33) + Hands (42)
-    pose_channels: int = 2        # x, y coordinates (confidence available but not used)
-    pose_features: int = 150      # 75 * 2
+    # Pose representation - UPGRADED to full pose + hands + minimal face + z-coordinate
+    num_pose_keypoints: int = 83  # Full MediaPipe Pose (33) + Hands (42) + Minimal Face (8)
+    pose_channels: int = 3        # x, y, z coordinates (depth for better 3D understanding)
+    pose_coord_features: int = 249  # 83 * 3 (raw coordinate features)
+
+    # Finger features - derived hand shape features (position-invariant)
+    use_finger_features: bool = True  # Whether to extract and use finger features
+    finger_features: int = 30         # 15 per hand (extension, spread, distances, openness)
+
+    # Total features per frame
+    pose_features: int = 279      # 249 coords + 30 finger features (when enabled)
 
     # Transformer architecture - UPGRADED for better capacity
     hidden_size: int = 256        # Increased from 64 (4x larger)
@@ -490,48 +522,60 @@ class CompactTransformer(nn.Module):
 
 class OpenHandsModel(nn.Module):
     """
-    Complete OpenHands model - ENHANCED with pose+hands.
+    Complete OpenHands model - ENHANCED with pose+hands+face, z-coordinate, and finger features.
 
     Architecture:
-    1. PoseFlattener: (N, 2, T, 75) -> (N, T, 150)
-    2. CompactTransformer: (N, T, 150) -> (N, T+1, 256)
-    3. Classification: CLS token -> vocab_size logits
+    1. PoseFlattener: (N, 3, T, 83) -> (N, T, 249)
+    2. Finger Features: (N, T, 30) - derived hand shape features
+    3. Combined: (N, T, 279) = 249 + 30
+    4. CompactTransformer: (N, T, 279) -> (N, T+1, 256)
+    5. Classification: CLS token -> vocab_size logits
 
-    UPDATED: Now uses 75 keypoints (33 pose + 42 hands) with 2 channels (x, y)
+    UPDATED: Now uses 83 keypoints + 30 finger features = 279 features per frame
     """
 
     def __init__(self, config: OpenHandsConfig):
         super().__init__()
         self.config = config
 
-        # Pose encoder
+        # Pose encoder (flattens 83 keypoints × 3 coords = 249 features)
         self.pose_flattener = PoseFlattener(
             in_channels=config.pose_channels,
             num_keypoints=config.num_pose_keypoints
         )
 
-        # Transformer encoder
+        # Transformer encoder (input is pose_features, which includes finger features if enabled)
         self.transformer = CompactTransformer(config)
 
         # Classification head
         self.classifier = nn.Linear(config.hidden_size, config.vocab_size)
         self.dropout = nn.Dropout(config.dropout_prob)
 
-    def forward(self, pose_data: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def forward(
+        self,
+        pose_data: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
+        finger_features: Optional[torch.Tensor] = None,
+    ) -> torch.Tensor:
         """
         Args:
-            pose_data: (batch_size, seq_len, 75, 2) - frames x keypoints x (x,y)
+            pose_data: (batch_size, seq_len, 83, 3) - frames x keypoints x (x,y,z)
             attention_mask: (batch_size, seq_len) - mask for padding
+            finger_features: (batch_size, seq_len, 30) - optional finger features
 
         Returns:
             logits: (batch_size, vocab_size) - classification scores
         """
-        # Reshape for pose flattener: (N, T, 75, 2) -> (N, 2, T, 75)
+        # Reshape for pose flattener: (N, T, 83, 3) -> (N, 3, T, 83)
         batch_size, seq_len = pose_data.shape[:2]
-        pose_data = pose_data.permute(0, 3, 1, 2)  # (N, 2, T, 75)
+        pose_data = pose_data.permute(0, 3, 1, 2)  # (N, 3, T, 83)
 
         # Flatten pose features
-        pose_features = self.pose_flattener(pose_data)  # (N, T, 150)
+        pose_features = self.pose_flattener(pose_data)  # (N, T, 249)
+
+        # Concatenate finger features if provided
+        if finger_features is not None and self.config.use_finger_features:
+            pose_features = torch.cat([pose_features, finger_features], dim=-1)  # (N, T, 279)
 
         # Apply transformer
         hidden_states = self.transformer(pose_features, attention_mask)  # (N, T+1, 256)
@@ -568,7 +612,7 @@ class WLASLPoseProcessor:
         self.transforms = PoseTransforms()
 
     def load_pickle_pose(self, pickle_path: str) -> np.ndarray:
-        """Load pose data from WLASL pickle file and convert to 27-point format."""
+        """Load pose data from WLASL pickle file in 83-point xyz format."""
         try:
             # Buffered reading for better performance on external drives
             with open(pickle_path, 'rb', buffering=1024*1024) as f:  # 1MB buffer
@@ -608,31 +652,49 @@ class WLASLPoseProcessor:
             elif len(keypoints.shape) == 4:
                 keypoints = keypoints[:, 0, :, :]  # Remove person dimension
 
-            # Check keypoint format and convert to 75-point as needed
+            # Check keypoint format and convert to 83-point xyz as needed
             frames, num_keypoints, coords = keypoints.shape
-            if num_keypoints == 75:
-                # Already in 75-point format, just ensure 2D coords
-                if coords == 3:
-                    pose_75 = keypoints[:, :, :2]
-                else:
-                    pose_75 = keypoints
-            elif num_keypoints == 83:
-                # 83-point format: 33 pose + 21 left hand + 21 right hand + 8 face
-                # Extract 75 points by dropping the 8 face landmarks (indices 75-82)
-                if coords == 3:
-                    pose_75 = keypoints[:, :75, :2]
-                else:
-                    pose_75 = keypoints[:, :75, :]
-            else:
-                # Extract 75-point pose+hands from 576-point format
-                pose_75 = self.mediapipe_subset.extract_27_points(keypoints)  # Redirects to extract_pose_hands_75
 
-            return pose_75
+            if num_keypoints == 83:
+                # Already in 83-point format
+                if coords == 3:
+                    # Perfect - 83pt xyz as expected
+                    pose_83 = keypoints
+                else:
+                    # 83pt but only xy - pad z with zeros
+                    pose_83 = np.zeros((frames, 83, 3), dtype=np.float32)
+                    pose_83[:, :, :coords] = keypoints
+            elif num_keypoints == 75:
+                # 75-point format - pad with zeros for face landmarks
+                if coords == 3:
+                    pose_83 = np.zeros((frames, 83, 3), dtype=np.float32)
+                    pose_83[:, :75, :] = keypoints
+                else:
+                    pose_83 = np.zeros((frames, 83, 3), dtype=np.float32)
+                    pose_83[:, :75, :coords] = keypoints
+            else:
+                # Extract 83-point from 576-point format
+                # Indices: 0-32 (pose), 501-521 (left hand), 522-542 (right hand), face minimal
+                pose_indices = list(range(0, 33))
+                left_hand_indices = list(range(501, 522))
+                right_hand_indices = list(range(522, 543))
+                # Minimal face: nose tip, mouth corners, chin, eyebrows, eye corners
+                face_indices = [33 + i for i in [1, 61, 291, 152, 107, 336, 33, 263]]
+
+                all_indices = pose_indices + left_hand_indices + right_hand_indices + face_indices
+
+                if coords >= 3:
+                    pose_83 = keypoints[:, all_indices, :3]
+                else:
+                    pose_83 = np.zeros((frames, 83, 3), dtype=np.float32)
+                    pose_83[:, :, :coords] = keypoints[:, all_indices, :]
+
+            return pose_83
 
         except Exception as e:
             print(f"WARNING: Error loading {pickle_path}: {e}")
-            # Return dummy data (75 points, 2 channels)
-            return np.zeros((30, 75, 2), dtype=np.float32)
+            # Return dummy data (83 points, 3 channels)
+            return np.zeros((30, 83, 3), dtype=np.float32)
 
     def preprocess_pose_sequence(self, pose_sequence: np.ndarray, augment: bool = False) -> np.ndarray:
         """Preprocess pose sequence with normalization and optional augmentation."""
@@ -646,9 +708,36 @@ class WLASLPoseProcessor:
 
         return pose_sequence
 
+    def extract_finger_features(self, pose_sequence: np.ndarray) -> np.ndarray:
+        """
+        Extract finger features from pose sequence.
+
+        Args:
+            pose_sequence: (frames, 83, 3) or (frames, 83, 2) pose landmarks
+
+        Returns:
+            (frames, 30) finger features array
+        """
+        if not FINGER_FEATURES_AVAILABLE:
+            # Return zeros if finger features not available
+            return np.zeros((len(pose_sequence), 30), dtype=np.float32)
+
+        # Hand positions in 83-point format: left hand at 33-53, right hand at 54-74
+        # (same as 75pt since face landmarks are at the end)
+        finger_features = extract_finger_features_from_sequence(
+            pose_sequence[:, :, :2],  # Use only x, y for finger features
+            left_hand_start=33,
+            right_hand_start=54,
+        )
+
+        return finger_features.astype(np.float32)
+
     def pad_or_truncate_sequence(self, pose_sequence: np.ndarray, max_length: int = 256) -> Tuple[np.ndarray, np.ndarray]:
         """Pad or truncate pose sequence to fixed length."""
         seq_len = len(pose_sequence)
+        # Get dimensions from actual data
+        num_keypoints = pose_sequence.shape[1] if len(pose_sequence.shape) > 1 else 83
+        num_coords = pose_sequence.shape[2] if len(pose_sequence.shape) > 2 else 3
 
         if seq_len > max_length:
             # Truncate
@@ -657,7 +746,7 @@ class WLASLPoseProcessor:
         else:
             # Pad
             padding_length = max_length - seq_len
-            padding = np.zeros((padding_length, 75, 2), dtype=np.float32)  # Updated: 75 keypoints, 2 channels
+            padding = np.zeros((padding_length, num_keypoints, num_coords), dtype=np.float32)
             pose_sequence = np.vstack([pose_sequence, padding])
             attention_mask = np.concatenate([
                 np.ones(seq_len, dtype=np.float32),
@@ -672,15 +761,16 @@ class WLASLPoseProcessor:
 # =============================================================================
 
 class WLASLOpenHandsDataset(Dataset):
-    """WLASL Dataset for OpenHands architecture."""
+    """WLASL Dataset for OpenHands architecture with finger features."""
 
     def __init__(self, pose_files: List[str], labels: List[str], gloss_to_id: Dict[str, int],
-                 max_seq_length: int = 256, augment: bool = False):
+                 max_seq_length: int = 256, augment: bool = False, use_finger_features: bool = True):
         self.pose_files = pose_files
         self.labels = labels
         self.gloss_to_id = gloss_to_id
         self.max_seq_length = max_seq_length
         self.augment = augment
+        self.use_finger_features = use_finger_features and FINGER_FEATURES_AVAILABLE
         self.processor = WLASLPoseProcessor()
 
     def __len__(self):
@@ -690,7 +780,24 @@ class WLASLOpenHandsDataset(Dataset):
         # Load and preprocess pose data
         pose_sequence = self.processor.load_pickle_pose(self.pose_files[idx])
         pose_sequence = self.processor.preprocess_pose_sequence(pose_sequence, augment=self.augment)
+
+        # Extract finger features BEFORE padding (on actual data only)
+        if self.use_finger_features:
+            finger_features = self.processor.extract_finger_features(pose_sequence)
+        else:
+            finger_features = None
+
+        # Pad/truncate pose sequence
         pose_sequence, attention_mask = self.processor.pad_or_truncate_sequence(pose_sequence, self.max_seq_length)
+
+        # Pad finger features to match
+        if self.use_finger_features:
+            seq_len = len(finger_features)
+            if seq_len > self.max_seq_length:
+                finger_features = finger_features[:self.max_seq_length]
+            elif seq_len < self.max_seq_length:
+                padding = np.zeros((self.max_seq_length - seq_len, 30), dtype=np.float32)
+                finger_features = np.vstack([finger_features, padding])
 
         # Get label
         label_text = self.labels[idx]
@@ -698,11 +805,16 @@ class WLASLOpenHandsDataset(Dataset):
             raise KeyError(f"Label '{label_text}' not found in vocabulary!")
         label_id = self.gloss_to_id[label_text]
 
-        return {
-            'pose_sequence': torch.tensor(pose_sequence, dtype=torch.float32),  # (T, 75, 2)
+        result = {
+            'pose_sequence': torch.tensor(pose_sequence, dtype=torch.float32),  # (T, 83, 3)
             'attention_mask': torch.tensor(attention_mask, dtype=torch.float32),  # (T,)
             'label': torch.tensor(label_id, dtype=torch.long)
         }
+
+        if self.use_finger_features:
+            result['finger_features'] = torch.tensor(finger_features, dtype=torch.float32)  # (T, 30)
+
+        return result
 
 
 # =============================================================================
@@ -827,34 +939,46 @@ class WLASLDatasetLoader:
 
 
 if __name__ == "__main__":
-    # Test the implementation - UPDATED for 75-point model
-    print("Testing ENHANCED OpenHands Model (75-point pose+hands)")
+    # Test the implementation - UPDATED for 83-point xyz + finger features
+    print("Testing ENHANCED OpenHands Model (83pt xyz + finger features)")
     print("=" * 60)
 
     config = OpenHandsConfig(vocab_size=50)
     model = OpenHandsModel(config)
 
-    # Test with dummy data - UPDATED dimensions
+    # Test with dummy data - UPDATED dimensions for 83pt xyz + finger features
     batch_size = 4
     seq_len = 100
-    dummy_pose = torch.randn(batch_size, seq_len, 75, 2)  # 75 keypoints, 2 channels
+    dummy_pose = torch.randn(batch_size, seq_len, 83, 3)  # 83 keypoints, 3 channels (xyz)
     dummy_mask = torch.ones(batch_size, seq_len)
+    dummy_finger = torch.randn(batch_size, seq_len, 30)  # 30 finger features
 
-    print(f"Input shape: {dummy_pose.shape}")  # (4, 100, 75, 2)
+    print(f"Pose shape: {dummy_pose.shape}")  # (4, 100, 83, 3)
+    print(f"Finger features shape: {dummy_finger.shape}")  # (4, 100, 30)
     print(f"Model config:")
     print(f"  Keypoints: {config.num_pose_keypoints}")
     print(f"  Channels: {config.pose_channels}")
-    print(f"  Features: {config.pose_features}")
+    print(f"  Coord features: {config.pose_coord_features}")
+    print(f"  Finger features: {config.finger_features}")
+    print(f"  Total features: {config.pose_features}")
     print(f"  Hidden size: {config.hidden_size}")
     print(f"  Layers: {config.num_hidden_layers}")
     print(f"  Attention heads: {config.num_attention_heads}")
     print()
 
-    logits = model(dummy_pose, dummy_mask)
-    print(f"Output shape: {logits.shape}")  # Should be (4, 50)
+    # Test WITH finger features
+    logits = model(dummy_pose, dummy_mask, dummy_finger)
+    print(f"Output shape (with finger features): {logits.shape}")  # Should be (4, 50)
+
+    # Test WITHOUT finger features (backward compatible)
+    config_no_finger = OpenHandsConfig(vocab_size=50, use_finger_features=False, pose_features=249)
+    model_no_finger = OpenHandsModel(config_no_finger)
+    logits_no_finger = model_no_finger(dummy_pose, dummy_mask)
+    print(f"Output shape (no finger features): {logits_no_finger.shape}")  # Should be (4, 50)
+
     print()
-    print("SUCCESS: Enhanced OpenHands architecture (75-point) working!")
-    print("Expected improvements: +10-15% accuracy from full hand detail")
+    print("SUCCESS: Enhanced OpenHands architecture working!")
+    print("Features: 83 keypoints × 3 coords + 30 finger features = 279 features per frame")
 
 # =============================================================================
 # Inference Functions
@@ -889,20 +1013,38 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = 20):
     print(f"SUCCESS: Loaded model from {checkpoint_path}")
     return model, id_to_gloss
 
-def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_path: str = None):
+def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_path: str = None,
+                       use_finger_features: bool = True):
     """Predict gloss from a pickle pose file."""
     if model is None:
         if checkpoint_path is None:
             raise ValueError("Either model or checkpoint_path must be provided")
         model, tokenizer = load_model_from_checkpoint(checkpoint_path)
+
     processor = WLASLPoseProcessor()
     pose_sequence = processor.load_pickle_pose(pickle_path)
     pose_sequence = processor.preprocess_pose_sequence(pose_sequence, augment=False)
+
+    # Extract finger features if enabled
+    finger_tensor = None
+    if use_finger_features and FINGER_FEATURES_AVAILABLE and model.config.use_finger_features:
+        finger_features = processor.extract_finger_features(pose_sequence)
+        # Pad finger features
+        seq_len = len(finger_features)
+        max_length = 256
+        if seq_len > max_length:
+            finger_features = finger_features[:max_length]
+        elif seq_len < max_length:
+            padding = np.zeros((max_length - seq_len, 30), dtype=np.float32)
+            finger_features = np.vstack([finger_features, padding])
+        finger_tensor = torch.tensor(finger_features, dtype=torch.float32).unsqueeze(0)
+
     pose_sequence, attention_mask = processor.pad_or_truncate_sequence(pose_sequence, max_length=256)
     pose_tensor = torch.tensor(pose_sequence, dtype=torch.float32).unsqueeze(0)
     mask_tensor = torch.tensor(attention_mask, dtype=torch.float32).unsqueeze(0)
+
     with torch.no_grad():
-        logits = model(pose_tensor, mask_tensor)
+        logits = model(pose_tensor, mask_tensor, finger_tensor)
         probs = torch.softmax(logits, dim=-1)
         confidence, pred_id = torch.max(probs, dim=-1)
         pred_id = pred_id.item()

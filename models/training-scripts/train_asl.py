@@ -149,7 +149,11 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
         )
         model = OpenHandsModel(config)
         print(f"MODEL: OpenHands Architecture ({model_size.upper()}) for {num_classes} classes")
-        print(f"   Pose keypoints: {config.num_pose_keypoints}")
+        print(f"   Pose keypoints: {config.num_pose_keypoints} (83pt = 33 pose + 42 hands + 8 face)")
+        print(f"   Pose channels: {config.pose_channels} (xyz coordinates)")
+        print(f"   Coord features: {config.pose_coord_features} ({config.num_pose_keypoints} × {config.pose_channels})")
+        print(f"   Finger features: {config.finger_features} (enabled: {config.use_finger_features})")
+        print(f"   Total features: {config.pose_features} per frame")
         print(f"   Hidden size: {config.hidden_size}")
         print(f"   Transformer layers: {config.num_hidden_layers}")
         print(f"   Attention heads: {config.num_attention_heads}")
@@ -175,9 +179,13 @@ def evaluate_model_improved(model, data_loader, device):
             pose_sequences = batch['pose_sequence'].to(device)
             attention_masks = batch['attention_mask'].to(device)
             labels = batch['label'].to(device)
+            # Get finger features if available
+            finger_features = batch.get('finger_features')
+            if finger_features is not None:
+                finger_features = finger_features.to(device)
 
             # Forward pass
-            logits = model(pose_sequences, attention_masks)
+            logits = model(pose_sequences, attention_masks, finger_features)
             loss = criterion(logits, labels)
 
             # Calculate accuracy
@@ -595,15 +603,17 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     print(f"RATIO: ~{len(train_files)/len(unique_glosses):.1f} train samples per class")
 
     # Create datasets - NO runtime augmentation (all augmentation is pre-done)
+    # Finger features are enabled by default for better hand shape recognition
     train_dataset = WLASLOpenHandsDataset(
         train_files, train_labels, gloss_to_id,
-        MAX_SEQ_LENGTH, augment=False  # No runtime augmentation
+        MAX_SEQ_LENGTH, augment=False, use_finger_features=True
     )
     print(f"AUGMENTATION: No runtime augmentation (using pre-generated augmented data)")
+    print(f"FINGER FEATURES: Enabled (30 derived hand shape features)")
 
     val_dataset = WLASLOpenHandsDataset(
         val_files, val_labels, gloss_to_id,
-        MAX_SEQ_LENGTH, augment=False
+        MAX_SEQ_LENGTH, augment=False, use_finger_features=True
     )
 
     # CLASS BALANCING: Using shuffle for now (WeightedRandomSampler causes hang)
@@ -754,12 +764,16 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
             pose_sequences = batch['pose_sequence'].to(device)
             attention_mask = batch['attention_mask'].to(device)
             labels = batch['label'].to(device)
+            # Get finger features if available
+            finger_features = batch.get('finger_features')
+            if finger_features is not None:
+                finger_features = finger_features.to(device)
 
             if len(labels.shape) > 1:
                 labels = labels.squeeze(-1)
 
             optimizer.zero_grad()
-            logits = model(pose_sequences, attention_mask)
+            logits = model(pose_sequences, attention_mask, finger_features)
             # Label smoothing: prevents overconfident predictions, improves top-k accuracy
             loss = torch.nn.functional.cross_entropy(logits, labels, label_smoothing=label_smoothing)
 
@@ -889,11 +903,12 @@ def test_multi_class_model(num_classes=20, architecture="openhands", model_size=
     unique_glosses = sorted(set(test_labels))
     gloss_to_id = {gloss: i for i, gloss in enumerate(unique_glosses)}
 
-    # Create test dataset (NO AUGMENTATION for testing)
+    # Create test dataset (NO AUGMENTATION for testing, finger features enabled)
     test_dataset = WLASLOpenHandsDataset(
         test_files, test_labels, gloss_to_id,
-        MAX_SEQ_LENGTH, augment=False
+        MAX_SEQ_LENGTH, augment=False, use_finger_features=True
     )
+    print(f"FINGER FEATURES: Enabled (30 derived hand shape features)")
 
     test_loader = DataLoader(test_dataset, batch_size=8, shuffle=False, num_workers=0)
 
