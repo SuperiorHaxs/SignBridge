@@ -223,21 +223,21 @@ class PoseTransforms:
         Center and scale normalize pose keypoints.
 
         Args:
-            pose_data: (frames, 75, 2) or (frames, 54, 2) - x, y coordinates
+            pose_data: (frames, N, 2) or (frames, N, 3) - x, y or x, y, z coordinates
             use_shoulder_center: If True, center on shoulders (robust to video framing).
                                  If False, center on mean of all valid keypoints.
 
         Returns:
-            normalized_data: same shape as input
+            normalized_data: same shape as input (z-coordinate preserved if present)
         """
         frames, keypoints, channels = pose_data.shape
         normalized = pose_data.copy()
 
         for frame_idx in range(frames):
-            frame = normalized[frame_idx]  # (N, 2)
+            frame = normalized[frame_idx]  # (N, channels)
 
-            # Extract x, y coordinates
-            xy_coords = frame[:, :]  # (N, 2)
+            # Extract only x, y coordinates for normalization (preserve z if present)
+            xy_coords = frame[:, :2].copy()  # (N, 2) - only x, y
 
             # Find valid keypoints (non-zero)
             valid_mask = (xy_coords != 0).any(axis=1)
