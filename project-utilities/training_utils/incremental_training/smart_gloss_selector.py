@@ -126,54 +126,55 @@ def stage1_quick_filter(
     all_glosses: dict,
     keep_classes: set,
     accuracy_report: dict = None,
-    min_samples: int = 15,
-    exclude_confusion_targets: bool = True
+    min_samples: int = 3
 ):
     """
-    Stage 1: Quick filtering without model inference.
+    Stage 1: Quick filtering.
 
     Args:
         all_glosses: Dict of gloss -> {count, files}
         keep_classes: Set of classes already in model (to keep)
-        accuracy_report: Optional accuracy report with confusion data
-        min_samples: Minimum samples required
-        exclude_confusion_targets: If True, exclude glosses that current model confuses WITH
+        accuracy_report: Optional accuracy report for confusion target exclusion
+        min_samples: Minimum samples needed for inference testing (default: 3)
 
     Returns:
         List of candidate glosses that pass filtering
     """
     print("\n" + "="*70)
-    print("STAGE 1: Quick Filtering")
+    print("STAGE 1: Filtering")
     print("="*70)
 
     # Get confusion targets from accuracy report
+    # These are glosses that existing classes get MISPREDICTED as
     confusion_targets = set()
-    if accuracy_report and exclude_confusion_targets:
+    if accuracy_report:
         for gloss, stats in accuracy_report.get('per_class_stats', {}).items():
             for confusion in stats.get('top_confusions', []):
                 conf_gloss = confusion['gloss'].upper()
                 # If model confuses X with Y at high rate, Y is a "confusion target"
-                if confusion['percent'] >= 20:  # 20%+ confusion rate
+                if confusion['percent'] >= 25:  # 25%+ confusion rate
                     confusion_targets.add(conf_gloss)
         print(f"  Found {len(confusion_targets)} confusion targets to exclude")
 
     candidates = []
-    excluded_reasons = defaultdict(list)
+    excluded_count = 0
+    confusion_excluded = 0
+    too_few = 0
 
     for gloss, data in all_glosses.items():
         # Skip if already in keep classes
         if gloss in keep_classes:
-            excluded_reasons['already_in_model'].append(gloss)
+            excluded_count += 1
             continue
 
-        # Skip if not enough samples
+        # Need at least a few samples to run inference test
         if data['count'] < min_samples:
-            excluded_reasons['too_few_samples'].append(gloss)
+            too_few += 1
             continue
 
-        # Skip if it's a confusion target (model already confuses things with this)
+        # Skip confusion targets (model already mispredicts other signs as this)
         if gloss in confusion_targets:
-            excluded_reasons['confusion_target'].append(gloss)
+            confusion_excluded += 1
             continue
 
         candidates.append({
@@ -182,14 +183,14 @@ def stage1_quick_filter(
             'files': data['files']
         })
 
-    # Sort by sample count (more samples = better)
+    # Sort by sample count (more samples = better diversity after augmentation)
     candidates.sort(key=lambda x: x['sample_count'], reverse=True)
 
     print(f"\n  Total glosses in pool: {len(all_glosses)}")
-    print(f"  Already in model: {len(excluded_reasons['already_in_model'])}")
-    print(f"  Too few samples (<{min_samples}): {len(excluded_reasons['too_few_samples'])}")
-    print(f"  Confusion targets: {len(excluded_reasons['confusion_target'])}")
-    print(f"  Candidates after Stage 1: {len(candidates)}")
+    print(f"  Already in model: {excluded_count}")
+    print(f"  Too few samples (<{min_samples}): {too_few}")
+    print(f"  Confusion targets excluded: {confusion_excluded}")
+    print(f"  Candidates for Stage 2: {len(candidates)}")
 
     return candidates
 
@@ -460,11 +461,9 @@ def main():
     parser.add_argument("--keep-classes", "-k", type=Path, required=True,
                         help="Path to JSON file with classes to keep")
     parser.add_argument("--accuracy-report", "-a", type=Path, default=None,
-                        help="Path to accuracy report (for confusion exclusion)")
+                        help="Path to accuracy report (for confusion target exclusion)")
     parser.add_argument("--num-to-select", "-n", type=int, default=10,
                         help="Number of new glosses to select (default: 10)")
-    parser.add_argument("--min-samples", type=int, default=15,
-                        help="Minimum samples required per gloss (default: 15)")
     parser.add_argument("--max-candidates", type=int, default=0,
                         help="Maximum candidates to test in Stage 2 (0=all, default: 0)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
@@ -519,16 +518,13 @@ def main():
     all_glosses = get_all_available_glosses(pickle_pool)
     print(f"Found {len(all_glosses)} glosses in pool")
 
-    # Load accuracy report if provided
+    # Load accuracy report if provided (for confusion target exclusion)
     accuracy_report = None
     if args.accuracy_report:
         accuracy_report = load_accuracy_report(args.accuracy_report)
 
     # Stage 1: Quick filtering
-    candidates = stage1_quick_filter(
-        all_glosses, keep_classes, accuracy_report,
-        min_samples=args.min_samples
-    )
+    candidates = stage1_quick_filter(all_glosses, keep_classes, accuracy_report)
 
     # Optionally limit candidates for Stage 2
     if args.max_candidates > 0:

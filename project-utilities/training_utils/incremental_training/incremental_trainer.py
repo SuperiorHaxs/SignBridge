@@ -109,10 +109,6 @@ Example iteration:
                         help="Target number of classes (default: 100)")
     parser.add_argument("--threshold", "-t", type=float, default=70.0,
                         help="Accuracy threshold for keeping classes (default: 70%%)")
-    parser.add_argument("--min-samples", type=int, default=15,
-                        help="Minimum samples required per candidate gloss (default: 15)")
-    parser.add_argument("--max-candidates", type=int, default=0,
-                        help="Maximum candidates to evaluate in smart selector (0=all, default: 0)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
                         help="Output directory (default: incremental_training/)")
     parser.add_argument("--skip-accuracy", action="store_true",
@@ -134,7 +130,6 @@ Example iteration:
     print(f"Current classes: {args.num_classes}")
     print(f"Target classes: {args.target}")
     print(f"Accuracy threshold: {args.threshold}%")
-    print(f"Min samples per gloss: {args.min_samples}")
     print(f"Output directory: {output_dir}")
 
     # Step 1: Analyze per-class accuracy
@@ -197,8 +192,6 @@ Example iteration:
             "--keep-classes", str(keep_classes_file),
             "--accuracy-report", str(accuracy_report),
             "--num-to-select", str(num_to_add),
-            "--min-samples", str(args.min_samples),
-            "--max-candidates", str(args.max_candidates),
             "--output-dir", str(output_dir)
         ],
         f"Smart selection of {num_to_add} new candidates"
