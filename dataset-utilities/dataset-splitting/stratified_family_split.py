@@ -794,26 +794,34 @@ def balance_train_split(
         for gloss, families in train_manifest.get('classes', {}).items():
             total_class_samples = sum(len(fam['files']) for fam in families)
             if total_class_samples > target_train_samples:
-                # Need to remove (total - target) samples
-                excess = total_class_samples - target_train_samples
-                # Remove samples proportionally from each family
-                for family_entry in families:
-                    if excess <= 0:
-                        break
-                    family_files = family_entry['files']
-                    # Keep at least 1 file per family (the original)
-                    removable = len(family_files) - 1
-                    if removable > 0:
-                        # Remove proportionally
-                        to_remove = min(removable, int(excess * len(family_files) / total_class_samples) + 1)
-                        if to_remove > 0:
-                            # Shuffle and keep first (len - to_remove) files, but always keep original
-                            original_file = family_files[0]  # First file is usually original
-                            aug_files = family_files[1:]
-                            random.shuffle(aug_files)
-                            family_entry['files'] = [original_file] + aug_files[:len(aug_files) - to_remove]
-                            files_removed += to_remove
-                            excess -= to_remove
+                # Collect originals (first file of each family) and augmented files separately
+                originals_by_family = {}  # fam_idx -> original file
+                augmented_files = []  # list of (fam_idx, filename)
+
+                for fam_idx, family_entry in enumerate(families):
+                    if family_entry['files']:
+                        # First file is original - ALWAYS keep it
+                        originals_by_family[fam_idx] = family_entry['files'][0]
+                        # Rest are augmented
+                        for f in family_entry['files'][1:]:
+                            augmented_files.append((fam_idx, f))
+
+                num_originals = len(originals_by_family)
+                # How many augmented files can we keep to hit target?
+                aug_to_keep = max(0, target_train_samples - num_originals)
+
+                # Shuffle and select augmented files to keep
+                random.shuffle(augmented_files)
+                kept_augmented = augmented_files[:aug_to_keep]
+
+                # Count removed
+                files_removed += len(augmented_files) - len(kept_augmented)
+
+                # Rebuild family file lists: original + selected augmented
+                for fam_idx, family_entry in enumerate(families):
+                    orig = originals_by_family.get(fam_idx)
+                    augs = [f for fi, f in kept_augmented if fi == fam_idx]
+                    family_entry['files'] = ([orig] if orig else []) + augs
 
         if files_removed > 0:
             print(f"  Capped overrepresented classes: removed {files_removed} samples")
