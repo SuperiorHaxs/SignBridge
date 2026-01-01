@@ -96,19 +96,48 @@ def load_model_and_classes(model_dir: Path):
     return model, id_to_gloss, gloss_to_id, model_config
 
 
-def get_all_available_glosses(pickle_pool: Path):
-    """Get all glosses and their sample counts from pickle pool."""
+def get_all_available_glosses(data_pool: Path, mapping_file: Path = None):
+    """Get all glosses and their sample counts from data pool.
+
+    Supports two modes:
+    1. Directory-based: data_pool contains gloss subdirectories with .pkl/.pose files
+    2. Flat with mapping: data_pool contains flat .pkl files, mapping_file maps video_id -> gloss
+    """
     gloss_samples = {}
 
-    for gloss_dir in pickle_pool.iterdir():
-        if gloss_dir.is_dir():
-            gloss_name = gloss_dir.name.upper()
-            pkl_files = list(gloss_dir.glob("*.pkl"))
-            if pkl_files:
-                gloss_samples[gloss_name] = {
-                    'count': len(pkl_files),
-                    'files': [str(f) for f in pkl_files]
-                }
+    # Check if this is a flat structure with a mapping file
+    if mapping_file and mapping_file.exists():
+        # Flat structure: use mapping to group files by gloss
+        with open(mapping_file, 'r') as f:
+            mapping = json.load(f)
+
+        # Group by gloss
+        from collections import defaultdict
+        gloss_files = defaultdict(list)
+
+        for video_id, info in mapping.items():
+            gloss = info['gloss'].upper()
+            pkl_file = data_pool / f"{video_id}.pkl"
+            if pkl_file.exists():
+                gloss_files[gloss].append(str(pkl_file))
+
+        for gloss, files in gloss_files.items():
+            gloss_samples[gloss] = {
+                'count': len(files),
+                'files': files
+            }
+    else:
+        # Directory-based structure
+        for gloss_dir in data_pool.iterdir():
+            if gloss_dir.is_dir():
+                gloss_name = gloss_dir.name.upper()
+                # Look for .pkl files
+                data_files = list(gloss_dir.glob("*.pkl"))
+                if data_files:
+                    gloss_samples[gloss_name] = {
+                        'count': len(data_files),
+                        'files': [str(f) for f in data_files]
+                    }
 
     return gloss_samples
 
@@ -466,6 +495,8 @@ def main():
                         help="Number of new glosses to select (default: 10)")
     parser.add_argument("--max-candidates", type=int, default=0,
                         help="Maximum candidates to test in Stage 2 (0=all, default: 0)")
+    parser.add_argument("--data-pool", "-d", type=Path, default=None,
+                        help="Path to data pool with all glosses (default: pose_files_by_gloss)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
                         help="Output directory (default: script directory)")
 
@@ -496,26 +527,40 @@ def main():
     model, id_to_gloss, gloss_to_id, model_config = load_model_and_classes(args.model_dir)
     model = model.to(device)
 
-    # Get pickle pool path
+    # Get data pool path (all available glosses)
     proj_config = get_config()
-    # Try to find pickle_pool from various sources
-    pickle_pool = None
-    for num_classes in [100, 125, 43]:
-        if num_classes in proj_config.dataset_splits:
-            splits = proj_config.dataset_splits[num_classes]
-            if 'pickle_pool' in splits:
-                pickle_pool = splits['pickle_pool']
-                break
+    mapping_file = None
 
-    if pickle_pool is None:
-        pickle_pool = proj_config.dataset_root.parent / "augmented_pool" / "pickle"
+    if args.data_pool:
+        data_pool = args.data_pool
+    else:
+        # Default to complete pickle_files with mapping (all 2000 glosses)
+        complete_pool = proj_config.dataset_root / "pickle_files"
+        complete_mapping = proj_config.dataset_root / "video_to_gloss_mapping.json"
 
-    pickle_pool = Path(pickle_pool)
-    print(f"Pickle pool: {pickle_pool}")
+        if complete_pool.exists() and complete_mapping.exists():
+            data_pool = complete_pool
+            mapping_file = complete_mapping
+        else:
+            # Fallback to augmented pickle pool
+            data_pool = None
+            for num_classes in [100, 125, 43]:
+                if num_classes in proj_config.dataset_splits:
+                    splits = proj_config.dataset_splits[num_classes]
+                    if 'pickle_pool' in splits:
+                        data_pool = splits['pickle_pool']
+                        break
+            if data_pool is None:
+                data_pool = proj_config.dataset_root.parent / "augmented_pool" / "pickle"
+
+    data_pool = Path(data_pool)
+    print(f"Data pool: {data_pool}")
+    if mapping_file:
+        print(f"Using mapping: {mapping_file}")
 
     # Get all available glosses
     print("\nScanning available glosses...")
-    all_glosses = get_all_available_glosses(pickle_pool)
+    all_glosses = get_all_available_glosses(data_pool, mapping_file)
     print(f"Found {len(all_glosses)} glosses in pool")
 
     # Load accuracy report if provided (for confusion target exclusion)
