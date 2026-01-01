@@ -111,8 +111,8 @@ Example iteration:
                         help="Accuracy threshold for keeping classes (default: 70%%)")
     parser.add_argument("--min-samples", type=int, default=15,
                         help="Minimum samples required per candidate gloss (default: 15)")
-    parser.add_argument("--max-candidates", type=int, default=200,
-                        help="Maximum candidates to evaluate in smart selector (default: 200)")
+    parser.add_argument("--max-candidates", type=int, default=0,
+                        help="Maximum candidates to evaluate in smart selector (0=all, default: 0)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
                         help="Output directory (default: incremental_training/)")
     parser.add_argument("--skip-accuracy", action="store_true",

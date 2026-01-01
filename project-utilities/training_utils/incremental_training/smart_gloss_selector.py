@@ -465,8 +465,8 @@ def main():
                         help="Number of new glosses to select (default: 10)")
     parser.add_argument("--min-samples", type=int, default=15,
                         help="Minimum samples required per gloss (default: 15)")
-    parser.add_argument("--max-candidates", type=int, default=200,
-                        help="Maximum candidates to test in Stage 2 (default: 200)")
+    parser.add_argument("--max-candidates", type=int, default=0,
+                        help="Maximum candidates to test in Stage 2 (0=all, default: 0)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
                         help="Output directory (default: script directory)")
 
@@ -530,9 +530,12 @@ def main():
         min_samples=args.min_samples
     )
 
-    # Limit candidates for Stage 2
-    candidates = candidates[:args.max_candidates]
-    print(f"\n  Limited to top {len(candidates)} candidates for Stage 2")
+    # Optionally limit candidates for Stage 2
+    if args.max_candidates > 0:
+        candidates = candidates[:args.max_candidates]
+        print(f"\n  Limited to top {len(candidates)} candidates for Stage 2")
+    else:
+        print(f"\n  Testing all {len(candidates)} candidates in Stage 2")
 
     # Stage 2: Distinctiveness test
     results = stage2_distinctiveness_test(
