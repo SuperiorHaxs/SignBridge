@@ -664,6 +664,12 @@ def balance_train_split(
     print(f"  Total samples: {sum(train_samples.values())}")
     print(f"  Sample range: {min(train_samples.values())} - {max(train_samples.values())}")
 
+    # Cap classes that exceed the target (subsample to target)
+    classes_over_target = [c for c, count in train_samples.items() if count > target_train_samples]
+    if classes_over_target:
+        print(f"\n  Classes over target ({target_train_samples}): {len(classes_over_target)}")
+        print(f"  Will cap these to ~{target_train_samples} samples each")
+
     # Calculate balancing plan
     balancing_plan = calculate_train_balancing_augmentations(
         train_class_samples=train_samples,
@@ -781,6 +787,37 @@ def balance_train_split(
                         family_entry['files'].extend(new_files)
                         files_added_to_manifest += len(new_files)
 
+        # Cap classes that exceed target (subsample to target_train_samples)
+        import random
+        random.seed(42)  # Reproducible subsampling
+        files_removed = 0
+        for gloss, families in train_manifest.get('classes', {}).items():
+            total_class_samples = sum(len(fam['files']) for fam in families)
+            if total_class_samples > target_train_samples:
+                # Need to remove (total - target) samples
+                excess = total_class_samples - target_train_samples
+                # Remove samples proportionally from each family
+                for family_entry in families:
+                    if excess <= 0:
+                        break
+                    family_files = family_entry['files']
+                    # Keep at least 1 file per family (the original)
+                    removable = len(family_files) - 1
+                    if removable > 0:
+                        # Remove proportionally
+                        to_remove = min(removable, int(excess * len(family_files) / total_class_samples) + 1)
+                        if to_remove > 0:
+                            # Shuffle and keep first (len - to_remove) files, but always keep original
+                            original_file = family_files[0]  # First file is usually original
+                            aug_files = family_files[1:]
+                            random.shuffle(aug_files)
+                            family_entry['files'] = [original_file] + aug_files[:len(aug_files) - to_remove]
+                            files_removed += to_remove
+                            excess -= to_remove
+
+        if files_removed > 0:
+            print(f"  Capped overrepresented classes: removed {files_removed} samples")
+
         # Update total samples count
         train_manifest['total_samples'] = sum(
             len(fam['files'])
@@ -796,19 +833,34 @@ def balance_train_split(
     else:
         print(f"  Warning: Train manifest not found at {train_manifest_path}")
 
-    # Calculate final statistics
+    # Calculate final statistics (recalculate from actual manifest after capping)
     final_stats = {}
-    for class_name, plan in balancing_plan.items():
-        final_stats[class_name] = {
-            'before': plan['current_samples'],
-            'after': plan['final_samples'],
-            'target': target_train_samples,
-            'achieved': plan['final_samples'] >= target_train_samples,
-        }
+    if train_manifest_path.exists():
+        with open(train_manifest_path, 'r') as f:
+            final_manifest = json.load(f)
+        for gloss, families in final_manifest.get('classes', {}).items():
+            actual_samples = sum(len(fam['files']) for fam in families)
+            original_count = balancing_plan.get(gloss, {}).get('current_samples', actual_samples)
+            final_stats[gloss] = {
+                'before': original_count,
+                'after': actual_samples,
+                'target': target_train_samples,
+                'achieved': actual_samples >= target_train_samples,
+            }
+    else:
+        # Fallback to balancing plan
+        for class_name, plan in balancing_plan.items():
+            final_stats[class_name] = {
+                'before': plan['current_samples'],
+                'after': min(plan['final_samples'], target_train_samples),
+                'target': target_train_samples,
+                'achieved': plan['final_samples'] >= target_train_samples,
+            }
 
     achieved_count = sum(1 for s in final_stats.values() if s['achieved'])
-    final_min = min(s['after'] for s in final_stats.values())
-    final_max = max(s['after'] for s in final_stats.values())
+    final_samples = [s['after'] for s in final_stats.values()]
+    final_min = min(final_samples) if final_samples else 0
+    final_max = max(final_samples) if final_samples else 0
 
     print(f"\nBalancing complete!")
     print(f"  Additional samples generated: {total_generated}")

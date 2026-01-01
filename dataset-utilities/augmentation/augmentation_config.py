@@ -21,7 +21,7 @@ from collections import defaultdict
 # The two-phase approach ensures exactly this many samples in train:
 #   Phase 1: Generate base augmentations for pool (enough for val/test)
 #   Phase 2: After splitting, augment train families to reach this target
-TARGET_TRAIN_SAMPLES_PER_CLASS = 200
+TARGET_TRAIN_SAMPLES_PER_CLASS = 50
 
 # Legacy setting (kept for backward compatibility)
 TARGET_SAMPLES_PER_CLASS = TARGET_TRAIN_SAMPLES_PER_CLASS

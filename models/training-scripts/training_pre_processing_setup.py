@@ -606,7 +606,7 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
     print_section("Step 4b: Two-Phase Splitting + Train Balancing")
 
     print_status("Phase 1: Splitting families into train/val/test...", "INFO")
-    print_status("Phase 2: Balancing train to exactly 200 samples/class...", "INFO")
+    print_status(f"Phase 2: Balancing train to ~{TARGET_TRAIN_SAMPLES_PER_CLASS} samples/class...", "INFO")
     try:
         results = run_two_phase_pipeline(
             input_dir=pickle_pool_dir,
@@ -624,7 +624,7 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
             samples = [s['after'] for s in final_stats.values()]
             print_status(f"Train samples per class: {min(samples)} - {max(samples)}", "INFO")
             achieved = sum(1 for s in final_stats.values() if s['achieved'])
-            print_status(f"Classes at target (200): {achieved}/{len(final_stats)}", "SUCCESS")
+            print_status(f"Classes at target ({TARGET_TRAIN_SAMPLES_PER_CLASS}): {achieved}/{len(final_stats)}", "SUCCESS")
 
         print_status("Two-phase pipeline complete!", "SUCCESS")
     except Exception as e:
