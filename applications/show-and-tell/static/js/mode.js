@@ -6,14 +6,16 @@
 const AppMode = {
     DEMO: 'demo',
     LIVE: 'live',
-    LIVE_DETAILED: 'live_detailed'
+    LIVE_DETAILED: 'live_detailed',
+    CLOSED_CAPTIONS: 'closed_captions'
 };
 
 // Mode display names
 const ModeNames = {
     [AppMode.DEMO]: 'Preset Demo',
     [AppMode.LIVE]: 'Live',
-    [AppMode.LIVE_DETAILED]: 'Upload'
+    [AppMode.LIVE_DETAILED]: 'Upload',
+    [AppMode.CLOSED_CAPTIONS]: 'Captions'
 };
 
 // Get current mode from sessionStorage
@@ -51,9 +53,11 @@ function setMode(mode) {
         sessionStorage.clear();
         sessionStorage.setItem('appMode', mode);
 
-        // Redirect to Phase 1 (different start page for Live mode)
+        // Redirect to Phase 1 (different start page for each mode)
         if (mode === AppMode.LIVE) {
             window.location.href = '/live-setup';
+        } else if (mode === AppMode.CLOSED_CAPTIONS) {
+            window.location.href = '/closed-captions';
         } else {
             window.location.href = '/';
         }
@@ -69,7 +73,7 @@ function updateToggleUI(mode) {
     });
 
     // Update body class for CSS styling
-    document.body.classList.remove('mode-live', 'mode-demo', 'mode-live_detailed');
+    document.body.classList.remove('mode-live', 'mode-demo', 'mode-live_detailed', 'mode-closed_captions');
     document.body.classList.add(`mode-${mode}`);
 
     // Update breadcrumb visibility based on mode
@@ -81,6 +85,10 @@ function updateToggleUI(mode) {
             // Live mode - show 4-step breadcrumb (Setup → Learn → Record → Results)
             detailedBreadcrumb.style.display = 'none';
             liveBreadcrumb.style.display = 'flex';
+        } else if (mode === AppMode.CLOSED_CAPTIONS) {
+            // Closed Captions mode - hide all breadcrumbs (single page)
+            detailedBreadcrumb.style.display = 'none';
+            liveBreadcrumb.style.display = 'none';
         } else {
             // Demo or Detailed mode - show 5-step breadcrumb
             detailedBreadcrumb.style.display = 'flex';
@@ -100,11 +108,17 @@ function initializeMode() {
 
     console.log('Mode initialized:', mode, 'Fast mode:', mode === AppMode.LIVE);
 
-    // If in LIVE mode and on the main convert page, redirect to live-setup
-    // (Live mode uses the new 4-step workflow starting at /live-setup)
-    if (mode === AppMode.LIVE && window.location.pathname === '/') {
-        window.location.href = '/live-setup';
-        return;
+    // Handle mode-specific redirects from main page
+    if (window.location.pathname === '/') {
+        if (mode === AppMode.LIVE) {
+            // Live mode uses 4-step workflow starting at /live-setup
+            window.location.href = '/live-setup';
+            return;
+        } else if (mode === AppMode.CLOSED_CAPTIONS) {
+            // Closed Captions mode is a single page
+            window.location.href = '/closed-captions';
+            return;
+        }
     }
 
     updateToggleUI(mode);
@@ -138,6 +152,11 @@ function isLiveDetailedMode() {
     return getMode() === AppMode.LIVE_DETAILED;
 }
 
+// Check if in closed captions mode
+function isClosedCaptionsMode() {
+    return getMode() === AppMode.CLOSED_CAPTIONS;
+}
+
 // Get selected demo sample
 function getSelectedSample() {
     const sampleJson = sessionStorage.getItem('demoSample');
@@ -162,6 +181,7 @@ window.setMode = setMode;
 window.isDemoMode = isDemoMode;
 window.isLiveMode = isLiveMode;
 window.isLiveDetailedMode = isLiveDetailedMode;
+window.isClosedCaptionsMode = isClosedCaptionsMode;
 window.isFastMode = isFastMode;
 window.getSelectedSample = getSelectedSample;
 window.setSelectedSample = setSelectedSample;

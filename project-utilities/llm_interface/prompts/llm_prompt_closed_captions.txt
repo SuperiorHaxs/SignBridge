@@ -1,0 +1,98 @@
+TASK: Generate a meaningful English sentence from ASL video sign predictions.
+
+IMPORTANT: These predictions come from an imperfect model. Some predictions may be wrong.
+Your goal is to create a MEANINGFUL, COHERENT sentence - not just a grammatically correct one.
+
+HOW TO SELECT WORDS:
+
+1. MEANING FIRST: Only include words that contribute to a coherent meaning.
+   - If a position's options don't fit the context, SKIP that position entirely
+   - It's better to have a shorter meaningful sentence than a longer nonsensical one
+   - Ask yourself: "Does this sentence make real-world sense?"
+
+2. SEMANTIC COHERENCE: Look for words that naturally go together.
+   - Examples: mother+help+child (caregiving), basketball+play+time (sports)
+   - Reject combinations like: basketball+finish+year+change (no clear meaning)
+
+3. USE ALTERNATIVES: Try all options from each position's top-k predictions.
+   - Lower confidence alternatives often make more sense than high-confidence ones
+   - Example: Position shows 'change' (80%) but 'practice' (15%) fits better with 'basketball'
+
+4. SKIP NOISE: If ALL options for a position seem like prediction errors, skip it.
+   - Signs for similar-looking words are often confused
+   - Random predictions that don't fit ANY context should be omitted
+
+5. POSITION FLEXIBILITY: You can arrange selected words in any grammatical order.
+
+6. RELATIONAL NOUNS: Add "my" or "the" for family/relationship words as subjects.
+   - "mother help" → "My mother helps..."
+   - "friend visit" → "My friend visits..."
+
+INPUT FORMAT:
+- Word options with confidence scores for each position
+- Confidence = model certainty, NOT semantic relevance
+- You may skip positions that don't contribute to meaning
+
+CRITICAL RULES:
+1. MEANING OVER COMPLETENESS: A 3-word meaningful sentence beats a 6-word nonsense sentence
+2. Select at most ONE word per position (no mixing alternatives)
+3. Your "selections" array lists words you actually used (can be fewer than total positions)
+4. If NO coherent sentence is possible, return your best attempt with "low_confidence": true
+
+{context_section}
+
+Word Predictions:
+{gloss_details}
+
+EXAMPLES:
+
+Example 1 - Normal case (use all positions):
+Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
+Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
+Position 3: 'child' (70%), 'candy' (16%), 'deaf' (11%)
+
+✓ CORRECT: {{"selections": ["mother", "help", "child"], "sentence": "My mother helps the child."}}
+
+Example 2 - Skip nonsensical position:
+Position 1: 'basketball' (75%), 'ball' (15%), 'orange' (5%)
+Position 2: 'play' (82%), 'game' (10%), 'fun' (5%)
+Position 3: 'change' (60%), 'different' (20%), 'time' (15%)
+Position 4: 'year' (45%), 'finish' (30%), 'old' (20%)
+
+✓ CORRECT: {{"selections": ["basketball", "play"], "sentence": "I play basketball."}}
+   Why: Positions 3-4 don't fit coherently, so they were skipped
+
+❌ WRONG: {{"selections": ["basketball", "play", "change", "year"], "sentence": "The basketball play will change this year."}}
+   Why: Grammatically correct but semantically meaningless
+
+Example 3 - Use lower-confidence alternative:
+Position 1: 'tall' (70%), 'son' (20%), 'man' (8%)
+Position 2: 'change' (55%), 'grow' (25%), 'big' (15%)
+Position 3: 'change' (80%), 'different' (12%), 'new' (5%)
+
+✓ CORRECT: {{"selections": ["son", "grow", "tall"], "sentence": "My son is growing tall."}}
+   Why: Lower-confidence words create meaningful sentence about a child growing
+
+❌ WRONG: {{"selections": ["tall", "change", "change"], "sentence": "The tall change is a change."}}
+   Why: Uses high-confidence words but creates nonsense
+
+Example 4 - Low confidence output:
+Position 1: 'purple' (30%), 'grape' (25%), 'color' (20%)
+Position 2: 'finish' (40%), 'done' (35%), 'complete' (20%)
+Position 3: 'elephant' (50%), 'big' (30%), 'animal' (15%)
+
+✓ ACCEPTABLE: {{"selections": ["elephant", "big"], "sentence": "The elephant is big.", "low_confidence": true}}
+   Why: Best possible sentence, but marked as uncertain
+
+OUTPUT FORMAT (JSON only):
+{{
+  "selections": ["word1", "word2"],
+  "sentence": "Your meaningful sentence here.",
+  "low_confidence": false
+}}
+
+Requirements:
+- "selections" = words you used (may be fewer than total positions)
+- "sentence" = meaningful sentence using selected words
+- "low_confidence" = true if you're unsure about the interpretation
+- Output ONLY the JSON object

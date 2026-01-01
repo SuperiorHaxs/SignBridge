@@ -88,6 +88,10 @@ import pickle
 import cv2
 import io
 import threading
+import time
+
+# Import Caption Service for closed-captions mode
+from caption_service import CaptionService, config as cc_config
 
 # MediaPipe for in-memory pose extraction (fast path)
 try:
@@ -2575,6 +2579,209 @@ def process_signs_batch():
         import traceback
         traceback.print_exc()
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ============================================================================
+# CLOSED-CAPTIONS MODE
+# ============================================================================
+
+# Global caption service instances (per session)
+_caption_services = {}
+_caption_services_lock = threading.Lock()
+
+
+def get_caption_service(session_id: str) -> CaptionService:
+    """Get or create caption service for session."""
+    with _caption_services_lock:
+        if session_id not in _caption_services:
+            session_dir = TEMP_DIR / session_id / "captions"
+            session_dir.mkdir(parents=True, exist_ok=True)
+
+            # Get model (uses cached global model)
+            model, tokenizer = get_model()
+
+            # Create service
+            service = CaptionService(
+                session_dir=session_dir,
+                model=model,
+                tokenizer=tokenizer
+            )
+            _caption_services[session_id] = service
+
+        return _caption_services[session_id]
+
+
+@app.route('/closed-captions')
+def closed_captions_page():
+    """Closed-captions mode page."""
+    return render_template('closed_captions.html')
+
+
+@app.route('/api/cc/start', methods=['POST'])
+def cc_start_session():
+    """Start closed-captions session."""
+    session_id = session.get('session_id')
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+
+    service = get_caption_service(session_id)
+    service.start()
+
+    return jsonify({
+        'success': True,
+        'session_id': session_id,
+        'message': 'Caption service started'
+    })
+
+
+@app.route('/api/cc/stop', methods=['POST'])
+def cc_stop_session():
+    """Stop closed-captions session."""
+    session_id = session.get('session_id')
+    if not session_id:
+        return jsonify({'success': False, 'error': 'No active session'}), 400
+
+    final_caption = ''
+    with _caption_services_lock:
+        if session_id in _caption_services:
+            service = _caption_services[session_id]
+            service.stop()  # This flushes remaining glosses
+            final_caption = service.get_current_caption()
+
+    return jsonify({
+        'success': True,
+        'message': 'Caption service stopped',
+        'final_caption': final_caption
+    })
+
+
+@app.route('/api/cc/reset', methods=['POST'])
+def cc_reset_session():
+    """Reset closed-captions session."""
+    session_id = session.get('session_id')
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+
+    with _caption_services_lock:
+        if session_id in _caption_services:
+            _caption_services[session_id].reset()
+            del _caption_services[session_id]
+
+    return jsonify({'success': True, 'message': 'Session reset'})
+
+
+@app.route('/api/cc/process-sign', methods=['POST'])
+def cc_process_sign():
+    """
+    Process a single sign video blob for closed-captions.
+
+    Receives video blob, extracts pose, predicts gloss, writes to context.
+    """
+    session_id = session.get('session_id')
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        session['session_id'] = session_id
+
+    if 'video' not in request.files:
+        return jsonify({'success': False, 'error': 'No video provided'}), 400
+
+    video_file = request.files['video']
+    video_bytes = video_file.read()
+
+    if len(video_bytes) == 0:
+        return jsonify({'success': False, 'error': 'Empty video'}), 400
+
+    try:
+        session_dir = get_session_dir()
+
+        # Extract pose using MediaPipe (pass raw bytes)
+        frames = decode_video_to_frames(video_bytes)
+        if not frames:
+            return jsonify({'success': False, 'error': 'Could not decode video'}), 400
+
+        poses = extract_poses_from_frames(frames)
+        if poses is None:
+            return jsonify({'success': False, 'error': 'Could not extract poses'}), 400
+
+        # Convert to pickle format (model expects x, y only - 150 features)
+        pickle_data = {
+            'keypoints': poses[:, :, :2],  # x, y only (NOT xyz)
+            'confidences': poses[:, :, 3] if poses.shape[2] > 3 else np.ones(poses.shape[:2]),
+        }
+
+        pickle_path = session_dir / f"sign_{int(time.time() * 1000)}.pkl"
+        with open(pickle_path, 'wb') as f:
+            pickle.dump(pickle_data, f)
+
+        # Get model and predict
+        model, tokenizer = get_model()
+        prediction = predict_pose_file(str(pickle_path), model=model, tokenizer=tokenizer)
+
+        # Get caption service and add gloss
+        service = get_caption_service(session_id)
+
+        gloss_data = {
+            'gloss': prediction['gloss'],
+            'confidence': prediction['confidence'],
+            'top_k': prediction['top_k_predictions'][:3]
+        }
+
+        # Add to context and write to file
+        service.context.add_gloss(gloss_data)
+        service._write_gloss_to_file(gloss_data)
+
+        # Cleanup temp pickle
+        try:
+            pickle_path.unlink()
+        except:
+            pass
+
+        return jsonify({
+            'success': True,
+            'gloss': prediction['gloss'],
+            'confidence': prediction['confidence'],
+            'top_k': prediction['top_k_predictions'][:3]
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/cc/get-caption', methods=['GET'])
+def cc_get_caption():
+    """Get current caption from sentence file."""
+    session_id = session.get('session_id')
+    if not session_id:
+        return jsonify({'caption': '', 'gloss_count': 0})
+
+    service = get_caption_service(session_id)
+
+    # Read from file (what the file watcher writes)
+    caption = service.get_sentence_file_content()
+    state = service.get_state()
+
+    return jsonify({
+        'caption': caption,
+        'running_caption': state['running_caption'],
+        'gloss_count': state['gloss_count'],
+        'processed_count': state['processed_count'],
+        'is_running': state['is_running']
+    })
+
+
+@app.route('/api/cc/config', methods=['GET'])
+def cc_get_config():
+    """Get closed-captions configuration for frontend."""
+    return jsonify({
+        'motion_config': cc_config.MOTION_CONFIG,
+        'caption_buffer_size': cc_config.CAPTION_BUFFER_SIZE,
+        'file_check_interval': cc_config.FILE_CHECK_INTERVAL,
+        'min_translation_delay': cc_config.MIN_TRANSLATION_DELAY,
+    })
 
 
 # ============================================================================
