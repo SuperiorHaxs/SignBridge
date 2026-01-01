@@ -2,22 +2,25 @@
 """
 incremental_trainer.py
 
-Orchestrates the incremental training pipeline:
-1. Analyze per-class accuracy of existing model
-2. Compute embeddings for existing and candidate glosses
-3. Select next batch of glosses to add
+Iterative training pipeline to build up to a target number of classes
+while maintaining high accuracy.
 
-This script generates a gloss list that you can pass to the existing
-training scripts (training_pre_processing_setup.py and train_asl.py).
+Workflow:
+1. Analyze per-class accuracy of current model
+2. Keep classes above accuracy threshold
+3. Use smart selector to fill gap to target (e.g., 100 classes)
+4. Output gloss list for next training iteration
+
+Iterate until convergence (most classes are stable high-accuracy).
 
 Usage:
-    python incremental_trainer.py --model-dir <path> --num-classes 100
-    python incremental_trainer.py -m ./models/wlasl_100_class_model -n 100 --threshold 70 --add 5
+    python incremental_trainer.py --model-dir <path> --num-classes 43 --target 100
+    python incremental_trainer.py -m ./models/wlasl_43_class_model -n 43 -T 100 --threshold 70
 
 Output:
-    - accuracy_report.json
-    - gloss_embeddings.json
-    - next_glosses.json (final gloss list for training)
+    - accuracy_report.json: Per-class accuracy analysis
+    - smart_selection_report.json: Candidate evaluation details
+    - gloss_list_<N>_class.json: Final gloss list for training
 """
 
 import os
@@ -58,22 +61,43 @@ def run_step(script_name: str, args: list, description: str):
     return True
 
 
+def extract_keep_classes(accuracy_report_path: Path, threshold: float):
+    """Extract classes above threshold from accuracy report."""
+    with open(accuracy_report_path, 'r') as f:
+        report = json.load(f)
+
+    keep_classes = report['recommendations']['keep_classes']
+    drop_classes = report['recommendations']['drop_classes']
+
+    return keep_classes, drop_classes, report['summary']
+
+
+def save_keep_classes_list(keep_classes: list, output_path: Path):
+    """Save keep classes to a JSON file for smart selector."""
+    # Convert to lowercase for consistency
+    glosses = [g.lower() for g in keep_classes]
+    with open(output_path, 'w') as f:
+        json.dump(glosses, f)
+    return output_path
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Orchestrate incremental training pipeline",
+        description="Iterative training pipeline to reach target class count",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Example workflow:
-  1. Train initial model with N classes
-  2. Run this script to get next gloss list
-  3. Use gloss list with training_pre_processing_setup.py
-  4. Train new model with train_asl.py
-  5. Repeat from step 2
+Iterative Workflow:
+  1. Train initial model (e.g., 43 high-accuracy classes)
+  2. Run this script to generate 100-class gloss list
+  3. Train new 100-class model
+  4. Run this script again on new model
+  5. Repeat until accuracy stabilizes
 
-The pipeline generates:
-  - accuracy_report.json: Per-class accuracy analysis
-  - gloss_embeddings.json: Model embeddings for similarity
-  - next_glosses.json: Final gloss list for training
+Example iteration:
+  Iteration 1: 43 keep + 57 new = 100 -> Train -> 60 classes pass threshold
+  Iteration 2: 60 keep + 40 new = 100 -> Train -> 75 classes pass threshold
+  Iteration 3: 75 keep + 25 new = 100 -> Train -> 85 classes pass threshold
+  ...converges to stable high-accuracy 100-class model
         """
     )
 
@@ -81,20 +105,18 @@ The pipeline generates:
                         help="Path to trained model directory")
     parser.add_argument("--num-classes", "-n", type=int, required=True,
                         help="Number of classes the model was trained on")
-    parser.add_argument("--threshold", "-t", type=float, default=50.0,
-                        help="Accuracy threshold for keeping classes (default: 50%%)")
-    parser.add_argument("--add", "-a", type=int, default=5,
-                        help="Number of new glosses to add (default: 5)")
-    parser.add_argument("--min-samples", type=int, default=10,
-                        help="Minimum samples required per gloss (default: 10)")
-    parser.add_argument("--max-embedding-samples", type=int, default=50,
-                        help="Max samples per class for embeddings (default: 50)")
+    parser.add_argument("--target", "-T", type=int, default=100,
+                        help="Target number of classes (default: 100)")
+    parser.add_argument("--threshold", "-t", type=float, default=70.0,
+                        help="Accuracy threshold for keeping classes (default: 70%%)")
+    parser.add_argument("--min-samples", type=int, default=15,
+                        help="Minimum samples required per candidate gloss (default: 15)")
+    parser.add_argument("--max-candidates", type=int, default=200,
+                        help="Maximum candidates to evaluate in smart selector (default: 200)")
     parser.add_argument("--output-dir", "-o", type=Path, default=None,
                         help="Output directory (default: incremental_training/)")
     parser.add_argument("--skip-accuracy", action="store_true",
                         help="Skip accuracy analysis (use existing report)")
-    parser.add_argument("--skip-embeddings", action="store_true",
-                        help="Skip embedding computation (use existing)")
 
     args = parser.parse_args()
 
@@ -103,16 +125,15 @@ The pipeline generates:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     accuracy_report = output_dir / "accuracy_report.json"
-    embeddings_file = output_dir / "gloss_embeddings.json"
-    next_glosses_file = output_dir / "next_glosses.json"
+    keep_classes_file = output_dir / "keep_classes_temp.json"
 
     print("="*70)
     print("INCREMENTAL TRAINING PIPELINE")
     print("="*70)
     print(f"Model directory: {args.model_dir}")
-    print(f"Number of classes: {args.num_classes}")
+    print(f"Current classes: {args.num_classes}")
+    print(f"Target classes: {args.target}")
     print(f"Accuracy threshold: {args.threshold}%")
-    print(f"Glosses to add: {args.add}")
     print(f"Min samples per gloss: {args.min_samples}")
     print(f"Output directory: {output_dir}")
 
@@ -136,83 +157,120 @@ The pipeline generates:
             print(f"ERROR: Accuracy report not found: {accuracy_report}")
             return 1
 
-    # Step 2: Compute embeddings
-    if not args.skip_embeddings:
-        success = run_step(
-            "compute_gloss_embeddings.py",
-            [
-                "--model-dir", str(args.model_dir),
-                "--num-classes", str(args.num_classes),
-                "--max-samples", str(args.max_embedding_samples),
-                "--output", str(embeddings_file),
-                "--include-existing"  # Include existing classes for comparison
-            ],
-            "Computing gloss embeddings"
-        )
-        if not success:
-            return 1
-    else:
-        print(f"\nSkipping embedding computation (using existing: {embeddings_file})")
-        if not embeddings_file.exists():
-            print(f"ERROR: Embeddings file not found: {embeddings_file}")
-            return 1
+    # Step 2: Extract keep classes
+    print(f"\n{'='*70}")
+    print("STEP: Extracting high-accuracy classes")
+    print("="*70)
 
-    # Step 3: Select next glosses
+    keep_classes, drop_classes, summary = extract_keep_classes(accuracy_report, args.threshold)
+
+    print(f"\nAccuracy Summary:")
+    print(f"  Overall accuracy: {summary['overall_accuracy']}%")
+    print(f"  Classes above {args.threshold}% threshold: {len(keep_classes)}")
+    print(f"  Classes below threshold: {len(drop_classes)}")
+
+    # Calculate gap to target
+    num_to_add = args.target - len(keep_classes)
+
+    if num_to_add <= 0:
+        print(f"\n*** Already at or above target! ***")
+        print(f"  Keep classes: {len(keep_classes)}")
+        print(f"  Target: {args.target}")
+        print(f"\nNo new classes needed. Consider raising the threshold.")
+
+        # Still save the keep classes list
+        final_gloss_list = output_dir / f"gloss_list_{len(keep_classes)}_class.json"
+        save_keep_classes_list(keep_classes, final_gloss_list)
+        print(f"\nSaved final gloss list to: {final_gloss_list}")
+        return 0
+
+    print(f"\n  Gap to target: {args.target} - {len(keep_classes)} = {num_to_add} classes needed")
+
+    # Save keep classes for smart selector
+    save_keep_classes_list(keep_classes, keep_classes_file)
+
+    # Step 3: Run smart gloss selector
     success = run_step(
-        "select_next_glosses.py",
+        "smart_gloss_selector.py",
         [
-            "--embeddings", str(embeddings_file),
-            "--accuracy", str(accuracy_report),
-            "--num-to-add", str(args.add),
+            "--model-dir", str(args.model_dir),
+            "--keep-classes", str(keep_classes_file),
+            "--accuracy-report", str(accuracy_report),
+            "--num-to-select", str(num_to_add),
             "--min-samples", str(args.min_samples),
-            "--output", str(next_glosses_file)
+            "--max-candidates", str(args.max_candidates),
+            "--output-dir", str(output_dir)
         ],
-        "Selecting next glosses"
+        f"Smart selection of {num_to_add} new candidates"
     )
     if not success:
         return 1
+
+    # Load results
+    final_gloss_list = output_dir / f"gloss_list_{args.target}_class.json"
+    selection_report = output_dir / "smart_selection_report.json"
+
+    if not final_gloss_list.exists():
+        print(f"ERROR: Expected output not found: {final_gloss_list}")
+        return 1
+
+    with open(final_gloss_list, 'r') as f:
+        new_glosses = json.load(f)
+
+    with open(selection_report, 'r') as f:
+        selection = json.load(f)
 
     # Print final summary
     print("\n" + "="*70)
     print("PIPELINE COMPLETE")
     print("="*70)
 
-    with open(next_glosses_file, 'r') as f:
-        result = json.load(f)
+    print(f"\nIteration Summary:")
+    print(f"  Classes kept (above {args.threshold}%): {len(keep_classes)}")
+    print(f"  New candidates selected: {len(selection['selected_glosses'])}")
+    print(f"  Total for next training: {len(new_glosses)}")
 
-    print(f"\nNext training configuration:")
-    print(f"  Total classes: {result['total_classes']}")
-    print(f"  Kept from current model: {result['existing_kept']}")
-    print(f"  New classes added: {result['new_added']}")
+    print(f"\nClasses dropped (below {args.threshold}% accuracy):")
+    for gloss in drop_classes[:10]:
+        print(f"  - {gloss}")
+    if len(drop_classes) > 10:
+        print(f"  ... and {len(drop_classes) - 10} more")
 
-    print(f"\nNew glosses to add:")
-    for item in result['new_gloss_details']:
-        print(f"  - {item['gloss']} (score: {item['combined_score']:.3f}, "
-              f"samples: {item['num_samples']})")
+    print(f"\nNew candidates added:")
+    for item in selection['selected_glosses'][:10]:
+        rec = item.get('recommendation', 'N/A')
+        dist = item.get('distinctiveness', 0)
+        print(f"  + {item['gloss']} (distinctiveness: {dist:.3f}, {rec})")
+    if len(selection['selected_glosses']) > 10:
+        print(f"  ... and {len(selection['selected_glosses']) - 10} more")
 
     print(f"\n{'='*70}")
     print("NEXT STEPS")
     print("="*70)
     print(f"""
-1. Review the gloss list in: {next_glosses_file}
+1. Review the gloss list: {final_gloss_list}
 
-2. Create training data splits:
+2. Run pre-processing on the other machine:
    python training_pre_processing_setup.py \\
-       --gloss-list {next_glosses_file}
+       --gloss-file "{final_gloss_list}" \\
+       --setup --force-fresh
 
 3. Train the new model:
-   python train_asl.py --num-classes {result['total_classes']}
+   python train_asl.py --num-classes {args.target} --model-size small --dropout 0.3
 
-4. Run this pipeline again on the new model to continue expansion
+4. Run this pipeline again on the new model:
+   python incremental_trainer.py \\
+       --model-dir <new_model_path> \\
+       --num-classes {args.target} \\
+       --target {args.target} \\
+       --threshold {args.threshold}
+
+5. Repeat until accuracy stabilizes (most classes above threshold)
 """)
 
-    # Also create a simple gloss list file for easy use
-    simple_list_file = output_dir / "gloss_list.txt"
-    with open(simple_list_file, 'w') as f:
-        for gloss in result['glosses']:
-            f.write(f"{gloss}\n")
-
-    print(f"Simple gloss list saved to: {simple_list_file}")
+    # Cleanup temp file
+    if keep_classes_file.exists():
+        keep_classes_file.unlink()
 
     return 0
 
