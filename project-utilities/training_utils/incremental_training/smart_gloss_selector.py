@@ -229,6 +229,7 @@ def stage2_distinctiveness_test(
     candidates: list,
     gloss_to_id: dict,
     id_to_gloss: dict,
+    baseline_classes: set,
     device: torch.device,
     max_samples_per_gloss: int = 20,
     max_seq_length: int = 256
@@ -236,9 +237,14 @@ def stage2_distinctiveness_test(
     """
     Stage 2: Zero-shot distinctiveness test.
 
-    Run candidate samples through existing model and measure prediction entropy.
-    High entropy = predictions spread across classes = gloss is distinct = good
-    Low entropy = model confidently predicts one class = too similar = bad
+    Run candidate samples through existing model and measure prediction entropy
+    ONLY against the baseline classes (not all classes the model knows).
+
+    High entropy = predictions spread across baseline classes = gloss is distinct = good
+    Low entropy = model confidently predicts one baseline class = too similar = bad
+
+    Args:
+        baseline_classes: Set of gloss names (uppercase) to measure distinctiveness against
 
     Returns:
         List of candidates with distinctiveness scores and confusion predictions
@@ -246,11 +252,22 @@ def stage2_distinctiveness_test(
     print("\n" + "="*70)
     print("STAGE 2: Zero-Shot Distinctiveness Test")
     print("="*70)
+    print(f"  Measuring distinctiveness against {len(baseline_classes)} baseline classes")
 
     model.eval()
     results = []
 
-    num_classes = len(gloss_to_id)
+    # Get indices of baseline classes in the model's output
+    baseline_indices = []
+    baseline_id_to_gloss = {}
+    for class_id, gloss in id_to_gloss.items():
+        if gloss.upper() in baseline_classes:
+            baseline_indices.append(int(class_id))
+            baseline_id_to_gloss[int(class_id)] = gloss
+
+    baseline_indices = torch.tensor(baseline_indices, device=device)
+    num_baseline = len(baseline_indices)
+    print(f"  Found {num_baseline} baseline classes in model")
 
     for i, candidate in enumerate(candidates):
         gloss = candidate['gloss']
@@ -278,8 +295,9 @@ def stage2_distinctiveness_test(
 
         loader = DataLoader(dataset, batch_size=16, shuffle=False, num_workers=0)
 
-        all_predictions = []
-        all_confidences = []
+        all_baseline_probs = []  # Probabilities over baseline classes only
+        all_predictions = []     # Predicted baseline class
+        all_confidences = []     # Confidence in predicted baseline class
 
         with torch.no_grad():
             for batch in loader:
@@ -290,36 +308,46 @@ def stage2_distinctiveness_test(
                     finger_features = finger_features.to(device)
 
                 logits = model(pose_sequences, attention_masks, finger_features)
-                probs = torch.softmax(logits, dim=-1)
 
-                # Get top prediction for each sample
-                confidences, predictions = torch.max(probs, dim=-1)
+                # Extract only baseline class logits and re-normalize
+                baseline_logits = logits[:, baseline_indices]
+                baseline_probs = torch.softmax(baseline_logits, dim=-1)
+
+                # Get top prediction among baseline classes
+                confidences, pred_indices = torch.max(baseline_probs, dim=-1)
+
+                # Map back to original class IDs
+                predictions = baseline_indices[pred_indices]
+
+                all_baseline_probs.append(baseline_probs.cpu().numpy())
                 all_predictions.extend(predictions.cpu().numpy())
                 all_confidences.extend(confidences.cpu().numpy())
 
         if not all_predictions:
             continue
 
-        # Compute distinctiveness metrics
+        # Compute distinctiveness metrics against baseline only
         predictions = np.array(all_predictions)
         confidences = np.array(all_confidences)
+        all_probs = np.concatenate(all_baseline_probs, axis=0)
 
-        # Count predictions per class
+        # Count predictions per baseline class
         pred_counts = defaultdict(int)
         for pred in predictions:
-            pred_gloss = id_to_gloss.get(str(pred), f"CLASS_{pred}")
+            pred_gloss = baseline_id_to_gloss.get(int(pred), f"CLASS_{pred}")
             pred_counts[pred_gloss] += 1
 
-        # Compute entropy of prediction distribution
-        pred_probs = np.array(list(pred_counts.values())) / len(predictions)
-        entropy = float(-np.sum(pred_probs * np.log(pred_probs + 1e-10)))
-        max_entropy = float(np.log(num_classes))  # Maximum possible entropy
-        normalized_entropy = entropy / max_entropy  # 0-1 scale
+        # Compute entropy of prediction distribution over baseline classes
+        # Use average probability distribution across all samples
+        avg_probs = np.mean(all_probs, axis=0)
+        entropy = float(-np.sum(avg_probs * np.log(avg_probs + 1e-10)))
+        max_entropy = float(np.log(num_baseline))  # Max entropy over baseline classes
+        normalized_entropy = entropy / max_entropy if max_entropy > 0 else 0
 
-        # Average confidence (lower = more uncertain = more distinct)
+        # Average confidence in predicted baseline class
         avg_confidence = float(np.mean(confidences))
 
-        # Distinctiveness score: high entropy + low confidence = distinct
+        # Distinctiveness score: high entropy + low confidence = distinct from baseline
         distinctiveness = 0.6 * normalized_entropy + 0.4 * (1 - avg_confidence)
 
         # Top predicted classes (potential confusions)
@@ -578,9 +606,9 @@ def main():
     else:
         print(f"\n  Testing all {len(candidates)} candidates in Stage 2")
 
-    # Stage 2: Distinctiveness test
+    # Stage 2: Distinctiveness test (against baseline classes only)
     results = stage2_distinctiveness_test(
-        model, candidates, gloss_to_id, id_to_gloss, device
+        model, candidates, gloss_to_id, id_to_gloss, keep_classes, device
     )
 
     # Stage 3: Pre-validation
