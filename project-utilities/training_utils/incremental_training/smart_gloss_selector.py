@@ -164,6 +164,7 @@ def stage1_quick_filter(
         all_glosses: Dict of gloss -> {count, files}
         keep_classes: Set of classes already in model (to keep)
         accuracy_report: Optional accuracy report for confusion target exclusion
+                        AND dropped class exclusion
         min_samples: Minimum samples needed for inference testing (default: 3)
 
     Returns:
@@ -173,10 +174,17 @@ def stage1_quick_filter(
     print("STAGE 1: Filtering")
     print("="*70)
 
-    # Get confusion targets from accuracy report
-    # These are glosses that existing classes get MISPREDICTED as
+    # Get confusion targets and dropped classes from accuracy report
     confusion_targets = set()
+    dropped_classes = set()
+
     if accuracy_report:
+        # Dropped classes - these already failed in the model, don't re-add them
+        for gloss in accuracy_report.get('recommendations', {}).get('drop_classes', []):
+            dropped_classes.add(gloss.upper())
+        print(f"  Found {len(dropped_classes)} dropped classes to exclude (already failed)")
+
+        # Confusion targets - glosses that existing classes get MISPREDICTED as
         for gloss, stats in accuracy_report.get('per_class_stats', {}).items():
             for confusion in stats.get('top_confusions', []):
                 conf_gloss = confusion['gloss'].upper()
@@ -187,6 +195,7 @@ def stage1_quick_filter(
 
     candidates = []
     excluded_count = 0
+    dropped_excluded = 0
     confusion_excluded = 0
     too_few = 0
 
@@ -194,6 +203,11 @@ def stage1_quick_filter(
         # Skip if already in keep classes
         if gloss in keep_classes:
             excluded_count += 1
+            continue
+
+        # Skip dropped classes (they already failed in training)
+        if gloss in dropped_classes:
+            dropped_excluded += 1
             continue
 
         # Need at least a few samples to run inference test
@@ -216,9 +230,10 @@ def stage1_quick_filter(
     candidates.sort(key=lambda x: x['sample_count'], reverse=True)
 
     print(f"\n  Total glosses in pool: {len(all_glosses)}")
-    print(f"  Already in model: {excluded_count}")
-    print(f"  Too few samples (<{min_samples}): {too_few}")
+    print(f"  Already in baseline: {excluded_count}")
+    print(f"  Dropped classes excluded: {dropped_excluded}")
     print(f"  Confusion targets excluded: {confusion_excluded}")
+    print(f"  Too few samples (<{min_samples}): {too_few}")
     print(f"  Candidates for Stage 2: {len(candidates)}")
 
     return candidates
