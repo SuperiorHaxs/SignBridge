@@ -535,7 +535,7 @@ def print_setup_state(num_classes, state):
 # AUGMENTATION GENERATION (Balanced Approach)
 # ============================================================================
 
-def generate_augmented_dataset_balanced(num_classes, config, force=False, landmark_config='83pt'):
+def generate_augmented_dataset_balanced(num_classes, config, force=False, landmark_config='83pt', gloss_list=None):
     """
     Generate class-balanced augmented dataset.
 
@@ -553,6 +553,7 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
         config: PathConfig instance
         force: If True, regenerate even if already exists
         landmark_config: Landmark configuration ('75pt', '83pt', etc.)
+        gloss_list: Optional list of glosses (bypasses dataset_splits config lookup)
 
     Returns:
         bool: Success status
@@ -580,6 +581,7 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
     try:
         result = generate_balanced_dataset(
             num_classes=num_classes,
+            gloss_list=gloss_list,
             landmark_config=landmark_config,
             target_per_class=TARGET_SAMPLES_PER_CLASS,
             dry_run=False,
@@ -891,7 +893,11 @@ def run_complete_setup(num_classes, config, resume=True, force_fresh=False, clea
 
     # Step 4: Generate balanced augmented dataset with family-based splitting
     if 4 in steps_to_run:
-        success = generate_augmented_dataset_balanced(num_classes, config, force=force_fresh)
+        # Load gloss list if provided
+        gloss_list = None
+        if gloss_file:
+            gloss_list = load_glosses_from_file(gloss_file)
+        success = generate_augmented_dataset_balanced(num_classes, config, force=force_fresh, gloss_list=gloss_list)
         if not success:
             print_status("Failed to generate balanced augmented dataset", "ERROR")
             return False
