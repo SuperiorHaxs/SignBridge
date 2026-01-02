@@ -1,0 +1,987 @@
+{
+  "timestamp": "2026-01-02T08:28:37.711404",
+  "threshold": 80.0,
+  "top3_threshold": 100.0,
+  "criteria": "top1 >= 80.0% AND top3 >= 100.0%",
+  "summary": {
+    "total_classes": 43,
+    "total_samples": 704,
+    "overall_accuracy": 80.68,
+    "overall_top3_accuracy": 88.78,
+    "classes_above_threshold": 31,
+    "classes_below_threshold": 12
+  },
+  "recommendations": {
+    "keep_classes": [
+      "BEFORE",
+      "BOWLING",
+      "BUT",
+      "CHAIR",
+      "DEAF",
+      "DOCTOR",
+      "DRINK",
+      "ENJOY",
+      "FAMILY",
+      "GIVE",
+      "HOT",
+      "MAN",
+      "ORANGE",
+      "PAPER",
+      "SON",
+      "TALL",
+      "TIME",
+      "WATER",
+      "HELP",
+      "PLAY",
+      "STUDY",
+      "AFRICA",
+      "APPLE",
+      "CHANGE",
+      "JACKET",
+      "THURSDAY",
+      "WRONG",
+      "YEAR",
+      "BASKETBALL",
+      "FINE",
+      "THANKSGIVING"
+    ],
+    "drop_classes": [
+      "TABLE",
+      "COMPUTER",
+      "TELL",
+      "DANCE",
+      "FULL",
+      "NO",
+      "WALK",
+      "LATER",
+      "BIRTHDAY",
+      "COW",
+      "NEED",
+      "WHAT"
+    ]
+  },
+  "per_class_stats": {
+    "BEFORE": {
+      "class_id": 3,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "BOWLING": {
+      "class_id": 5,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "BUT": {
+      "class_id": 6,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "CHAIR": {
+      "class_id": 7,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "DEAF": {
+      "class_id": 12,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "DOCTOR": {
+      "class_id": 13,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "DRINK": {
+      "class_id": 14,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "ENJOY": {
+      "class_id": 15,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "FAMILY": {
+      "class_id": 16,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "GIVE": {
+      "class_id": 19,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "HOT": {
+      "class_id": 21,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "MAN": {
+      "class_id": 24,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "ORANGE": {
+      "class_id": 27,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "PAPER": {
+      "class_id": 28,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "SON": {
+      "class_id": 30,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "TALL": {
+      "class_id": 33,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "TIME": {
+      "class_id": 37,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "WATER": {
+      "class_id": 39,
+      "total_samples": 16,
+      "correct": 16,
+      "accuracy": 100.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "HELP": {
+      "class_id": 20,
+      "total_samples": 32,
+      "correct": 30,
+      "accuracy": 93.75,
+      "top3_correct": 32,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "YEAR",
+          "count": 2,
+          "percent": 6.2
+        }
+      ]
+    },
+    "PLAY": {
+      "class_id": 29,
+      "total_samples": 16,
+      "correct": 15,
+      "accuracy": 93.75,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "JACKET",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "STUDY": {
+      "class_id": 31,
+      "total_samples": 16,
+      "correct": 15,
+      "accuracy": 93.75,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "ENJOY",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "AFRICA": {
+      "class_id": 0,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "MAN",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "APPLE": {
+      "class_id": 1,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "ORANGE",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "CHANGE": {
+      "class_id": 8,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "BUT",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "JACKET": {
+      "class_id": 22,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "PLAY",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "TABLE": {
+      "class_id": 32,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 14,
+      "top3_accuracy": 87.5,
+      "top_confusions": [
+        {
+          "gloss": "LATER",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "THURSDAY": {
+      "class_id": 36,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "THANKSGIVING",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "WRONG": {
+      "class_id": 41,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "DRINK",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "YEAR": {
+      "class_id": 42,
+      "total_samples": 16,
+      "correct": 14,
+      "accuracy": 87.5,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "TIME",
+          "count": 2,
+          "percent": 12.5
+        }
+      ]
+    },
+    "BASKETBALL": {
+      "class_id": 2,
+      "total_samples": 16,
+      "correct": 13,
+      "accuracy": 81.25,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "TALL",
+          "count": 2,
+          "percent": 12.5
+        },
+        {
+          "gloss": "COW",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "FINE": {
+      "class_id": 17,
+      "total_samples": 16,
+      "correct": 13,
+      "accuracy": 81.25,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "PAPER",
+          "count": 2,
+          "percent": 12.5
+        },
+        {
+          "gloss": "WATER",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "THANKSGIVING": {
+      "class_id": 35,
+      "total_samples": 16,
+      "correct": 13,
+      "accuracy": 81.25,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "MAN",
+          "count": 1,
+          "percent": 6.2
+        },
+        {
+          "gloss": "NO",
+          "count": 1,
+          "percent": 6.2
+        },
+        {
+          "gloss": "BIRTHDAY",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "COMPUTER": {
+      "class_id": 9,
+      "total_samples": 16,
+      "correct": 12,
+      "accuracy": 75.0,
+      "top3_correct": 14,
+      "top3_accuracy": 87.5,
+      "top_confusions": [
+        {
+          "gloss": "TABLE",
+          "count": 3,
+          "percent": 18.8
+        },
+        {
+          "gloss": "SON",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "TELL": {
+      "class_id": 34,
+      "total_samples": 16,
+      "correct": 12,
+      "accuracy": 75.0,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "ORANGE",
+          "count": 4,
+          "percent": 25.0
+        }
+      ]
+    },
+    "DANCE": {
+      "class_id": 11,
+      "total_samples": 16,
+      "correct": 11,
+      "accuracy": 68.75,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "STUDY",
+          "count": 5,
+          "percent": 31.2
+        }
+      ]
+    },
+    "FULL": {
+      "class_id": 18,
+      "total_samples": 16,
+      "correct": 11,
+      "accuracy": 68.75,
+      "top3_correct": 14,
+      "top3_accuracy": 87.5,
+      "top_confusions": [
+        {
+          "gloss": "DOCTOR",
+          "count": 3,
+          "percent": 18.8
+        },
+        {
+          "gloss": "PAPER",
+          "count": 1,
+          "percent": 6.2
+        },
+        {
+          "gloss": "TABLE",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "NO": {
+      "class_id": 26,
+      "total_samples": 16,
+      "correct": 11,
+      "accuracy": 68.75,
+      "top3_correct": 15,
+      "top3_accuracy": 93.75,
+      "top_confusions": [
+        {
+          "gloss": "APPLE",
+          "count": 5,
+          "percent": 31.2
+        }
+      ]
+    },
+    "WALK": {
+      "class_id": 38,
+      "total_samples": 16,
+      "correct": 11,
+      "accuracy": 68.75,
+      "top3_correct": 16,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "TIME",
+          "count": 5,
+          "percent": 31.2
+        }
+      ]
+    },
+    "LATER": {
+      "class_id": 23,
+      "total_samples": 16,
+      "correct": 1,
+      "accuracy": 6.25,
+      "top3_correct": 2,
+      "top3_accuracy": 12.5,
+      "top_confusions": [
+        {
+          "gloss": "DRINK",
+          "count": 15,
+          "percent": 93.8
+        }
+      ]
+    },
+    "BIRTHDAY": {
+      "class_id": 4,
+      "total_samples": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 0,
+      "top3_accuracy": 0.0,
+      "top_confusions": [
+        {
+          "gloss": "SON",
+          "count": 16,
+          "percent": 100.0
+        }
+      ]
+    },
+    "COW": {
+      "class_id": 10,
+      "total_samples": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 0,
+      "top3_accuracy": 0.0,
+      "top_confusions": [
+        {
+          "gloss": "MAN",
+          "count": 12,
+          "percent": 75.0
+        },
+        {
+          "gloss": "BOWLING",
+          "count": 3,
+          "percent": 18.8
+        },
+        {
+          "gloss": "COMPUTER",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    },
+    "NEED": {
+      "class_id": 25,
+      "total_samples": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 6,
+      "top3_accuracy": 37.5,
+      "top_confusions": [
+        {
+          "gloss": "BOWLING",
+          "count": 16,
+          "percent": 100.0
+        }
+      ]
+    },
+    "WHAT": {
+      "class_id": 40,
+      "total_samples": 16,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 0,
+      "top3_accuracy": 0.0,
+      "top_confusions": [
+        {
+          "gloss": "FINE",
+          "count": 15,
+          "percent": 93.8
+        },
+        {
+          "gloss": "CHANGE",
+          "count": 1,
+          "percent": 6.2
+        }
+      ]
+    }
+  },
+  "classes_by_accuracy": {
+    "high_accuracy": [
+      {
+        "gloss": "BEFORE",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "BOWLING",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "BUT",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "CHAIR",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "DEAF",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "DOCTOR",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "DRINK",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "ENJOY",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "FAMILY",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "GIVE",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "HOT",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "MAN",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "ORANGE",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "PAPER",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "SON",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "TALL",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "TIME",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "WATER",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "HELP",
+        "accuracy": 93.75,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "PLAY",
+        "accuracy": 93.75,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "STUDY",
+        "accuracy": 93.75,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "AFRICA",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "APPLE",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "CHANGE",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "JACKET",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "THURSDAY",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "WRONG",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "YEAR",
+        "accuracy": 87.5,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "BASKETBALL",
+        "accuracy": 81.25,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "FINE",
+        "accuracy": 81.25,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "THANKSGIVING",
+        "accuracy": 81.25,
+        "top3_accuracy": 100.0
+      }
+    ],
+    "low_accuracy": [
+      {
+        "gloss": "TABLE",
+        "accuracy": 87.5,
+        "top3_accuracy": 87.5,
+        "top_confusions": [
+          {
+            "gloss": "LATER",
+            "count": 2,
+            "percent": 12.5
+          }
+        ]
+      },
+      {
+        "gloss": "COMPUTER",
+        "accuracy": 75.0,
+        "top3_accuracy": 87.5,
+        "top_confusions": [
+          {
+            "gloss": "TABLE",
+            "count": 3,
+            "percent": 18.8
+          },
+          {
+            "gloss": "SON",
+            "count": 1,
+            "percent": 6.2
+          }
+        ]
+      },
+      {
+        "gloss": "TELL",
+        "accuracy": 75.0,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "ORANGE",
+            "count": 4,
+            "percent": 25.0
+          }
+        ]
+      },
+      {
+        "gloss": "DANCE",
+        "accuracy": 68.75,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "STUDY",
+            "count": 5,
+            "percent": 31.2
+          }
+        ]
+      },
+      {
+        "gloss": "FULL",
+        "accuracy": 68.75,
+        "top3_accuracy": 87.5,
+        "top_confusions": [
+          {
+            "gloss": "DOCTOR",
+            "count": 3,
+            "percent": 18.8
+          },
+          {
+            "gloss": "PAPER",
+            "count": 1,
+            "percent": 6.2
+          },
+          {
+            "gloss": "TABLE",
+            "count": 1,
+            "percent": 6.2
+          }
+        ]
+      },
+      {
+        "gloss": "NO",
+        "accuracy": 68.75,
+        "top3_accuracy": 93.75,
+        "top_confusions": [
+          {
+            "gloss": "APPLE",
+            "count": 5,
+            "percent": 31.2
+          }
+        ]
+      },
+      {
+        "gloss": "WALK",
+        "accuracy": 68.75,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "TIME",
+            "count": 5,
+            "percent": 31.2
+          }
+        ]
+      },
+      {
+        "gloss": "LATER",
+        "accuracy": 6.25,
+        "top3_accuracy": 12.5,
+        "top_confusions": [
+          {
+            "gloss": "DRINK",
+            "count": 15,
+            "percent": 93.8
+          }
+        ]
+      },
+      {
+        "gloss": "BIRTHDAY",
+        "accuracy": 0.0,
+        "top3_accuracy": 0.0,
+        "top_confusions": [
+          {
+            "gloss": "SON",
+            "count": 16,
+            "percent": 100.0
+          }
+        ]
+      },
+      {
+        "gloss": "COW",
+        "accuracy": 0.0,
+        "top3_accuracy": 0.0,
+        "top_confusions": [
+          {
+            "gloss": "MAN",
+            "count": 12,
+            "percent": 75.0
+          },
+          {
+            "gloss": "BOWLING",
+            "count": 3,
+            "percent": 18.8
+          },
+          {
+            "gloss": "COMPUTER",
+            "count": 1,
+            "percent": 6.2
+          }
+        ]
+      },
+      {
+        "gloss": "NEED",
+        "accuracy": 0.0,
+        "top3_accuracy": 37.5,
+        "top_confusions": [
+          {
+            "gloss": "BOWLING",
+            "count": 16,
+            "percent": 100.0
+          }
+        ]
+      },
+      {
+        "gloss": "WHAT",
+        "accuracy": 0.0,
+        "top3_accuracy": 0.0,
+        "top_confusions": [
+          {
+            "gloss": "FINE",
+            "count": 15,
+            "percent": 93.8
+          },
+          {
+            "gloss": "CHANGE",
+            "count": 1,
+            "percent": 6.2
+          }
+        ]
+      }
+    ]
+  }
+}

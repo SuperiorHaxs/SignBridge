@@ -294,13 +294,14 @@ def compute_per_class_accuracy(model, val_loader, id_to_gloss, device):
     return per_class_stats
 
 
-def generate_report(per_class_stats, threshold: float, output_path: Path):
+def generate_report(per_class_stats, threshold: float, top3_threshold: float, output_path: Path):
     """
     Generate accuracy report with recommendations.
 
     Args:
         per_class_stats: Per-class accuracy statistics
-        threshold: Accuracy threshold for keeping classes
+        threshold: Top-1 accuracy threshold for keeping classes (e.g., 80%)
+        top3_threshold: Top-3 accuracy threshold for keeping classes (e.g., 100%)
         output_path: Path to save JSON report
     """
     # Sort by accuracy
@@ -310,9 +311,11 @@ def generate_report(per_class_stats, threshold: float, output_path: Path):
         reverse=True
     )
 
-    # Categorize
-    high_accuracy = [(g, s) for g, s in sorted_classes if s['accuracy'] >= threshold]
-    low_accuracy = [(g, s) for g, s in sorted_classes if s['accuracy'] < threshold]
+    # Categorize using combined criteria: top-3 >= top3_threshold AND top-1 >= threshold
+    high_accuracy = [(g, s) for g, s in sorted_classes
+                     if s['top3_accuracy'] >= top3_threshold and s['accuracy'] >= threshold]
+    low_accuracy = [(g, s) for g, s in sorted_classes
+                    if s['top3_accuracy'] < top3_threshold or s['accuracy'] < threshold]
 
     # Compute overall stats
     total_samples = sum(s['total_samples'] for s in per_class_stats.values())
@@ -325,6 +328,8 @@ def generate_report(per_class_stats, threshold: float, output_path: Path):
     report = {
         'timestamp': datetime.now().isoformat(),
         'threshold': threshold,
+        'top3_threshold': top3_threshold,
+        'criteria': f'top1 >= {threshold}% AND top3 >= {top3_threshold}%',
         'summary': {
             'total_classes': len(per_class_stats),
             'total_samples': total_samples,
@@ -373,9 +378,10 @@ def print_summary(report):
     print(f"  Overall accuracy: {summary['overall_accuracy']}%")
     print(f"  Overall top-3 accuracy: {summary['overall_top3_accuracy']}%")
 
-    print(f"\nThreshold: {report['threshold']}%")
-    print(f"  Classes above threshold: {summary['classes_above_threshold']}")
-    print(f"  Classes below threshold: {summary['classes_below_threshold']}")
+    criteria = report.get('criteria', f"top1 >= {report['threshold']}%")
+    print(f"\nSelection Criteria: {criteria}")
+    print(f"  Classes meeting criteria (KEEP): {summary['classes_above_threshold']}")
+    print(f"  Classes not meeting criteria (DROP): {summary['classes_below_threshold']}")
 
     print(f"\n{'='*70}")
     print("HIGH ACCURACY CLASSES (KEEP)")
@@ -390,7 +396,7 @@ def print_summary(report):
     print("="*70)
     for item in report['classes_by_accuracy']['low_accuracy']:
         confusions = ", ".join([f"{c['gloss']}({c['percent']}%)" for c in item['top_confusions'][:2]])
-        print(f"  {item['gloss']:<20} {item['accuracy']:>6.1f}% | confused with: {confusions}")
+        print(f"  {item['gloss']:<20} top1:{item['accuracy']:>5.1f}% top3:{item['top3_accuracy']:>5.1f}% | confused with: {confusions}")
 
     print(f"\n{'='*70}")
     print("RECOMMENDATIONS")
@@ -411,8 +417,10 @@ def main():
                         help="Path to model directory (contains config.json, pytorch_model.bin)")
     parser.add_argument("--num-classes", "-n", type=int, required=True,
                         help="Number of classes the model was trained on")
-    parser.add_argument("--threshold", "-t", type=float, default=70.0,
-                        help="Accuracy threshold for keeping classes (default: 70%%)")
+    parser.add_argument("--threshold", "-t", type=float, default=80.0,
+                        help="Top-1 accuracy threshold for keeping classes (default: 80%%)")
+    parser.add_argument("--top3-threshold", type=float, default=100.0,
+                        help="Top-3 accuracy threshold for keeping classes (default: 100%%)")
     parser.add_argument("--output", "-o", type=Path, default=None,
                         help="Output path for JSON report (default: accuracy_report.json)")
     parser.add_argument("--batch-size", type=int, default=32,
@@ -428,7 +436,7 @@ def main():
 
     print(f"Analyzing model: {args.model_dir}")
     print(f"Number of classes: {args.num_classes}")
-    print(f"Accuracy threshold: {args.threshold}%")
+    print(f"Selection criteria: top1 >= {args.threshold}% AND top3 >= {args.top3_threshold}%")
 
     # Setup device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -455,7 +463,7 @@ def main():
     per_class_stats = compute_per_class_accuracy(model, val_loader, id_to_gloss, device)
 
     # Generate report
-    report = generate_report(per_class_stats, args.threshold, args.output)
+    report = generate_report(per_class_stats, args.threshold, args.top3_threshold, args.output)
 
     # Print summary
     print_summary(report)
