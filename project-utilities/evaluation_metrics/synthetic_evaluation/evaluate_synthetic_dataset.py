@@ -53,6 +53,7 @@ sys.path.insert(0, project_utilities_dir)
 # Import modular evaluation metrics from the parent evaluation_metrics package
 from evaluation_metrics import (
     calculate_gloss_accuracy,
+    calculate_perfect_translation_rate,
     calculate_bleu_score,
     calculate_bert_score,
     calculate_quality_score,
@@ -98,14 +99,31 @@ class SyntheticDatasetEvaluator:
         quiet=False,
         use_two_stage=False,
         prompt_file=None,
-        use_manifest=False
+        use_manifest=False,
+        no_mask=False
     ):
         self.dataset_path = dataset_path
         self.checkpoint_path = checkpoint_path
         self.use_llm = use_llm
         self.output_dir = output_dir
-        self.num_glosses = num_glosses
         self.skip_existing = skip_existing
+
+        # Auto-detect num_glosses from checkpoint config if provided
+        if checkpoint_path:
+            checkpoint = Path(checkpoint_path)
+            if checkpoint.suffix in ['.pt', '.bin', '.pth']:
+                config_path = checkpoint.parent / "config.json"
+            else:
+                config_path = checkpoint / "config.json"
+            if config_path.exists():
+                with open(config_path, 'r') as f:
+                    model_config = json.load(f)
+                detected_glosses = model_config.get('vocab_size')
+                if detected_glosses:
+                    print(f"Auto-detected num_glosses={detected_glosses} from checkpoint config")
+                    num_glosses = detected_glosses
+
+        self.num_glosses = num_glosses
         self.keep_poses = keep_poses
         self.no_confidence_scores = no_confidence_scores
         self.split = split
@@ -113,6 +131,7 @@ class SyntheticDatasetEvaluator:
         self.use_two_stage = use_two_stage and TWO_STAGE_AVAILABLE
         self.prompt_file = prompt_file
         self.use_manifest = use_manifest
+        self.no_mask = no_mask
 
         # Manifest-based mode setup
         self.manifest = None
@@ -127,16 +146,34 @@ class SyntheticDatasetEvaluator:
         if self.use_manifest:
             self._load_manifest_and_model()
 
-        # Initialize two-stage pipeline if enabled
+        # Initialize LLM provider and pipelines
+        self.llm_provider = None
         self.two_stage_pipeline = None
+        self.one_stage_prompt_template = None
+
         if self.use_two_stage:
             try:
-                llm_provider = create_llm_provider()
-                self.two_stage_pipeline = TwoStagePipeline(llm_provider)
+                self.llm_provider = create_llm_provider()
+                self.two_stage_pipeline = TwoStagePipeline(self.llm_provider)
                 print("Two-stage pipeline: INITIALIZED")
             except Exception as e:
                 print(f"Warning: Failed to initialize two-stage pipeline: {e}")
                 self.use_two_stage = False
+        elif self.use_llm and self.use_manifest:
+            # One-stage LLM for manifest mode
+            try:
+                self.llm_provider = create_llm_provider()
+                # Load one-stage prompt template
+                prompt_path = self.prompt_file or Path(__file__).parent.parent.parent / "llm_interface" / "prompts" / "llm_prompt_topk.txt"
+                if Path(prompt_path).exists():
+                    self.one_stage_prompt_template = Path(prompt_path).read_text(encoding='utf-8')
+                    print(f"One-stage LLM: INITIALIZED (prompt: {Path(prompt_path).name})")
+                else:
+                    print(f"Warning: One-stage prompt not found at {prompt_path}")
+                    self.use_llm = False
+            except Exception as e:
+                print(f"Warning: Failed to initialize one-stage LLM: {e}")
+                self.use_llm = False
 
         # Load dataset
         self.dataset = self._load_dataset()
@@ -183,14 +220,19 @@ class SyntheticDatasetEvaluator:
 
         splits = config.dataset_splits[self.num_glosses]
 
-        # Load val_manifest
-        if 'val_manifest' not in splits:
-            raise ValueError(f"No val_manifest defined for {self.num_glosses} classes in config")
+        # Determine which manifest to use based on split parameter
+        if self.split == "test":
+            manifest_key = 'test_manifest'
+        else:
+            manifest_key = 'val_manifest'  # Default to val for "val" or "all"
 
-        manifest_path = splits['val_manifest']
+        if manifest_key not in splits:
+            raise ValueError(f"No {manifest_key} defined for {self.num_glosses} classes in config")
+
+        manifest_path = splits[manifest_key]
         pickle_pool_path = splits['pickle_pool']
 
-        print(f"  Loading manifest: {manifest_path}")
+        print(f"  Loading manifest ({self.split}): {manifest_path}")
         with open(manifest_path, 'r') as f:
             self.manifest = json.load(f)
 
@@ -255,6 +297,20 @@ class SyntheticDatasetEvaluator:
         mapping_path = model_dir / "class_index_mapping.json"
         with open(mapping_path, 'r') as f:
             self.id_to_gloss = json.load(f)
+
+        # Load masked classes config (optional, unless --no-mask is set)
+        self.masked_class_ids = []
+        if self.no_mask:
+            print("  Class masking: DISABLED (--no-mask flag)")
+        else:
+            masked_classes_file = model_dir / "masked_classes.json"
+            if masked_classes_file.exists():
+                with open(masked_classes_file, 'r') as f:
+                    masked_config = json.load(f)
+                self.masked_class_ids = masked_config.get('masked_class_ids', [])
+                masked_names = masked_config.get('masked_class_names', [])
+                print(f"  Loaded class masking: {len(self.masked_class_ids)} classes masked")
+                print(f"    Masked: {', '.join(masked_names)}")
 
         # Create processor for feature extraction
         self.processor = WLASLPoseProcessor()
@@ -341,6 +397,12 @@ class SyntheticDatasetEvaluator:
         with torch.no_grad():
             outputs = self.model(pose_tensor, attention_tensor, finger_tensor)
             logits = outputs['logits'] if isinstance(outputs, dict) else outputs
+
+            # Apply class masking if configured
+            if hasattr(self, 'masked_class_ids') and self.masked_class_ids:
+                for class_id in self.masked_class_ids:
+                    logits[:, class_id] = float('-inf')
+
             probs = torch.softmax(logits, dim=-1)
 
         # Get top-3 predictions
@@ -400,6 +462,69 @@ class SyntheticDatasetEvaluator:
                 })
 
         return predictions
+
+    def _run_one_stage_llm(self, predicted_glosses):
+        """
+        Run one-stage LLM to generate sentence from predicted glosses.
+
+        Args:
+            predicted_glosses: List of prediction dicts with top_k info
+
+        Returns:
+            tuple: (predicted_sentence, llm_response_json)
+        """
+        if not self.llm_provider or not self.one_stage_prompt_template:
+            # Fallback to simple joining
+            top1_glosses = [p['top_prediction'] for p in predicted_glosses]
+            sentence = ' '.join(top1_glosses) + '.'
+            return sentence, sentence
+
+        # Format gloss details for the prompt
+        gloss_lines = []
+        for i, pred in enumerate(predicted_glosses, 1):
+            top_k = pred.get('top_k', [])
+            if top_k:
+                options = ', '.join([f"'{g['gloss']}' ({g['confidence']*100:.1f}%)" for g in top_k])
+                gloss_lines.append(f"Position {i}: {options}")
+            else:
+                gloss_lines.append(f"Position {i}: '{pred['top_prediction']}' ({pred['confidence']*100:.1f}%)")
+
+        gloss_details = '\n'.join(gloss_lines)
+
+        # Build prompt
+        prompt = self.one_stage_prompt_template.replace('{gloss_details}', gloss_details)
+
+        try:
+            # Call LLM
+            response = self.llm_provider.generate(prompt)
+
+            if not self.quiet:
+                print(f"  [ONE-STAGE LLM] Response received")
+
+            # Parse JSON response
+            import re
+            json_match = re.search(r'\{[\s\S]*"selections"[\s\S]*"sentence"[\s\S]*\}', response)
+            if json_match:
+                try:
+                    data = json.loads(json_match.group(0))
+                    sentence = data.get('sentence', '')
+                    selections = data.get('selections', [])
+                    if not self.quiet:
+                        print(f"  [ONE-STAGE LLM] Selections: {selections}")
+                        print(f"  [ONE-STAGE LLM] Sentence: '{sentence}'")
+                    return sentence, response
+                except json.JSONDecodeError:
+                    pass
+
+            # If JSON parsing fails, use raw response
+            return response.strip(), response
+
+        except Exception as e:
+            print(f"  [ONE-STAGE LLM] Error: {e}")
+            # Fallback to simple joining
+            top1_glosses = [p['top_prediction'] for p in predicted_glosses]
+            sentence = ' '.join(top1_glosses) + '.'
+            return sentence, sentence
 
     def _create_concatenated_pose(self, glosses, entry_id):
         """
@@ -1083,16 +1208,15 @@ class SyntheticDatasetEvaluator:
         Evaluate a single dataset entry
         Returns: result dict
         """
+        glosses = entry['glosses']
+        reference_sentence = entry['sentence']
+
         if not self.quiet:
             print("\n" + "="*80)
             print(f"EVALUATING ENTRY {entry_id + 1}")
             print("="*80)
-
-        glosses = entry['glosses']
-        reference_sentence = entry['sentence']
-
-        print(f"GLOSSES: {', '.join(glosses)}")
-        print(f"REFERENCE: '{reference_sentence}'")
+            print(f"GLOSSES: {', '.join(glosses)}")
+            print(f"REFERENCE: '{reference_sentence}'")
 
         result = {
             'entry_id': entry_id,
@@ -1138,6 +1262,9 @@ class SyntheticDatasetEvaluator:
             'effective_gloss_total': 0,
             'effective_gloss_mismatches': [],
             'effective_glosses': [],
+            # Perfect Translation Rate (PTR) - binary metric for CTQI
+            'baseline_ptr': None,
+            'model_ptr': None,
             'status': 'pending'
         }
 
@@ -1166,8 +1293,13 @@ class SyntheticDatasetEvaluator:
                         selections = two_stage_result.get('selected_glosses', [])
                         print(f"  [STAGE 1] Selections: {selections}")
                         print(f"  [STAGE 2] Sentence: '{predicted_sentence}'")
+                elif self.use_llm and self.llm_provider:
+                    # One-stage LLM for manifest mode
+                    if not self.quiet:
+                        print(f"  [ONE-STAGE LLM] Running sentence generation...")
+                    predicted_sentence, predicted_response = self._run_one_stage_llm(predicted_glosses)
                 else:
-                    # Simple gloss joining as fallback
+                    # Simple gloss joining as fallback (--no-llm)
                     top1_glosses = [p['top_prediction'] for p in predicted_glosses]
                     predicted_sentence = ' '.join(top1_glosses) + '.'
                     predicted_response = predicted_sentence
@@ -1272,10 +1404,14 @@ class SyntheticDatasetEvaluator:
             result['baseline_coverage_precision'] = baseline_coverage['precision']
             result['baseline_coverage_f1'] = baseline_coverage['f1']
 
-            # Calculate baseline composite score (including coverage_f1)
+            # Calculate baseline PTR (Perfect Translation Rate)
+            result['baseline_ptr'] = calculate_perfect_translation_rate(top1_glosses, glosses)
+
+            # Calculate baseline CTQI composite score (gloss_accuracy + quality + PTR)
             result['baseline_composite'] = calculate_composite_score(
-                bleu=baseline_bleu, bertscore=baseline_bertscore,
-                quality=baseline_quality, coverage_f1=baseline_coverage['f1']
+                gloss_accuracy=result['gloss_accuracy'],
+                quality=baseline_quality,
+                perfect_translation_rate=result['baseline_ptr']
             )
 
             # Step 5: Calculate model metrics (from LLM sentence with top-3)
@@ -1292,10 +1428,14 @@ class SyntheticDatasetEvaluator:
             result['missing_words'] = model_coverage['missing_words']
             result['hallucinated_words'] = model_coverage['hallucinated_words']
 
-            # Calculate model composite score (including coverage_f1)
+            # Calculate model PTR (Perfect Translation Rate) using effective glosses
+            result['model_ptr'] = calculate_perfect_translation_rate(effective_glosses, glosses)
+
+            # Calculate model CTQI composite score (effective_gloss_accuracy + quality + PTR)
             result['model_composite'] = calculate_composite_score(
-                bleu=model_bleu, bertscore=model_bertscore,
-                quality=model_quality, coverage_f1=model_coverage['f1']
+                gloss_accuracy=result['effective_gloss_accuracy'],
+                quality=model_quality,
+                perfect_translation_rate=result['model_ptr']
             )
 
             # Print model coverage metrics
@@ -1353,6 +1493,11 @@ class SyntheticDatasetEvaluator:
                     print(f"    Precision: {result['improvement_coverage_precision']:+.1f}% ({result['baseline_coverage_precision']:.1f}% -> {result['model_coverage_precision']:.1f}%)")
                     print(f"    F1: {result['improvement_coverage_f1']:+.1f}% ({result['baseline_coverage_f1']:.1f}% -> {result['model_coverage_f1']:.1f}%)")
 
+            # In quiet mode, print reference and predicted sentence
+            if self.quiet:
+                print(f"[{entry_id + 1}] Reference: {reference_sentence}")
+                print(f"    Predicted: {result.get('predicted_sentence', 'N/A')}")
+
             result['status'] = 'success'
 
         except Exception as e:
@@ -1384,24 +1529,27 @@ class SyntheticDatasetEvaluator:
         """
         Evaluate entire dataset (or limited subset)
         """
-        print("\n" + "="*80)
-        print("SYNTHETIC DATASET EVALUATION")
-        print("="*80)
-        print(f"Dataset: {self.dataset_path}")
-        print(f"Total entries: {len(self.dataset)}")
-        if limit:
-            print(f"Limit: First {limit} entries")
-        print(f"Output directory: {self.output_dir}")
-        print(f"Checkpoint: {self.checkpoint_path or 'None (using default model)'}")
-        print(f"LLM: {'Enabled' if self.use_llm else 'Disabled (simple gloss joining)'}")
-        print(f"Keep poses: {'Yes (poses will be saved)' if self.keep_poses else 'No (poses will be deleted after evaluation)'}")
-        print("\nEvaluation Metrics:")
-        print(f"  BLEU Score: {'Enabled' if BLEU_AVAILABLE else 'DISABLED'}")
-        print(f"  BERTScore: {'Enabled' if BERTSCORE_AVAILABLE else 'DISABLED'}")
-        quality_available = QUALITY_SCORING_AVAILABLE and self.quality_scorer is not None and self.quality_scorer.is_available
-        print(f"  Quality Score (GPT-2): {'Enabled' if quality_available else 'DISABLED'}")
-        print(f"  Composite Score: {'Enabled' if (BLEU_AVAILABLE or BERTSCORE_AVAILABLE or quality_available) else 'DISABLED'}")
-        print("="*80)
+        if not self.quiet:
+            print("\n" + "="*80)
+            print("SYNTHETIC DATASET EVALUATION")
+            print("="*80)
+            print(f"Dataset: {self.dataset_path}")
+            print(f"Total entries: {len(self.dataset)}")
+            if limit:
+                print(f"Limit: First {limit} entries")
+            print(f"Output directory: {self.output_dir}")
+            print(f"Checkpoint: {self.checkpoint_path or 'None (using default model)'}")
+            print(f"LLM: {'Enabled' if self.use_llm else 'Disabled (simple gloss joining)'}")
+            print(f"Keep poses: {'Yes (poses will be saved)' if self.keep_poses else 'No (poses will be deleted after evaluation)'}")
+            print("\nEvaluation Metrics:")
+            quality_available = QUALITY_SCORING_AVAILABLE and self.quality_scorer is not None and self.quality_scorer.is_available
+            print(f"  BLEU Score: {'Enabled' if BLEU_AVAILABLE else 'DISABLED'}")
+            print(f"  BERTScore: {'Enabled' if BERTSCORE_AVAILABLE else 'DISABLED'}")
+            print(f"  Quality Score (GPT-2): {'Enabled' if quality_available else 'DISABLED'}")
+            print(f"  Composite Score: {'Enabled' if (BLEU_AVAILABLE or BERTSCORE_AVAILABLE or quality_available) else 'DISABLED'}")
+            print("="*80)
+        else:
+            quality_available = QUALITY_SCORING_AVAILABLE and self.quality_scorer is not None and self.quality_scorer.is_available
 
         # Process entries
         entries_to_process = self.dataset[:limit] if limit else self.dataset
@@ -1425,15 +1573,13 @@ class SyntheticDatasetEvaluator:
 
         if not self.quiet:
             print(f"\nSaved intermediate results: {results_file}")
-        else:
-            # Add separator between entries in quiet mode
-            print()
 
     def _generate_report(self):
         """Generate evaluation report"""
-        print("\n" + "="*80)
-        print("EVALUATION REPORT")
-        print("="*80)
+        if not self.quiet:
+            print("\n" + "="*80)
+            print("EVALUATION REPORT")
+            print("="*80)
 
         # Calculate statistics
         total = len(self.results)
@@ -1455,10 +1601,17 @@ class SyntheticDatasetEvaluator:
         model_quality_scores = [r['model_quality'] for r in self.results if r['model_quality'] is not None]
         quality_improvements = [r['improvement_quality'] for r in self.results if r['improvement_quality'] is not None]
 
-        # Calculate Composite Score statistics
+        # Calculate Composite Score (CTQI) statistics
         baseline_composite_scores = [r['baseline_composite'] for r in self.results if r['baseline_composite'] is not None]
         model_composite_scores = [r['model_composite'] for r in self.results if r['model_composite'] is not None]
         composite_improvements = [r['improvement_composite'] for r in self.results if r['improvement_composite'] is not None]
+
+        # Calculate Perfect Translation Rate (PTR) statistics
+        baseline_ptr_scores = [r['baseline_ptr'] for r in self.results if r['baseline_ptr'] is not None]
+        model_ptr_scores = [r['model_ptr'] for r in self.results if r['model_ptr'] is not None]
+        # Count perfect translations (PTR = 100)
+        baseline_perfect_count = sum(1 for p in baseline_ptr_scores if p == 100)
+        model_perfect_count = sum(1 for p in model_ptr_scores if p == 100)
 
         # Calculate Coverage statistics (comparative metric)
         baseline_coverage_recalls = [r['baseline_coverage_recall'] for r in self.results if r['baseline_coverage_recall'] is not None]
@@ -1479,50 +1632,53 @@ class SyntheticDatasetEvaluator:
         total_missing = sum(len(r['missing_words']) for r in self.results)
         total_hallucinated = sum(len(r['hallucinated_words']) for r in self.results)
 
-        print(f"\nOVERALL STATISTICS:")
-        print(f"  Total entries: {total}")
-        print(f"  Successful: {successful} ({successful/total*100:.1f}%)")
-        print(f"  Failed: {failed} ({failed/total*100:.1f}%)")
-
         # Gloss Prediction Accuracy Statistics (Top-1)
         gloss_accuracies = [r['gloss_accuracy'] for r in self.results if r['gloss_accuracy'] is not None]
         total_correct = sum(r['gloss_correct'] for r in self.results if r['gloss_correct'] is not None)
         total_glosses = sum(r['gloss_total'] for r in self.results if r['gloss_total'] is not None)
-
-        if gloss_accuracies:
-            print(f"\nMODEL GLOSS ACCURACY - TOP-1 (Predicted vs Original Input Glosses):")
-            print(f"  Overall: {total_correct}/{total_glosses} ({total_correct/total_glosses*100:.1f}%)")
-            print(f"  Average per Entry: {sum(gloss_accuracies)/len(gloss_accuracies):.1f}%")
-            print(f"  Min: {min(gloss_accuracies):.1f}%")
-            print(f"  Max: {max(gloss_accuracies):.1f}%")
-            perfect_predictions = sum(1 for acc in gloss_accuracies if acc == 100.0)
-            print(f"  Perfect Predictions: {perfect_predictions}/{len(gloss_accuracies)} ({perfect_predictions/len(gloss_accuracies)*100:.1f}%)")
+        perfect_predictions = sum(1 for acc in gloss_accuracies if acc == 100.0) if gloss_accuracies else 0
 
         # Effective Gloss Accuracy Statistics (LLM-selected from top-k)
         effective_gloss_accuracies = [r['effective_gloss_accuracy'] for r in self.results if r['effective_gloss_accuracy'] is not None]
         effective_total_correct = sum(r['effective_gloss_correct'] for r in self.results if r['effective_gloss_correct'] is not None)
         effective_total_glosses = sum(r['effective_gloss_total'] for r in self.results if r['effective_gloss_total'] is not None)
+        effective_perfect_predictions = sum(1 for acc in effective_gloss_accuracies if acc == 100.0) if effective_gloss_accuracies else 0
 
-        if effective_gloss_accuracies:
-            print(f"\nEFFECTIVE GLOSS ACCURACY - LLM-SELECTED FROM TOP-K:")
-            print(f"  Overall: {effective_total_correct}/{effective_total_glosses} ({effective_total_correct/effective_total_glosses*100:.1f}%)")
-            print(f"  Average per Entry: {sum(effective_gloss_accuracies)/len(effective_gloss_accuracies):.1f}%")
-            print(f"  Min: {min(effective_gloss_accuracies):.1f}%")
-            print(f"  Max: {max(effective_gloss_accuracies):.1f}%")
-            effective_perfect_predictions = sum(1 for acc in effective_gloss_accuracies if acc == 100.0)
-            print(f"  Perfect Predictions: {effective_perfect_predictions}/{len(effective_gloss_accuracies)} ({effective_perfect_predictions/len(effective_gloss_accuracies)*100:.1f}%)")
+        # In quiet mode, skip all verbose console output
+        if not self.quiet:
+            # Verbose console output
+            print(f"\nOVERALL STATISTICS:")
+            print(f"  Total entries: {total}")
+            print(f"  Successful: {successful} ({successful/total*100:.1f}%)")
+            print(f"  Failed: {failed} ({failed/total*100:.1f}%)")
 
-            # Show improvement from top-1 to effective
             if gloss_accuracies:
-                avg_improvement = sum(effective_gloss_accuracies)/len(effective_gloss_accuracies) - sum(gloss_accuracies)/len(gloss_accuracies)
-                overall_improvement = (effective_total_correct/effective_total_glosses*100) - (total_correct/total_glosses*100)
-                print(f"\nGLOSS ACCURACY IMPROVEMENT (Effective - Top-1):")
-                print(f"  Overall Improvement: {overall_improvement:+.1f}% ({total_correct}/{total_glosses} -> {effective_total_correct}/{effective_total_glosses})")
-                print(f"  Average Improvement: {avg_improvement:+.1f}%")
-                print(f"  Perfect Predictions Gained: {effective_perfect_predictions - perfect_predictions}")
+                print(f"\nMODEL GLOSS ACCURACY - TOP-1 (Predicted vs Original Input Glosses):")
+                print(f"  Overall: {total_correct}/{total_glosses} ({total_correct/total_glosses*100:.1f}%)")
+                print(f"  Average per Entry: {sum(gloss_accuracies)/len(gloss_accuracies):.1f}%")
+                print(f"  Min: {min(gloss_accuracies):.1f}%")
+                print(f"  Max: {max(gloss_accuracies):.1f}%")
+                print(f"  Perfect Predictions: {perfect_predictions}/{len(gloss_accuracies)} ({perfect_predictions/len(gloss_accuracies)*100:.1f}%)")
 
-                # Analyze effective mismatches: was correct answer in top-k?
-                print(f"\nEFFECTIVE MISMATCH ANALYSIS:")
+            if effective_gloss_accuracies:
+                print(f"\nEFFECTIVE GLOSS ACCURACY - LLM-SELECTED FROM TOP-K:")
+                print(f"  Overall: {effective_total_correct}/{effective_total_glosses} ({effective_total_correct/effective_total_glosses*100:.1f}%)")
+                print(f"  Average per Entry: {sum(effective_gloss_accuracies)/len(effective_gloss_accuracies):.1f}%")
+                print(f"  Min: {min(effective_gloss_accuracies):.1f}%")
+                print(f"  Max: {max(effective_gloss_accuracies):.1f}%")
+                print(f"  Perfect Predictions: {effective_perfect_predictions}/{len(effective_gloss_accuracies)} ({effective_perfect_predictions/len(effective_gloss_accuracies)*100:.1f}%)")
+
+                # Show improvement from top-1 to effective
+                if gloss_accuracies:
+                    avg_improvement = sum(effective_gloss_accuracies)/len(effective_gloss_accuracies) - sum(gloss_accuracies)/len(gloss_accuracies)
+                    overall_improvement = (effective_total_correct/effective_total_glosses*100) - (total_correct/total_glosses*100)
+                    print(f"\nGLOSS ACCURACY IMPROVEMENT (Effective - Top-1):")
+                    print(f"  Overall Improvement: {overall_improvement:+.1f}% ({total_correct}/{total_glosses} -> {effective_total_correct}/{effective_total_glosses})")
+                    print(f"  Average Improvement: {avg_improvement:+.1f}%")
+                    print(f"  Perfect Predictions Gained: {effective_perfect_predictions - perfect_predictions}")
+
+                    # Analyze effective mismatches: was correct answer in top-k?
+                    print(f"\nEFFECTIVE MISMATCH ANALYSIS:")
                 correct_in_topk = 0
                 correct_not_in_topk = 0
                 for r in self.results:
@@ -1549,142 +1705,14 @@ class SyntheticDatasetEvaluator:
                     if correct_in_topk > 0:
                         print(f"  -> Potential improvement with better LLM prompting: {correct_in_topk} glosses")
 
-        # BLEU Statistics
-        if baseline_bleu_scores:
-            print(f"\nBASELINE BLEU (Top-1 Glosses -> Simple Sentence):")
-            print(f"  Average: {sum(baseline_bleu_scores)/len(baseline_bleu_scores):.2f}")
-            print(f"  Min: {min(baseline_bleu_scores):.2f}")
-            print(f"  Max: {max(baseline_bleu_scores):.2f}")
-
-        if model_bleu_scores:
-            print(f"\nMODEL BLEU (LLM Sentence with Top-3):")
-            print(f"  Average: {sum(model_bleu_scores)/len(model_bleu_scores):.2f}")
-            print(f"  Min: {min(model_bleu_scores):.2f}")
-            print(f"  Max: {max(model_bleu_scores):.2f}")
-
-        if bleu_improvements:
-            print(f"\nBLEU IMPROVEMENT (Model - Baseline):")
-            print(f"  Average: {sum(bleu_improvements)/len(bleu_improvements):+.2f}")
-            print(f"  Min: {min(bleu_improvements):+.2f}")
-            print(f"  Max: {max(bleu_improvements):+.2f}")
-
-            positive_bleu = [i for i in bleu_improvements if i > 0]
-            if positive_bleu:
-                print(f"  Entries with improvement: {len(positive_bleu)}/{len(bleu_improvements)} ({len(positive_bleu)/len(bleu_improvements)*100:.1f}%)")
-                print(f"  Average improvement (of improved entries): {sum(positive_bleu)/len(positive_bleu):+.2f}")
-
-        # BERTScore Statistics
-        if baseline_bertscore_scores:
-            print(f"\nBASELINE BERTScore (Top-1 Glosses -> Simple Sentence):")
-            print(f"  Average: {sum(baseline_bertscore_scores)/len(baseline_bertscore_scores):.2f}")
-            print(f"  Min: {min(baseline_bertscore_scores):.2f}")
-            print(f"  Max: {max(baseline_bertscore_scores):.2f}")
-
-        if model_bertscore_scores:
-            print(f"\nMODEL BERTScore (LLM Sentence with Top-3):")
-            print(f"  Average: {sum(model_bertscore_scores)/len(model_bertscore_scores):.2f}")
-            print(f"  Min: {min(model_bertscore_scores):.2f}")
-            print(f"  Max: {max(model_bertscore_scores):.2f}")
-
-        if bertscore_improvements:
-            print(f"\nBERTScore IMPROVEMENT (Model - Baseline):")
-            print(f"  Average: {sum(bertscore_improvements)/len(bertscore_improvements):+.2f}")
-            print(f"  Min: {min(bertscore_improvements):+.2f}")
-            print(f"  Max: {max(bertscore_improvements):+.2f}")
-
-            positive_bertscore = [i for i in bertscore_improvements if i > 0]
-            if positive_bertscore:
-                print(f"  Entries with improvement: {len(positive_bertscore)}/{len(bertscore_improvements)} ({len(positive_bertscore)/len(bertscore_improvements)*100:.1f}%)")
-                print(f"  Average improvement (of improved entries): {sum(positive_bertscore)/len(positive_bertscore):+.2f}")
-
-        # Quality Score Statistics (reference-free)
-        if baseline_quality_scores:
-            print(f"\nBASELINE QUALITY (Reference-free Fluency/Grammar):")
-            print(f"  Average: {sum(baseline_quality_scores)/len(baseline_quality_scores):.2f}")
-            print(f"  Min: {min(baseline_quality_scores):.2f}")
-            print(f"  Max: {max(baseline_quality_scores):.2f}")
-
-        if model_quality_scores:
-            print(f"\nMODEL QUALITY (Reference-free Fluency/Grammar):")
-            print(f"  Average: {sum(model_quality_scores)/len(model_quality_scores):.2f}")
-            print(f"  Min: {min(model_quality_scores):.2f}")
-            print(f"  Max: {max(model_quality_scores):.2f}")
-
-        if quality_improvements:
-            print(f"\nQUALITY IMPROVEMENT (Model - Baseline):")
-            print(f"  Average: {sum(quality_improvements)/len(quality_improvements):+.2f}")
-            print(f"  Min: {min(quality_improvements):+.2f}")
-            print(f"  Max: {max(quality_improvements):+.2f}")
-
-            positive_quality = [i for i in quality_improvements if i > 0]
-            if positive_quality:
-                print(f"  Entries with improvement: {len(positive_quality)}/{len(quality_improvements)} ({len(positive_quality)/len(quality_improvements)*100:.1f}%)")
-                print(f"  Average improvement (of improved entries): {sum(positive_quality)/len(positive_quality):+.2f}")
-
-        # Coverage Statistics (Comparative Metric - vs Reference Sentence)
-        if baseline_coverage_recalls:
-            print(f"\nBASELINE COVERAGE (vs Reference Sentence Content Words):")
-            print(f"  Average Recall: {sum(baseline_coverage_recalls)/len(baseline_coverage_recalls):.1f}%")
-            print(f"  Average Precision: {sum(baseline_coverage_precisions)/len(baseline_coverage_precisions):.1f}%")
-            print(f"  Average F1: {sum(baseline_coverage_f1s)/len(baseline_coverage_f1s):.1f}%")
-
-        if model_coverage_recalls:
-            print(f"\nMODEL COVERAGE (vs Reference Sentence Content Words):")
-            print(f"  Average Recall: {sum(model_coverage_recalls)/len(model_coverage_recalls):.1f}%")
-            print(f"  Average Precision: {sum(model_coverage_precisions)/len(model_coverage_precisions):.1f}%")
-            print(f"  Average F1: {sum(model_coverage_f1s)/len(model_coverage_f1s):.1f}%")
-            print(f"  Perfect Recall: {model_perfect_recall_count}/{len(model_coverage_recalls)} entries ({model_perfect_recall_count/len(model_coverage_recalls)*100:.1f}%)")
-            print(f"  Entries with Missing Words: {entries_with_missing}/{total} ({total_missing} total)")
-            print(f"  Entries with Hallucinations: {entries_with_hallucinations}/{total} ({total_hallucinated} total)")
-
-        if coverage_recall_improvements:
-            print(f"\nCOVERAGE IMPROVEMENT (Model - Baseline):")
-            print(f"  Average Recall Improvement: {sum(coverage_recall_improvements)/len(coverage_recall_improvements):+.1f}%")
-            print(f"  Average Precision Improvement: {sum(coverage_precision_improvements)/len(coverage_precision_improvements):+.1f}%")
-            print(f"  Average F1 Improvement: {sum(coverage_f1_improvements)/len(coverage_f1_improvements):+.1f}%")
-
-            positive_recall = [i for i in coverage_recall_improvements if i > 0]
-            if positive_recall:
-                print(f"  Entries with Recall improvement: {len(positive_recall)}/{len(coverage_recall_improvements)} ({len(positive_recall)/len(coverage_recall_improvements)*100:.1f}%)")
-                print(f"  Average Recall improvement (of improved entries): {sum(positive_recall)/len(positive_recall):+.1f}%")
-
-        # Composite Score Statistics (weighted combination)
-        if baseline_composite_scores:
-            print(f"\nBASELINE COMPOSITE (Weighted: {METRIC_WEIGHTS['quality']:.0%} Quality + {METRIC_WEIGHTS['coverage_f1']:.0%} Coverage + {METRIC_WEIGHTS['bertscore']:.0%} BERT + {METRIC_WEIGHTS['bleu']:.0%} BLEU):")
-            print(f"  Average: {sum(baseline_composite_scores)/len(baseline_composite_scores):.2f}")
-            print(f"  Min: {min(baseline_composite_scores):.2f}")
-            print(f"  Max: {max(baseline_composite_scores):.2f}")
-
-        if model_composite_scores:
-            print(f"\nMODEL COMPOSITE (Weighted: {METRIC_WEIGHTS['quality']:.0%} Quality + {METRIC_WEIGHTS['coverage_f1']:.0%} Coverage + {METRIC_WEIGHTS['bertscore']:.0%} BERT + {METRIC_WEIGHTS['bleu']:.0%} BLEU):")
-            print(f"  Average: {sum(model_composite_scores)/len(model_composite_scores):.2f}")
-            print(f"  Min: {min(model_composite_scores):.2f}")
-            print(f"  Max: {max(model_composite_scores):.2f}")
-
-        if composite_improvements:
-            print(f"\nCOMPOSITE IMPROVEMENT (Model - Baseline):")
-            print(f"  Average: {sum(composite_improvements)/len(composite_improvements):+.2f}")
-            print(f"  Min: {min(composite_improvements):+.2f}")
-            print(f"  Max: {max(composite_improvements):+.2f}")
-
-            positive_composite = [i for i in composite_improvements if i > 0]
-            if positive_composite:
-                print(f"  Entries with improvement: {len(positive_composite)}/{len(composite_improvements)} ({len(positive_composite)/len(composite_improvements)*100:.1f}%)")
-                print(f"  Average improvement (of improved entries): {sum(positive_composite)/len(positive_composite):+.2f}")
-
-        # LLM Alternative Usage Statistics
+        # LLM Alternative Usage Statistics (needed for file writing)
         total_alternatives_used = sum(r['llm_used_alternatives'] for r in self.results if r['llm_used_alternatives'] is not None)
         entries_with_alternatives = sum(1 for r in self.results if r['llm_used_alternatives'] and r['llm_used_alternatives'] > 0)
         total_gloss_positions = sum(len(r['predicted_glosses']) for r in self.results if r['predicted_glosses'])
 
-        if total_gloss_positions > 0:
-            print(f"\nGEMINI ALTERNATIVE USAGE (Top-2 or Top-3 instead of Top-1):")
-            print(f"  Total Gloss Positions: {total_gloss_positions}")
-            print(f"  Alternatives Used: {total_alternatives_used} ({total_alternatives_used/total_gloss_positions*100:.1f}%)")
-            print(f"  Entries with Alternatives: {entries_with_alternatives}/{len(self.results)} ({entries_with_alternatives/len(self.results)*100:.1f}%)")
-
-        # Generate detailed table
-        self._generate_table()
+        # Generate detailed table (skip in quiet mode)
+        if not self.quiet:
+            self._generate_table()
 
         # Save report
         report_file = os.path.join(self.output_dir, "evaluation_report.txt")
@@ -1895,17 +1923,28 @@ class SyntheticDatasetEvaluator:
                     f.write(f"ENTRIES WITH RECALL IMPROVEMENT: {len(positive_recall)}/{len(coverage_recall_improvements)} ({len(positive_recall)/len(coverage_recall_improvements)*100:.1f}%)\n")
             f.write("\n")
 
-            # Composite Score Summary
+            # Perfect Translation Rate (PTR) Summary
+            if baseline_ptr_scores:
+                f.write(f"BASELINE PERFECT TRANSLATIONS: {baseline_perfect_count}/{len(baseline_ptr_scores)} ({baseline_perfect_count/len(baseline_ptr_scores)*100:.1f}%)\n")
+            if model_ptr_scores:
+                f.write(f"MODEL PERFECT TRANSLATIONS: {model_perfect_count}/{len(model_ptr_scores)} ({model_perfect_count/len(model_ptr_scores)*100:.1f}%)\n")
+            if baseline_ptr_scores and model_ptr_scores:
+                ptr_improvement = model_perfect_count - baseline_perfect_count
+                f.write(f"PERFECT TRANSLATION IMPROVEMENT: {ptr_improvement:+d} entries\n")
+            f.write("\n")
+
+            # Composite Score (CTQI) Summary
+            f.write("CTQI WEIGHTS: Gloss Accuracy=40%, Quality=40%, PTR=20%\n")
             if baseline_composite_scores:
-                f.write(f"BASELINE COMPOSITE: {sum(baseline_composite_scores)/len(baseline_composite_scores):.2f}\n")
+                f.write(f"BASELINE CTQI: {sum(baseline_composite_scores)/len(baseline_composite_scores):.2f}\n")
             if model_composite_scores:
-                f.write(f"MODEL COMPOSITE: {sum(model_composite_scores)/len(model_composite_scores):.2f}\n")
+                f.write(f"MODEL CTQI: {sum(model_composite_scores)/len(model_composite_scores):.2f}\n")
             if composite_improvements:
-                f.write(f"AVERAGE COMPOSITE IMPROVEMENT: {sum(composite_improvements)/len(composite_improvements):+.2f}\n")
+                f.write(f"AVERAGE CTQI IMPROVEMENT: {sum(composite_improvements)/len(composite_improvements):+.2f}\n")
                 positive_composite = [i for i in composite_improvements if i > 0]
                 if positive_composite:
-                    f.write(f"ENTRIES WITH COMPOSITE IMPROVEMENT: {len(positive_composite)}/{len(composite_improvements)} ({len(positive_composite)/len(composite_improvements)*100:.1f}%)\n")
-                    f.write(f"AVERAGE COMPOSITE IMPROVEMENT (of improved entries): {sum(positive_composite)/len(positive_composite):+.2f}\n")
+                    f.write(f"ENTRIES WITH CTQI IMPROVEMENT: {len(positive_composite)}/{len(composite_improvements)} ({len(positive_composite)/len(composite_improvements)*100:.1f}%)\n")
+                    f.write(f"AVERAGE CTQI IMPROVEMENT (of improved entries): {sum(positive_composite)/len(positive_composite):+.2f}\n")
             f.write("\n")
 
             # LLM Alternative Usage Statistics
@@ -2008,14 +2047,21 @@ class SyntheticDatasetEvaluator:
                     if r['hallucinated_words']:
                         f.write(f"  Hallucinated Words: {', '.join(r['hallucinated_words'])}\n")
 
-                # Composite (grouped: baseline, model, improvement)
+                # PTR (Perfect Translation Rate)
+                if r['baseline_ptr'] is not None or r['model_ptr'] is not None:
+                    baseline_ptr_str = "Yes" if r['baseline_ptr'] == 100 else "No"
+                    model_ptr_str = "Yes" if r['model_ptr'] == 100 else "No"
+                    f.write(f"  Baseline Perfect Translation: {baseline_ptr_str}\n")
+                    f.write(f"  Model Perfect Translation: {model_ptr_str}\n")
+
+                # CTQI Composite (grouped: baseline, model, improvement)
                 if r['baseline_composite'] is not None or r['model_composite'] is not None:
                     if r['baseline_composite'] is not None:
-                        f.write(f"  Baseline Composite: {r['baseline_composite']:.2f}\n")
+                        f.write(f"  Baseline CTQI: {r['baseline_composite']:.2f}\n")
                     if r['model_composite'] is not None:
-                        f.write(f"  Model Composite: {r['model_composite']:.2f}\n")
+                        f.write(f"  Model CTQI: {r['model_composite']:.2f}\n")
                     if r['improvement_composite'] is not None:
-                        f.write(f"  Composite Improvement: {r['improvement_composite']:+.2f}\n")
+                        f.write(f"  CTQI Improvement: {r['improvement_composite']:+.2f}\n")
 
                 # LLM alternative usage
                 if r['llm_used_alternatives'] is not None:
@@ -2033,7 +2079,8 @@ class SyntheticDatasetEvaluator:
 
                 f.write(f"  Status: {r['status']}\n")
 
-        print(f"\nReport saved: {report_file}")
+        if not self.quiet:
+            print(f"\nReport saved: {report_file}")
 
     def _generate_table(self):
         """Generate comparison table (markdown format)"""
@@ -2120,12 +2167,18 @@ class SyntheticDatasetEvaluator:
                 improvement_quality_str = f"{r['improvement_quality']:+.2f}" if r['improvement_quality'] is not None else 'N/A'
                 print(f"   Quality: {baseline_quality_str} -> {model_quality_str} ({improvement_quality_str})")
 
-            # Format Composite scores
+            # Format PTR (Perfect Translation Rate)
+            if r['baseline_ptr'] is not None or r['model_ptr'] is not None:
+                baseline_ptr_str = "Yes" if r['baseline_ptr'] == 100 else "No"
+                model_ptr_str = "Yes" if r['model_ptr'] == 100 else "No"
+                print(f"   Perfect Translation: {baseline_ptr_str} -> {model_ptr_str}")
+
+            # Format CTQI Composite scores
             if r['baseline_composite'] is not None or r['model_composite'] is not None:
                 baseline_composite_str = f"{r['baseline_composite']:.2f}" if r['baseline_composite'] is not None else 'N/A'
                 model_composite_str = f"{r['model_composite']:.2f}" if r['model_composite'] is not None else 'N/A'
                 improvement_composite_str = f"{r['improvement_composite']:+.2f}" if r['improvement_composite'] is not None else 'N/A'
-                print(f"   Composite: {baseline_composite_str} -> {model_composite_str} ({improvement_composite_str})")
+                print(f"   CTQI: {baseline_composite_str} -> {model_composite_str} ({improvement_composite_str})")
 
             print()
 
@@ -2205,6 +2258,11 @@ def main():
         action="store_true",
         help="Use val_manifest.json pickle files for prediction (matches accuracy analysis exactly)"
     )
+    parser.add_argument(
+        "--no-mask",
+        action="store_true",
+        help="Disable class masking (use all classes even if masked_classes.json exists)"
+    )
 
     args = parser.parse_args()
 
@@ -2223,16 +2281,18 @@ def main():
             quiet=args.quiet,
             use_two_stage=args.two_stage,
             prompt_file=args.prompt_file,
-            use_manifest=args.use_manifest
+            use_manifest=args.use_manifest,
+            no_mask=args.no_mask
         )
 
         # Run evaluation
         evaluator.evaluate_dataset(limit=args.limit)
 
-        print("\n" + "="*80)
-        print("EVALUATION COMPLETE")
-        print("="*80)
-        print(f"Results saved to: {args.output_dir}")
+        if not args.quiet:
+            print("\n" + "="*80)
+            print("EVALUATION COMPLETE")
+            print("="*80)
+            print(f"Results saved to: {args.output_dir}")
 
         return 0
 

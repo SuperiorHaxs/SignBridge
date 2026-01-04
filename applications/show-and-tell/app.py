@@ -341,7 +341,7 @@ TEMP_DIR = Path(__file__).parent / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
 
 # Global model cache (loaded once)
-_model_cache = {"model": None, "tokenizer": None, "num_classes": None}
+_model_cache = {"model": None, "tokenizer": None, "num_classes": None, "masked_class_ids": None}
 
 # Global quality scorer (from evaluation_metrics library)
 _quality_scorer = None
@@ -352,7 +352,7 @@ def get_model():
     if _model_cache["model"] is None:
         print("Loading model from checkpoint...")
         # vocab_size will be read from config.json in checkpoint directory
-        _model_cache["model"], _model_cache["tokenizer"] = load_model_from_checkpoint(
+        _model_cache["model"], _model_cache["tokenizer"], _model_cache["masked_class_ids"] = load_model_from_checkpoint(
             str(CHECKPOINT_PATH)
         )
         # Load num_classes from model config

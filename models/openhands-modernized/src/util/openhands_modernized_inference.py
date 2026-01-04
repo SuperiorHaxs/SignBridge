@@ -22,7 +22,8 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
         vocab_size: Number of classes (optional, will be read from config.json if available)
 
     Returns:
-        tuple: (model, id_to_gloss_mapping)
+        tuple: (model, id_to_gloss_mapping, masked_class_ids)
+               masked_class_ids is a list of class indices to mask, or empty list if no masking
     """
     checkpoint_path = Path(checkpoint_path)
 
@@ -38,6 +39,17 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
 
     with open(vocab_file, 'r') as f:
         id_to_gloss = json.load(f)
+
+    # Load masked classes config (optional)
+    masked_class_ids = []
+    masked_classes_file = checkpoint_path / "masked_classes.json"
+    if masked_classes_file.exists():
+        with open(masked_classes_file, 'r') as f:
+            masked_config = json.load(f)
+        masked_class_ids = masked_config.get('masked_class_ids', [])
+        masked_names = masked_config.get('masked_class_names', [])
+        print(f"Loaded class masking: {len(masked_class_ids)} classes masked")
+        print(f"  Masked: {', '.join(masked_names)}")
 
     # Try to load config from checkpoint directory
     config_file = checkpoint_path / "config.json"
@@ -79,11 +91,13 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
 
     print(f"SUCCESS: Loaded model from {checkpoint_path}")
     print(f"VOCAB: {config.vocab_size} classes")
+    if masked_class_ids:
+        print(f"EFFECTIVE CLASSES: {config.vocab_size - len(masked_class_ids)} (after masking)")
 
-    return model, id_to_gloss
+    return model, id_to_gloss, masked_class_ids
 
 
-def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_path: str = None):
+def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_path: str = None, masked_class_ids=None):
     """
     Predict gloss from a pickle pose file.
 
@@ -92,6 +106,7 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
         model: Pre-loaded model (optional)
         tokenizer: Vocabulary mapping (id_to_gloss dict)
         checkpoint_path: Path to checkpoint if model not provided
+        masked_class_ids: List of class indices to mask (set to -inf before softmax)
 
     Returns:
         dict: Prediction results with 'gloss', 'confidence', 'top_k_predictions'
@@ -100,7 +115,7 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
     if model is None:
         if checkpoint_path is None:
             raise ValueError("Either model or checkpoint_path must be provided")
-        model, tokenizer = load_model_from_checkpoint(checkpoint_path)
+        model, tokenizer, masked_class_ids = load_model_from_checkpoint(checkpoint_path)
 
     # Load and process pose data
     processor = WLASLPoseProcessor()
@@ -133,6 +148,12 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
     # Predict
     with torch.no_grad():
         logits = model(pose_tensor, mask_tensor, finger_features=finger_features_tensor)  # (1, vocab_size)
+
+        # Apply class masking if configured
+        if masked_class_ids:
+            for class_id in masked_class_ids:
+                logits[:, class_id] = float('-inf')
+
         probs = torch.softmax(logits, dim=-1)
 
         # Get top prediction

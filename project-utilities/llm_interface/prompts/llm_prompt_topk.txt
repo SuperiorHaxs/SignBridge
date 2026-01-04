@@ -1,86 +1,211 @@
-TASK: Generate a grammatically correct English sentence from ASL video sign predictions.
+TASK: Generate a meaningful English sentence from ASL video sign predictions.
+
+Your goal is to create a MEANINGFUL, COHERENT sentence - not just a grammatically correct one.
+Ask yourself: "Does this sentence make real-world sense?"
 
 HOW TO SELECT WORDS:
 
- 1. SEMANTIC COHERENCE + GRAMMAR: Choose words that create a grammatically correct, coherent sentence      
-     - Confidence scores matter less than grammar and meaning
-     - Try alternatives from top-k if your first choice creates awkward grammar
-     - Examples: chair+table (furniture), mother+help+deaf (caregiving), "is fine" not "is like"
+1. MEANING FIRST: The sentence must make logical sense, not just be grammatical.
+   - "I give bowling an orange" is grammatically correct but meaningless
+   - "Give the apple and orange" makes real-world sense
+   - Always check: Would a person actually say this? Does it describe something real?
 
-2. ITERATE MENTALLY: Try different combinations. If one sounds unnatural, go back and pick different words.
+2. TRUST CONFIDENCE WITH SEMANTIC CHECK: High-confidence words are usually correct, BUT:
+   - If the top prediction creates a nonsensical or unnatural meaning, check alternatives
+   - Apply these semantic rules to override confidence when needed:
 
-3. POSITION FLEXIBILITY: Position numbers are just labels. You can arrange selected words in ANY grammatical order in your sentence.
+   VERB vs NOUN CONFLICTS:
+   - Position 1 (sentence start): Prefer NOUNS over VERBS as subjects
+     * "year/time/man" > "help/play/give" when starting a sentence
+     * Most sentences describe something (noun-first), not command something (verb-first)
 
-4. RELATIONAL NOUNS AS SUBJECTS: When a family relation or personal relationship word
-   (e.g., mother, father, son, daughter, brother, sister, grandmother, friend) appears
-   as the subject of the sentence, add a possessive prefix like "my" or "the" as appropriate.
-   - Example: "mother help deaf" → "My mother helps the deaf person."
-   - Example: "son go school" → "My son goes to school."
+   TEMPORAL WORD PAIRING (CRITICAL - check across ALL positions):
+   - When 'before', 'after', or 'later' appears in ANY position, SCAN ALL positions for TIME NOUNS
+   - TIME NOUNS: year, day, week, month, time, hour, minute
+   - If a TIME NOUN is available (even at low confidence), USE IT to pair with the temporal word
+     * "a year before" / "a day later" = complete temporal expression
+     * "help before" / "play later" = incomplete (before/later WHAT?)
+   - This rule OVERRIDES confidence: 'help' at 51% loses to 'year' at 26% when 'before' is present
 
-5. VERB COMPLEMENTATION: Use correct verb patterns when adding filler verbs:
-   - Verbs like 'enjoy', 'avoid', 'finish' require gerunds (-ing): "enjoys playing" NOT "enjoys to play"
+   OBJECT COMPATIBILITY (Semantic Role Selection):
+   - In English, verbs select for specific types of objects based on meaning:
+     * TRANSFER verbs (give/take/hand) → require POSSESSABLE objects (apple, book, jacket, paper)
+     * CONSUMPTION verbs (drink/eat) → require CONSUMABLE objects (water, apple, food)
+     * EXPERIENCE verbs (enjoy/like) → can take activities OR objects (enjoy bowling, enjoy apples)
+   - If an activity appears with a transfer verb, check for object alternatives
+   - Example: 'give' + 'bowling' is wrong, but 'give' + 'apple' is correct
+
+   PROPER NOUNS vs COMMON NOUNS:
+   - Prefer SPECIFIC proper nouns (places, days, names) over GENERIC common nouns when both fit
+     * 'africa' > 'man' when describing a location or subject of description
+     * 'thursday' > 'man' when time context is present
+   - Proper nouns add specific meaning; generic nouns (man/woman) are often confusion errors
+   - If a place name or day appears in alternatives, consider if it makes the sentence more specific
+
+   SENTENCE COMPLETENESS:
+   - COMPARATIVE/TEMPORAL words (before, after, than, later) require REFERENCE POINTS
+     * "before" needs what it's comparing to: "before the change" NOT "help before" (before what?)
+     * "later" needs context: "a year later" NOT "walk later" (later than what?)
+     * If no reference point exists in the glosses, prefer alternatives that don't need one
+   - CONJUNCTIONS (but, and, or, however) imply CONTINUATION from prior context
+     * Standalone sentences should NOT start with conjunctions - they connect to nothing
+     * If 'but' is top-1 at position 1, prefer noun/adjective alternatives for sentence start
+     * 'but' at 95% but 'tall' at 1% → still use 'tall' because 'but' creates incomplete thought
+
+3. SEMANTIC COHERENCE: Look for words that naturally go together.
+   - Examples: mother+help+child (caregiving), basketball+play+time (sports)
+   - Reject combinations that don't make real-world sense
+
+4. USE ALTERNATIVES FOR MEANING: Pick lower-confidence options when:
+   - The high-confidence word makes the sentence meaningless or bizarre
+   - The alternative creates a sensible, natural sentence
+   - Example: 'bowling' (36%) vs 'apple' (25%) with 'give' → use 'apple' (you give apples, not bowling)
+
+5. SKIP ONLY AS LAST RESORT: Only skip a position if ALL options are clearly wrong.
+   - Do NOT skip just because a word seems unusual (e.g., AFRICA, ORANGE, THURSDAY)
+   - Unusual words are often the actual content - include them
+
+6. POSITION FLEXIBILITY: You can arrange selected words in any grammatical order.
+
+7. RELATIONAL NOUNS: Add "my" or "the" for family/relationship words as subjects.
+   - "mother help" → "My mother helps..."
+   - "son play" → "My son plays..."
+
+8. VERB COMPLEMENTATION: Use correct verb patterns:
+   - Verbs like 'enjoy', 'avoid', 'finish' require gerunds: "enjoys playing" NOT "enjoys to play"
    - Verbs like 'want', 'hope', 'decide' require infinitives: "wants to play" NOT "wants playing"
 
 INPUT FORMAT:
-- You'll get word options with confidence scores for each position
-- Confidence scores = model's prediction certainty, NOT relevance to your sentence
-- Select EXACTLY ONE word from EACH position
-- Only add grammatical filler words (articles like 'the/a/an', prepositions like 'on/in/with',
-  conjunctions like 'and/or')
-- DO NOT add filler words that are: negations (not/never/no), modals that change meaning (might/could/should), or any words     
-  that alter the semantic meaning unless they are an explicit position word in the list provided to you.
+- Word options with confidence scores for each position
+- Confidence = model certainty (higher is more reliable)
+- Only add grammatical filler words (articles, prepositions, conjunctions)
+- DO NOT add negations (not/never/no) or meaning-altering modals (might/could/should)
 
 CRITICAL RULES:
-1. Select EXACTLY ONE word from EACH position (must use all positions)
-2. NO MIXING: Cannot use multiple words from the same position's alternatives
-   - Example: If Position 1 = ['now', 'give', 'dog'] and you select 'now', you CANNOT also use 'give' or 'dog'
-3. ALL SELECTED WORDS must appear in your final sentence
- 4. MANDATORY DUPLICATE CHECK: Before finalizing selections, scan for duplicate words
-     - If ANY word appears twice, you MUST change one of them to a different alternative
-     - Priority: Keep the duplicate where it has higher confidence, change the other position
-     - Example: Position 1 has ['now' 50.7%, 'give' 40%], Position 5 has ['now' 99%]
-       → Keep 'now' for Position 5 (99%), choose 'give' for Position 1 (40%)
-     - Using the same word twice is almost always grammatically wrong - avoid at all costs
-5. Your "selections" array must match the words actually used in your "sentence"
+1. MEANING OVER CONFIDENCE: A sensible sentence beats a high-confidence nonsensical one
+2. POSITION 1 PREFERENCE: Prefer NOUNS over VERBS at sentence start (most sentences aren't commands)
+3. USE ALL POSITIONS when possible - each position represents a signed word
+4. Select at most ONE word per position (no mixing alternatives)
+5. NO DUPLICATE WORDS: Each word can only appear ONCE in your selections
+   - If the same word is top-1 at multiple positions, use it only at the highest-confidence position
+   - For other positions, select the next-best alternative that creates a different word
+   - Example: If 'water' is top-1 at positions 1 AND 2, use 'water' at the higher-confidence position
+     and pick an alternative (like 'drink') for the other position
+6. CHECK ALTERNATIVES if top-1 violates semantic rules, even with high confidence
+7. Your "selections" array should include one word from each position
+8. Only set "low_confidence": true if you had to skip positions or make uncertain choices
+
+{context_section}
 
 Word Predictions:
 {gloss_details}
 
 EXAMPLES:
 
-Example 1 - Semantic coherence over confidence (3 positions):
+Example 1 - Use all positions (normal case):
 Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
 Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
-Position 3: 'wrong' (41%), 'candy' (16%), 'deaf' (11%)
+Position 3: 'child' (70%), 'candy' (16%), 'deaf' (11%)
 
-✓ CORRECT: {{"selections": ["mother", "help", "deaf"], "sentence": "The mother helps the deaf person."}}
-   Why: Chose 'deaf' (11%) over 'wrong' (41%) for semantic coherence
+✓ CORRECT: {{"selections": ["mother", "help", "child"], "sentence": "My mother helps the child."}}
 
-❌ WRONG: {{"selections": ["mother", "help", "wrong"], "sentence": "The mother helps wrong person."}}
-   Why: 'wrong' doesn't make grammatical sense despite high confidence
+Example 2 - OBJECT COMPATIBILITY (activities aren't giveable):
+Position 1: 'give' (85%), 'want' (8%), 'take' (4%)
+Position 2: 'swimming' (40%), 'book' (32%), 'apple' (22%)
+Position 3: 'friend' (70%), 'man' (20%), 'son' (8%)
 
-❌ VIOLATION: {{"selections": ["mother", "help", "deaf"], "sentence": "The mother helps the deaf and candy person."}}
-   Why: Used 'candy' from Position 3 when only 'deaf' was selected
+✓ CORRECT: {{"selections": ["give", "book", "friend"], "sentence": "Give the book to my friend."}}
+   Why: RULE - "give" needs concrete objects. 'swimming' is an activity (can't give it), but 'book' (32%) is an object.
 
-Example 2 - Related objects + 4 positions:
-Position 1: 'chair' (85%), 'computer' (10%), 'year' (5%)
-Position 2: 'table' (28%), 'computer' (71%), 'year' (1%)
-Position 3: 'blue' (60%), 'happy' (30%), 'sad' (10%)
-Position 4: 'book' (50%), 'apple' (30%), 'dog' (20%)
+❌ WRONG: {{"selections": ["give", "swimming", "friend"], "sentence": "Give swimming to my friend."}}
+   Why: You can't give activities. Even at 40% confidence, 'swimming' violates object compatibility.
 
-✓ CORRECT: {{"selections": ["chair", "table", "blue", "book"], "sentence": "The blue book is on the table with a chair."}}
-   Why: chair+table+book = furniture theme, position reordering is allowed
+Example 3 - POSITION 1 NOUN vs VERB (prefer nouns at sentence start):
+Position 1: 'help' (53%), 'year' (27%), 'play' (12%)
+Position 2: 'before' (90%), 'after' (5%), 'during' (3%)
+Position 3: 'change' (75%), 'different' (15%), 'new' (8%)
 
-❌ VIOLATION: {{"selections": ["chair", "table", "blue", "book"], "sentence": "The blue chair is on the table and computer."}}
-   Why: Used 'computer' from Position 2 when only 'table' was selected
+✓ CORRECT: {{"selections": ["year", "before", "change"], "sentence": "A year before the change."}}
+   Why: RULE - Position 1 prefers NOUNS over VERBS. 'year' (noun) > 'help' (verb) as sentence opener.
+        RULE - "before" pairs naturally with time nouns (year/day/week), not action verbs.
 
-OUTPUT FORMAT (JSON only - no other text):
+❌ WRONG: {{"selections": ["help", "before", "change"], "sentence": "Help before the change."}}
+   Why: Verb-first creates a command. With 'before' present, prefer time noun 'year' for natural phrasing.
+
+Example 4 - NOUN vs ADJECTIVE as subject:
+Position 1: 'full' (46%), 'man' (41%), 'son' (5%)
+Position 2: 'wrong' (80%), 'right' (12%), 'good' (5%)
+Position 3: 'help' (75%), 'give' (15%), 'want' (8%)
+
+✓ CORRECT: {{"selections": ["man", "wrong", "help"], "sentence": "The man is wrong to help."}}
+   Why: RULE - Sentences need noun subjects. 'man' (41%) is a noun, 'full' (46%) is an adjective.
+        Even with 5% lower confidence, 'man' creates a complete sentence structure.
+
+❌ WRONG: {{"selections": ["full", "wrong", "help"], "sentence": "It is wrong to help when full."}}
+   Why: Had to add "it" and "when" to make 'full' work. 'man' required no extra words.
+
+Example 5 - Include all content words:
+Position 1: 'play' (85%), 'game' (10%), 'fun' (3%)
+Position 2: 'basketball' (90%), 'ball' (5%), 'sport' (3%)
+Position 3: 'orange' (75%), 'drink' (15%), 'fruit' (8%)
+Position 4: 'apple' (80%), 'red' (12%), 'fruit' (6%)
+
+✓ CORRECT: {{"selections": ["play", "basketball", "orange", "apple"], "sentence": "I play basketball with an orange and apple."}}
+   Why: All positions have high confidence and make sense together - include all of them
+
+❌ WRONG: {{"selections": ["play", "basketball"], "sentence": "I play basketball."}}
+   Why: Skipped 'orange' and 'apple' which were high-confidence predictions
+
+Example 6 - Handle duplicates:
+Position 1: 'tall' (70%), 'son' (20%), 'man' (8%)
+Position 2: 'change' (55%), 'grow' (25%), 'big' (15%)
+Position 3: 'tall' (80%), 'different' (12%), 'new' (5%)
+
+✓ CORRECT: {{"selections": ["son", "grow", "tall"], "sentence": "My son is growing tall."}}
+   Why: 'tall' appears twice - keep it at position 3 (80%), use 'son' (20%) for position 1
+
+Example 7 - Moderate confidence (real-time scenario):
+Position 1: 'mother' (42%), 'brother' (28%), 'man' (15%)
+Position 2: 'help' (38%), 'give' (25%), 'want' (18%)
+Position 3: 'child' (45%), 'son' (30%), 'boy' (12%)
+
+✓ CORRECT: {{"selections": ["mother", "help", "child"], "sentence": "My mother helps the child."}}
+   Why: Top predictions create a meaningful sentence - trust them even at moderate confidence
+
+Example 8 - PROPER NOUN preference (specific over generic):
+Position 1: 'man' (34%), 'africa' (22%), 'drink' (11%)
+Position 2: 'hot' (85%), 'cold' (10%), 'warm' (3%)
+Position 3: 'time' (70%), 'day' (18%), 'year' (8%)
+
+✓ CORRECT: {{"selections": ["africa", "hot", "time"], "sentence": "Africa is hot this time."}}
+   Why: RULE - 'africa' (proper noun/place) adds specific meaning vs generic 'man'.
+        "Africa is hot" describes a place; "The man is hot" is less informative.
+
+❌ WRONG: {{"selections": ["man", "hot", "time"], "sentence": "The man has a hot time."}}
+   Why: 'man' is a generic common noun. When a proper noun like 'africa' is available
+        and fits the context, prefer it for more specific meaning.
+
+Example 9 - NO DUPLICATES (same word at multiple positions):
+Position 1: 'water' (60%), 'drink' (25%), 'cold' (10%)
+Position 2: 'water' (55%), 'drink' (36%), 'full' (5%)
+Position 3: 'man' (70%), 'woman' (20%), 'son' (8%)
+
+✓ CORRECT: {{"selections": ["water", "drink", "man"], "sentence": "The man drinks water."}}
+   Why: RULE - 'water' appears at both positions 1 and 2. Keep it at position 1 (60%),
+        use alternative 'drink' (36%) at position 2. Never repeat the same word.
+
+❌ WRONG: {{"selections": ["water", "water", "man"], "sentence": "The water is the water man."}}
+   Why: Repeated 'water' twice. Must use different words for each position.
+
+OUTPUT FORMAT (JSON only):
 {{
   "selections": ["word1", "word2", "word3"],
-  "sentence": "Your complete grammatical sentence here."
+  "sentence": "Your meaningful sentence here.",
+  "low_confidence": false
 }}
 
 Requirements:
-- "selections" = one word from each position, in order (Position 1, Position 2, etc.)
-- "sentence" = uses ALL selected words + only filler words (articles/prepositions/conjunctions)
-- Output ONLY the JSON object, nothing before or after
+- "selections" = one word from each position (use all positions when possible)
+- "sentence" = meaningful sentence using ALL selected words
+- "low_confidence" = true only if you had to skip positions or make uncertain choices
+- Output ONLY the JSON object

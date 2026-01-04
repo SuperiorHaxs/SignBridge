@@ -395,11 +395,12 @@ class EndToEndPipeline:
         """Load model from checkpoint"""
         print(f"STEP: Loading model from checkpoint: {self.checkpoint_path}")
         try:
-            self.model, self.tokenizer = load_model_from_checkpoint(self.checkpoint_path)
+            self.model, self.tokenizer, self.masked_class_ids = load_model_from_checkpoint(self.checkpoint_path)
             print("SUCCESS: Checkpoint model loaded successfully")
         except Exception as e:
             print(f"ERROR: Failed to load checkpoint: {e}")
             print("WARNING: Falling back to default model")
+            self.masked_class_ids = []
 
     def _create_temp_directory(self):
         """Create temporary working directory"""
@@ -761,7 +762,8 @@ class EndToEndPipeline:
             try:
                 # Use checkpoint model if available, otherwise default model
                 if self.model and self.tokenizer:
-                    result = predict_pose_file(pickle_file, model=self.model, tokenizer=self.tokenizer)
+                    result = predict_pose_file(pickle_file, model=self.model, tokenizer=self.tokenizer,
+                                               masked_class_ids=getattr(self, 'masked_class_ids', None))
                 else:
                     result = predict_pose_file(pickle_file)
 
@@ -1399,7 +1401,8 @@ Return only the constructed English sentence, nothing else."""
 
             # Run prediction
             if self.model and self.tokenizer:
-                result = predict_pose_file(pickle_path, model=self.model, tokenizer=self.tokenizer)
+                result = predict_pose_file(pickle_path, model=self.model, tokenizer=self.tokenizer,
+                                           masked_class_ids=getattr(self, 'masked_class_ids', None))
             else:
                 result = predict_pose_file(pickle_path)
 

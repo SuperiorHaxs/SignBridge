@@ -54,16 +54,20 @@ except ImportError:
 
 
 # ============================================================================
-# CONFIGURABLE METRIC WEIGHTS FOR COMPOSITE SCORE
+# CONFIGURABLE METRIC WEIGHTS FOR COMPOSITE SCORE (CTQI)
 # ============================================================================
-# Adjust these weights to change how the composite score is calculated
+# Composite Translation Quality Index (CTQI) weights
 # All weights should sum to 1.0
+#
+# The CTQI combines three complementary metrics:
+# - Gloss Accuracy: Did we recognize the signs correctly? (continuous, 0-100)
+# - Quality Score: Is the output grammatically fluent? (continuous, 0-100)
+# - Perfect Translation Rate: Bonus for complete correctness (binary, 0 or 100)
 
 METRIC_WEIGHTS = {
-    'quality': 0.4,        # Reference-free grammaticality/fluency (0-100)
-    'coverage_f1': 0.25,   # Content word alignment with reference (0-100)
-    'bertscore': 0.2,      # Semantic similarity to reference (0-100)
-    'bleu': 0.15           # Lexical n-gram overlap with reference (0-100)
+    'gloss_accuracy': 0.4,           # Core task - sign recognition accuracy (40%)
+    'quality': 0.4,                  # Reference-free grammaticality/fluency (40%)
+    'perfect_translation_rate': 0.2  # Bonus for all glosses correct (20%)
 }
 
 # Verify weights sum to 1.0
@@ -148,6 +152,44 @@ def calculate_gloss_accuracy(
         'total': total,
         'mismatches': mismatches
     }
+
+
+# ============================================================================
+# PERFECT TRANSLATION RATE (PTR)
+# ============================================================================
+
+def calculate_perfect_translation_rate(
+    predicted_glosses: List[str],
+    original_glosses: List[str]
+) -> float:
+    """
+    Calculate Perfect Translation Rate (PTR) - binary metric for complete correctness.
+
+    PTR is 100 if ALL glosses are correct, 0 otherwise.
+    This is a stricter measure than Gloss Accuracy, rewarding only perfect translations.
+
+    Used as a "bonus" component in the CTQI composite score.
+
+    Args:
+        predicted_glosses: List of predicted/selected glosses (strings)
+        original_glosses: List of original input glosses (ground truth)
+
+    Returns:
+        100.0 if all glosses match exactly, 0.0 otherwise
+    """
+    if not predicted_glosses or not original_glosses:
+        return 0.0
+
+    # Must have same length
+    if len(predicted_glosses) != len(original_glosses):
+        return 0.0
+
+    # Check all glosses match
+    for pred, orig in zip(predicted_glosses, original_glosses):
+        if pred.upper().strip() != orig.upper().strip():
+            return 0.0
+
+    return 100.0
 
 
 # ============================================================================
@@ -549,30 +591,30 @@ def calculate_coverage(
 # ============================================================================
 
 def calculate_composite_score(
-    bleu: Optional[float] = None,
-    bertscore: Optional[float] = None,
+    gloss_accuracy: Optional[float] = None,
     quality: Optional[float] = None,
-    coverage_f1: Optional[float] = None,
+    perfect_translation_rate: Optional[float] = None,
     weights: Optional[Dict[str, float]] = None
 ) -> Optional[float]:
     """
     Calculate Composite Translation Quality Index (CTQI).
 
-    This is a weighted average of available metrics, normalized to handle
-    missing metrics gracefully.
+    This is a weighted average of three complementary metrics that measure
+    different aspects of ASL-to-English translation quality.
 
     Default weights (must sum to 1.0):
-    - quality: 0.4 (40%) - Reference-free grammaticality/fluency
-    - coverage_f1: 0.25 (25%) - Content word alignment
-    - bertscore: 0.2 (20%) - Semantic similarity
-    - bleu: 0.15 (15%) - Lexical n-gram overlap
+    - gloss_accuracy: 0.4 (40%) - Sign recognition accuracy (continuous)
+    - quality: 0.4 (40%) - Reference-free grammaticality/fluency (continuous)
+    - perfect_translation_rate: 0.2 (20%) - Bonus for complete correctness (binary)
+
+    The PTR component acts as a bonus for perfect translations rather than
+    a harsh penalty, since it has lower weight and is binary (0 or 100).
 
     Args:
-        bleu: BLEU score (0-100) or None
-        bertscore: BERTScore F1 (0-100) or None
-        quality: Quality score (0-100) or None
-        coverage_f1: Coverage F1 score (0-100) or None
-        weights: Optional custom weights dict (keys: 'bleu', 'bertscore', 'quality', 'coverage_f1')
+        gloss_accuracy: Gloss accuracy score (0-100, continuous)
+        quality: Quality score (0-100, continuous)
+        perfect_translation_rate: PTR score (0 or 100, binary)
+        weights: Optional custom weights dict
 
     Returns:
         Composite score (0-100) or None if no metrics available
@@ -584,21 +626,17 @@ def calculate_composite_score(
     weights_sum = 0
 
     # Add available scores
-    if bleu is not None:
-        scores['bleu'] = bleu
-        weights_sum += metric_weights['bleu']
-
-    if bertscore is not None:
-        scores['bertscore'] = bertscore
-        weights_sum += metric_weights['bertscore']
+    if gloss_accuracy is not None:
+        scores['gloss_accuracy'] = gloss_accuracy
+        weights_sum += metric_weights.get('gloss_accuracy', 0.4)
 
     if quality is not None:
         scores['quality'] = quality
-        weights_sum += metric_weights['quality']
+        weights_sum += metric_weights.get('quality', 0.4)
 
-    if coverage_f1 is not None:
-        scores['coverage_f1'] = coverage_f1
-        weights_sum += metric_weights['coverage_f1']
+    if perfect_translation_rate is not None:
+        scores['perfect_translation_rate'] = perfect_translation_rate
+        weights_sum += metric_weights.get('perfect_translation_rate', 0.2)
 
     # Need at least one score
     if not scores or weights_sum == 0:
@@ -606,7 +644,7 @@ def calculate_composite_score(
 
     # Calculate weighted average (renormalize weights if some metrics missing)
     composite = sum(
-        scores[key] * metric_weights[key] / weights_sum
+        scores[key] * metric_weights.get(key, 0) / weights_sum
         for key in scores
     )
 
@@ -637,7 +675,7 @@ def calculate_all_metrics(
         quality_scorer: Optional QualityScorer instance (reuse for efficiency)
 
     Returns:
-        dict with all computed metrics
+        dict with all computed metrics including CTQI composite score
     """
     results = {
         'bleu': calculate_bleu_score(hypothesis, reference),
@@ -653,21 +691,29 @@ def calculate_all_metrics(
     results['missing_words'] = coverage['missing_words']
     results['hallucinated_words'] = coverage['hallucinated_words']
 
-    # Calculate composite score
-    results['composite'] = calculate_composite_score(
-        bleu=results['bleu'],
-        bertscore=results['bertscore'],
-        quality=results['quality'],
-        coverage_f1=results['coverage_f1']
-    )
-
-    # Calculate gloss accuracy if glosses provided
+    # Calculate gloss accuracy and PTR if glosses provided
     if predicted_glosses is not None and original_glosses is not None:
         accuracy_result = calculate_gloss_accuracy(predicted_glosses, original_glosses)
         results['gloss_accuracy'] = accuracy_result['accuracy']
         results['gloss_correct'] = accuracy_result['correct']
         results['gloss_total'] = accuracy_result['total']
         results['gloss_mismatches'] = accuracy_result['mismatches']
+
+        # Calculate Perfect Translation Rate
+        results['perfect_translation_rate'] = calculate_perfect_translation_rate(
+            predicted_glosses, original_glosses
+        )
+
+        # Calculate CTQI composite score (gloss_accuracy + quality + PTR)
+        results['ctqi'] = calculate_composite_score(
+            gloss_accuracy=results['gloss_accuracy'],
+            quality=results['quality'],
+            perfect_translation_rate=results['perfect_translation_rate']
+        )
+    else:
+        results['gloss_accuracy'] = None
+        results['perfect_translation_rate'] = None
+        results['ctqi'] = None
 
     return results
 
@@ -712,6 +758,13 @@ if __name__ == "__main__":
     print(f"  Accuracy: {accuracy_mismatch['accuracy']:.1f}%")
     print(f"  Mismatches: {accuracy_mismatch['mismatches']}")
 
+    # Test Perfect Translation Rate
+    print("\n--- Perfect Translation Rate ---")
+    ptr_perfect = calculate_perfect_translation_rate(predicted_glosses, original_glosses)
+    print(f"  PTR (all correct): {ptr_perfect:.0f}")
+    ptr_mismatch = calculate_perfect_translation_rate(predicted_mismatch, original_glosses)
+    print(f"  PTR (with mismatch): {ptr_mismatch:.0f}")
+
     # Test BLEU
     print("\n--- BLEU Score ---")
     bleu = calculate_bleu_score(hypothesis, reference)
@@ -734,15 +787,25 @@ if __name__ == "__main__":
     print(f"  Precision: {coverage['precision']:.1f}%")
     print(f"  F1: {coverage['f1']:.1f}%")
 
-    # Test Composite Score
+    # Test Composite Score (CTQI)
     print("\n--- Composite Score (CTQI) ---")
-    composite = calculate_composite_score(
-        bleu=bleu,
-        bertscore=bert,
+    print(f"  Weights: Gloss Accuracy={METRIC_WEIGHTS['gloss_accuracy']:.0%}, Quality={METRIC_WEIGHTS['quality']:.0%}, PTR={METRIC_WEIGHTS['perfect_translation_rate']:.0%}")
+
+    # Perfect case
+    ctqi_perfect = calculate_composite_score(
+        gloss_accuracy=accuracy['accuracy'],
         quality=quality,
-        coverage_f1=coverage['f1']
+        perfect_translation_rate=ptr_perfect
     )
-    print(f"  Composite: {composite:.2f}" if composite is not None else "  Composite: Not available")
+    print(f"  CTQI (all correct): {ctqi_perfect:.2f}" if ctqi_perfect is not None else "  CTQI: Not available")
+
+    # Mismatch case
+    ctqi_mismatch = calculate_composite_score(
+        gloss_accuracy=accuracy_mismatch['accuracy'],
+        quality=quality,
+        perfect_translation_rate=ptr_mismatch
+    )
+    print(f"  CTQI (with mismatch): {ctqi_mismatch:.2f}" if ctqi_mismatch is not None else "  CTQI: Not available")
 
     # Test all metrics at once
     print("\n--- All Metrics (convenience function) ---")

@@ -1,0 +1,11 @@
+{
+  "description": "Classes to mask at inference time due to confusion patterns",
+  "threshold_used": "manual selection based on evaluation analysis",
+  "masked_class_ids": [11, 18, 32],
+  "masked_class_names": [
+    "DANCE",
+    "FULL",
+    "TABLE"
+  ],
+  "effective_classes": 40
+}
