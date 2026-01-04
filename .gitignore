@@ -107,3 +107,27 @@ config/settings.json
 # Synthetic evaluation temporary results
 project-utilities/synthetic_evaluation/evaluation_results/
 config/settings.json.backup.*
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Evaluation results (generated output)
+evaluation_results/
+project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results/
+project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results_*/
+
+# Application output files
+applications/closed-captions/detected_glosses.txt
+applications/closed-captions/translated_sentence.txt
+applications/show-and-tell/saved-sessions/
+
+# Training models and artifacts
+models/training-scripts/models/
+models/training-scripts/distinct_glosses_v2.json
+models/openhands-modernized/production-models/*/class_index_mapping.json
+
+# Incremental training artifacts
+project-utilities/training_utils/incremental_training/*.json
+
+# Junk files
+nul
