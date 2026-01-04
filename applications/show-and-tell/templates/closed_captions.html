@@ -4,269 +4,18 @@
 
 {% block head %}
 <style>
-    /* Closed Captions Mode Styles */
-    .cc-container {
+    /* Closed Captions Mode Layout - matches Live Mode sizing */
+    .cc-page-container {
         display: flex;
         flex-direction: column;
-        height: calc(100vh - 160px);
+        align-items: center;
         padding: 1rem;
         gap: 1rem;
     }
 
-    .cc-video-section {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        background: #1a1a2e;
-        border-radius: 12px;
-        overflow: hidden;
-    }
-
-    .cc-video-wrapper {
-        position: relative;
+    .cc-camera-section {
         width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #cc-webcam {
-        max-width: 100%;
-        max-height: 100%;
-        border-radius: 8px;
-        transform: scaleX(-1); /* Mirror for natural interaction */
-    }
-
-    .cc-warmup-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        border-radius: 8px;
-        z-index: 10;
-    }
-
-    .cc-warmup-text {
-        font-size: 1.5rem;
-        color: white;
-        margin-bottom: 0.5rem;
-    }
-
-    .cc-warmup-countdown {
-        font-size: 4rem;
-        font-weight: bold;
-        color: #4CAF50;
-        animation: pulse 1s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.1); opacity: 0.8; }
-    }
-
-    .cc-ready-indicator {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(76, 175, 80, 0.9);
-        color: white;
-        padding: 1rem 2rem;
-        border-radius: 8px;
-        font-size: 1.25rem;
-        font-weight: bold;
-        z-index: 10;
-        animation: fadeOut 2s ease-in-out forwards;
-    }
-
-    @keyframes fadeOut {
-        0%, 70% { opacity: 1; }
-        100% { opacity: 0; }
-    }
-
-    .cc-caption-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 1.5rem 2rem;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
-    }
-
-    .cc-caption-text {
-        font-size: 1.75rem;
-        color: white;
-        text-align: center;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-        min-height: 2.5rem;
-        transition: opacity 0.3s ease;
-    }
-
-    .cc-caption-text.updating {
-        opacity: 0.7;
-    }
-
-    .cc-status-bar {
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        right: 1rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .cc-status-left {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .cc-status-indicator {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 20px;
-        color: white;
-        font-size: 0.9rem;
-    }
-
-    .cc-status-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        background: #666;
-        animation: pulse 2s infinite;
-    }
-
-    .cc-status-dot.ready {
-        background: #4CAF50;
-    }
-
-    .cc-status-dot.signing {
-        background: #ff9800;
-        animation: pulse 0.5s infinite;
-    }
-
-    .cc-status-dot.processing {
-        background: #2196F3;
-        animation: pulse 0.3s infinite;
-    }
-
-    @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
-
-    .cc-gloss-count {
-        padding: 0.5rem 1rem;
-        background: rgba(0, 0, 0, 0.6);
-        border-radius: 20px;
-        color: white;
-        font-size: 0.9rem;
-    }
-
-    .cc-controls {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        padding: 1rem;
-        background: var(--card-bg);
-        border-radius: 12px;
-    }
-
-    .cc-btn {
-        padding: 0.75rem 2rem;
-        font-size: 1rem;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .cc-btn-start {
-        background: #4CAF50;
-        color: white;
-    }
-
-    .cc-btn-start:hover {
-        background: #43A047;
-    }
-
-    .cc-btn-stop {
-        background: #f44336;
-        color: white;
-    }
-
-    .cc-btn-stop:hover {
-        background: #e53935;
-    }
-
-    .cc-btn-reset {
-        background: #607D8B;
-        color: white;
-    }
-
-    .cc-btn-reset:hover {
-        background: #546E7A;
-    }
-
-    .cc-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* Recent glosses panel */
-    .cc-glosses-panel {
-        position: absolute;
-        top: 4rem;
-        right: 1rem;
-        max-width: 200px;
-        max-height: 300px;
-        overflow-y: auto;
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 8px;
-        padding: 0.75rem;
-    }
-
-    .cc-glosses-title {
-        font-size: 0.8rem;
-        color: #aaa;
-        margin-bottom: 0.5rem;
-        text-transform: uppercase;
-    }
-
-    .cc-gloss-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.25rem 0;
-        color: white;
-        font-size: 0.9rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .cc-gloss-item:last-child {
-        border-bottom: none;
-    }
-
-    .cc-gloss-confidence {
-        color: #4CAF50;
-        font-size: 0.8rem;
+        max-width: 800px;
     }
 
     /* Hide breadcrumbs in CC mode */
@@ -277,51 +26,26 @@
 {% endblock %}
 
 {% block content %}
-<div class="cc-container">
-    <div class="cc-video-section">
-        <div class="cc-status-bar">
-            <div class="cc-status-left">
-                <div class="cc-status-indicator">
-                    <span class="cc-status-dot" id="cc-status-dot"></span>
-                    <span id="cc-status-text">Ready</span>
-                </div>
-                <div class="cc-gloss-count">
-                    Signs: <span id="cc-gloss-count">0</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="cc-video-wrapper">
-            <video id="cc-webcam" autoplay playsinline muted></video>
-            <div class="cc-warmup-overlay" id="cc-warmup-overlay" style="display: none;">
-                <div class="cc-warmup-text">Get ready...</div>
-                <div class="cc-warmup-countdown" id="cc-warmup-countdown">3</div>
-            </div>
-            <div class="cc-ready-indicator" id="cc-ready-indicator" style="display: none;">
-                Start signing now
-            </div>
-        </div>
-
-        <div class="cc-glosses-panel" id="cc-glosses-panel" style="display: none;">
-            <div class="cc-glosses-title">Recent Signs</div>
-            <div id="cc-glosses-list"></div>
-        </div>
-
-        <div class="cc-caption-overlay">
-            <div class="cc-caption-text" id="cc-caption-text">
-                Start signing to see captions...
-            </div>
-        </div>
+<div class="cc-page-container">
+    <div class="cc-camera-section">
+        {% set camera_id = 'cc' %}
+        {% set camera_fullscreen = false %}
+        {% set camera_show_warmup = true %}
+        {% set camera_show_caption = true %}
+        {% set camera_show_glosses_panel = true %}
+        {% set camera_show_motion_score = false %}
+        {% set camera_placeholder_text = 'Start signing to see captions...' %}
+        {% include 'partials/camera_ui.html' %}
     </div>
 
-    <div class="cc-controls">
-        <button class="cc-btn cc-btn-start" id="cc-start-btn">
+    <div class="camera-controls">
+        <button class="camera-btn camera-btn-start" id="cc-start-btn">
             <span>Start</span>
         </button>
-        <button class="cc-btn cc-btn-stop" id="cc-stop-btn" disabled>
+        <button class="camera-btn camera-btn-stop" id="cc-stop-btn" disabled>
             <span>Stop</span>
         </button>
-        <button class="cc-btn cc-btn-reset" id="cc-reset-btn">
+        <button class="camera-btn camera-btn-reset" id="cc-reset-btn">
             <span>Reset</span>
         </button>
     </div>
@@ -329,5 +53,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/closed_captions.js') }}"></script>
+<script src="{{ url_for('static', filename='js/closed_captions.js') }}?v=2"></script>
 {% endblock %}

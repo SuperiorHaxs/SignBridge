@@ -84,6 +84,9 @@ class CaptionService:
         # Context manager
         self.context = ContextManager()
 
+        # Current gloss status (used/dropped) for frontend display
+        self.current_gloss_status = []
+
         # Threading
         self._file_watcher_running = False
         self._file_watcher_thread = None
@@ -164,6 +167,7 @@ class CaptionService:
     def reset(self):
         """Clear all state and files."""
         self.context.reset()
+        self.current_gloss_status = []  # Clear gloss status
 
         # Clear files
         try:
@@ -271,6 +275,13 @@ class CaptionService:
             }
 
             self.context.add_gloss(gloss_data)
+
+            # Add to current_gloss_status as pending (will be updated when LLM processes)
+            self.current_gloss_status.append({
+                'gloss': gloss_data['gloss'],
+                'confidence': gloss_data['confidence'],
+                'used': None  # None = pending, True = used, False = dropped
+            })
 
             # Write to file
             self._write_gloss_to_file(gloss_data)
@@ -452,6 +463,11 @@ class CaptionService:
         if not self.llm_provider or not self.prompt_template:
             # Fallback: just join glosses
             gloss_words = [g.get('gloss', 'UNKNOWN') for g in new_glosses]
+            # Mark all as used in fallback mode
+            self.current_gloss_status = [
+                {'gloss': g.get('gloss', 'UNKNOWN'), 'confidence': g.get('confidence', 0), 'used': True}
+                for g in new_glosses
+            ]
             return ' '.join(gloss_words)
 
         try:
@@ -472,10 +488,17 @@ class CaptionService:
             # Call LLM
             response = self.llm_provider.generate(prompt)
 
-            # Parse response
-            sentence = self._parse_llm_response(response, ctx['glosses'])
+            # Parse response (now returns dict with sentence and gloss_status)
+            result = self._parse_llm_response(response, ctx['glosses'])
 
-            return sentence
+            # Update gloss status for glosses that were processed
+            # Match by gloss name and update used status
+            selection_set = set(s.lower() for s in result['selections'])
+            for gloss_entry in self.current_gloss_status:
+                if gloss_entry['used'] is None:  # Only update pending ones
+                    gloss_entry['used'] = gloss_entry['gloss'].lower() in selection_set
+
+            return result['sentence']
 
         except Exception as e:
             print(f"[CaptionService] LLM error: {e}")
@@ -546,8 +569,8 @@ INCREMENTAL MODE: Add the new words to extend the caption naturally.
                 details.append(f"Position {i}: '{g.get('gloss', 'UNKNOWN')}' (confidence: {conf:.1f}%)\n")
         return "".join(details)
 
-    def _parse_llm_response(self, response: str, glosses: list) -> str:
-        """Parse LLM response to extract sentence."""
+    def _parse_llm_response(self, response: str, glosses: list) -> Dict[str, Any]:
+        """Parse LLM response to extract sentence and selections."""
         import re
 
         response_text = response.strip()
@@ -561,32 +584,49 @@ INCREMENTAL MODE: Add the new words to extend the caption naturally.
             response_text = response_text[:-3]
         response_text = response_text.strip()
 
+        sentence = ""
+        selections = []
+
         # Try to parse JSON
         try:
             result = json.loads(response_text)
-            return result.get('sentence', response_text)
+            sentence = result.get('sentence', response_text)
+            selections = result.get('selections', [])
         except json.JSONDecodeError:
-            pass
+            # Fallback: Try to find JSON object in response
+            try:
+                json_match = re.search(r'\{[^{}]*"sentence"\s*:\s*"([^"]+)"[^{}]*\}', response_text)
+                if json_match:
+                    sentence = json_match.group(1)
+                # Try to extract selections
+                sel_match = re.search(r'"selections"\s*:\s*\[([^\]]+)\]', response_text)
+                if sel_match:
+                    selections = [s.strip().strip('"\'') for s in sel_match.group(1).split(',')]
+            except Exception:
+                pass
 
-        # Fallback: Try to find JSON object in response
-        try:
-            json_match = re.search(r'\{[^{}]*"sentence"\s*:\s*"([^"]+)"[^{}]*\}', response_text)
-            if json_match:
-                return json_match.group(1)
-        except Exception:
-            pass
+        # If no sentence found, use raw text
+        if not sentence:
+            sentence = response_text
+            print(f"[CaptionService] Warning: Could not parse LLM response: {response_text[:100]}")
 
-        # Fallback: Extract just the sentence value using regex
-        try:
-            sentence_match = re.search(r'"sentence"\s*:\s*"([^"]+)"', response_text)
-            if sentence_match:
-                return sentence_match.group(1)
-        except Exception:
-            pass
+        # Mark glosses as used or dropped
+        gloss_status = []
+        selection_set = set(s.lower() for s in selections)
+        for g in glosses:
+            gloss_word = g.get('gloss', 'UNKNOWN').lower()
+            used = gloss_word in selection_set
+            gloss_status.append({
+                'gloss': g.get('gloss', 'UNKNOWN'),
+                'confidence': g.get('confidence', 0),
+                'used': used
+            })
 
-        # Last resort: return raw text (shouldn't reach here normally)
-        print(f"[CaptionService] Warning: Could not parse LLM response: {response_text[:100]}")
-        return response_text
+        return {
+            'sentence': sentence,
+            'selections': selections,
+            'gloss_status': gloss_status
+        }
 
     # =========================================================================
     # PUBLIC API
@@ -605,6 +645,10 @@ INCREMENTAL MODE: Add the new words to extend the caption naturally.
             print(f"[CaptionService] Error reading sentence file: {e}")
         return ""
 
+    def get_gloss_status(self) -> list:
+        """Get current gloss status (used/dropped for each gloss)."""
+        return self.current_gloss_status
+
     def get_state(self) -> Dict[str, Any]:
         """Get current service state."""
         return {
@@ -613,4 +657,5 @@ INCREMENTAL MODE: Add the new words to extend the caption naturally.
             'processed_count': self.context.processed_count,
             'sentence_count': len(self.context.sentence_history),
             'is_running': self._file_watcher_running,
+            'gloss_status': self.current_gloss_status,
         }

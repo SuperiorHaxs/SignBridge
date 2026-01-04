@@ -5,7 +5,6 @@
       "name": "Son Enjoy Work",
       "thumbnail": "pose_video.mp4"
     },
-  
     {
       "id": "what-time-finish-basketball-k",
       "name": "what time finish basketball",
@@ -24,6 +23,11 @@
     {
       "id": "work-full-time-doctor-k",
       "name": "work full time doctor",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "man-drink-water-kk",
+      "name": "Man Drink Water",
       "thumbnail": "pose_video.mp4"
     }
   ]

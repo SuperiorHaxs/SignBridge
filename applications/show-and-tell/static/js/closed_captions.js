@@ -11,10 +11,6 @@
 
 let stream = null;
 let isRunning = false;
-let isSigning = false;
-let isProcessing = false;
-let signStartTime = null;
-let lastMotionTime = null;
 let signRecorder = null;
 let signChunks = [];
 let config = null;
@@ -24,11 +20,8 @@ let detectedGlosses = [];
 let captionPollInterval = null;
 let lastCaption = '';
 
-// Motion detection
-let motionCanvas = null;
-let motionCtx = null;
-let previousFrame = null;
-let frameCount = 0;  // For skipping initial frames
+// Motion detection - using common MotionDetector module
+let motionDetector = null;
 
 // DOM Elements
 let webcamVideo, captionText, statusDot, statusText, glossCount;
@@ -47,7 +40,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initializeElements() {
-    webcamVideo = document.getElementById('cc-webcam');
+    // Using common camera UI component IDs (cc- prefix)
+    webcamVideo = document.getElementById('cc-video');
     captionText = document.getElementById('cc-caption-text');
     statusDot = document.getElementById('cc-status-dot');
     statusText = document.getElementById('cc-status-text');
@@ -126,7 +120,7 @@ async function startCaptioning() {
         startBtn.disabled = true;
         stopBtn.disabled = false;
 
-        // Initialize motion detection
+        // Initialize motion detection using common module
         initMotionDetection();
 
         // Start motion detection loop
@@ -208,18 +202,46 @@ async function resetSession() {
 }
 
 // ============================================================
-// MOTION DETECTION
+// MOTION DETECTION (using common MotionDetector module)
 // ============================================================
 
 function initMotionDetection() {
-    motionCanvas = document.createElement('canvas');
-    motionCanvas.width = 160;
-    motionCanvas.height = 120;
-    motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
-    previousFrame = null;
-    frameCount = 0;  // Reset frame counter
+    // Create motion detector with config from server
+    const motionConfig = config.motion_config || {};
+    motionDetector = new MotionDetector(motionConfig);
 
-    // Show warmup overlay with countdown
+    // Set up callbacks
+    motionDetector.onWarmupProgress = (secondsLeft, frameCount, totalFrames) => {
+        warmupOverlay.style.display = 'flex';
+        if (warmupCountdown.textContent !== String(secondsLeft)) {
+            warmupCountdown.textContent = secondsLeft;
+        }
+    };
+
+    motionDetector.onWarmupComplete = () => {
+        warmupOverlay.style.display = 'none';
+        readyIndicator.style.display = 'block';
+        setTimeout(() => {
+            readyIndicator.style.display = 'none';
+        }, 2000);
+    };
+
+    motionDetector.onSignStart = () => {
+        updateStatus('signing', 'Signing...');
+        startSignRecording();
+    };
+
+    motionDetector.onSignEnd = (duration) => {
+        console.log(`[CC] Sign ended after ${duration}ms`);
+        stopSignRecordingAndProcess();
+    };
+
+    motionDetector.onSignTooShort = (duration) => {
+        console.log(`[CC] Sign too short (${duration}ms), ignoring`);
+        cancelSignRecording();
+    };
+
+    // Show warmup overlay
     warmupOverlay.style.display = 'flex';
     readyIndicator.style.display = 'none';
     warmupCountdown.textContent = '3';
@@ -228,123 +250,13 @@ function initMotionDetection() {
 function motionDetectionLoop() {
     if (!isRunning) return;
 
-    if (!webcamVideo || webcamVideo.readyState < 2) {
-        requestAnimationFrame(motionDetectionLoop);
-        return;
-    }
-
     try {
-        const now = Date.now();
-        const motionConfig = config.motion_config;
-
-        // Skip first 90 frames (~3 seconds at 30fps) to let camera stabilize
-        frameCount++;
-        const warmupFrames = motionConfig.warmup_frames || 90;
-        if (frameCount <= warmupFrames) {
-            // Update countdown display (3, 2, 1)
-            const secondsLeft = Math.ceil((warmupFrames - frameCount) / 30);
-            if (warmupCountdown.textContent !== String(secondsLeft)) {
-                warmupCountdown.textContent = secondsLeft;
-            }
-            requestAnimationFrame(motionDetectionLoop);
-            return;
-        }
-
-        // Warmup just ended - hide overlay and show ready indicator
-        if (frameCount === warmupFrames + 1) {
-            warmupOverlay.style.display = 'none';
-            readyIndicator.style.display = 'block';
-            // Ready indicator auto-hides via CSS animation
-            setTimeout(() => {
-                readyIndicator.style.display = 'none';
-            }, 2000);
-        }
-
-        // Draw current frame
-        motionCtx.drawImage(webcamVideo, 0, 0, motionCanvas.width, motionCanvas.height);
-        const currentFrame = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height);
-
-        let motionScore = 0;
-        if (previousFrame) {
-            motionScore = calculateMotionScore(previousFrame.data, currentFrame.data);
-        }
-        previousFrame = currentFrame;
-
-        // motionScore is now a ratio (0-1) of pixels that changed significantly
-        // motion_area_threshold is the minimum fraction of pixels that must change (e.g., 0.02 = 2%)
-        const threshold = motionConfig.motion_area_threshold || 0.02;
-
-        // Detect motion
-        if (motionScore > threshold) {
-            lastMotionTime = now;
-
-            if (!isSigning && !isProcessing) {
-                // Start signing
-                isSigning = true;
-                signStartTime = now;
-                updateStatus('signing', 'Signing...');
-                startSignRecording();
-            }
-        } else if (isSigning) {
-            const cooldownMs = motionConfig.cooldown_ms || 1000;
-            const timeSinceMotion = now - lastMotionTime;
-
-            if (timeSinceMotion >= cooldownMs) {
-                const signDuration = now - signStartTime;
-                const minSignMs = motionConfig.min_sign_ms || 500;
-
-                if (signDuration >= minSignMs) {
-                    console.log(`[CC] Sign ended after ${signDuration}ms`);
-                    stopSignRecordingAndProcess();
-                } else {
-                    console.log(`[CC] Sign too short (${signDuration}ms), ignoring`);
-                    cancelSignRecording();
-                }
-                isSigning = false;
-            }
-        }
-
-        // Check max duration
-        if (isSigning) {
-            const maxSignMs = motionConfig.max_sign_ms || 5000;
-            const signDuration = now - signStartTime;
-            if (signDuration >= maxSignMs) {
-                console.log(`[CC] Sign max duration reached (${signDuration}ms)`);
-                stopSignRecordingAndProcess();
-                isSigning = false;
-            }
-        }
-
+        motionDetector.processFrame(webcamVideo);
     } catch (error) {
         console.error('[CC] Motion detection error:', error);
     }
 
     requestAnimationFrame(motionDetectionLoop);
-}
-
-function calculateMotionScore(prevData, currData) {
-    let changedPixels = 0;
-    const length = prevData.length;
-
-    // Per-pixel threshold to filter camera noise
-    const pixelThreshold = config.motion_config.motion_threshold || 30;
-
-    // Compare every 4th pixel (RGBA) for speed
-    for (let i = 0; i < length; i += 16) {
-        const rDiff = Math.abs(prevData[i] - currData[i]);
-        const gDiff = Math.abs(prevData[i + 1] - currData[i + 1]);
-        const bDiff = Math.abs(prevData[i + 2] - currData[i + 2]);
-        const avgDiff = (rDiff + gDiff + bDiff) / 3;
-
-        // Only count pixels that changed significantly (above noise threshold)
-        if (avgDiff > pixelThreshold) {
-            changedPixels++;
-        }
-    }
-
-    // Return percentage of changed pixels (0-1 range)
-    const totalSampledPixels = length / 16;
-    return changedPixels / totalSampledPixels;
 }
 
 // ============================================================
@@ -354,7 +266,7 @@ function calculateMotionScore(prevData, currData) {
 function startSignRecording() {
     if (!stream) {
         console.error('[CC] No stream available');
-        isSigning = false;
+        motionDetector.reset();
         return;
     }
 
@@ -374,7 +286,7 @@ function startSignRecording() {
         console.log('[CC] Sign recording started');
     } catch (error) {
         console.error('[CC] Error starting recording:', error);
-        isSigning = false;
+        motionDetector.reset();
     }
 }
 
@@ -392,7 +304,7 @@ async function stopSignRecordingAndProcess() {
         return;
     }
 
-    isProcessing = true;
+    motionDetector.setProcessing(true);
     updateStatus('processing', 'Processing...');
 
     return new Promise((resolve) => {
@@ -404,7 +316,7 @@ async function stopSignRecordingAndProcess() {
                 if (blob.size < 1000) {
                     console.log('[CC] Recording too small, ignoring');
                     updateStatus('ready', 'Listening...');
-                    isProcessing = false;
+                    motionDetector.setProcessing(false);
                     resolve();
                     return;
                 }
@@ -440,7 +352,7 @@ async function stopSignRecordingAndProcess() {
                 console.error('[CC] Error processing sign:', error);
             }
 
-            isProcessing = false;
+            motionDetector.setProcessing(false);
             updateStatus('ready', 'Listening...');
             resolve();
         };
@@ -482,6 +394,11 @@ async function pollCaption() {
             glossCount.textContent = result.gloss_count;
         }
 
+        // Update gloss list with used/dropped status
+        if (result.gloss_status && result.gloss_status.length > 0) {
+            updateGlossesListWithStatus(result.gloss_status);
+        }
+
     } catch (error) {
         console.error('[CC] Caption poll error:', error);
     }
@@ -502,20 +419,50 @@ function updateCaption(caption) {
 // ============================================================
 
 function updateStatus(status, text) {
-    statusDot.className = 'cc-status-dot ' + status;
+    statusDot.className = 'camera-status-dot ' + status;
     statusText.textContent = text;
 }
 
 function updateGlossesList() {
-    // Show last 10 glosses
+    // Show last 10 glosses (without status info - basic display)
     const recentGlosses = detectedGlosses.slice(-10).reverse();
 
     glossesList.innerHTML = recentGlosses.map(g => `
-        <div class="cc-gloss-item">
+        <div class="camera-gloss-item">
             <span>${g.gloss}</span>
-            <span class="cc-gloss-confidence">${(g.confidence * 100).toFixed(0)}%</span>
+            <span class="camera-gloss-confidence">${(g.confidence * 100).toFixed(0)}%</span>
         </div>
     `).join('');
+}
+
+function updateGlossesListWithStatus(glossStatus) {
+    // Show glosses with used (green) / dropped (red) / pending (yellow) status
+    glossesList.innerHTML = glossStatus.map(g => {
+        let statusClass, statusIcon;
+        if (g.used === null || g.used === undefined) {
+            // Pending - not yet processed by LLM
+            statusClass = 'gloss-pending';
+            statusIcon = '○';
+        } else if (g.used) {
+            // Used in sentence
+            statusClass = 'gloss-used';
+            statusIcon = '✓';
+        } else {
+            // Dropped/skipped
+            statusClass = 'gloss-dropped';
+            statusIcon = '✗';
+        }
+        return `
+            <div class="camera-gloss-item ${statusClass}">
+                <span class="gloss-status-icon">${statusIcon}</span>
+                <span>${g.gloss}</span>
+                <span class="camera-gloss-confidence">${(g.confidence * 100).toFixed(0)}%</span>
+            </div>
+        `;
+    }).join('');
+
+    // Show the panel
+    glossesPanel.style.display = 'block';
 }
 
 // ============================================================

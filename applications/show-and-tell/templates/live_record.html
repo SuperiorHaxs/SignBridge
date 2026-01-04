@@ -19,36 +19,22 @@
         </div>
     </div>
 
-    <!-- Webcam Panel -->
+    <!-- Webcam Panel using common camera UI -->
     <div class="webcam-panel">
         <div class="panel-header">
             <h3>Webcam Recording</h3>
             <span class="status-badge" id="record-status">Ready</span>
         </div>
 
-        <div class="video-wrapper video-wrapper-large">
-            <video id="webcam-video" autoplay muted playsinline></video>
-
-            <!-- Live Status Overlay -->
-            <div class="live-status-overlay" id="live-status-overlay">
-                <div class="status-indicator" id="live-status-indicator">
-                    <span class="status-dot" id="live-status-dot"></span>
-                    <span class="status-text" id="live-status-text">READY</span>
-                </div>
-                <div class="motion-score" id="motion-score-display">
-                    Motion: <span id="motion-score-value">0</span>
-                </div>
-            </div>
-
-            <!-- Live Prediction Overlay -->
-            <div class="live-prediction-overlay" id="live-prediction-overlay">
-                <div class="prediction-display" id="prediction-display">
-                    <div class="current-prediction" id="current-prediction"></div>
-                    <div class="prediction-confidence" id="prediction-confidence"></div>
-                </div>
-                <div class="all-predictions" id="all-predictions"></div>
-            </div>
-        </div>
+        {% set camera_id = 'live' %}
+        {% set camera_fullscreen = false %}
+        {% set camera_show_warmup = false %}
+        {% set camera_show_caption = false %}
+        {% set camera_show_prediction = true %}
+        {% set camera_show_glosses_panel = false %}
+        {% set camera_show_motion_score = true %}
+        {% set camera_placeholder_text = 'Waiting for signing...' %}
+        {% include 'partials/camera_ui.html' %}
 
         <!-- Recording Controls -->
         <div class="recording-controls">
@@ -102,5 +88,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/live_record.js') }}"></script>
+<script src="{{ url_for('static', filename='js/live_record.js') }}?v=2"></script>
 {% endblock %}

@@ -1,0 +1,86 @@
+{#
+  Common Camera UI Component
+
+  Usage:
+    {% include 'partials/camera_ui.html' %}
+
+  Variables (set before including):
+    - camera_id: Base ID for elements (default: 'camera')
+    - camera_fullscreen: Set to true for fullscreen mode (default: false)
+    - camera_show_warmup: Show warmup countdown overlay (default: true)
+    - camera_show_caption: Show caption overlay at bottom (default: false)
+    - camera_show_prediction: Show prediction overlay at bottom (default: false)
+    - camera_show_glosses_panel: Show side panel for recent glosses (default: false)
+    - camera_show_motion_score: Show motion score in status bar (default: false)
+    - camera_placeholder_text: Text shown before signing starts
+#}
+
+{% set cam_id = camera_id | default('camera') %}
+{% set fullscreen_class = 'camera-container--fullscreen' if camera_fullscreen else '' %}
+
+<div class="camera-container {{ fullscreen_class }}" id="{{ cam_id }}-container">
+    <div class="camera-video-wrapper">
+        <video class="camera-video" id="{{ cam_id }}-video" autoplay playsinline muted></video>
+
+        <!-- Status bar -->
+        <div class="camera-status-bar">
+            <div class="camera-status-left">
+                <div class="camera-status-indicator">
+                    <span class="camera-status-dot" id="{{ cam_id }}-status-dot"></span>
+                    <span id="{{ cam_id }}-status-text">Ready</span>
+                </div>
+                {% if camera_show_motion_score %}
+                <div class="camera-stat-badge">
+                    Motion: <span id="{{ cam_id }}-motion-score">0</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="camera-status-right">
+                <div class="camera-stat-badge">
+                    Signs: <span id="{{ cam_id }}-gloss-count">0</span>
+                </div>
+            </div>
+        </div>
+
+        {% if camera_show_warmup %}
+        <!-- Warmup overlay -->
+        <div class="camera-warmup-overlay" id="{{ cam_id }}-warmup-overlay" style="display: none;">
+            <div class="camera-warmup-text">Get ready...</div>
+            <div class="camera-warmup-countdown" id="{{ cam_id }}-warmup-countdown">3</div>
+        </div>
+
+        <!-- Ready indicator -->
+        <div class="camera-ready-indicator" id="{{ cam_id }}-ready-indicator" style="display: none;">
+            Start signing now
+        </div>
+        {% endif %}
+
+        {% if camera_show_glosses_panel %}
+        <!-- Side panel for recent glosses -->
+        <div class="camera-glosses-panel" id="{{ cam_id }}-glosses-panel" style="display: none;">
+            <div class="camera-glosses-title">Recent Signs</div>
+            <div id="{{ cam_id }}-glosses-list"></div>
+        </div>
+        {% endif %}
+
+        {% if camera_show_caption %}
+        <!-- Caption overlay -->
+        <div class="camera-caption-overlay">
+            <div class="camera-caption-text" id="{{ cam_id }}-caption-text">
+                {{ camera_placeholder_text | default('Start signing to see captions...') }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if camera_show_prediction %}
+        <!-- Prediction overlay -->
+        <div class="camera-prediction-overlay">
+            <div class="camera-current-prediction" id="{{ cam_id }}-current-prediction"></div>
+            <div class="camera-prediction-confidence" id="{{ cam_id }}-prediction-confidence">
+                {{ camera_placeholder_text | default('Waiting for signing...') }}
+            </div>
+            <div class="camera-all-predictions" id="{{ cam_id }}-all-predictions"></div>
+        </div>
+        {% endif %}
+    </div>
+</div>

@@ -1040,7 +1040,7 @@ def list_available_glosses(num_classes: int = 50):
     print()
 
 
-def prepare_sample_from_glosses(glosses, reference, name, sample_id, output_dir, description="", gap_seconds=1.5, num_classes=50):
+def prepare_sample_from_glosses(glosses, reference, name, sample_id, output_dir, description="", gap_seconds=1.5, num_classes=50, model_path=None):
     """Create a demo sample from a list of glosses."""
 
     if not POSE_FORMAT_AVAILABLE:
@@ -1179,7 +1179,10 @@ def prepare_sample_from_glosses(glosses, reference, name, sample_id, output_dir,
     try:
         from openhands_modernized_inference import load_model_from_checkpoint, predict_pose_file
 
-        checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
+        if model_path:
+            checkpoint_path = Path(model_path)
+        else:
+            checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
         print(f"  Loading model from: {checkpoint_path}")
         model, tokenizer = load_model_from_checkpoint(str(checkpoint_path))
 
@@ -1419,7 +1422,7 @@ def prepare_sample_from_glosses(glosses, reference, name, sample_id, output_dir,
 # ============================================================================
 
 def prepare_sample(video_path, reference, name, sample_id, output_dir, description="", num_classes=50,
-                   source="iphone", seg_options=None):
+                   source="iphone", seg_options=None, model_path=None):
     """
     Run full pipeline and save as demo sample.
 
@@ -1679,7 +1682,10 @@ def prepare_sample(video_path, reference, name, sample_id, output_dir, descripti
     try:
         from openhands_modernized_inference import load_model_from_checkpoint, predict_pose_file
 
-        checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
+        if model_path:
+            checkpoint_path = Path(model_path)
+        else:
+            checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
         print(f"  Loading model from: {checkpoint_path}")
         model, tokenizer = load_model_from_checkpoint(str(checkpoint_path))
 
@@ -1918,7 +1924,7 @@ def prepare_sample(video_path, reference, name, sample_id, output_dir, descripti
     return True
 
 
-def prepare_sample_from_session(session_path, reference, name, sample_id, output_dir, description="", num_classes=100):
+def prepare_sample_from_session(session_path, reference, name, sample_id, output_dir, description="", num_classes=100, model_path=None):
     """
     Prepare demo sample from an existing Live mode session.
 
@@ -2143,8 +2149,9 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
     saved_predictions = session_metadata.get('predictions', [])
     saved_model_classes = session_metadata.get('model_classes', 100)
 
-    # Warn if model classes don't match
-    if saved_predictions and saved_model_classes != num_classes:
+    # Warn if model classes don't match (only when not using custom model path)
+    # When --model is specified, we trust the user knows what model to use for re-prediction
+    if saved_predictions and saved_model_classes != num_classes and not model_path:
         print(f"  WARNING: Session used {saved_model_classes}-class model, but you requested {num_classes}-class")
         print(f"  Re-running predictions with {num_classes}-class model...")
         saved_predictions = []  # Force re-prediction
@@ -2156,7 +2163,8 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
             # Find matching prediction
             pred = next((p for p in saved_predictions if p.get('segment_id') == seg_id), None)
             if pred:
-                seg['top_1'] = pred.get('gloss', 'UNKNOWN')
+                # Handle both formats: 'gloss' (regular mode) and 'top_1' (fast mode)
+                seg['top_1'] = pred.get('gloss') or pred.get('top_1', 'UNKNOWN')
                 seg['confidence'] = pred.get('confidence', 0.0)
                 seg['top_k'] = pred.get('top_k', [])
                 print(f"  Segment {seg_id}: {seg['top_1']} ({seg['confidence']:.2%})")
@@ -2170,7 +2178,10 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
         try:
             from openhands_modernized_inference import load_model_from_checkpoint, predict_pose_file
 
-            checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
+            if model_path:
+                checkpoint_path = Path(model_path)
+            else:
+                checkpoint_path = MODELS_DIR / "openhands-modernized" / "production-models" / f"wlasl_{num_classes}_class_model"
             print(f"  Loading model from: {checkpoint_path}")
             model, tokenizer = load_model_from_checkpoint(str(checkpoint_path))
 
@@ -2515,7 +2526,9 @@ Segmentation types:
 
     # Glosses mode specific
     parser.add_argument("--gap", type=float, default=1.5, help="Gap between signs in seconds (default: 1.5)")
-    parser.add_argument("--classes", type=int, default=50, choices=[20, 50, 100], help="Number of classes (default: 50)")
+    parser.add_argument("--classes", type=int, default=50, choices=[20, 43, 50, 100], help="Number of classes (default: 50)")
+    parser.add_argument("--model", "-m", type=str, default=None,
+                        help="Custom model directory path (overrides --classes for model selection)")
 
     # Video source and segmentation options
     parser.add_argument("--source", choices=["webcam", "iphone"], default="iphone",
@@ -2574,7 +2587,8 @@ Segmentation types:
             output_dir=output_dir,
             description=args.description,
             gap_seconds=args.gap,
-            num_classes=args.classes
+            num_classes=args.classes,
+            model_path=args.model
         )
         return
 
@@ -2614,7 +2628,8 @@ Segmentation types:
             description=args.description,
             num_classes=args.classes,
             source=args.source,
-            seg_options=seg_options
+            seg_options=seg_options,
+            model_path=args.model
         )
         return
 
@@ -2642,7 +2657,8 @@ Segmentation types:
             sample_id=args.id,
             output_dir=output_dir,
             description=args.description,
-            num_classes=args.classes
+            num_classes=args.classes,
+            model_path=args.model
         )
         return
 

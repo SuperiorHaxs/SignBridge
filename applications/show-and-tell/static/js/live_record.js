@@ -9,18 +9,12 @@ let glosses = [];
 let stream = null;
 let liveDemoActive = false;
 let detectedGlosses = [];
-let isSigning = false;
-let isProcessing = false;
-let signStartTime = null;
-let lastMotionTime = null;
 let signRecorder = null;
 let signChunks = [];
 let liveConfig = null;
 
-// Motion detection
-let motionDetectionCanvas = null;
-let motionDetectionCtx = null;
-let previousFrame = null;
+// Motion detection - using common MotionDetector module
+let motionDetector = null;
 
 // DOM Elements
 let webcamVideo, referenceDisplay, glossesDisplay;
@@ -55,16 +49,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function initializeElements() {
-    webcamVideo = document.getElementById('webcam-video');
+    // Using common camera UI component IDs (live- prefix)
+    webcamVideo = document.getElementById('live-video');
     referenceDisplay = document.getElementById('reference-display');
     glossesDisplay = document.getElementById('glosses-display');
     statusBadge = document.getElementById('record-status');
     liveStatusDot = document.getElementById('live-status-dot');
     liveStatusText = document.getElementById('live-status-text');
-    motionScoreValue = document.getElementById('motion-score-value');
-    currentPrediction = document.getElementById('current-prediction');
-    predictionConfidence = document.getElementById('prediction-confidence');
-    allPredictions = document.getElementById('all-predictions');
+    motionScoreValue = document.getElementById('live-motion-score');
+    currentPrediction = document.getElementById('live-current-prediction');
+    predictionConfidence = document.getElementById('live-prediction-confidence');
+    allPredictions = document.getElementById('live-all-predictions');
     detectedSignsSection = document.getElementById('detected-signs-section');
     detectedSignsList = document.getElementById('detected-signs-list');
     startBtn = document.getElementById('start-btn');
@@ -131,10 +126,9 @@ async function restartRecording() {
 
     // Reset state
     detectedGlosses = [];
-    isSigning = false;
-    isProcessing = false;
-    signStartTime = null;
-    lastMotionTime = null;
+    if (motionDetector) {
+        motionDetector.reset();
+    }
 
     // Reset server session
     try {
@@ -163,7 +157,7 @@ function updateStatus(text, type) {
 
 function updateLiveStatus(text, type) {
     liveStatusText.textContent = text;
-    liveStatusDot.className = 'status-dot status-' + type;
+    liveStatusDot.className = 'camera-status-dot ' + type;
 }
 
 // ============================================================
@@ -187,10 +181,8 @@ async function startRecording() {
 
     liveDemoActive = true;
     detectedGlosses = [];
-    isSigning = false;
-    isProcessing = false;
 
-    // Initialize motion detection
+    // Initialize motion detection (creates fresh instance)
     initMotionDetection();
 
     // Update UI
@@ -297,115 +289,53 @@ function finishAndNavigate() {
 }
 
 // ============================================================
-// MOTION DETECTION (from convert.js)
+// MOTION DETECTION (using common MotionDetector module)
 // ============================================================
 
 function initMotionDetection() {
-    motionDetectionCanvas = document.createElement('canvas');
-    motionDetectionCanvas.width = 160;
-    motionDetectionCanvas.height = 120;
-    motionDetectionCtx = motionDetectionCanvas.getContext('2d', { willReadFrequently: true });
-    previousFrame = null;
+    // Create motion detector with config from server
+    // Note: Live Mode has no warmup period for immediate response
+    const motionConfig = {
+        ...(liveConfig?.motion_config || {}),
+        warmup_frames: 0  // No warmup for Live Mode (instant response)
+    };
+    motionDetector = new MotionDetector(motionConfig);
+
+    // Set up callbacks
+    motionDetector.onSignStart = () => {
+        updateLiveStatus('SIGNING', 'signing');
+        console.log('Sign started');
+        startSignRecording();
+    };
+
+    motionDetector.onSignEnd = (duration) => {
+        console.log(`Sign ended after ${duration}ms`);
+        stopSignRecordingAndProcess();
+    };
+
+    motionDetector.onSignTooShort = (duration) => {
+        console.log(`Sign too short (${duration}ms), ignoring`);
+        cancelSignRecording();
+    };
+
+    motionDetector.onMotionScore = (score) => {
+        // Update motion score display (convert ratio to display value)
+        if (motionScoreValue) {
+            motionScoreValue.textContent = (score * 10000).toFixed(0);
+        }
+    };
 }
 
 function motionDetectionLoop() {
     if (!liveDemoActive) return;
 
-    if (!webcamVideo || webcamVideo.readyState < 2) {
-        requestAnimationFrame(motionDetectionLoop);
-        return;
-    }
-
     try {
-        // Draw current frame to detection canvas
-        motionDetectionCtx.drawImage(webcamVideo, 0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
-        const currentFrame = motionDetectionCtx.getImageData(0, 0, motionDetectionCanvas.width, motionDetectionCanvas.height);
-
-        let motionScore = 0;
-        if (previousFrame) {
-            motionScore = calculateMotionScore(previousFrame.data, currentFrame.data);
-        }
-        previousFrame = currentFrame;
-
-        // Update motion score display
-        if (motionScoreValue) {
-            motionScoreValue.textContent = motionScore.toFixed(0);
-        }
-
-        // Motion detection state machine
-        const config = liveConfig?.motion_config || {};
-        const motionThreshold = config.motion_area_threshold || 0.02;
-        const isMotionDetected = motionScore > motionThreshold * 10000;
-
-        const now = Date.now();
-
-        if (isMotionDetected) {
-            lastMotionTime = now;
-
-            if (!isSigning && !isProcessing) {
-                // Start signing
-                isSigning = true;
-                signStartTime = now;
-                updateLiveStatus('SIGNING', 'signing');
-                console.log('Sign started');
-                startSignRecording();
-            }
-        } else if (isSigning) {
-            const cooldownMs = config.cooldown_ms || 1000;
-            const timeSinceMotion = now - lastMotionTime;
-
-            if (timeSinceMotion > cooldownMs) {
-                const signDuration = now - signStartTime;
-                const minSignMs = config.min_sign_ms || 500;
-
-                if (signDuration >= minSignMs) {
-                    console.log(`Sign ended after ${signDuration}ms`);
-                    stopSignRecordingAndProcess();
-                } else {
-                    console.log(`Sign too short (${signDuration}ms), ignoring`);
-                    cancelSignRecording();
-                }
-                isSigning = false;
-            }
-        }
-
-        // Check for max sign duration
-        if (isSigning) {
-            const maxSignMs = config.max_sign_ms || 5000;
-            const signDuration = now - signStartTime;
-            if (signDuration >= maxSignMs) {
-                console.log(`Sign max duration reached (${signDuration}ms)`);
-                stopSignRecordingAndProcess();
-                isSigning = false;
-            }
-        }
+        motionDetector.processFrame(webcamVideo);
     } catch (error) {
         console.error('Error in motion detection loop:', error);
-        // Reset state on error to allow recovery
-        if (isSigning && !isProcessing) {
-            isSigning = false;
-            cancelSignRecording();
-        }
     }
 
-    // Always schedule next frame, even after errors
     requestAnimationFrame(motionDetectionLoop);
-}
-
-function calculateMotionScore(prevData, currData) {
-    let diff = 0;
-    const length = prevData.length;
-
-    for (let i = 0; i < length; i += 4) {
-        const dr = Math.abs(prevData[i] - currData[i]);
-        const dg = Math.abs(prevData[i + 1] - currData[i + 1]);
-        const db = Math.abs(prevData[i + 2] - currData[i + 2]);
-        if (dr + dg + db > 30) {
-            diff++;
-        }
-    }
-
-    return diff;
 }
 
 // ============================================================
@@ -415,7 +345,7 @@ function calculateMotionScore(prevData, currData) {
 function startSignRecording() {
     if (!stream) {
         console.error('Cannot start recording: no stream available');
-        isSigning = false;
+        motionDetector.reset();
         return;
     }
 
@@ -435,14 +365,14 @@ function startSignRecording() {
 
         signRecorder.onerror = (event) => {
             console.error('MediaRecorder error:', event.error);
-            isSigning = false;
+            motionDetector.reset();
             updateLiveStatus('READY', 'ready');
         };
 
         signRecorder.start(100);
     } catch (error) {
         console.error('Failed to start sign recording:', error);
-        isSigning = false;
+        motionDetector.reset();
         updateLiveStatus('READY', 'ready');
     }
 }
@@ -461,7 +391,7 @@ async function stopSignRecordingAndProcess() {
         return;
     }
 
-    isProcessing = true;
+    motionDetector.setProcessing(true);
     updateLiveStatus('PROCESSING', 'processing');
 
     return new Promise((resolve) => {
@@ -528,7 +458,7 @@ async function stopSignRecordingAndProcess() {
                 console.error('Sign processing error:', error);
             } finally {
                 // Always reset state to allow next sign detection
-                isProcessing = false;
+                motionDetector.setProcessing(false);
                 updateLiveStatus('READY', 'ready');
                 resolve();
             }

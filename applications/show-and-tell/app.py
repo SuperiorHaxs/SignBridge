@@ -52,6 +52,9 @@ from motion_based_segmenter import MotionBasedSegmenter
 # Import model inference functions
 from openhands_modernized_inference import load_model_from_checkpoint, predict_pose_file
 
+# Import common camera processor (uses VIDEO_TO_POSE_EXE for better hand detection)
+from camera_processor import get_camera_processor, CameraProcessor
+
 # Import LLM interface
 from llm_factory import create_llm_provider
 
@@ -119,8 +122,8 @@ def get_holistic():
             print("[MediaPipe] Initializing persistent Holistic model...")
             mp_holistic = mp.solutions.holistic
             _holistic_instance = mp_holistic.Holistic(
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5,
+                min_detection_confidence=0.3,
+                min_tracking_confidence=0.3,
                 model_complexity=1
             )
             print("[MediaPipe] Holistic model ready")
@@ -129,10 +132,10 @@ def get_holistic():
 
 def extract_poses_from_frames(frames, target_frames=15):
     """
-    Extract 75-point pose landmarks from video frames using MediaPipe.
+    Extract 83-point pose landmarks from video frames using MediaPipe.
 
-    Returns numpy array of shape (num_frames, 75, 4) where:
-    - 75 = 33 body + 21 left hand + 21 right hand
+    Returns numpy array of shape (num_frames, 83, 4) where:
+    - 83 = 33 body + 21 left hand + 21 right hand + 8 face
     - 4 = x, y, z, visibility/confidence
 
     Downsamples to target_frames to keep processing fast (~130ms per frame).
@@ -141,6 +144,10 @@ def extract_poses_from_frames(frames, target_frames=15):
     holistic = get_holistic()
     if holistic is None:
         return None
+
+    # 8 minimal face landmark indices from MediaPipe Face Mesh (468 total)
+    # These are: nose tip, mouth corners, chin, eyebrows, eye corners
+    FACE_INDICES = [1, 61, 291, 152, 107, 336, 33, 263]
 
     # Downsample if too many frames (each frame takes ~100ms)
     num_frames = len(frames)
@@ -154,6 +161,11 @@ def extract_poses_from_frames(frames, target_frames=15):
         frames_to_process = frames
 
     pose_sequence = []
+    # Debug counters for detection stats
+    body_count = 0
+    left_hand_count = 0
+    right_hand_count = 0
+    face_count = 0
 
     for frame in frames_to_process:
         # Convert BGR to RGB
@@ -164,26 +176,42 @@ def extract_poses_from_frames(frames, target_frames=15):
 
         # Body pose (33 landmarks)
         if results.pose_landmarks:
+            body_count += 1
             for lm in results.pose_landmarks.landmark:
                 landmarks.append([lm.x, lm.y, lm.z, lm.visibility])
         else:
             landmarks.extend([[0, 0, 0, 0]] * 33)
 
-        # Left hand (21 landmarks)
+        # Left hand (21 landmarks) - hand landmarks DON'T have visibility, use 1.0
         if results.left_hand_landmarks:
+            left_hand_count += 1
             for lm in results.left_hand_landmarks.landmark:
-                landmarks.append([lm.x, lm.y, lm.z, lm.visibility])
+                landmarks.append([lm.x, lm.y, lm.z, 1.0])  # hands don't have visibility
         else:
             landmarks.extend([[0, 0, 0, 0]] * 21)
 
-        # Right hand (21 landmarks)
+        # Right hand (21 landmarks) - hand landmarks DON'T have visibility, use 1.0
         if results.right_hand_landmarks:
+            right_hand_count += 1
             for lm in results.right_hand_landmarks.landmark:
-                landmarks.append([lm.x, lm.y, lm.z, lm.visibility])
+                landmarks.append([lm.x, lm.y, lm.z, 1.0])  # hands don't have visibility
         else:
             landmarks.extend([[0, 0, 0, 0]] * 21)
+
+        # 8 minimal face landmarks (indices 75-82)
+        if results.face_landmarks:
+            face_count += 1
+            for idx in FACE_INDICES:
+                lm = results.face_landmarks.landmark[idx]
+                landmarks.append([lm.x, lm.y, lm.z, lm.visibility if hasattr(lm, 'visibility') else 1.0])
+        else:
+            landmarks.extend([[0, 0, 0, 0]] * 8)
 
         pose_sequence.append(landmarks)
+
+    # Log detection stats - critical for debugging hand detection issues
+    total = len(frames_to_process)
+    print(f"[MediaPipe] Detection: body={body_count}/{total}, L_hand={left_hand_count}/{total}, R_hand={right_hand_count}/{total}, face={face_count}/{total}")
 
     return np.array(pose_sequence) if pose_sequence else None
 
@@ -229,14 +257,14 @@ def poses_to_pickle_data(pose_array):
     """
     Convert pose numpy array to pickle format expected by model.
 
-    Input: (num_frames, 75, 4) array
-    Output: dict with 'keypoints' and 'confidences'
+    Input: (num_frames, 83, 4) array where 4 = x, y, z, visibility
+    Output: dict with 'keypoints' (x,y,z) and 'confidences'
     """
     if pose_array is None or len(pose_array) == 0:
         return None
 
     return {
-        'keypoints': pose_array[:, :, :2],      # x, y only
+        'keypoints': pose_array[:, :, :3],      # x, y, z (keep z for 43-class model)
         'confidences': pose_array[:, :, 3],     # visibility/confidence
         'gloss': 'UNKNOWN'
     }
@@ -270,8 +298,8 @@ if FFMPEG_EXE is None:
 # Path to existing LLM prompt
 LLM_PROMPT_PATH = PROJECT_UTILITIES_DIR / "llm_interface" / "prompts" / "llm_prompt_topk.txt"
 
-# Model checkpoint path (100-class model) - use production models folder
-CHECKPOINT_PATH = MODELS_DIR / "openhands-modernized" / "production-models" / "wlasl_100_class_model"
+# Model checkpoint path - use production models folder
+CHECKPOINT_PATH = MODELS_DIR / "openhands-modernized" / "production-models" / "wlasl_43_class_50s_model"
 
 # METRIC_WEIGHTS imported from evaluation_metrics library
 
@@ -313,7 +341,7 @@ TEMP_DIR = Path(__file__).parent / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
 
 # Global model cache (loaded once)
-_model_cache = {"model": None, "tokenizer": None}
+_model_cache = {"model": None, "tokenizer": None, "num_classes": None}
 
 # Global quality scorer (from evaluation_metrics library)
 _quality_scorer = None
@@ -327,8 +355,24 @@ def get_model():
         _model_cache["model"], _model_cache["tokenizer"] = load_model_from_checkpoint(
             str(CHECKPOINT_PATH)
         )
-        print("Model loaded successfully")
+        # Load num_classes from model config
+        config_path = CHECKPOINT_PATH / "config.json"
+        if config_path.exists():
+            import json
+            with open(config_path) as f:
+                config = json.load(f)
+            _model_cache["num_classes"] = config.get("vocab_size", 100)
+        else:
+            _model_cache["num_classes"] = 100  # fallback
+        print(f"Model loaded successfully ({_model_cache['num_classes']} classes)")
     return _model_cache["model"], _model_cache["tokenizer"]
+
+
+def get_model_num_classes():
+    """Get number of classes in loaded model"""
+    if _model_cache["num_classes"] is None:
+        get_model()  # Ensure model is loaded
+    return _model_cache["num_classes"]
 
 
 def get_quality_scorer():
@@ -1077,8 +1121,13 @@ def segment_pose():
 def convert_pose_to_pickle(pose_file, debug=False):
     """
     Convert .pose file to pickle format for model inference.
-    Uses same logic as EndToEndPipeline.step3_convert_segments_to_pickle
+    Extracts 83 keypoints (33 body + 21 left hand + 21 right hand + 8 face).
     """
+    # 8 minimal face landmark indices from MediaPipe Face Mesh
+    # In 543-format, face landmarks start at index 33
+    FACE_MESH_INDICES = [1, 61, 291, 152, 107, 336, 33, 263]
+    FACE_543_INDICES = [33 + i for i in FACE_MESH_INDICES]
+
     try:
         with open(pose_file, "rb") as f:
             buffer = f.read()
@@ -1096,27 +1145,34 @@ def convert_pose_to_pickle(pose_file, debug=False):
             print(f"[DEBUG] Original shape: {pose_data.shape}")
             print(f"[DEBUG] After squeeze: {pose_sequence.shape}")
 
-        # Extract 75-point subset (same as predict_sentence.py line 706-712)
+        # Extract 83-point subset (33 body + 21 left hand + 21 right hand + 8 face)
         if pose_sequence.shape[1] == 543:
-            pose_75pt = np.concatenate([
-                pose_sequence[:, 0:33, :],      # Pose landmarks
-                pose_sequence[:, 501:522, :],   # Left hand landmarks
-                pose_sequence[:, 522:543, :]    # Right hand landmarks
+            pose_83pt = np.concatenate([
+                pose_sequence[:, 0:33, :],            # Pose landmarks (33)
+                pose_sequence[:, 501:522, :],         # Left hand landmarks (21)
+                pose_sequence[:, 522:543, :],         # Right hand landmarks (21)
+                pose_sequence[:, FACE_543_INDICES, :] # Face landmarks (8)
             ], axis=1)
+        elif pose_sequence.shape[1] == 83:
+            pose_83pt = pose_sequence
         elif pose_sequence.shape[1] == 75:
-            pose_75pt = pose_sequence
+            # Pad with zeros for face landmarks
+            frames = pose_sequence.shape[0]
+            coords = pose_sequence.shape[2]
+            pose_83pt = np.zeros((frames, 83, coords), dtype=np.float32)
+            pose_83pt[:, :75, :] = pose_sequence
         else:
-            pose_75pt = pose_sequence
+            pose_83pt = pose_sequence
 
         if debug:
-            print(f"[DEBUG] After 75pt extraction: {pose_75pt.shape}")
+            print(f"[DEBUG] After 83pt extraction: {pose_83pt.shape}")
 
         # Create pickle file
         pickle_path = str(pose_file).replace('.pose', '.pkl')
 
         pickle_data = {
-            'keypoints': pose_75pt[:, :, :2],
-            'confidences': pose_75pt[:, :, 3] if pose_75pt.shape[2] > 3 else np.ones(pose_75pt.shape[:2]),
+            'keypoints': pose_83pt[:, :, :3],  # x, y, z
+            'confidences': pose_83pt[:, :, 3] if pose_83pt.shape[2] > 3 else np.ones(pose_83pt.shape[:2]),
             'gloss': 'UNKNOWN'
         }
 
@@ -1244,27 +1300,32 @@ def process_full_pipeline():
 
         print(f"[FAST MODE] Found {len(segment_files)} segments")
 
-        # Step 3: Load model and predict for each segment
+        # Step 3: Load model and predict for each segment using camera processor
         model, tokenizer = get_model()
+        processor = get_camera_processor(model, tokenizer)
 
         predictions = []
         for i, seg_file in enumerate(segment_files):
-            # Convert pose to pickle for prediction (no visualization)
-            pickle_path = convert_pose_to_pickle(seg_file)
+            # Use camera processor for consistent pose-to-pickle and prediction
+            pickle_path = processor.pose_to_pickle(seg_file)
 
             if pickle_path:
-                prediction = predict_pose_file(
-                    pickle_path,
-                    model=model,
-                    tokenizer=tokenizer
-                )
+                prediction = processor.predict(str(pickle_path))
 
-                predictions.append({
-                    "segment_id": i + 1,
-                    "top_1": prediction['gloss'],
-                    "confidence": prediction['confidence'],
-                    "top_k": prediction['top_k_predictions'][:3]
-                })
+                if prediction:
+                    predictions.append({
+                        "segment_id": i + 1,
+                        "top_1": prediction['gloss'],
+                        "confidence": prediction['confidence'],
+                        "top_k": prediction['top_k_predictions'][:3]
+                    })
+                else:
+                    predictions.append({
+                        "segment_id": i + 1,
+                        "top_1": "UNKNOWN",
+                        "confidence": 0.0,
+                        "top_k": []
+                    })
             else:
                 predictions.append({
                     "segment_id": i + 1,
@@ -1831,7 +1892,7 @@ def save_session():
             "raw_sentence": raw_sentence,
             "llm_sentence": llm_sentence,
             "predictions": predictions,
-            "model_classes": 100,  # Live mode always uses 100-class model
+            "model_classes": get_model_num_classes(),
             "original_session_id": session.get('session_id', 'unknown')
         }
         metadata_path = saved_path / "session_metadata.json"
@@ -2677,7 +2738,8 @@ def cc_process_sign():
     """
     Process a single sign video blob for closed-captions.
 
-    Receives video blob, extracts pose, predicts gloss, writes to context.
+    Uses common camera processor (VIDEO_TO_POSE_EXE) for consistent,
+    high-quality pose extraction matching Live Mode.
     """
     session_id = session.get('session_id')
     if not session_id:
@@ -2694,30 +2756,16 @@ def cc_process_sign():
         return jsonify({'success': False, 'error': 'Empty video'}), 400
 
     try:
-        session_dir = get_session_dir()
-
-        # Extract pose using MediaPipe (pass raw bytes)
-        frames = decode_video_to_frames(video_bytes)
-        if not frames:
-            return jsonify({'success': False, 'error': 'Could not decode video'}), 400
-
-        poses = extract_poses_from_frames(frames)
-        if poses is None:
-            return jsonify({'success': False, 'error': 'Could not extract poses'}), 400
-
-        # Convert to pickle format (model expects x, y only - 150 features)
-        pickle_data = {
-            'keypoints': poses[:, :, :2],  # x, y only (NOT xyz)
-            'confidences': poses[:, :, 3] if poses.shape[2] > 3 else np.ones(poses.shape[:2]),
-        }
-
-        pickle_path = session_dir / f"sign_{int(time.time() * 1000)}.pkl"
-        with open(pickle_path, 'wb') as f:
-            pickle.dump(pickle_data, f)
-
-        # Get model and predict
+        # Get model and camera processor
         model, tokenizer = get_model()
-        prediction = predict_pose_file(str(pickle_path), model=model, tokenizer=tokenizer)
+        processor = get_camera_processor(model, tokenizer)
+
+        # Use common camera processor (same as Live Mode)
+        # This uses VIDEO_TO_POSE_EXE for better hand detection
+        prediction = processor.process_video_bytes(video_bytes, video_format='webm')
+
+        if prediction is None:
+            return jsonify({'success': False, 'error': 'Could not process video'}), 400
 
         # Get caption service and add gloss
         service = get_caption_service(session_id)
@@ -2731,12 +2779,6 @@ def cc_process_sign():
         # Add to context and write to file
         service.context.add_gloss(gloss_data)
         service._write_gloss_to_file(gloss_data)
-
-        # Cleanup temp pickle
-        try:
-            pickle_path.unlink()
-        except:
-            pass
 
         return jsonify({
             'success': True,
@@ -2756,7 +2798,7 @@ def cc_get_caption():
     """Get current caption from sentence file."""
     session_id = session.get('session_id')
     if not session_id:
-        return jsonify({'caption': '', 'gloss_count': 0})
+        return jsonify({'caption': '', 'gloss_count': 0, 'gloss_status': []})
 
     service = get_caption_service(session_id)
 
@@ -2769,7 +2811,8 @@ def cc_get_caption():
         'running_caption': state['running_caption'],
         'gloss_count': state['gloss_count'],
         'processed_count': state['processed_count'],
-        'is_running': state['is_running']
+        'is_running': state['is_running'],
+        'gloss_status': state.get('gloss_status', [])
     })
 
 
