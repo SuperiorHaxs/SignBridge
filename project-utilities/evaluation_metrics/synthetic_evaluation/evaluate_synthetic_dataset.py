@@ -33,9 +33,12 @@ import argparse
 import tempfile
 import shutil
 import string
+import pickle
 from pathlib import Path
 from datetime import datetime
 import traceback
+import numpy as np
+import torch
 
 # Suppress HuggingFace Hub warnings and progress bars
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
@@ -65,6 +68,16 @@ from evaluation_metrics import (
 # Print availability status
 print(f"Metrics availability: BLEU={BLEU_AVAILABLE}, BERTScore={BERTSCORE_AVAILABLE}, Quality={QUALITY_SCORING_AVAILABLE}")
 
+# Import two-stage pipeline and LLM interface for two-phase mode
+TWO_STAGE_AVAILABLE = False
+try:
+    from llm_interface.two_stage_pipeline import TwoStagePipeline
+    from llm_interface import create_llm_provider
+    TWO_STAGE_AVAILABLE = True
+    print("Two-stage pipeline: AVAILABLE")
+except ImportError as e:
+    print(f"Two-stage pipeline: NOT AVAILABLE ({e})")
+
 # ============================================================================
 
 
@@ -82,7 +95,10 @@ class SyntheticDatasetEvaluator:
         keep_poses=False,
         no_confidence_scores=False,
         split="all",
-        quiet=False
+        quiet=False,
+        use_two_stage=False,
+        prompt_file=None,
+        use_manifest=False
     ):
         self.dataset_path = dataset_path
         self.checkpoint_path = checkpoint_path
@@ -94,9 +110,33 @@ class SyntheticDatasetEvaluator:
         self.no_confidence_scores = no_confidence_scores
         self.split = split
         self.quiet = quiet
+        self.use_two_stage = use_two_stage and TWO_STAGE_AVAILABLE
+        self.prompt_file = prompt_file
+        self.use_manifest = use_manifest
+
+        # Manifest-based mode setup
+        self.manifest = None
+        self.pickle_pool = None
+        self.model = None
+        self.id_to_gloss = None
 
         # Create output directory
         os.makedirs(self.output_dir, exist_ok=True)
+
+        # Load manifest and model if using manifest mode
+        if self.use_manifest:
+            self._load_manifest_and_model()
+
+        # Initialize two-stage pipeline if enabled
+        self.two_stage_pipeline = None
+        if self.use_two_stage:
+            try:
+                llm_provider = create_llm_provider()
+                self.two_stage_pipeline = TwoStagePipeline(llm_provider)
+                print("Two-stage pipeline: INITIALIZED")
+            except Exception as e:
+                print(f"Warning: Failed to initialize two-stage pipeline: {e}")
+                self.use_two_stage = False
 
         # Load dataset
         self.dataset = self._load_dataset()
@@ -122,6 +162,245 @@ class SyntheticDatasetEvaluator:
         print(f"SUCCESS: Loaded {len(dataset)} entries")
         return dataset
 
+    def _load_manifest_and_model(self):
+        """Load val_manifest.json and initialize model for manifest-based evaluation"""
+        print("\n[MANIFEST MODE] Loading manifest and model...")
+
+        # Add project root to path for imports
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
+        sys.path.insert(0, str(project_root))
+
+        try:
+            from config import get_config
+            config = get_config()
+        except ImportError as e:
+            raise RuntimeError(f"Cannot use manifest mode - config module not available: {e}")
+
+        # Get paths from config for this num_glosses
+        if self.num_glosses not in config.dataset_splits:
+            raise ValueError(f"No dataset config for {self.num_glosses} classes. "
+                           f"Available: {list(config.dataset_splits.keys())}")
+
+        splits = config.dataset_splits[self.num_glosses]
+
+        # Load val_manifest
+        if 'val_manifest' not in splits:
+            raise ValueError(f"No val_manifest defined for {self.num_glosses} classes in config")
+
+        manifest_path = splits['val_manifest']
+        pickle_pool_path = splits['pickle_pool']
+
+        print(f"  Loading manifest: {manifest_path}")
+        with open(manifest_path, 'r') as f:
+            self.manifest = json.load(f)
+
+        self.pickle_pool = Path(pickle_pool_path)
+        print(f"  Pickle pool: {self.pickle_pool}")
+        print(f"  Manifest has {len(self.manifest['classes'])} classes, {self.manifest['total_samples']} samples")
+
+        # Load model
+        self._load_model_for_manifest()
+
+        print("[MANIFEST MODE] Ready")
+
+    def _load_model_for_manifest(self):
+        """Load the model for direct pickle prediction"""
+        # Add openhands path
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
+        sys.path.insert(0, str(project_root))
+
+        from config import get_config
+        config = get_config()
+
+        openhands_src = config.openhands_dir / "src"
+        sys.path.insert(0, str(openhands_src))
+
+        from openhands_modernized import OpenHandsModel, OpenHandsConfig, WLASLPoseProcessor
+
+        # Load from checkpoint or default model
+        if self.checkpoint_path:
+            checkpoint = Path(self.checkpoint_path)
+            # If checkpoint looks like a file path (ends with .pt or .bin), use its parent directory
+            if checkpoint.suffix in ['.pt', '.bin', '.pth']:
+                model_dir = checkpoint.parent
+            else:
+                model_dir = checkpoint
+        else:
+            model_dir = config.openhands_dir / "production-models" / f"wlasl_{self.num_glosses}_class_50s_model"
+
+        print(f"  Loading model from: {model_dir}")
+
+        # Load config
+        config_path = model_dir / "config.json"
+        with open(config_path, 'r') as f:
+            config_dict = json.load(f)
+
+        model_config = OpenHandsConfig(
+            num_pose_keypoints=config_dict.get('num_pose_keypoints', 83),
+            pose_channels=config_dict.get('pose_channels', 3),
+            pose_features=config_dict.get('pose_features', 279),
+            use_finger_features=config_dict.get('use_finger_features', True),
+            finger_features=config_dict.get('finger_features', 30),
+            hidden_size=config_dict.get('hidden_size', 256),
+            num_hidden_layers=config_dict.get('num_hidden_layers', 6),
+            num_attention_heads=config_dict.get('num_attention_heads', 16),
+            intermediate_size=config_dict.get('intermediate_size', 1024),
+            max_position_embeddings=config_dict.get('max_position_embeddings', 257),
+            dropout_prob=config_dict.get('dropout_prob', 0.2),
+            vocab_size=config_dict.get('vocab_size', self.num_glosses),
+            use_cls_token=config_dict.get('use_cls_token', True)
+        )
+
+        # Load class mapping
+        mapping_path = model_dir / "class_index_mapping.json"
+        with open(mapping_path, 'r') as f:
+            self.id_to_gloss = json.load(f)
+
+        # Create processor for feature extraction
+        self.processor = WLASLPoseProcessor()
+        self.model_config = model_config
+        self.max_seq_length = 256
+
+        # Create and load model
+        self.model = OpenHandsModel(model_config)
+        # Use the checkpoint file if provided, otherwise look for standard files
+        if self.checkpoint_path and Path(self.checkpoint_path).is_file():
+            weights_path = Path(self.checkpoint_path)
+        elif (model_dir / "best_model.pt").exists():
+            weights_path = model_dir / "best_model.pt"
+        else:
+            weights_path = model_dir / "pytorch_model.bin"
+        state_dict = torch.load(weights_path, map_location='cpu')
+        self.model.load_state_dict(state_dict)
+        self.model.eval()
+
+        print(f"  Model loaded: {model_config.vocab_size} classes, {model_config.hidden_size} hidden")
+
+    def _get_pickle_file_for_gloss(self, gloss):
+        """
+        Get the pickle file path for a gloss from the val_manifest.
+        Returns the first (original, non-augmented) pickle file.
+        """
+        gloss_lower = gloss.lower()
+        if gloss_lower not in self.manifest['classes']:
+            return None
+
+        # Get the first family (video) and first file (original, not augmented)
+        families = self.manifest['classes'][gloss_lower]
+        if not families:
+            return None
+
+        first_family = families[0]
+        files = first_family.get('files', [])
+        if not files:
+            return None
+
+        # First file should be the original (e.g., "37884.pkl", not "37884_aug_00.pkl")
+        original_file = files[0]
+        return self.pickle_pool / gloss_lower / original_file
+
+    def _predict_from_pickle(self, pickle_path):
+        """
+        Run prediction on a single pickle file.
+        Returns top-k predictions as dict with confidence scores.
+
+        Uses the same processing as WLASLOpenHandsDataset for consistency.
+        """
+        # Use processor to load and preprocess (same as dataset does)
+        pose_sequence = self.processor.load_pickle_pose(str(pickle_path))
+        pose_sequence = self.processor.preprocess_pose_sequence(pose_sequence, augment=False)
+
+        # Extract finger features BEFORE padding (on actual data only)
+        finger_features = None
+        if self.model_config.use_finger_features:
+            finger_features = self.processor.extract_finger_features(pose_sequence)
+
+        # Pad/truncate pose sequence using processor method
+        pose_sequence, attention_mask = self.processor.pad_or_truncate_sequence(
+            pose_sequence, self.max_seq_length
+        )
+
+        # Pad finger features to match
+        if finger_features is not None:
+            seq_len = len(finger_features)
+            if seq_len > self.max_seq_length:
+                finger_features = finger_features[:self.max_seq_length]
+            elif seq_len < self.max_seq_length:
+                padding = np.zeros((self.max_seq_length - seq_len, 30), dtype=np.float32)
+                finger_features = np.vstack([finger_features, padding])
+
+        # Convert to tensors with batch dimension
+        pose_tensor = torch.from_numpy(pose_sequence).float().unsqueeze(0)  # (1, T, 83, 3)
+        attention_tensor = torch.from_numpy(attention_mask).long().unsqueeze(0)  # (1, T)
+
+        finger_tensor = None
+        if finger_features is not None:
+            finger_tensor = torch.from_numpy(finger_features).float().unsqueeze(0)  # (1, T, 30)
+
+        # Run model (must pass attention_mask as 2nd positional arg, like accuracy analysis does)
+        with torch.no_grad():
+            outputs = self.model(pose_tensor, attention_tensor, finger_tensor)
+            logits = outputs['logits'] if isinstance(outputs, dict) else outputs
+            probs = torch.softmax(logits, dim=-1)
+
+        # Get top-3 predictions
+        top_k = 3
+        top_probs, top_indices = torch.topk(probs[0], top_k)
+
+        result = {
+            'top_prediction': self.id_to_gloss[str(top_indices[0].item())].lower(),
+            'confidence': top_probs[0].item(),
+            'top_k': []
+        }
+
+        for i in range(top_k):
+            idx = top_indices[i].item()
+            result['top_k'].append({
+                'gloss': self.id_to_gloss[str(idx)].lower(),
+                'confidence': top_probs[i].item()
+            })
+
+        return result
+
+    def _predict_glosses_from_manifest(self, glosses):
+        """
+        Predict each gloss using pickle files from manifest.
+        Returns list of prediction dicts with top-k info.
+        """
+        predictions = []
+
+        for gloss in glosses:
+            pickle_path = self._get_pickle_file_for_gloss(gloss)
+
+            if pickle_path is None or not pickle_path.exists():
+                print(f"  WARNING: No pickle file found for gloss '{gloss}'")
+                predictions.append({
+                    'top_prediction': 'UNKNOWN',
+                    'confidence': 0.0,
+                    'top_k': []
+                })
+                continue
+
+            try:
+                pred = self._predict_from_pickle(pickle_path)
+                predictions.append(pred)
+
+                if not self.quiet:
+                    top1 = pred['top_prediction']
+                    conf = pred['confidence']
+                    match = "[OK]" if top1.upper() == gloss.upper() else "[X]"
+                    print(f"  {gloss}: {top1} ({conf*100:.1f}%) {match}")
+
+            except Exception as e:
+                print(f"  ERROR predicting {gloss}: {e}")
+                predictions.append({
+                    'top_prediction': 'ERROR',
+                    'confidence': 0.0,
+                    'top_k': []
+                })
+
+        return predictions
+
     def _create_concatenated_pose(self, glosses, entry_id):
         """
         Create concatenated pose file from glosses using sentence_to_pickle.py
@@ -130,9 +409,11 @@ class SyntheticDatasetEvaluator:
         if not self.quiet:
             print(f"\n  Creating concatenated pose from glosses: {', '.join(glosses)}")
 
-        # Build command for sentence_to_pickle.py (in parent directory)
+        # Build command for sentence_to_pickle.py (in pose_utils directory)
+        project_utilities_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         sentence_to_pickle_script = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            project_utilities_dir,
+            "pose_utils",
             "sentence_to_pickle.py"
         )
 
@@ -555,9 +836,9 @@ class SyntheticDatasetEvaluator:
             print(f"\n  Running prediction with pose + metadata...")
 
         # Build command for predict_sentence.py (go up to asl-v1, then to applications)
-        # Path: synthetic_evaluation -> project-utilities -> asl-v1 -> applications
+        # Path: synthetic_evaluation -> evaluation_metrics -> project-utilities -> asl-v1 -> applications
         predict_script = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "applications",
             "predict_sentence.py"
         )
@@ -575,13 +856,23 @@ class SyntheticDatasetEvaluator:
         if self.checkpoint_path:
             cmd.extend(["--checkpoint", self.checkpoint_path])
 
+        # For two-stage mode, always disable LLM in predict_sentence.py
+        # We'll use our own TwoStagePipeline instead
+        if self.use_two_stage:
+            cmd.append("--no-llm")
+            if not self.quiet:
+                print(f"  [TWO-STAGE MODE] Getting model predictions only...")
         # Add --no-llm flag if LLM is disabled
-        if not self.use_llm:
+        elif not self.use_llm:
             cmd.append("--no-llm")
 
         # Add --no-confidence-scores flag if enabled
         if self.no_confidence_scores:
             cmd.append("--no-confidence-scores")
+
+        # Add custom prompt file if provided
+        if self.prompt_file:
+            cmd.extend(["--prompt-file", self.prompt_file])
 
         # Debug: Show if LLM is enabled
         if not self.quiet:
@@ -666,7 +957,66 @@ class SyntheticDatasetEvaluator:
                                 print(f"  WARNING: Failed to parse GLOSSES_JSON: {json_err}")
                             predicted_glosses = []
 
-            if predicted_sentence:
+            if predicted_sentence or (self.use_two_stage and predicted_glosses):
+                # Two-stage mode: use TwoStagePipeline to process predictions
+                if self.use_two_stage and predicted_glosses and self.two_stage_pipeline:
+                    if not self.quiet:
+                        print(f"  [TWO-STAGE] Running Stage 1 (Selection) + Stage 2 (Sentence)...")
+
+                    # Convert predicted_glosses to format expected by TwoStagePipeline
+                    # Expected format: [{'gloss': str, 'confidence': float, 'top_k': [...]}]
+                    formatted_glosses = []
+                    for g in predicted_glosses:
+                        if isinstance(g, dict):
+                            # Already has top_k info
+                            formatted = {
+                                'gloss': g.get('top_prediction', g.get('gloss', 'UNKNOWN')),
+                                'confidence': g.get('confidence', 0.0),
+                                'top_k': g.get('top_k', [])
+                            }
+                            formatted_glosses.append(formatted)
+                        else:
+                            # Simple string, no top-k
+                            formatted_glosses.append({
+                                'gloss': str(g),
+                                'confidence': 1.0,
+                                'top_k': [{'gloss': str(g), 'confidence': 1.0}]
+                            })
+
+                    try:
+                        # Run two-stage pipeline
+                        result = self.two_stage_pipeline.run_full_pipeline(formatted_glosses)
+
+                        # Extract results
+                        stage1 = result.get('stage1', {})
+                        stage2 = result.get('stage2', {})
+                        final_sentence = result.get('final_sentence', '')
+                        selected_glosses = result.get('selected_glosses', [])
+
+                        if not self.quiet:
+                            print(f"  [STAGE 1] Selections: {selected_glosses}")
+                            print(f"  [STAGE 2] Sentence: '{final_sentence}'")
+
+                        # Build a JSON-like response for compatibility with existing parsing
+                        import json
+                        two_stage_response = json.dumps({
+                            'selections': selected_glosses,
+                            'sentence': final_sentence,
+                            'stage1_raw': stage1.get('raw_response', ''),
+                            'stage2_raw': stage2.get('raw_response', '')
+                        })
+
+                        print(f"PREDICTED SENTENCE: '{final_sentence}'")
+                        print(f"PREDICTED GLOSSES (selected): {', '.join(selected_glosses)}")
+                        return two_stage_response, predicted_glosses
+
+                    except Exception as e:
+                        print(f"  [TWO-STAGE ERROR] {e}")
+                        traceback.print_exc()
+                        # Fall back to no-LLM output
+                        pass
+
+                # Regular output (one-phase or fallback)
                 print(f"PREDICTED SENTENCE: '{predicted_sentence}'")
                 if predicted_glosses:
                     # Extract display names from glosses (handle both dicts and strings)
@@ -792,23 +1142,58 @@ class SyntheticDatasetEvaluator:
         }
 
         try:
-            # Step 1: Create concatenated pose + metadata
-            pose_file, metadata_file = self._create_concatenated_pose(glosses, entry_id)
+            # Initialize pose_file and metadata_file for cleanup handling
+            pose_file = None
+            metadata_file = None
 
-            if not pose_file or not metadata_file:
-                result['status'] = 'failed_pose_creation'
-                return result
+            # Branch based on evaluation mode
+            if self.use_manifest:
+                # MANIFEST MODE: Predict each gloss individually from pickle files
+                if not self.quiet:
+                    print(f"\n  [MANIFEST MODE] Predicting from pickle files...")
 
-            # Step 2: Run prediction (with top-3 for LLM)
-            predicted_response, predicted_glosses = self._run_prediction(pose_file, metadata_file)
+                predicted_glosses = self._predict_glosses_from_manifest(glosses)
+                result['predicted_glosses'] = predicted_glosses
 
-            # Extract clean sentence from response (handles JSON or plain text)
-            predicted_sentence = self._extract_sentence_from_response(predicted_response)
+                # Use two-stage pipeline or simple joining for sentence
+                if self.use_two_stage and self.two_stage_pipeline:
+                    if not self.quiet:
+                        print(f"  [TWO-STAGE] Running Stage 1 (Selection) + Stage 2 (Sentence)...")
+                    two_stage_result = self.two_stage_pipeline.run_full_pipeline(predicted_glosses)
+                    predicted_sentence = two_stage_result.get('final_sentence', '')
+                    predicted_response = json.dumps(two_stage_result)
+                    if not self.quiet:
+                        selections = two_stage_result.get('selected_glosses', [])
+                        print(f"  [STAGE 1] Selections: {selections}")
+                        print(f"  [STAGE 2] Sentence: '{predicted_sentence}'")
+                else:
+                    # Simple gloss joining as fallback
+                    top1_glosses = [p['top_prediction'] for p in predicted_glosses]
+                    predicted_sentence = ' '.join(top1_glosses) + '.'
+                    predicted_response = predicted_sentence
 
-            # Store both raw response and clean sentence
-            result['predicted_sentence'] = predicted_sentence
-            result['predicted_response_raw'] = predicted_response  # For selection extraction
-            result['predicted_glosses'] = predicted_glosses
+                result['predicted_sentence'] = predicted_sentence
+                result['predicted_response_raw'] = predicted_response
+
+            else:
+                # POSE MODE: Create concatenated pose + metadata (original behavior)
+                # Step 1: Create concatenated pose + metadata
+                pose_file, metadata_file = self._create_concatenated_pose(glosses, entry_id)
+
+                if not pose_file or not metadata_file:
+                    result['status'] = 'failed_pose_creation'
+                    return result
+
+                # Step 2: Run prediction (with top-3 for LLM)
+                predicted_response, predicted_glosses = self._run_prediction(pose_file, metadata_file)
+
+                # Extract clean sentence from response (handles JSON or plain text)
+                predicted_sentence = self._extract_sentence_from_response(predicted_response)
+
+                # Store both raw response and clean sentence
+                result['predicted_sentence'] = predicted_sentence
+                result['predicted_response_raw'] = predicted_response  # For selection extraction
+                result['predicted_glosses'] = predicted_glosses
 
             if not predicted_sentence:
                 result['status'] = 'failed_prediction'
@@ -868,7 +1253,7 @@ class SyntheticDatasetEvaluator:
                                     conf = candidate['confidence']
                                     # Check if this is the correct answer
                                     is_correct = gloss_name.upper() == mm['original'].upper()
-                                    marker = " ✓ CORRECT!" if is_correct else ""
+                                    marker = " * CORRECT!" if is_correct else ""
                                     print(f"        {i}. {gloss_name} ({conf*100:.1f}%){marker}")
 
                 # Show improvement from top-1 to effective
@@ -1162,7 +1547,7 @@ class SyntheticDatasetEvaluator:
                     print(f"  Correct answer IN top-3 (LLM selection error): {correct_in_topk} ({correct_in_topk/total_effective_mismatches*100:.1f}%)")
                     print(f"  Correct answer NOT in top-3 (model error): {correct_not_in_topk} ({correct_not_in_topk/total_effective_mismatches*100:.1f}%)")
                     if correct_in_topk > 0:
-                        print(f"  → Potential improvement with better LLM prompting: {correct_in_topk} glosses")
+                        print(f"  -> Potential improvement with better LLM prompting: {correct_in_topk} glosses")
 
         # BLEU Statistics
         if baseline_bleu_scores:
@@ -1806,6 +2191,20 @@ def main():
         action="store_true",
         help="Minimal console output (only show glosses, reference, predicted sentence/glosses)"
     )
+    parser.add_argument(
+        "--two-stage",
+        action="store_true",
+        help="Use two-stage LLM pipeline (Stage 1: Selection, Stage 2: Sentence) instead of one-phase"
+    )
+    parser.add_argument(
+        "--prompt-file",
+        help="Custom prompt file path for one-stage LLM (overrides default prompt)"
+    )
+    parser.add_argument(
+        "--use-manifest",
+        action="store_true",
+        help="Use val_manifest.json pickle files for prediction (matches accuracy analysis exactly)"
+    )
 
     args = parser.parse_args()
 
@@ -1821,7 +2220,10 @@ def main():
             keep_poses=args.keep_poses,
             no_confidence_scores=args.no_confidence_scores,
             split=args.split,
-            quiet=args.quiet
+            quiet=args.quiet,
+            use_two_stage=args.two_stage,
+            prompt_file=args.prompt_file,
+            use_manifest=args.use_manifest
         )
 
         # Run evaluation
