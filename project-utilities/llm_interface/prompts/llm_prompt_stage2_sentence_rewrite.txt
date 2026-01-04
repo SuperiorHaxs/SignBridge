@@ -1,0 +1,95 @@
+TASK: Construct a new sentence AND rewrite the full caption for coherence.
+
+You are given:
+1. The current running caption (previous sentences)
+2. New selected glosses for the latest window
+3. All selected glosses in the reconstruction window
+
+Your job is to:
+1. Construct a new sentence from the latest window glosses
+2. Rewrite the full caption so all sentences flow naturally together
+
+RULES:
+
+1. NEW SENTENCE: Build a sentence from the latest window glosses.
+   - You may drop glosses that don't fit meaningfully.
+   - Add grammatical fillers (articles, prepositions, conjunctions).
+
+2. FULL CAPTION REWRITE: Combine all sentences into a coherent narrative.
+   - Ensure pronouns are consistent (she/he/they).
+   - Ensure tense is consistent.
+   - Ensure logical flow between sentences.
+   - You may slightly adjust previous sentences for better flow.
+
+3. RELATIONAL NOUNS: Add possessive for family/relationship words.
+   - "mother" -> "My mother..."
+
+4. MAINTAIN MEANING: Do not change the core meaning of previous sentences.
+   - Only adjust for grammar, pronouns, and flow.
+
+CURRENT CAPTION:
+{running_caption}
+
+ALL GLOSSES IN RECONSTRUCTION WINDOW:
+{reconstruction_glosses}
+
+LATEST WINDOW GLOSSES (for new sentence):
+{selected_glosses}
+
+OUTPUT FORMAT (JSON only - no other text):
+{{
+  "new_sentence": "Sentence from latest window glosses.",
+  "full_caption": "Complete rewritten caption with all sentences.",
+  "used_glosses": ["GLOSS1", "GLOSS2"],
+  "dropped_glosses": []
+}}
+
+EXAMPLES:
+
+Example 1 - Simple extension:
+Current caption: "My mother helps the child."
+Latest window glosses: ["GO", "SCHOOL", "NOW"]
+
+CORRECT: {{
+  "new_sentence": "She goes to school now.",
+  "full_caption": "My mother helps the child. She goes to school now.",
+  "used_glosses": ["GO", "SCHOOL", "NOW"],
+  "dropped_glosses": []
+}}
+
+Example 2 - Rewrite for coherence:
+Current caption: "The mother helps. The child is happy."
+Latest window glosses: ["GO", "HOME", "TOGETHER"]
+
+CORRECT: {{
+  "new_sentence": "They go home together.",
+  "full_caption": "My mother helps the child. The child is happy. They go home together.",
+  "used_glosses": ["GO", "HOME", "TOGETHER"],
+  "dropped_glosses": []
+}}
+Note: Adjusted "The mother" to "My mother" for consistency.
+
+Example 3 - Drop noisy gloss:
+Current caption: "I play basketball."
+Latest window glosses: ["WIN", "GAME", "PURPLE"]
+
+CORRECT: {{
+  "new_sentence": "I win the game.",
+  "full_caption": "I play basketball. I win the game.",
+  "used_glosses": ["WIN", "GAME"],
+  "dropped_glosses": ["PURPLE"]
+}}
+"PURPLE" doesn't fit the sports narrative.
+
+Example 4 - Full reconstruction:
+Current caption: "My mother helps."
+Reconstruction window glosses: ["MOTHER", "HELP", "CHILD", "GO", "SCHOOL", "NOW"]
+Latest window glosses: ["GO", "SCHOOL", "NOW"]
+
+CORRECT: {{
+  "new_sentence": "She goes to school now.",
+  "full_caption": "My mother helps the child. She goes to school now.",
+  "used_glosses": ["GO", "SCHOOL", "NOW"],
+  "dropped_glosses": []
+}}
+Rewrote first sentence to include "child" from reconstruction window.

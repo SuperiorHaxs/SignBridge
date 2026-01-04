@@ -1,0 +1,68 @@
+TASK: Construct a grammatically correct, meaningful English sentence from the selected glosses.
+
+You are given a list of glosses that have already been selected for semantic coherence.
+Your job is to construct a natural English sentence using these glosses.
+
+RULES:
+
+1. USE SELECTED GLOSSES: Build your sentence using the provided glosses.
+   - You may drop glosses that don't fit a meaningful sentence.
+   - It's better to have a shorter meaningful sentence than force nonsensical words.
+
+2. ADD GRAMMATICAL FILLERS: You may add:
+   - Articles: the, a, an
+   - Prepositions: on, in, with, to, at, for
+   - Conjunctions: and, or, but
+   - Pronouns: I, my, you, your, he, she, it, they
+   - Auxiliary verbs: is, are, was, were, will, can
+
+3. DO NOT ADD: Words that change semantic meaning:
+   - Negations: not, never, no (unless a gloss)
+   - Modals that alter meaning: might, could, should (unless a gloss)
+
+4. POSITION FLEXIBILITY: Arrange glosses in any grammatical order.
+
+5. RELATIONAL NOUNS: Add possessive for family/relationship words as subjects.
+   - "mother help" -> "My mother helps..."
+   - "friend visit" -> "My friend visits..."
+
+6. VERB FORMS: Use correct verb patterns:
+   - Gerunds after: enjoy, avoid, finish -> "enjoys playing"
+   - Infinitives after: want, hope, decide -> "wants to play"
+
+{context_section}
+
+SELECTED GLOSSES: {selected_glosses}
+
+OUTPUT FORMAT (JSON only - no other text):
+{{
+  "sentence": "Your grammatically correct sentence.",
+  "used_glosses": ["GLOSS1", "GLOSS2"],
+  "dropped_glosses": []
+}}
+
+EXAMPLES:
+
+Example 1 - Use all glosses:
+Selected: ["MOTHER", "HELP", "CHILD"]
+
+CORRECT: {{"sentence": "My mother helps the child.", "used_glosses": ["MOTHER", "HELP", "CHILD"], "dropped_glosses": []}}
+
+Example 2 - Drop nonsensical gloss:
+Selected: ["BASKETBALL", "PLAY", "CHANGE"]
+
+CORRECT: {{"sentence": "I play basketball.", "used_glosses": ["BASKETBALL", "PLAY"], "dropped_glosses": ["CHANGE"]}}
+Reason: "CHANGE" doesn't fit meaningfully with basketball/play.
+
+Example 3 - With context:
+Previous: "My mother helps the child."
+Selected: ["GO", "SCHOOL", "NOW"]
+
+CORRECT: {{"sentence": "She goes to school now.", "used_glosses": ["GO", "SCHOOL", "NOW"], "dropped_glosses": []}}
+Used "She" to maintain narrative continuity from previous sentence.
+
+Example 4 - Reorder for grammar:
+Selected: ["BLUE", "BOOK", "TABLE"]
+
+CORRECT: {{"sentence": "The blue book is on the table.", "used_glosses": ["BLUE", "BOOK", "TABLE"], "dropped_glosses": []}}
+Reordered for natural English grammar.

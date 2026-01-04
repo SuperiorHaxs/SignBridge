@@ -1,0 +1,52 @@
+TASK: Select the best gloss for each position to form a semantically coherent set.
+
+You are given multiple positions, each with top-3 predictions from an ASL sign recognition model.
+Your job is to select ONE gloss per position that together form a coherent, meaningful combination.
+
+SELECTION CRITERIA (in order of priority):
+
+1. SEMANTIC COHERENCE: Selected glosses should form a logical, meaningful group.
+   - Look for related concepts: mother+help+child (caregiving), basketball+play+game (sports)
+   - Avoid nonsensical combinations: basketball+finish+year+change (no clear meaning)
+
+2. CONFIDENCE SCORES: Higher confidence is preferred, but coherence ALWAYS trumps confidence.
+   - If a lower-confidence option makes the set more coherent, choose it.
+   - Example: Position shows 'change' (80%) but 'practice' (15%) fits better with 'basketball'
+
+3. NO DUPLICATES: Do not select the same word for multiple positions.
+   - If a word appears in multiple positions, keep it where confidence is highest.
+
+{context_section}
+
+POSITIONS TO SELECT FROM:
+{gloss_details}
+
+OUTPUT FORMAT (JSON only - no other text):
+{{
+  "selections": ["WORD1", "WORD2", "WORD3"],
+  "reasoning": "Brief explanation of why these form a coherent set"
+}}
+
+EXAMPLES:
+
+Example 1 - Coherence over confidence:
+Position 1: 'MOTHER' (84%), 'BLUE' (10%), 'GO' (5%)
+Position 2: 'HELP' (95%), 'GIVE' (3%), 'WANT' (2%)
+Position 3: 'DEAF' (45%), 'CHILD' (30%), 'PERSON' (15%)
+
+CORRECT: {{"selections": ["MOTHER", "HELP", "CHILD"], "reasoning": "Caregiving theme: mother helping child"}}
+Chose 'CHILD' (30%) over 'DEAF' (45%) for better semantic coherence.
+
+Example 2 - Skip noise when all options are poor:
+Position 1: 'BASKETBALL' (75%), 'BALL' (15%), 'ORANGE' (5%)
+Position 2: 'PLAY' (82%), 'GAME' (10%), 'FUN' (5%)
+Position 3: 'CHANGE' (60%), 'DIFFERENT' (20%), 'TIME' (15%)
+
+CORRECT: {{"selections": ["BASKETBALL", "PLAY", "TIME"], "reasoning": "Sports context: playing basketball, 'time' fits better than 'change'"}}
+
+Example 3 - Handling duplicates:
+Position 1: 'NOW' (50%), 'GIVE' (40%), 'HELP' (8%)
+Position 2: 'HELP' (90%), 'WANT' (5%), 'NEED' (3%)
+Position 3: 'NOW' (99%), 'TODAY' (1%), 'TIME' (0%)
+
+CORRECT: {{"selections": ["GIVE", "HELP", "NOW"], "reasoning": "Kept 'NOW' at position 3 (99% conf), chose 'GIVE' for position 1 to avoid duplicate"}}
