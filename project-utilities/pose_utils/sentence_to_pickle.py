@@ -767,9 +767,8 @@ Examples:
     parser.add_argument(
         '--num-glosses',
         type=int,
-        choices=[20, 50],
-        default=20,
-        help='Number of glosses in vocabulary (20 or 50, default: 20)'
+        default=50,
+        help='Number of glosses in vocabulary (default: 50)'
     )
     parser.add_argument(
         '--split',

@@ -7,6 +7,7 @@ Provides load_model_from_checkpoint and predict_pose_file functions.
 """
 
 import torch
+import numpy as np
 import json
 from pathlib import Path
 from openhands_modernized import OpenHandsConfig, OpenHandsModel, WLASLPoseProcessor
@@ -47,6 +48,9 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
         config = OpenHandsConfig(
             num_pose_keypoints=config_dict.get('num_pose_keypoints', 75),
             pose_channels=config_dict.get('pose_channels', 2),
+            pose_coord_features=config_dict.get('pose_coord_features', 150),
+            use_finger_features=config_dict.get('use_finger_features', False),
+            finger_features=config_dict.get('finger_features', 0),
             pose_features=config_dict.get('pose_features', 150),
             hidden_size=config_dict.get('hidden_size', 64),
             num_hidden_layers=config_dict.get('num_hidden_layers', 3),
@@ -60,6 +64,7 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
         )
         print(f"Loaded config from {config_file}")
         print(f"  hidden_size={config.hidden_size}, num_layers={config.num_hidden_layers}, vocab={config.vocab_size}")
+        print(f"  pose_features={config.pose_features}, use_finger_features={config.use_finger_features}")
     else:
         # Fallback to default config with provided vocab_size
         config = OpenHandsConfig(vocab_size=vocab_size or 20)
@@ -100,16 +105,34 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
     # Load and process pose data
     processor = WLASLPoseProcessor()
     pose_sequence = processor.load_pickle_pose(pickle_path)
+    import numpy as _np
+    print(f'[DEBUG] Raw pose shape: {pose_sequence.shape}, shoulder dist: {_np.linalg.norm(pose_sequence[0,11,:2] - pose_sequence[0,12,:2]):.4f}')
     pose_sequence = processor.preprocess_pose_sequence(pose_sequence, augment=False)
+    print(f'[DEBUG] After norm: shoulder dist: {_np.linalg.norm(pose_sequence[0,11,:2] - pose_sequence[0,12,:2]):.4f}')
+
+    # Extract finger features before padding if model uses them
+    finger_features_tensor = None
+    if hasattr(model, 'config') and model.config.use_finger_features:
+        import numpy as np
+        finger_features = processor.extract_finger_features(pose_sequence)
+        # Pad finger features to same length as pose sequence
+        max_length = 256
+        if len(finger_features) > max_length:
+            finger_features = finger_features[:max_length]
+        else:
+            padding = np.zeros((max_length - len(finger_features), 30), dtype=np.float32)
+            finger_features = np.concatenate([finger_features, padding], axis=0)
+        finger_features_tensor = torch.tensor(finger_features, dtype=torch.float32).unsqueeze(0)  # (1, T, 30)
+
     pose_sequence, attention_mask = processor.pad_or_truncate_sequence(pose_sequence, max_length=256)
 
     # Convert to tensors and add batch dimension
-    pose_tensor = torch.tensor(pose_sequence, dtype=torch.float32).unsqueeze(0)  # (1, T, 75, 2)
-    mask_tensor = torch.tensor(attention_mask, dtype=torch.float32).unsqueeze(0)  # (1, T)
+    pose_tensor = torch.tensor(pose_sequence, dtype=torch.float32).unsqueeze(0)  # (1, T, 83, 3)
+    mask_tensor = torch.tensor(attention_mask, dtype=torch.long).unsqueeze(0)  # (1, T) - must be long like training!
 
     # Predict
     with torch.no_grad():
-        logits = model(pose_tensor, mask_tensor)  # (1, vocab_size)
+        logits = model(pose_tensor, mask_tensor, finger_features=finger_features_tensor)  # (1, vocab_size)
         probs = torch.softmax(logits, dim=-1)
 
         # Get top prediction

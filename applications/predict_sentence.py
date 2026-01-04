@@ -362,7 +362,8 @@ class EndToEndPipeline:
         min_sign_duration=10,
         use_top_k=1,
         num_glosses=20,
-        no_confidence_scores=False
+        no_confidence_scores=False,
+        prompt_file=None
     ):
         self.checkpoint_path = checkpoint_path
         self.use_llm = use_llm and LLM_AVAILABLE  # Only use LLM if requested AND available
@@ -372,6 +373,7 @@ class EndToEndPipeline:
         self.use_top_k = use_top_k
         self.num_glosses = num_glosses
         self.no_confidence_scores = no_confidence_scores
+        self.prompt_file = prompt_file
         self.model = None
         self.tokenizer = None
         self.temp_dir = None
@@ -822,8 +824,11 @@ class EndToEndPipeline:
         script_dir = os.path.dirname(os.path.abspath(__file__))
         prompts_dir = os.path.join(script_dir, "..", "project-utilities", "llm_interface", "prompts")
 
+        # Use custom prompt file if provided
+        if self.prompt_file:
+            prompt_file = self.prompt_file
         # Determine which prompt file to load
-        if prompt_type == "simple":
+        elif prompt_type == "simple":
             prompt_file = os.path.join(prompts_dir, "llm_prompt_simple.txt")
         elif prompt_type == "topk":
             if self.no_confidence_scores:
@@ -837,6 +842,10 @@ class EndToEndPipeline:
         try:
             with open(prompt_file, 'r', encoding='utf-8') as f:
                 template = f.read()
+
+            # Add default context_section if not provided (for closed_captions prompt compatibility)
+            if 'context_section' not in kwargs:
+                kwargs['context_section'] = ''
 
             # Format template with provided variables
             return template.format(**kwargs)
@@ -1499,6 +1508,10 @@ def main():
         action="store_true",
         help="Send only top-k words to LLM without confidence scores (LLM selects based on semantic fit only)"
     )
+    parser.add_argument(
+        "--prompt-file",
+        help="Custom prompt file path (overrides default prompt selection)"
+    )
 
     args = parser.parse_args()
 
@@ -1541,7 +1554,8 @@ def main():
             min_sign_duration=args.min_sign_duration,
             use_top_k=args.use_top_k,
             num_glosses=args.num_glosses,
-            no_confidence_scores=args.no_confidence_scores
+            no_confidence_scores=args.no_confidence_scores,
+            prompt_file=args.prompt_file
         )
 
         if args.webcam:
