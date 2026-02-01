@@ -359,7 +359,7 @@ classes = load_class_mapping(num_classes=100)
 | **1.3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
 | **1.4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **1.5** | Real-Time Webcam "Show-and-Tell" Demo App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
-| **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 83 keypoints, 279-dim features, 50x augmentation (342 → 17,100 samples) |
+| **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation<br>• Model optimizations including dropout tuning, label smoothing, learning rate optimization, gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 83 keypoints, 279-dim features, 50x augmentation (342 → 17,100 samples) |
 | **1.7** | Deployment & Release | 🔄 **IN PROGRESS** | • Deploy model and application to cloud | • Production-ready cloud deployment | **In Progress:** Cloud deployment |
 
 ### Future Phases
@@ -367,7 +367,8 @@ classes = load_class_mapping(num_classes=100)
 | Step | Title | Status | Key Deliverables | Success Criteria | Notes |
 |------|-------|--------|------------------|------------------|-------|
 | **2.1** | Mobile Conferencing App with Closed Captions | 🔄 **IN PROGRESS** | • Mobile application<br>• Real-time closed captions<br>• Video conferencing integration | • Real-time captioning<br>• Mobile-optimized inference | **In Progress** |
-| **2.2** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
+| **2.2** | Expand SignBridge to WLASL-1000 Dataset | ⏳ **NOT STARTED** | • 1000-class model<br>• Extended augmentation pipeline<br>• Updated evaluation | • Competitive Top-1 accuracy on WLASL-1000<br>• Scalable training pipeline | **Future:** Scale recognition to 1000 sign classes |
+| **2.3** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
 
 ---
 
