@@ -7,7 +7,7 @@
 ## Table of Contents
 
 1. [Abstract](#1--abstract)
-2. [Project Goals and Motivation](#2--project-goals-and-motivation)
+2. [Research Questions, Hypotheses & Engineering Goals](#2--research-questions-hypotheses--engineering-goals)
 3. [Current State of the Field](#3--current-state-of-the-field)
 4. [Research Challenges & Our Solutions](#4--research-challenges--our-solutions)
 5. [Phased Research Roadmap](#5--phased-research-roadmap)
@@ -32,25 +32,33 @@ Taken together, SignBridge offers a foundation for more reliable and practical r
 
 ---
 
-## 2. 🎯 Project Goals and Motivation
+## 2. 🎯 Research Questions, Hypotheses & Engineering Goals
 
-### The Accessibility Challenge
-- 500,000+ ASL users in North America face communication barriers
-- Video conferencing (Zoom, Teams, Meet) lacks real-time ASL translation
-- Existing solutions: expensive, non-real-time, or accuracy-limited
+### Research Questions
 
-### Our Vision
-Build a **production-ready, real-time ASL translation system** that:
-- Translates signs to natural English sentences in <2 seconds
-- Runs on consumer hardware (webcam, laptop)
-- Achieves 80%+ accuracy on real-world vocabulary
-- Integrates seamlessly into video conferencing workflows
+- **RQ1:** Can tracking more body points improve sign language recognition accuracy (benchmark 72%) when training data is limited?
+- **RQ2:** Can AI language models improve translation accuracy by considering sentence meaning rather than evaluating each sign independently?
+- **RQ3:** Can measuring multiple aspects of translation quality together provide better assessment than single measurements?
 
-### Research Objectives
-1. **Improve pose-based recognition** beyond current benchmarks
-2. **Enable real-time inference** suitable for live conversation
-3. **Build end-to-end pipeline** (video → pose → prediction → natural language)
-4. **Make research reproducible** with clean architecture and documentation
+### Hypotheses
+
+- **H1: Enhanced Body Tracking.** Tracking 3x more body points instead of standard 27, combined with artificially expanding the training dataset by 10-20 times, will improve word-level recognition accuracy compared to current methods.
+- **H2: AI-Powered Word Selection.** Using an AI Large Language Model to select words based on sentence meaning will produce higher quality translations than choosing the highest-confidence prediction from traditional science frameworks and machine learning models — particularly when the correct sign appears among the top predictions but not as the first choice.
+- **H3: Multi-Dimensional Quality Measurement.** A combined quality score measuring word accuracy, meaning preservation, and grammatical correctness will reveal improvements that no single measurement captures alone.
+
+### Engineering Goals
+
+1. Build a sign recognition system that tracks 83 body points including detailed finger positions
+2. Integrate an AI language model to construct grammatically correct sentences from sign predictions
+3. Develop Composite Translation Quality Index (CTQI), a combined quality scoring framework measuring multiple translation dimensions
+4. Create a working prototype demonstrating practical ASL-to-English translation (SignBridge)
+
+### Expected Outcomes
+
+- Recognition accuracy reaching 80%+ among top-3 predictions
+- Grammatical quality of translations significantly improved over word-by-word output
+- Validation that combined quality measurement outperforms single metrics for usage in real world applications
+- A functional system demonstrating the viability of AI-enhanced sign language translation
 
 ---
 
