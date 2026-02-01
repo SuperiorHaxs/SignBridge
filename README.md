@@ -1,4 +1,4 @@
-# ASL-v1: Real-Time American Sign Language Recognition System
+# SignBridge: Real-Time American Sign Language Recognition System
 
 *Building accessible, real-time ASL translation for video conferencing and beyond*
 
@@ -89,7 +89,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 | Challenge | Problem Statement | Solution & Impact |
 |-----------|-------------------|-------------------|
-| **Natural Language Generation** | No end-to-end systems combining modern pose models with LLMs. Traditional rule-based grammar insufficient for natural output. | **Solution: LLM-based Self-Correcting Sentence Construction**<br>**Implementation**: Streaming Gemini API with smart buffering (5 trigger strategies), context-aware prompts, top-K integration<br>**Components**: Smart buffering, local fallback, BLEU score evaluation (in progress)<br>**Result**: <2s latency with grammatically correct sentences. |
+| **Natural Language Generation** | No end-to-end systems combining modern pose models with LLMs. Traditional rule-based grammar insufficient for natural output. | **Solution: LLM-based Self-Correcting Sentence Construction**<br>**Implementation**: Streaming Gemini API with smart buffering (5 trigger strategies), context-aware prompts, top-K integration<br>**Components**: Smart buffering, local fallback, BLEU/BERTScore/CTQI evaluation<br>**Result**: <2s latency, BLEU 56.53, BERTScore 96.30, CTQI 78.16. |
 | **Continuous Sign Segmentation** | Segmenting continuous signing into individual signs is unsolved. Real-world videos unusable without manual annotation. | **Solution: Continuous Sign Detection**<br>**Implementation**: Dual segmentation approach - auto-detect (pose_to_segments ML-based) + motion-based (velocity thresholds)<br>**Features**: Configurable for different signing styles, works on real-world videos<br>**Result**: Automated boundary detection enabling continuous video processing. |
 
 ### (e) Reusability & Extensibility
@@ -106,7 +106,7 @@ Build a **production-ready, real-time ASL translation system** that:
 | Phase | Title | Status | Key Deliverables | Success Criteria | Notes |
 |-------|-------|--------|------------------|------------------|-------|
 | **1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 75pt augmentation<br>• Baseline architecture | • 50%+ Top-3 (20-class) ✅<br>• 50%+ Top-3 (50-class) ✅ | **Achieved:** 75.29% top-3 (20-class), 50.91% top-3 (50-class) |
-| **2** | LLM-based Self-Correcting Sentence Construction | 🔄 **IN PROGRESS** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation 🔄 | **Achieved:** Streaming API, 5 trigger strategies, local fallback. **In Progress:** BLEU evaluation framework |
+| **2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
 | **3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
 | **4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **5** | Real-Time Webcam App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
@@ -114,7 +114,7 @@ Build a **production-ready, real-time ASL translation system** that:
 | **7** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
 | **8** | Deployment & Release | 🔄 **IN PROGRESS** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **In Progress:** Documentation (README, training results). **Next:** Containerization, model quantization |
 
-**Current Status:** 4 of 8 phases complete (50% done), 3 in progress, 1 not started
+**Current Status:** 5 of 8 phases complete (62.5% done), 2 in progress, 1 not started
 
 ---
 
@@ -142,9 +142,23 @@ Build a **production-ready, real-time ASL translation system** that:
 - **End-to-end latency**: <2 seconds (webcam → sentence)
 - **Model size**: 175K params (small) vs 4.8M (large)
 
-**Real-World Performance:**
+**Translation Quality (Synthetic Evaluation, n=34):**
+
+| Metric | Baseline | Model | Improvement | p-value | Cohen's d |
+|--------|----------|-------|-------------|---------|-----------|
+| Coverage F1 | 74.64 | 87.62 | +12.98 | 2.18e-05*** | 0.848 |
+| Quality Score | 39.38 | 74.56 | +35.18 | 1.25e-07*** | 1.149 |
+| CTQI | 55.56 | 78.16 | +22.60 | 2.96e-07*** | 1.098 |
+| BLEU Score | 20.62 | 56.53 | +35.91 | 9.04e-06*** | 0.899 |
+| BERTScore | 91.64 | 96.30 | +4.65 | 1.47e-06*** | 1.004 |
+
+*All metrics show statistically significant improvements with large effect sizes (d > 0.8).*
+
+**Additional Metrics:**
+- **Perfect Translation Rate**: 41.2% → 67.6% (+26.4%, p=0.004)
+- **Gloss Accuracy (Top-1)**: 79.0% | **Effective (after LLM selection)**: 86.7% (+7.6%)
+- **Entries with CTQI improvement**: 30/34 (88.2%)
 - **Top-3 accuracy**: 75.29% (20-class) - suitable for context disambiguation
-- **BLEU score**: Framework implemented, evaluation in progress
 - **Segmentation**: Dual methods (auto-detect + motion-based)
 
 ---
@@ -267,12 +281,13 @@ Dropout 0.25 (optimized): 47.27% val (stable until epoch 25)
 - Adapts to trigger reason (question vs statement)
 - Top-K prediction integration for better word choice
 
-**Quality Evaluation (BLEU Score):**
-- Automatic BLEU score calculation against reference sentences
-- Uses synthetic sentence generator for ground truth
-- **Status**: Framework implemented, evaluation in progress
+**Quality Evaluation:**
+- Automatic BLEU and BERTScore calculation against reference sentences
+- Synthetic evaluation dataset: 34 sentence pairs, 43 glosses
+- CTQI (Composite Translation Quality Index): custom metric combining Gloss Accuracy (40%), Quality Score (40%), PTR (20%)
+- **Results**: BLEU 56.53 (+35.91), BERTScore 96.30 (+4.65), CTQI 78.16 (+22.60), all p < 0.001
 
-**Result:** <2s latency with grammatically correct sentences
+**Result:** <2s latency with grammatically correct sentences, 67.6% perfect translation rate
 
 **Files:**
 - `applications/gemini_conversation_manager.py`
