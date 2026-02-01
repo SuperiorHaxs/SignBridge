@@ -9,7 +9,7 @@
 1. [Abstract](#1--abstract)
 2. [Research Questions, Hypotheses & Engineering Goals](#2--research-questions-hypotheses--engineering-goals)
 3. [Current State of the Field](#3--current-state-of-the-field)
-4. [Research Challenges & Our Solutions](#4--research-challenges--our-solutions)
+4. [Experimental Design Overview](#4--experimental-design-overview)
 5. [Phased Research Roadmap](#5--phased-research-roadmap)
 6. [Performance Comparison](#6--performance-comparison)
 7. [More Details on Our Unique Features & Innovations](#7--more-details-on-our-unique-features--innovations)
@@ -84,41 +84,32 @@ Taken together, SignBridge offers a foundation for more reliable and practical r
 
 ---
 
-## 4. 🔍 Research Challenges & Our Solutions
+## 4. 🔬 Experimental Design Overview
 
-### (a) Model Architecture
+All development and experimentation for this research project were conducted on personal computing equipment using publicly available and synthetically augmented datasets. This develops and evaluates a three-component ASL translation system:
 
-| Challenge | Problem Statement | Solution & Impact |
-|-----------|-------------------|-------------------|
-| **Pose Representation Quality** | OpenHands baseline uses only 27 keypoints (body), missing critical hand and face details needed for sign disambiguation. Video models use full RGB but are too computationally expensive. | **Solution: 83-Point OpenHands-HD Keypoints**<br>Face + body + hands (83 points: 8 face + 33 body + 42 hands) generating 279-dimensional feature vectors per frame. Built on OpenHands transformer, extended to OpenHands-HD.<br>**Result**: 80.97% Top-1 accuracy on WLASL-100, up from 72% benchmark. |
-| **Context Disambiguation** | Single-prediction approach limits ability to use context for resolving ambiguous signs (e.g., BOOK vs LOOK). | **Solution: Top-K Prediction Support**<br>Model returns top-1 through top-5 predictions with confidences. Gemini (gemini-2.0-flash) receives all alternatives for context-aware semantic selection.<br>**Result**: 91.62% Top-3 accuracy; LLM selects based on sentence meaning, not just confidence. |
+### Component 1: OpenHands-HD for Pose-Based Sign Recognition
 
-### (b) Data Augmentation
+- **Original Dataset:** WLASL (Word-Level ASL), with the WLASL-100 subset (100 sign classes, 342 samples expanded 50x to 17,100 via augmentation, 30% held out for validation/test)
+- **Synthetic Data Augmentation:** Pre-generated augmentation with rotation (±15°), shear (±0.2 rad), producing 50x expansion
+- **OpenHands-HD Development:** Enhanced MediaPipe Holistic extraction of 83 keypoints (8 face + 33 body + 42 hands), yielding 279-dimensional feature vectors per frame
+- **Model Training:** Transformer encoder, small vs. large capacity (64–129 hidden, 2–3 layers, 8 heads), 1500 epochs, batch size 16
+- **Output:** Top-K predictions with confidence scores per video
 
-| Challenge | Problem Statement | Solution & Impact |
-|-----------|-------------------|-------------------|
-| **Data Efficiency & Augmentation** | Limited pose augmentation techniques in literature. WLASL has only 2,000 classes with limited samples per class. Models overfit on small datasets. | **Solution: 50x Pose Data Augmentation Pipeline**<br>Comprehensive augmentation: rotation (±15°), shear (±0.2 rad), combinations, and multi-variant stacking. Pre-generated (not runtime) for training efficiency. 342 samples → 17,100 via 50x expansion.<br>**Result**: 80.97% Top-1 accuracy on WLASL-100 with augmented training data. |
+### Component 2: LLM Integration Library for Semantic Sentence Construction
 
-### (c) Training Optimizations
+- **Plug-and-play LLM integration;** prototype uses Google Gemini (gemini-2.0-flash)
+- **Input:** Top-3 predictions per sign position with confidence scores, rolling window predictions
+- **Semantic Coherence Analysis:** LLM selects signs based on semantic coherence (not just confidence), multi-pass prompt engineering, prevents duplicate selections, adds grammatical elements
+- **Output:** Grammatically correct English sentences
 
-| Challenge | Problem Statement | Solution & Impact |
-|-----------|-------------------|-------------------|
-| **Model Capacity & Overfitting** | Standard training approaches cause severe overfitting on limited sign language data. Optimal model capacity unclear for pose-based recognition. | **Solution: Samples-per-Parameter Model Sizing**<br>Analytical approach to right-sizing models. Small vs Large capacities: 64-129 hidden, 2-3 layers, 8 heads. Training: 1500 epochs, batch size 16.<br>**Result**: 80.97% Top-1 accuracy on WLASL-100 with stable training. |
-| **Training Stability** | Default dropout settings cause overfitting on limited ASL data. Need optimization for small dataset regime. | **Solution: Configurable Dropout**<br>Command-line configurable dropout with empirical optimization. Found 0.25 optimal for 50-class (vs 0.1 default).<br>**Result**: +3.63% improvement, stable until epoch 25. |
+### Component 3: CTQI Framework for Comprehensive Evaluation
 
-### (d) Application
-
-| Challenge | Problem Statement | Solution & Impact |
-|-----------|-------------------|-------------------|
-| **Natural Language Generation** | No end-to-end systems combining modern pose models with LLMs. Traditional rule-based grammar insufficient for natural output. | **Solution: LLM-based Semantic Coherence Analysis**<br>**Implementation**: Gemini (gemini-2.0-flash) API with smart buffering (5 trigger strategies), context-aware prompts, top-K integration<br>**Components**: Smart buffering, local fallback, BLEU/BERTScore/CTQI evaluation<br>**Result**: Grammatical quality 32% → 76%, CTQI 51% → 74%. |
-| **Continuous Sign Segmentation** | Segmenting continuous signing into individual signs is unsolved. Real-world videos unusable without manual annotation. | **Solution: Continuous Sign Detection**<br>**Implementation**: Dual segmentation approach - auto-detect (pose_to_segments ML-based) + motion-based (velocity thresholds)<br>**Features**: Configurable for different signing styles, works on real-world videos<br>**Result**: Automated boundary detection enabling continuous video processing. |
-
-### (e) Reusability & Extensibility
-
-| Challenge | Problem Statement | Solution & Impact |
-|-----------|-------------------|-------------------|
-| **System Architecture** | Hardcoded paths and manual configuration in research code. Brittle scripts difficult to reproduce across machines. | **Solution: Centralized Configuration System**<br>`config/settings.json` with auto-detection, gitignored user settings, cross-platform compatibility (Windows/Linux).<br>**Result**: Reproducible research, easy multi-machine setup. |
-| **Scalability Across Class Sizes** | Hardcoded class lists require code changes when switching between 20/50/100/2000-class configurations. | **Solution: Dynamic Class Loading**<br>Reads class mappings from JSON files dynamically. Single codebase for all class configurations.<br>**Result**: Zero code changes when scaling vocabulary. |
+- **CTQI Formula:** `CTQI = (α × BLEU) + (β × BERTScore) + (γ × Quality)`
+  - **BLEU** for lexical similarity
+  - **BERTScore** for semantic preservation
+  - **Quality** for grammatical correctness (0–100)
+- **Evaluation:** 25-entry synthetic sentence dataset with ground truth, comparing before-LLM (confidence-based) vs. after-LLM (semantic coherence), with statistical analysis of all quality metrics
 
 ---
 
