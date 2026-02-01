@@ -6,18 +6,33 @@
 
 ## Table of Contents
 
-1. [Project Goals and Motivation](#1--project-goals-and-motivation)
-2. [Current State of the Field](#2--current-state-of-the-field)
-3. [Research Challenges & Our Solutions](#3--research-challenges--our-solutions)
-4. [Phased Research Roadmap](#4--phased-research-roadmap)
-5. [Performance Comparison](#5--performance-comparison)
-6. [More Details on Our Unique Features & Innovations](#6--more-details-on-our-unique-features--innovations)
-7. [Getting Started](#7--getting-started)
-8. [Related Work](#8--related-work)
+1. [Abstract](#1--abstract)
+2. [Project Goals and Motivation](#2--project-goals-and-motivation)
+3. [Current State of the Field](#3--current-state-of-the-field)
+4. [Research Challenges & Our Solutions](#4--research-challenges--our-solutions)
+5. [Phased Research Roadmap](#5--phased-research-roadmap)
+6. [Performance Comparison](#6--performance-comparison)
+7. [More Details on Our Unique Features & Innovations](#7--more-details-on-our-unique-features--innovations)
+8. [Getting Started](#8--getting-started)
+9. [Related Work](#9--related-work)
 
 ---
 
-## 1. 🎯 Project Goals and Motivation
+## 1. 📄 Abstract
+
+Around 70 million Deaf individuals worldwide rely on sign languages, yet fewer than 20% of their digital content receives accurate captions. This is because current automated systems struggle with dynamic, continuous signing, leading to grammatically incorrect and unusable translations.
+
+We present SignBridge, an American Sign Language (ASL) translation system that combines high-density pose estimation with an LLM for contextual selection from multiple sign candidates. SignBridge addresses three central challenges: individual word-level sign language accuracy in data-scarce scenarios, lack of grammatically correct sentence construction from sign predictions, and inadequate, multi-dimensional translation quality metrics. SignBridge's core innovation enables coherence-based selection rather than relying solely on vision model confidence scores for individual words.
+
+Our approach enhances the OpenHands model to OpenHands-HD (expanding from 27 to 83 body points including detailed finger tracking), applies 50x pose data augmentation for training diversity, and uses transformer architecture to generate Top-K sign predictions. Google's Gemini LLM (gemini-2.0-flash) then performs contextual recovery by selecting semantically appropriate signs from the Top-K predictions.
+
+Testing on the WLASL-100 dataset shows substantial improvements: word-level prediction accuracy increased from 72% benchmark to 80.97% for Top-1 predictions and 91.62% for Top-3 predictions. Sentence-level grammatical quality rose from 32% to 76%. To address the absence of comprehensive translation quality assessment frameworks, we introduce Composite Translation Quality Index (CTQI)—a new score that integrates lexical similarity, semantic preservation, grammatical structure, and completeness—improved from 51% to 74%.
+
+Taken together, SignBridge offers a foundation for more reliable and practical real-time ASL translation systems, helping reduce communication barriers for the Deaf community in education, employment and digital communication.
+
+---
+
+## 2. 🎯 Project Goals and Motivation
 
 ### The Accessibility Challenge
 - 500,000+ ASL users in North America face communication barriers
@@ -39,7 +54,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 ---
 
-## 2. 📊 Current State of the Field
+## 3. 📊 Current State of the Field
 
 ### Literature Benchmarks (WLASL Dataset)
 
@@ -53,8 +68,6 @@ Build a **production-ready, real-time ASL translation system** that:
 | Dataset | Classes | Accuracy | Model |
 |---------|---------|----------|-------|
 | WLASL2000 | 2000 | 30.6% | SL-GCN |
-| INCLUDE (Indian) | 263 | 93.5% | SL-GCN |
-| AUTSL (Turkish) | 226 | 95.02% | SL-GCN |
 
 **Key Observations:**
 - Video models: High accuracy but computationally prohibitive for real-time
@@ -63,7 +76,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 ---
 
-## 3. 🔍 Research Challenges & Our Solutions
+## 4. 🔍 Research Challenges & Our Solutions
 
 ### (a) Model Architecture
 
@@ -101,7 +114,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 ---
 
-## 4. 🗺️ Phased Research Roadmap
+## 5. 🗺️ Phased Research Roadmap
 
 | Phase | Title | Status | Key Deliverables | Success Criteria | Notes |
 |-------|-------|--------|------------------|------------------|-------|
@@ -118,7 +131,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 ---
 
-## 5. 📈 Performance Comparison
+## 6. 📈 Performance Comparison
 
 ### Our Results vs Literature
 
@@ -174,7 +187,7 @@ Build a **production-ready, real-time ASL translation system** that:
 
 ---
 
-## 6. 📖 More Details on Our Unique Features & Innovations
+## 7. 📖 More Details on Our Unique Features & Innovations
 
 ### (a) Model Architecture
 
@@ -387,7 +400,7 @@ classes = load_class_mapping(num_classes=50)
 
 ---
 
-## 7. 🚀 Getting Started
+## 8. 🚀 Getting Started
 
 ### 📁 Project Structure
 
@@ -593,7 +606,7 @@ python dataset-utilities/conversion/pose_to_pickle_converter.py \
 
 ---
 
-## 8. 🔗 Related Work
+## 9. 🔗 Related Work
 
 - [WLASL Dataset](https://github.com/dxli94/WLASL) - Original dataset
 - [OpenHands](https://github.com/AI4Bharat/OpenHands) - Base architecture
