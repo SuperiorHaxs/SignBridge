@@ -8,13 +8,12 @@
 
 1. [Abstract](#1--abstract)
 2. [Research Questions, Hypotheses & Engineering Goals](#2--research-questions-hypotheses--engineering-goals)
-3. [Current State of the Field](#3--current-state-of-the-field)
-4. [Experimental Design Overview](#4--experimental-design-overview)
-5. [Phased Research Roadmap](#5--phased-research-roadmap)
-6. [SignBridge Performance](#6--signbridge-performance)
-7. [More Details on Our Unique Features & Innovations](#7--more-details-on-our-unique-features--innovations)
-8. [Getting Started](#8--getting-started)
-9. [Related Work](#9--related-work)
+3. [Experimental Design Overview](#3--experimental-design-overview)
+4. [SignBridge Performance](#4--signbridge-performance)
+5. [Getting Started](#5--getting-started)
+6. [Reusability & Extensibility](#6--reusability--extensibility)
+7. [Phased Research Roadmap](#7--phased-research-roadmap)
+8. [Related Work](#8--related-work)
 
 ---
 
@@ -62,29 +61,7 @@ Taken together, SignBridge offers a foundation for more reliable and practical r
 
 ---
 
-## 3. 📊 Current State of the Field
-
-### Literature Benchmarks (WLASL Dataset)
-
-**Video-Based Models (2019-2024):**
-| Model | WLASL100 | WLASL300 | WLASL1000 | WLASL2000 | Notes |
-|-------|----------|----------|-----------|-----------|-------|
-| I3D Baseline | 65.89% | 56.14% | 47.33% | 32.48% | 3D CNN, computationally expensive |
-| Multi-stream CNN (SOTA 2021) | 81.38% | 73.43% | 63.61% | 47.26% | State-of-the-art, heavy model |
-
-**Pose-Based Models (OpenHands 2021):**
-| Dataset | Classes | Accuracy | Model |
-|---------|---------|----------|-------|
-| WLASL2000 | 2000 | 30.6% | SL-GCN |
-
-**Key Observations:**
-- Video models: High accuracy but computationally prohibitive for real-time
-- Pose models: Fast but significantly lower accuracy (30.6% on WLASL2000)
-- Gap: 63.61% (video SOTA) vs 30.6% (pose baseline) on comparable scales
-
----
-
-## 4. 🔬 Experimental Design Overview
+## 3. 🔬 Experimental Design Overview
 
 All development and experimentation for this research project were conducted on personal computing equipment using publicly available and synthetically augmented datasets. This develops and evaluates a three-component ASL translation system:
 
@@ -113,24 +90,7 @@ All development and experimentation for this research project were conducted on 
 
 ---
 
-## 5. 🗺️ Phased Research Roadmap
-
-| Phase | Title | Status | Key Deliverables | Success Criteria | Notes |
-|-------|-------|--------|------------------|------------------|-------|
-| **1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 50x augmentation (342 → 17,100 samples) |
-| **2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
-| **3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
-| **4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
-| **5** | Real-Time Webcam App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
-| **6** | Isolated Sign Recognition Model Optimization & Expansion | 🔄 **IN PROGRESS** | • 100-class model<br>• 300-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 67%+ Top-3 (100-class)<br>• 67%+ Top-3 (300-class)<br>• 67%+ Top-3 (50-class optimized)<br>• Reduced overfitting | **In Progress:** Dropout tuning (testing 0.35), label smoothing, gradient clipping. **Next:** 100-class and 300-class models |
-| **7** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
-| **8** | Deployment & Release | 🔄 **IN PROGRESS** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **In Progress:** Documentation (README, training results). **Next:** Containerization, model quantization |
-
-**Current Status:** 5 of 8 phases complete (62.5% done), 2 in progress, 1 not started
-
----
-
-## 6. 📈 SignBridge Performance
+## 4. 📈 SignBridge Performance
 
 ### Isolated Word-Level Sign Recognition Accuracy
 
@@ -149,230 +109,16 @@ Statistical analysis of SignBridge results using paired t-tests (n=34 sentence p
 
 For overall translation quality, the Quality Score (a reference-free grammaticality measure based on GPT-2 perplexity) improved substantially from 39.38 to 74.56 (t(33) = 6.700, p < 0.001, Cohen's d = 1.149), representing a large effect size. Additionally, the Perfect Translation Rate—a binary metric indicating whether all glosses in a sentence were correctly predicted—increased from 41.2% (14/34) to 67.6% (23/34), with p=0.004, confirming this improvement is statistically significant. The Composite Translation Quality Index (CTQI, introduced by SignBridge), which combines Gloss Accuracy (40%), Quality Score (40%), and Perfect Translation Rate (20%), improved from 55.56 to 78.16 (t(33) = 6.403, p < 0.001, Cohen's d = 1.098). Overall, 88.2% of test entries (30/34) showed improvement in CTQI, demonstrating consistent gains across the evaluation dataset.
 
-| Metric | Baseline (No LLM) | With LLM | Improvement |
-|--------|-------------------|----------|-------------|
-| Coverage F1 | 74.64 | 87.62 | +12.98 |
-| Quality Score | 39.38 | 74.56 | +35.18 |
-| Perfect Translation Rate | 41.2% (14/34) | 67.6% (23/34) | +26.4% |
-| CTQI (introduced by SignBridge) | 55.56 | 78.16 | +22.60 |
-| Entries with CTQI improvement | — | 30/34 (88.2%) | — |
+| Metric | Baseline (No LLM) | With LLM | Improvement | p-value |
+|--------|-------------------|----------|-------------|---------|
+| Coverage F1 | 74.64 | 87.62 | +12.98 | p < 0.001 |
+| Quality Score | 39.38 | 74.56 | +35.18 | p < 0.001 |
+| Perfect Translation Rate | 41.2% (14/34) | 67.6% (23/34) | +26.4% | p = 0.004 |
+| **CTQI (introduced by SignBridge)** | **55.56** | **78.16** | **+22.60** | **p < 0.001** |
 
 ---
 
-## 7. 📖 More Details on Our Unique Features & Innovations
-
-### (a) Model Architecture
-
-#### 🎯 83-Point OpenHands-HD Keypoints
-**What it does:**
-- Extracts 83 keypoints: 8 face + 33 body pose + 42 hands (including 30 finger-level features)
-- Generates 279-dimensional feature vectors per frame (83 × 3 coordinates + 30 finger features)
-- Extended from OpenHands to OpenHands-HD with 3x more body points than baseline (27 → 83)
-
-**Technical Details:**
-- MediaPipe Holistic model with enhanced extraction
-- 3D data: (x, y, z) for each keypoint, 279 features per frame
-- Processes at 30 FPS on consumer hardware
-
-**File:** `applications/predict_sentence.py` (RealTimePoseEstimator class)
-
-#### 🎯 Top-K Prediction Support
-**What it does:**
-- Model returns top-5 predictions with confidence scores
-- Gemini LLM uses all alternatives for context-aware selection
-- User configurable: `--use-top-k 3`
-
-**Example:**
-```
-Position 1: BOOK (85%), LOOK (12%), COOK (3%)
-Position 2: READ (92%), RED (5%), REED (3%)
-→ Gemini: "I'm reading a book" (not "I'm reading a look")
-```
-
-**Benefits:**
-- Better context disambiguation
-- Handles visually similar signs
-- Improves sentence coherence
-
-### (b) Data Augmentation
-
-#### 🎨 50x Pose Data Augmentation Pipeline
-**What it does:**
-- Comprehensive pre-generated pose augmentation designed for sign language
-- 50x expansion: 342 original samples → 17,100 augmented training samples
-- Pre-generated (not runtime) for training efficiency
-
-**Augmentation Types:**
-- **Rotation**: ±15° geometric transformations
-- **Shear**: ±0.2 rad deformations
-- **Combinations**: Multi-augmentation stacking
-- **Additional**: flip, noise, translation, scaling, speed variations
-
-**Key Features:**
-- Pre-generated augmentation (vs runtime augmentation that slows model predictions)
-- Variable-length frame support (handles speed augmentation)
-- Confidence mask preservation
-- Pose-specific (doesn't corrupt keypoint structure)
-
-**Impact:** 80.97% Top-1 accuracy on WLASL-100 with 50x augmented training data
-
-**File:** `dataset-utilities/augmentation/generate_75pt_augmented_dataset.py`
-
-### (c) Training Optimizations
-
-#### 🎛️ Configurable Dropout
-**What it does:**
-- Command-line configurable dropout parameter
-- Empirically optimized for small dataset regime
-
-**Usage:**
-```bash
-python train_asl.py --classes 50 --dropout 0.25
-```
-
-**Analysis:**
-```
-Dropout 0.1 (default): 43.64% val (overfits at epoch 4)
-Dropout 0.25 (optimized): 47.27% val (stable until epoch 25)
-→ +3.63% improvement
-```
-
-**File:** `models/training-scripts/train_asl.py`
-
-#### 📊 Samples-per-Parameter Model Sizing
-**What it does:**
-- Analytical approach to model capacity selection
-- Balances model expressiveness with dataset size
-
-**Configurations:**
-- **Small model**: 64 hidden, 2 layers, 8 heads
-- **Large model**: 129 hidden, 3 layers, 8 heads
-- Training: 1500 epochs, batch size 16
-
-**Result:** Right-sized models avoid both underfitting and overfitting. 80.97% Top-1 on WLASL-100.
-
-### (d) Application
-
-#### 🤖 LLM-based Semantic Coherence Analysis
-**What it does:**
-- Real-time LLM integration for natural sentence construction from sign predictions
-- Transforms isolated sign glosses into grammatically correct English sentences
-- Semantic coherence-based selection: LLM selects signs based on sentence meaning, not just confidence scores
-
-**Implementation: Gemini API (gemini-2.0-flash)**
-
-**Smart Buffering Triggers (5 strategies):**
-1. **Pause detection**: 1.8s silence + 2+ words
-2. **Buffer size**: 3-4 words accumulated
-3. **Question words**: Immediate on "what/who/where/when/why/how"
-4. **Sentence enders**: On "please/thanks/./?"
-5. **Timeout**: Max 10s without response
-
-**Local Fallback:**
-- Instant responses for common phrases ("hello", "thank you", "bye")
-- Zero API latency for frequent interactions
-
-**Context-Aware Prompts:**
-- Includes confidence scores from sign recognition
-- Adapts to trigger reason (question vs statement)
-- Top-K prediction integration for better word choice
-
-**Quality Evaluation:**
-- Automatic BLEU, BERTScore, and grammatical quality calculation against reference sentences
-- Synthetic evaluation dataset for before/after LLM comparison
-- CTQI (Composite Translation Quality Index): `CTQI = (α × BLEU) + (β × BERTScore) + (γ × Quality)`
-  - **BLEU**: Lexical similarity via n-gram overlap
-  - **BERTScore**: Semantic preservation via contextual embeddings
-  - **Quality**: Grammatical correctness score (0-100)
-- **Results**: Grammatical quality 32% → 76%, CTQI 51% → 74%, all p < 0.001
-
-**Result:** <2s latency, grammatical quality improved from 32% to 76%, 67.6% perfect translation rate
-
-**Files:**
-- `applications/gemini_conversation_manager.py`
-- `project-utilities/calculate_sent_bleu.py`
-
-#### 🔍 Continuous Sign Detection
-**What it does:**
-- Automatically detects sign boundaries in continuous signing videos
-- Segments video stream into individual signs without manual annotation
-- Enables real-world video processing
-
-**Implementation: Dual Segmentation Approach**
-
-**Method 1: Auto-detect (pose_to_segments)**
-- Uses pose-format library's built-in ML-based segmentation
-- Analyzes pose patterns for natural boundaries
-- Works well for clear pauses between signs
-
-**Method 2: Motion-based (velocity threshold)**
-- Calculates keypoint velocities frame-by-frame
-- Configurable threshold (default: 0.02)
-- Better for subtle boundaries and continuous signing
-
-**Usage:**
-```bash
---segmentation-method auto  # ML-based (default)
---segmentation-method motion --velocity-threshold 0.02  # Velocity-based
-```
-
-**Result:** Automated boundary detection enabling real-world video processing
-
-**File:** `applications/motion_based_segmenter.py`
-
-### (e) Reusability & Extensibility
-
-#### 🔧 Centralized Configuration System
-**What it does:**
-- Single source of truth for all paths
-- Auto-detection of project root
-- Cross-platform compatibility
-
-**Structure:**
-```json
-{
-  "data_root": "/path/to/wlasl_poses_complete",
-  "project_root": "auto"
-}
-```
-
-**Features:**
-- `settings.json` gitignored (user-specific)
-- `settings.json.example` committed (template)
-- Works on Windows and Linux
-- Interactive setup script
-
-**Usage:**
-```bash
-python setup_config.py  # Interactive setup
-python -m config.paths  # Verify configuration
-```
-
-**Files:** `config/settings.json.example`, `config/paths.py`, `setup_config.py`
-
-#### 🎯 Dynamic Class Loading
-**What it does:**
-- Reads class mappings from JSON files dynamically
-- Supports any number of classes: 20/50/100/300/2000
-- Single codebase for all configurations
-
-**Benefits:**
-- Zero code changes when switching class counts
-- Easy to add new class splits
-- Consistent across all utilities (training, augmentation, splitting)
-
-**Example:**
-```python
-# Automatically loads from:
-# dataset_splits/50_classes/50_class_mapping.json
-classes = load_class_mapping(num_classes=50)
-```
-
-**Files:** All training and utility scripts support this
-
----
-
-## 8. 🚀 Getting Started
+## 5. 🚀 Getting Started
 
 ### 📁 Project Structure
 
@@ -578,12 +324,86 @@ python dataset-utilities/conversion/pose_to_pickle_converter.py \
 
 ---
 
-## 9. 🔗 Related Work
+## 6. 🔧 Reusability & Extensibility
 
-- [WLASL Dataset](https://github.com/dxli94/WLASL) - Original dataset
-- [OpenHands](https://github.com/AI4Bharat/OpenHands) - Base architecture
-- [MediaPipe](https://google.github.io/mediapipe/) - Pose estimation
-- [Gemini API](https://ai.google.dev/) - LLM integration
+### Centralized Configuration System
+**What it does:**
+- Single source of truth for all paths
+- Auto-detection of project root
+- Cross-platform compatibility
+
+**Structure:**
+```json
+{
+  "data_root": "/path/to/wlasl_poses_complete",
+  "project_root": "auto"
+}
+```
+
+**Features:**
+- `settings.json` gitignored (user-specific)
+- `settings.json.example` committed (template)
+- Works on Windows and Linux
+- Interactive setup script
+
+**Usage:**
+```bash
+python setup_config.py  # Interactive setup
+python -m config.paths  # Verify configuration
+```
+
+**Files:** `config/settings.json.example`, `config/paths.py`, `setup_config.py`
+
+### Dynamic Class Loading
+**What it does:**
+- Reads class mappings from JSON files dynamically
+- Supports any number of classes: 20/50/100/300/2000
+- Single codebase for all configurations
+
+**Benefits:**
+- Zero code changes when switching class counts
+- Easy to add new class splits
+- Consistent across all utilities (training, augmentation, splitting)
+
+**Example:**
+```python
+# Automatically loads from:
+# dataset_splits/50_classes/50_class_mapping.json
+classes = load_class_mapping(num_classes=50)
+```
+
+**Files:** All training and utility scripts support this
+
+---
+
+## 7. 🗺️ Phased Research Roadmap
+
+| Phase | Title | Status | Key Deliverables | Success Criteria | Notes |
+|-------|-------|--------|------------------|------------------|-------|
+| **1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 50x augmentation (342 → 17,100 samples) |
+| **2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
+| **3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
+| **4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
+| **5** | Real-Time Webcam App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
+| **6** | Isolated Sign Recognition Model Optimization & Expansion | 🔄 **IN PROGRESS** | • 100-class model<br>• 300-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 67%+ Top-3 (100-class)<br>• 67%+ Top-3 (300-class)<br>• 67%+ Top-3 (50-class optimized)<br>• Reduced overfitting | **In Progress:** Dropout tuning (testing 0.35), label smoothing, gradient clipping. **Next:** 100-class and 300-class models |
+| **7** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
+| **8** | Deployment & Release | 🔄 **IN PROGRESS** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **In Progress:** Documentation (README, training results). **Next:** Containerization, model quantization |
+
+**Current Status:** 5 of 8 phases complete (62.5% done), 2 in progress, 1 not started
+
+---
+
+## 8. 🔗 Related Work
+
+1. World Federation of the Deaf. (2023). *WFD Position Paper on Sign Language Rights.* World Federation of the Deaf. https://wfdeaf.org/news/resources/wfd-position-paper-on-sign-language-rights/
+2. Li, D., Rodriguez, C., Yu, X., & Li, H. (2020). *Word-level Deep Sign Language Recognition from Video: A New Large-scale Dataset and Methods Comparison.* IEEE Winter Conference on Applications of Computer Vision (WACV), 1459-1469. https://github.com/dxli94/WLASL
+3. Selvaraj, P., Koller, O., Golber, L., Narayanan, S., & Anastasopoulos, A. (2022). *OpenHands: Making Sign Language Recognition Accessible.* arXiv preprint arXiv:2110.05877. https://github.com/AI4Bharat/OpenHands
+4. Moryossef, A., Muller, M., & Fahrni, R. (2021). *pose-format: A Library for Viewing, Augmenting, and Handling Pose Files.* GitHub Repository. https://github.com/sign-language-processing/pose
+5. Cao, Z., Hidalgo, G., Simon, T., Wei, S. E., & Sheikh, Y. (2019). *OpenPose: Realtime Multi-Person 2D Pose Estimation using Part Affinity Fields.* IEEE TPAMI, 43(1), 172-186. https://arxiv.org/abs/1812.08008
+6. Zhang, T., Kishore, V., Wu, F., Weinberger, K. Q., & Artzi, Y. (2020). *BERTScore: Evaluating Text Generation with BERT.* ICLR. https://arxiv.org/abs/1904.09675
+7. Papineni, K., Roukos, S., Ward, T., & Zhu, W. J. (2002). *BLEU: A Method for Automatic Evaluation of Machine Translation.* ACL, 311-318. https://aclanthology.org/P02-1040/
+8. [MediaPipe](https://google.github.io/mediapipe/) - Pose estimation framework
+9. [Gemini API](https://ai.google.dev/) - LLM integration
 
 ---
 
