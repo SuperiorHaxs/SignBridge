@@ -25,7 +25,7 @@ We present SignBridge, an American Sign Language (ASL) translation system that c
 
 Our approach enhances the OpenHands model to OpenHands-HD (expanding from 27 to 83 body points including detailed finger tracking), applies 50x pose data augmentation for training diversity, and uses transformer architecture to generate Top-K sign predictions. Google's Gemini LLM (gemini-2.0-flash) then performs contextual recovery by selecting semantically appropriate signs from the Top-K predictions.
 
-Testing on the WLASL-100 dataset shows substantial improvements: word-level prediction accuracy increased from 72% benchmark to 80.97% for Top-1 predictions and 91.62% for Top-3 predictions. Sentence-level grammatical quality rose from 32% to 76%. To address the absence of comprehensive translation quality assessment frameworks, we introduce Composite Translation Quality Index (CTQI)—a new score that integrates lexical similarity, semantic preservation, grammatical structure, and completeness—improved from 51% to 74%.
+Testing on the WLASL-100 dataset shows substantial improvements: word-level prediction accuracy increased from 71.57% benchmark to 80.97% for Top-1 predictions and 91.62% for Top-3 predictions. Sentence-level grammatical quality (Quality Score) rose from 39.38 to 74.56. To address the absence of comprehensive translation quality assessment frameworks, we introduce Composite Translation Quality Index (CTQI)—a new score that integrates lexical similarity, semantic preservation, grammatical structure, and completeness—improved from 55.56 to 78.16. All improvements achieve statistical significance (p < 0.001, paired t-tests) with large effect sizes (Cohen's d > 0.8) across all measures.
 
 Taken together, SignBridge offers a foundation for more reliable and practical real-time ASL translation systems, helping reduce communication barriers for the Deaf community in education, employment and digital communication.
 
@@ -123,7 +123,7 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 ### 📁 Project Structure
 
 ```
-asl-v1/
+signbridge/
 ├── config/                      # Configuration system
 │   ├── settings.json           # User-specific paths (gitignored)
 │   ├── settings.json.example   # Template
@@ -131,27 +131,39 @@ asl-v1/
 │
 ├── models/
 │   ├── openhands-modernized/   # OpenHands-HD implementation
+│   │   ├── src/                # Inference modules
+│   │   └── production-models/  # Trained model checkpoints
 │   ├── training-scripts/
 │   │   └── train_asl.py        # Main training script
 │   └── training_results_comp.md # Performance tracking
 │
 ├── dataset-utilities/
 │   ├── augmentation/
-│   │   └── generate_75pt_augmented_dataset.py  # 50x augmentation
+│   │   └── generate_augmented_dataset.py   # 50x augmentation
 │   ├── conversion/
-│   │   └── pose_to_pickle_converter.py
+│   │   ├── pose_to_pickle_converter.py
+│   │   └── video_to_pose_extraction.py
 │   ├── dataset-splitting/
 │   │   └── split_pose_files_nclass.py
-│   └── segmentation/           # Boundary detection
+│   ├── landmarks-extraction/   # 83-point landmark extraction
+│   └── sentence-construction/  # Synthetic sentence generation
 │
 ├── applications/
 │   ├── predict_sentence.py     # Full pipeline (file + webcam)
 │   ├── predict_sentence_with_gemini_streaming.py  # Real-time streaming
 │   ├── gemini_conversation_manager.py  # Smart buffering
-│   └── motion_based_segmenter.py       # Velocity-based segmentation
+│   ├── motion_based_segmenter.py       # Velocity-based segmentation
+│   ├── closed-captions/        # Real-time ASL detection service
+│   └── show-and-tell/          # Web application demo
 │
-├── project-utilities/          # Helper scripts
-└── archive/                    # Legacy experiments
+├── project-utilities/
+│   ├── evaluation_metrics/     # CTQI, BLEU, BERTScore, p-values
+│   ├── llm_interface/          # Multi-provider LLM integration
+│   ├── segmentation/           # Hybrid & motion-based segmenters
+│   ├── pose_utils/             # Pose analysis & ranking
+│   └── training_utils/         # Incremental training & error analysis
+│
+└── datasets/                   # Dataset storage (gitignored)
 ```
 
 ### 📦 Dependencies
@@ -190,7 +202,7 @@ pip install -r requirements.txt
 
 **Option A: Interactive Setup (Recommended)**
 ```bash
-python setup_config.py
+python setup.py
 ```
 
 **Option B: Manual Configuration**
@@ -214,12 +226,11 @@ Your `data_root` should contain:
 ```
 wlasl_poses_complete/
 ├── dataset_splits/
-│   ├── 20_classes/
-│   │   ├── train.txt
-│   │   ├── val.txt
-│   │   ├── test.txt
-│   │   └── 20_class_mapping.json
-│   └── 50_classes/...
+│   └── 100_classes/
+│       ├── train.txt
+│       ├── val.txt
+│       ├── test.txt
+│       └── 100_class_mapping.json
 ├── pickle_files/         # Original pose data
 ├── augmented_pool/       # Generated augmentations
 └── video_to_gloss_mapping.json
@@ -227,29 +238,19 @@ wlasl_poses_complete/
 
 **Generate Augmented Dataset:**
 ```bash
-python dataset-utilities/augmentation/generate_75pt_augmented_dataset.py \
-  --num-classes 50
+python dataset-utilities/augmentation/generate_augmented_dataset.py \
+  --classes 100
 ```
 
 ### 5. Training
 
-**Train 20-Class Model:**
+**Train 100-Class Model:**
 ```bash
 python models/training-scripts/train_asl.py \
-  --classes 20 \
+  --classes 100 \
   --dataset augmented \
   --architecture openhands \
   --model-size large \
-  --dropout 0.1
-```
-
-**Train 50-Class Model (Optimized):**
-```bash
-python models/training-scripts/train_asl.py \
-  --classes 50 \
-  --dataset augmented \
-  --architecture openhands \
-  --model-size small \
   --dropout 0.25 \
   --early-stopping 30
 ```
@@ -257,7 +258,7 @@ python models/training-scripts/train_asl.py \
 **Resume Training:**
 ```bash
 python models/training-scripts/train_asl.py \
-  --classes 50 \
+  --classes 100 \
   --dataset augmented
 # Automatically detects and resumes from latest checkpoint
 ```
@@ -265,7 +266,7 @@ python models/training-scripts/train_asl.py \
 **Test Model:**
 ```bash
 python models/training-scripts/train_asl.py \
-  --classes 50 \
+  --classes 100 \
   --mode test
 ```
 
@@ -274,24 +275,22 @@ python models/training-scripts/train_asl.py \
 **Real-Time Video Conferencing (Streaming):**
 ```bash
 python applications/predict_sentence_with_gemini_streaming.py \
-  --checkpoint models/wlasl_50_class_model \
+  --checkpoint models/openhands-modernized/production-models/wlasl_100_class_model \
   --gemini-api-key YOUR_KEY
 ```
 
 **Standard Webcam:**
 ```bash
 python applications/predict_sentence.py --webcam \
-  --checkpoint models/wlasl_50_class_model \
-  --gemini-api-key YOUR_KEY \
+  --checkpoint models/openhands-modernized/production-models/wlasl_100_class_model \
   --use-top-k 3
 ```
 
 **Video File (Auto-detect segmentation):**
 ```bash
 python applications/predict_sentence.py input.mp4 \
-  --checkpoint models/wlasl_50_class_model \
-  --gemini-api-key YOUR_KEY \
-  --num-glosses 50
+  --checkpoint models/openhands-modernized/production-models/wlasl_100_class_model \
+  --num-glosses 100
 ```
 
 **Video File (Motion-based segmentation):**
@@ -307,7 +306,7 @@ python applications/predict_sentence.py input.mp4 \
 **Split Dataset:**
 ```bash
 python dataset-utilities/dataset-splitting/split_pose_files_nclass.py \
-  --num-classes 50
+  --num-classes 100
 ```
 
 **Convert Pose to Pickle:**
@@ -348,11 +347,11 @@ python dataset-utilities/conversion/pose_to_pickle_converter.py \
 
 **Usage:**
 ```bash
-python setup_config.py  # Interactive setup
+python setup.py  # Interactive setup
 python -m config.paths  # Verify configuration
 ```
 
-**Files:** `config/settings.json.example`, `config/paths.py`, `setup_config.py`
+**Files:** `config/settings.json.example`, `config/paths.py`, `setup.py`
 
 ### Dynamic Class Loading
 **What it does:**
@@ -368,8 +367,8 @@ python -m config.paths  # Verify configuration
 **Example:**
 ```python
 # Automatically loads from:
-# dataset_splits/50_classes/50_class_mapping.json
-classes = load_class_mapping(num_classes=50)
+# dataset_splits/100_classes/100_class_mapping.json
+classes = load_class_mapping(num_classes=100)
 ```
 
 **Files:** All training and utility scripts support this
@@ -378,18 +377,24 @@ classes = load_class_mapping(num_classes=50)
 
 ## 7. 🗺️ Phased Research Roadmap
 
-| Phase | Title | Status | Key Deliverables | Success Criteria | Notes |
-|-------|-------|--------|------------------|------------------|-------|
-| **1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 50x augmentation (342 → 17,100 samples) |
-| **2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
-| **3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
-| **4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
-| **5** | Real-Time Webcam App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
-| **6** | Isolated Sign Recognition Model Optimization & Expansion | 🔄 **IN PROGRESS** | • 100-class model<br>• 300-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 67%+ Top-3 (100-class)<br>• 67%+ Top-3 (300-class)<br>• 67%+ Top-3 (50-class optimized)<br>• Reduced overfitting | **In Progress:** Dropout tuning (testing 0.35), label smoothing, gradient clipping. **Next:** 100-class and 300-class models |
-| **7** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
-| **8** | Deployment & Release | 🔄 **IN PROGRESS** | • Model quantization<br>• Docker containerization<br>• Public release<br>• Documentation | • Production-ready deployment<br>• Complete documentation<br>• Demo videos | **In Progress:** Documentation (README, training results). **Next:** Containerization, model quantization |
+### Current Phase
 
-**Current Status:** 5 of 8 phases complete (62.5% done), 2 in progress, 1 not started
+| Step | Title | Status | Key Deliverables | Success Criteria | Notes |
+|------|-------|--------|------------------|------------------|-------|
+| **1.1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation | • 40%+ Top-1 ✅<br>• 60%+ Top-3 ✅ | **Achieved:** 20-class: 42.47% Top-1, 75.29% Top-3. 50-class: 47.27% Top-1, 67.25% Top-3. 50x augmentation (342 → 17,100 samples) |
+| **1.2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
+| **1.3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
+| **1.4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
+| **1.5** | Real-Time Webcam "Show-and-Tell" Demo App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
+| **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). OpenHands-HD with 83 keypoints, 279-dim features |
+| **1.7** | Deployment & Release | 🔄 **IN PROGRESS** | • Deploy model and application to cloud | • Production-ready cloud deployment | **In Progress:** Cloud deployment |
+
+### Future Phases
+
+| Step | Title | Status | Key Deliverables | Success Criteria | Notes |
+|------|-------|--------|------------------|------------------|-------|
+| **2.1** | Mobile Conferencing App with Closed Captions | 🔄 **IN PROGRESS** | • Mobile application<br>• Real-time closed captions<br>• Video conferencing integration | • Real-time captioning<br>• Mobile-optimized inference | **In Progress** |
+| **2.2** | Text-to-Audio Streaming Enhancement | ⏳ **NOT STARTED** | • TTS integration<br>• Real-time audio output<br>• Voice customization<br>• Audio-visual sync | • <500ms audio latency<br>• Natural voice quality<br>• Seamless integration | **Future:** Complete audio-visual accessibility solution |
 
 ---
 
@@ -415,22 +420,4 @@ This is a research project. Contributions welcome:
 3. Create a feature branch
 4. Submit a pull request
 
----
 
-## 📄 License & Citation
-
-[Your license choice]
-
-If you use this work, please cite:
-```
-[Your citation]
-```
-
----
-
-**Quick Start Checklist:**
-- [ ] Clone and install dependencies
-- [ ] Configure paths (`python setup_config.py`)
-- [ ] Generate augmented dataset
-- [ ] Train model (`python train_asl.py --classes 20`)
-- [ ] Try webcam streaming (`python predict_sentence_with_gemini_streaming.py`)
