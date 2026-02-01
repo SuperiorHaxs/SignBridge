@@ -11,7 +11,7 @@
 3. [Current State of the Field](#3--current-state-of-the-field)
 4. [Experimental Design Overview](#4--experimental-design-overview)
 5. [Phased Research Roadmap](#5--phased-research-roadmap)
-6. [Performance Comparison](#6--performance-comparison)
+6. [SignBridge Performance](#6--signbridge-performance)
 7. [More Details on Our Unique Features & Innovations](#7--more-details-on-our-unique-features--innovations)
 8. [Getting Started](#8--getting-started)
 9. [Related Work](#9--related-work)
@@ -130,24 +130,22 @@ All development and experimentation for this research project were conducted on 
 
 ---
 
-## 6. 📈 Performance Comparison
+## 6. 📈 SignBridge Performance
 
-### Gloss Selection and Translation Quality Evaluation
+### Isolated Word-Level Sign Recognition Accuracy
+
+| Model | Dataset | Approach | Keypoints | Top-1 Accuracy | Top-3 Accuracy | Speed |
+|-------|---------|----------|-----------|----------------|----------------|-------|
+| I3D Baseline | WLASL-100 | Video | N/A | 65.89% | — | Slow |
+| Multi-stream CNN (SOTA) | WLASL-100 | Video | N/A | 81.38% | — | Slow |
+| OpenHands Baseline | WLASL-100 | Pose + Transformer | 27 | 71.57% | — | Real-time |
+| **OpenHands-HD (Ours)** | WLASL-100 | Pose + Transformer | 83 | **80.97%** | **91.62%** | Real-time |
 
 Statistical analysis of SignBridge results using paired t-tests (n=34 sentence pairs) demonstrates significant improvements across all evaluation metrics. For gloss-level selection accuracy, Coverage F1—which measures the overlap of content words between the generated and reference sentences—improved from 74.64 to 87.62 (t(33) = 4.944, p < 0.001, Cohen's d = 0.848), representing a large effect size. This improvement indicates that the LLM pipeline more accurately selects contextually appropriate glosses from the model's top-k predictions, resulting in translations that better capture the intended meaning.
 
+### End-to-End Sentence-Level Translation
+
 For overall translation quality, the Quality Score (a reference-free grammaticality measure based on GPT-2 perplexity) improved substantially from 39.38 to 74.56 (t(33) = 6.700, p < 0.001, Cohen's d = 1.149), representing a large effect size. Additionally, the Perfect Translation Rate—a binary metric indicating whether all glosses in a sentence were correctly predicted—increased from 41.2% (14/34) to 67.6% (23/34), with p=0.004, confirming this improvement is statistically significant. The Composite Translation Quality Index (CTQI, introduced by SignBridge), which combines Gloss Accuracy (40%), Quality Score (40%), and Perfect Translation Rate (20%), improved from 55.56 to 78.16 (t(33) = 6.403, p < 0.001, Cohen's d = 1.098). Overall, 88.2% of test entries (30/34) showed improvement in CTQI, demonstrating consistent gains across the evaluation dataset.
-
-### Our Results vs Literature for Isolated Word-Level Sign Recognition
-
-| Model | Approach | Keypoints | Top-1 Accuracy | Top-3 Accuracy | Speed |
-|-------|----------|-----------|----------------|----------------|-------|
-| I3D Baseline | Video | N/A | 65.89% | — | Slow |
-| Multi-stream CNN (SOTA) | Video | N/A | 81.38% | — | Slow |
-| OpenHands Baseline | Pose + Transformer | 27 | 71.57% | — | Real-time |
-| **OpenHands-HD (Ours)** | Pose + Transformer | 83 | **80.97%** | **91.62%** | Real-time |
-
-### SignBridge Results for End-to-End Sentence-Level Translation
 
 | Metric | Baseline (No LLM) | With LLM | Improvement |
 |--------|-------------------|----------|-------------|
