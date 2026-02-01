@@ -272,13 +272,6 @@ python models/training-scripts/train_asl.py \
 
 ### 6. Inference
 
-**Real-Time Video Conferencing (Streaming):**
-```bash
-python applications/predict_sentence_with_gemini_streaming.py \
-  --checkpoint models/openhands-modernized/production-models/wlasl_100_class_model \
-  --gemini-api-key YOUR_KEY
-```
-
 **Standard Webcam:**
 ```bash
 python applications/predict_sentence.py --webcam \
@@ -299,26 +292,6 @@ python applications/predict_sentence.py input.mp4 \
   --segmentation-method motion \
   --velocity-threshold 0.02 \
   --min-sign-duration 10
-```
-
-### 7. Dataset Utilities
-
-**Split Dataset:**
-```bash
-python dataset-utilities/dataset-splitting/split_pose_files_nclass.py \
-  --num-classes 100
-```
-
-**Convert Pose to Pickle:**
-```bash
-# Batch conversion
-python dataset-utilities/conversion/pose_to_pickle_converter.py \
-  --input-dir path/to/pose_files \
-  --output-dir path/to/pickle_files
-
-# Single file
-python dataset-utilities/conversion/pose_to_pickle_converter.py \
-  --input-file video_001.pose
 ```
 
 ---
@@ -377,16 +350,16 @@ classes = load_class_mapping(num_classes=100)
 
 ## 7. 🗺️ Phased Research Roadmap
 
-### Current Phase
+### Phase 1 — COMPLETED
 
 | Step | Title | Status | Key Deliverables | Success Criteria | Notes |
 |------|-------|--------|------------------|------------------|-------|
-| **1.1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation | • 40%+ Top-1 ✅<br>• 60%+ Top-3 ✅ | **Achieved:** 20-class: 42.47% Top-1, 75.29% Top-3. 50-class: 47.27% Top-1, 67.25% Top-3. 50x augmentation (342 → 17,100 samples) |
+| **1.1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 75pt OpenHands-HD<br>• 16x augmentation | • 40%+ Top-1 ✅<br>• 60%+ Top-3 ✅ | **Achieved:** 20-class: 42.47% Top-1, 75.29% Top-3. 50-class: 47.27% Top-1, 67.25% Top-3 |
 | **1.2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
 | **1.3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
 | **1.4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **1.5** | Real-Time Webcam "Show-and-Tell" Demo App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
-| **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). OpenHands-HD with 83 keypoints, 279-dim features |
+| **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation<br>• Dropout tuning<br>• Label smoothing<br>• Learning rate optimization<br>• Gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 83 keypoints, 279-dim features, 50x augmentation (342 → 17,100 samples) |
 | **1.7** | Deployment & Release | 🔄 **IN PROGRESS** | • Deploy model and application to cloud | • Production-ready cloud deployment | **In Progress:** Cloud deployment |
 
 ### Future Phases
