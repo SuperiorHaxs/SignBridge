@@ -121,6 +121,12 @@ applications/closed-captions/detected_glosses.txt
 applications/closed-captions/translated_sentence.txt
 applications/show-and-tell/saved-sessions/
 
+# Include production model for HF Spaces deployment
+!models/openhands-modernized/production-models/wlasl_43_class_50s_model/pytorch_model.bin
+!models/openhands-modernized/production-models/wlasl_43_class_50s_model/config.json
+!models/openhands-modernized/production-models/wlasl_43_class_50s_model/class_index_mapping.json
+!models/openhands-modernized/production-models/wlasl_43_class_50s_model/masked_classes.json
+
 # Include demo data for HF Spaces deployment
 !applications/show-and-tell/demo-data/samples/*/metadata.json
 !applications/show-and-tell/demo-data/samples/*/pose_video.mp4
