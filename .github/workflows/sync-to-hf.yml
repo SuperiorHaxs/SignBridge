@@ -12,17 +12,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           lfs: true
 
-      - name: Install git-xet
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/huggingface/xet-core/refs/heads/main/git_xet/install.sh | sh
+      - name: Install huggingface_hub
+        run: pip install -U huggingface_hub[hf_xet]
 
-      - name: Push to Hugging Face Spaces
+      - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
         run: |
-          git config lfs.allowincompletepush true
-          git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID main --force
+          huggingface-cli upload $HF_SPACE_ID . . --repo-type space --token $HF_TOKEN
