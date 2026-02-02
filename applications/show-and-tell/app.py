@@ -2689,19 +2689,24 @@ def closed_captions_page():
 @app.route('/api/cc/start', methods=['POST'])
 def cc_start_session():
     """Start closed-captions session."""
-    session_id = session.get('session_id')
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        session['session_id'] = session_id
+    try:
+        session_id = session.get('session_id')
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            session['session_id'] = session_id
 
-    service = get_caption_service(session_id)
-    service.start()
+        service = get_caption_service(session_id)
+        service.start()
 
-    return jsonify({
-        'success': True,
-        'session_id': session_id,
-        'message': 'Caption service started'
-    })
+        return jsonify({
+            'success': True,
+            'session_id': session_id,
+            'message': 'Caption service started'
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/cc/stop', methods=['POST'])

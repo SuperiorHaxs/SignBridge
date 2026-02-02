@@ -109,10 +109,19 @@ async function startCaptioning() {
     try {
         // Start backend service
         const response = await fetch('/api/cc/start', { method: 'POST' });
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            const text = await response.text();
+            console.error('[CC] Server error (non-JSON):', response.status, text.substring(0, 200));
+            updateStatus('error', `Server error ${response.status}`);
+            return;
+        }
 
         if (!result.success) {
             console.error('[CC] Failed to start service:', result.error);
+            updateStatus('error', 'Start failed: ' + (result.error || 'unknown'));
             return;
         }
 
