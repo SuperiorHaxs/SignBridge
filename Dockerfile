@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir \
     flask \
     numpy \
     opencv-python-headless \
-    mediapipe \
+    "mediapipe<0.10.15" \
     pose-format \
     vidgear \
     google-generativeai \
