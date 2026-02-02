@@ -5,19 +5,19 @@
 ### Demo: Isolated Sign Recognition → Sentence Construction
 
 <p align="center">
-  <img src="docs/images/sign_man.gif" alt="Sign: MAN" width="180"/>
-  <img src="docs/images/sign_drink.gif" alt="Sign: DRINK" width="180"/>
-  <img src="docs/images/sign_water.gif" alt="Sign: WATER" width="180"/>
+  <img src="docs/images/pose_man.gif" alt="Sign: MAN" width="180"/>
+  <img src="docs/images/pose_drink.gif" alt="Sign: DRINK" width="180"/>
+  <img src="docs/images/pose_water.gif" alt="Sign: WATER" width="180"/>
 </p>
 
-<p align="center"><em>Individual signs recognized by OpenHands-HD (83 keypoints) → LLM constructs: <strong>"The man wants to drink water."</strong></em></p>
+<p align="center"><em>Individual signs captured as 83-point pose skeletons → LLM constructs: <strong>"The man wants to drink water."</strong></em></p>
 
 <p align="center">
-  <img src="docs/images/pose_skeleton_sentence.gif" alt="Pose skeleton visualization" width="260"/>
-  <img src="docs/images/sentence_demo.gif" alt="Sentence demo" width="300"/>
+  <img src="docs/images/pose_skeleton_sentence.gif" alt="Pose skeleton: man drink water" width="280"/>
+  <img src="docs/images/pose_sentence_demo.gif" alt="Pose skeleton: time son go bed" width="280"/>
 </p>
 
-<p align="center"><em>Left: 83-point pose skeleton extraction &nbsp;|&nbsp; Right: Full sentence translation with LLM</em></p>
+<p align="center"><em>Full sentence pose sequences &nbsp;|&nbsp; Left: "The man wants to drink water." &nbsp;|&nbsp; Right: "It is time for my son to go to bed."</em></p>
 
 ---
 
