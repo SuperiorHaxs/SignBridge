@@ -1,0 +1,157 @@
+{
+  "id": "man-woman-like-thanksgiving",
+  "name": "Man Woman Like Thanksgiving",
+  "description": "Demo sample from glosses: MAN, WOMAN, LIKE, THANKSGIVING",
+  "reference_sentence": "Man and woman like Thanksgiving.",
+  "source_glosses": [
+    "MAN",
+    "WOMAN",
+    "LIKE",
+    "THANKSGIVING"
+  ],
+  "created": "2025-12-14",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "expected_gloss": "MAN",
+        "top_1": "man",
+        "confidence": 0.9159609079360962,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.9159609079360962
+          },
+          {
+            "gloss": "hot",
+            "confidence": 0.011096226051449776
+          },
+          {
+            "gloss": "woman",
+            "confidence": 0.010834107175469398
+          },
+          {
+            "gloss": "forget",
+            "confidence": 0.007073806598782539
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0051234811544418335
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "expected_gloss": "WOMAN",
+        "top_1": "woman",
+        "confidence": 0.688260555267334,
+        "top_k": [
+          {
+            "gloss": "woman",
+            "confidence": 0.688260555267334
+          },
+          {
+            "gloss": "hot",
+            "confidence": 0.13850751519203186
+          },
+          {
+            "gloss": "thin",
+            "confidence": 0.08788392692804337
+          },
+          {
+            "gloss": "cool",
+            "confidence": 0.011715121567249298
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0045970710925757885
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_003.pose",
+        "video_file": "segments/segment_003.mp4",
+        "expected_gloss": "LIKE",
+        "top_1": "like",
+        "confidence": 0.8616787195205688,
+        "top_k": [
+          {
+            "gloss": "like",
+            "confidence": 0.8616787195205688
+          },
+          {
+            "gloss": "dog",
+            "confidence": 0.07049553841352463
+          },
+          {
+            "gloss": "now",
+            "confidence": 0.008162762969732285
+          },
+          {
+            "gloss": "hot",
+            "confidence": 0.00778668187558651
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.006217925809323788
+          }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_004.pose",
+        "video_file": "segments/segment_004.mp4",
+        "expected_gloss": "THANKSGIVING",
+        "top_1": "thanksgiving",
+        "confidence": 0.59150630235672,
+        "top_k": [
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.59150630235672
+          },
+          {
+            "gloss": "woman",
+            "confidence": 0.17079392075538635
+          },
+          {
+            "gloss": "hearing",
+            "confidence": 0.03623920679092407
+          },
+          {
+            "gloss": "walk",
+            "confidence": 0.027813365682959557
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.01763787493109703
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "man woman like thanksgiving",
+    "llm_sentence": "The man and woman like Thanksgiving.",
+    "evaluation": {
+      "raw": {
+        "bleu": 49.76093899250716,
+        "bert": 91.75872802734375,
+        "quality": 0,
+        "composite": 60.81588645434482,
+        "gloss_accuracy": 100.0
+      },
+      "llm": {
+        "bleu": 75.98356856515926,
+        "bert": 95.122230052948,
+        "quality": 7.20503690767792,
+        "composite": 67.58349236766686,
+        "gloss_accuracy": 100.0
+      }
+    }
+  }
+}

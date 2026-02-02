@@ -1,0 +1,164 @@
+{
+  "id": "time-son-go-bed-k",
+  "name": "time son go bed",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "It is time for my son to go to bed",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20251225_064516",
+  "created": "2025-12-25",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "time",
+        "confidence": 0.865215003490448,
+        "top_k": [
+          {
+            "confidence": 0.865215003490448,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.08291196823120117,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.027280086651444435,
+            "gloss": "work"
+          },
+          {
+            "confidence": 0.008678676560521126,
+            "gloss": "cheat"
+          },
+          {
+            "confidence": 0.0030855219811201096,
+            "gloss": "same"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "son",
+        "confidence": 0.9741685390472412,
+        "top_k": [
+          {
+            "confidence": 0.9741685390472412,
+            "gloss": "son"
+          },
+          {
+            "confidence": 0.011255927383899689,
+            "gloss": "table"
+          },
+          {
+            "confidence": 0.0034786893520504236,
+            "gloss": "wife"
+          },
+          {
+            "confidence": 0.0016913204453885555,
+            "gloss": "birthday"
+          },
+          {
+            "confidence": 0.0010520587675273418,
+            "gloss": "black"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "go",
+        "confidence": 0.5673329830169678,
+        "top_k": [
+          {
+            "confidence": 0.5673329830169678,
+            "gloss": "go"
+          },
+          {
+            "confidence": 0.22683106362819672,
+            "gloss": "corn"
+          },
+          {
+            "confidence": 0.03776515647768974,
+            "gloss": "yes"
+          },
+          {
+            "confidence": 0.024928905069828033,
+            "gloss": "last"
+          },
+          {
+            "confidence": 0.019435657188296318,
+            "gloss": "candy"
+          }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "segment_file": "segments/segment_004.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_004.mp4",
+        "top_1": "bed",
+        "confidence": 0.9831238985061646,
+        "top_k": [
+          {
+            "confidence": 0.9831238985061646,
+            "gloss": "bed"
+          },
+          {
+            "confidence": 0.004166869446635246,
+            "gloss": "brown"
+          },
+          {
+            "confidence": 0.0039878953248262405,
+            "gloss": "family"
+          },
+          {
+            "confidence": 0.00103659275919199,
+            "gloss": "walk"
+          },
+          {
+            "confidence": 0.0008232387481257319,
+            "gloss": "dark"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "time son go bed",
+    "llm_sentence": "It is time for my son to go to bed.",
+    "evaluation": {
+      "raw": {
+        "bleu": 5.04052149439767,
+        "bert": 0.0,
+        "quality": 0.0,
+        "coverage_recall": 66.66666666666666,
+        "coverage_precision": 100.0,
+        "coverage_f1": 80.0,
+        "missing_words": [
+          "it",
+          "my"
+        ],
+        "hallucinated_words": [],
+        "composite": 20.75607822415965
+      },
+      "llm": {
+        "bleu": 100.00000000000004,
+        "bert": 0.0,
+        "quality": 100,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 80.0
+      }
+    }
+  }
+}

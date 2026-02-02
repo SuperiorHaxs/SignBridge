@@ -1,0 +1,164 @@
+{
+  "id": "what-time-finish-basketball-k",
+  "name": "what time finish basketball",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "what time do you finish playing basketball?",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20251225_060602",
+  "created": "2025-12-25",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "what",
+        "confidence": 0.8013972640037537,
+        "top_k": [
+          {
+            "confidence": 0.8013972640037537,
+            "gloss": "what"
+          },
+          {
+            "confidence": 0.06254852563142776,
+            "gloss": "last"
+          },
+          {
+            "confidence": 0.05311637744307518,
+            "gloss": "many"
+          },
+          {
+            "confidence": 0.024426892399787903,
+            "gloss": "jacket"
+          },
+          {
+            "confidence": 0.018794305622577667,
+            "gloss": "play"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "time",
+        "confidence": 0.8914973735809326,
+        "top_k": [
+          {
+            "confidence": 0.8914973735809326,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.05794716626405716,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.019098708406090736,
+            "gloss": "cheat"
+          },
+          {
+            "confidence": 0.01229256484657526,
+            "gloss": "work"
+          },
+          {
+            "confidence": 0.0045589059591293335,
+            "gloss": "doctor"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "finish",
+        "confidence": 0.35545945167541504,
+        "top_k": [
+          {
+            "confidence": 0.35545945167541504,
+            "gloss": "finish"
+          },
+          {
+            "confidence": 0.2689704895019531,
+            "gloss": "kiss"
+          },
+          {
+            "confidence": 0.12892495095729828,
+            "gloss": "family"
+          },
+          {
+            "confidence": 0.09904349595308304,
+            "gloss": "basketball"
+          },
+          {
+            "confidence": 0.02434350550174713,
+            "gloss": "computer"
+          }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "segment_file": "segments/segment_004.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_004.mp4",
+        "top_1": "basketball",
+        "confidence": 0.9643473625183105,
+        "top_k": [
+          {
+            "confidence": 0.9643473625183105,
+            "gloss": "basketball"
+          },
+          {
+            "confidence": 0.01676640473306179,
+            "gloss": "cow"
+          },
+          {
+            "confidence": 0.0035905016120523214,
+            "gloss": "computer"
+          },
+          {
+            "confidence": 0.002410169458016753,
+            "gloss": "kiss"
+          },
+          {
+            "confidence": 0.002211450133472681,
+            "gloss": "play"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "what time finish basketball",
+    "llm_sentence": "What time do you finish playing basketball?",
+    "evaluation": {
+      "raw": {
+        "bleu": 17.946048174042403,
+        "bert": 89.24136757850647,
+        "quality": 0.0,
+        "coverage_recall": 66.66666666666666,
+        "coverage_precision": 100.0,
+        "coverage_f1": 80.0,
+        "missing_words": [
+          "you",
+          "playing"
+        ],
+        "hallucinated_words": [],
+        "composite": 40.54018074180765
+      },
+      "llm": {
+        "bleu": 100.00000000000004,
+        "bert": 99.97020959854126,
+        "quality": 99.41604919433594,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 99.76046159744263
+      }
+    }
+  }
+}

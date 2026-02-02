@@ -1,0 +1,119 @@
+{
+  "id": "son-enjoy-work-vid",
+  "name": "Son Enjoy Work",
+  "description": "Demo sample: Son Enjoy Work",
+  "reference_sentence": "The son enjoys his work",
+  "created": "2025-12-14",
+  "original_video": "original_video.MOV",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "son",
+        "confidence": 0.9705113172531128,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9705113172531128
+          },
+          {
+            "gloss": "table",
+            "confidence": 0.013589493930339813
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.0028041836339980364
+          },
+          {
+            "gloss": "wife",
+            "confidence": 0.001953421626240015
+          },
+          {
+            "gloss": "black",
+            "confidence": 0.0013503164518624544
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "enjoy",
+        "confidence": 0.29617422819137573,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.29617422819137573
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.23431745171546936
+          },
+          {
+            "gloss": "cook",
+            "confidence": 0.20419122278690338
+          },
+          {
+            "gloss": "table",
+            "confidence": 0.14246132969856262
+          },
+          {
+            "gloss": "fish",
+            "confidence": 0.013992995023727417
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_003.pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "work",
+        "confidence": 0.6786131262779236,
+        "top_k": [
+          {
+            "gloss": "work",
+            "confidence": 0.6786131262779236
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.2831312119960785
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.01053585484623909
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.007022998761385679
+          },
+          {
+            "gloss": "table",
+            "confidence": 0.002795026870444417
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "son enjoy work",
+    "llm_sentence": "The son enjoys work.",
+    "evaluation": {
+      "raw": {
+        "bleu": 17.799177396293473,
+        "bert": 91.59098267555237,
+        "quality": 0,
+        "gloss_accuracy": 100.0,
+        "composite": 55.98807314455449
+      },
+      "llm": {
+        "bleu": 49.76093899250716,
+        "bert": 96.37925028800964,
+        "quality": 0,
+        "gloss_accuracy": 100.0,
+        "composite": 61.739990906478
+      }
+    }
+  }
+}

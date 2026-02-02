@@ -121,6 +121,14 @@ applications/closed-captions/detected_glosses.txt
 applications/closed-captions/translated_sentence.txt
 applications/show-and-tell/saved-sessions/
 
+# Include demo data for HF Spaces deployment
+!applications/show-and-tell/demo-data/samples/*/metadata.json
+!applications/show-and-tell/demo-data/samples/*/pose_video.mp4
+!applications/show-and-tell/demo-data/samples/*/segments/*.mp4
+!applications/show-and-tell/demo-data/samples/*/segments/*.pkl
+!applications/show-and-tell/demo-data/samples/*/segments/*.pose
+!applications/show-and-tell/demo-data/samples/*/capture.pose
+
 # Training models and artifacts
 models/training-scripts/models/
 models/training-scripts/distinct_glosses_v2.json

@@ -1,0 +1,119 @@
+{
+  "id": "chair-black-table-vid",
+  "name": "Chair Black Table",
+  "description": "Demo sample: Chair Black Table",
+  "reference_sentence": "The black chair is by the table",
+  "created": "2025-12-15",
+  "original_video": "original_video.MOV",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "chair",
+        "confidence": 0.725,
+        "top_k": [
+          {
+            "gloss": "chair",
+            "confidence": 0.725
+          },
+          {
+            "gloss": "letter",
+            "confidence": 0.125
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.077
+          },
+          {
+            "gloss": "cheat",
+            "confidence": 0.043
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.004
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "hearing",
+        "confidence": 0.62,
+        "top_k": [
+          {
+            "gloss": "hearing",
+            "confidence": 0.62
+          },
+          {
+            "gloss": "apple",
+            "confidence": 0.16
+          },
+          {
+            "gloss": "pizza",
+            "confidence": 0.108
+          },
+          {
+            "gloss": "africa",
+            "confidence": 0.049
+          },
+          {
+            "gloss": "corn",
+            "confidence": 0.015
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_003.pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "table",
+        "confidence": 0.597,
+        "top_k": [
+          {
+            "gloss": "table",
+            "confidence": 0.597
+          },
+          {
+            "gloss": "school",
+            "confidence": 0.267
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.054
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.019
+          },
+          {
+            "gloss": "cheat",
+            "confidence": 0.015
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "chair hearing table",
+    "llm_sentence": "I heard the chair at the table.",
+    "evaluation": {
+      "raw": {
+        "bleu": 9.138402379955025,
+        "bert": 91.18282794952393,
+        "quality": 0,
+        "gloss_accuracy": 66.67,
+        "composite": 54.607325946898044
+      },
+      "llm": {
+        "bleu": 6.567274736060395,
+        "bert": 88.36414217948914,
+        "quality": 28.977227852514808,
+        "gloss_accuracy": 66.67,
+        "composite": 39.017754668727996
+      }
+    }
+  }
+}

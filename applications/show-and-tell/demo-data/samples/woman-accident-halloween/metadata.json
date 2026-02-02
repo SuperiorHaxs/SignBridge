@@ -1,0 +1,126 @@
+{
+  "id": "woman-accident-halloween",
+  "name": "Woman Accident Halloween",
+  "description": "Demo sample from glosses: WOMAN, ACCIDENT, HALLOWEEN",
+  "reference_sentence": "The woman had an accident on Halloween.",
+  "source_glosses": [
+    "WOMAN",
+    "ACCIDENT",
+    "HALLOWEEN"
+  ],
+  "created": "2025-12-14",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "expected_gloss": "WOMAN",
+        "top_1": "woman",
+        "confidence": 0.688260555267334,
+        "top_k": [
+          {
+            "gloss": "woman",
+            "confidence": 0.688260555267334
+          },
+          {
+            "gloss": "hot",
+            "confidence": 0.13850751519203186
+          },
+          {
+            "gloss": "thin",
+            "confidence": 0.08788392692804337
+          },
+          {
+            "gloss": "cool",
+            "confidence": 0.011715121567249298
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0045970710925757885
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "expected_gloss": "ACCIDENT",
+        "top_1": "accident",
+        "confidence": 0.7442095279693604,
+        "top_k": [
+          {
+            "gloss": "accident",
+            "confidence": 0.7442095279693604
+          },
+          {
+            "gloss": "go",
+            "confidence": 0.05949251353740692
+          },
+          {
+            "gloss": "all",
+            "confidence": 0.02968457154929638
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.022840408608317375
+          },
+          {
+            "gloss": "halloween",
+            "confidence": 0.0219354759901762
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_003.pose",
+        "video_file": "segments/segment_003.mp4",
+        "expected_gloss": "HALLOWEEN",
+        "top_1": "halloween",
+        "confidence": 0.5256789326667786,
+        "top_k": [
+          {
+            "gloss": "halloween",
+            "confidence": 0.5256789326667786
+          },
+          {
+            "gloss": "kiss",
+            "confidence": 0.350330650806427
+          },
+          {
+            "gloss": "finish",
+            "confidence": 0.031950075179338455
+          },
+          {
+            "gloss": "candy",
+            "confidence": 0.004915570840239525
+          },
+          {
+            "gloss": "fine",
+            "confidence": 0.004325230140239
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "woman accident halloween",
+    "llm_sentence": "The woman had an accident on Halloween.",
+    "evaluation": {
+      "raw": {
+        "bleu": 10.460859358517785,
+        "bert": 88.41609954833984,
+        "quality": 0,
+        "composite": 54.252348813445636,
+        "gloss_accuracy": 100.0
+      },
+      "llm": {
+        "bleu": 100.00000000000004,
+        "bert": 99.99998807907104,
+        "quality": 32.04418357342664,
+        "composite": 79.6132526878422,
+        "gloss_accuracy": 100.0
+      }
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "id": "chair-black-tall-k",
+  "name": "chair black tall",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "The black chair is tall.",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20251224_142432",
+  "created": "2025-12-25",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "chair",
+        "confidence": 0.8672833442687988,
+        "top_k": [
+          {
+            "confidence": 0.8672833442687988,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.05037061870098114,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.03582660108804703,
+            "gloss": "same"
+          },
+          {
+            "confidence": 0.011359444819390774,
+            "gloss": "cheat"
+          },
+          {
+            "confidence": 0.006182564422488213,
+            "gloss": "letter"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "black",
+        "confidence": 0.7587509751319885,
+        "top_k": [
+          {
+            "confidence": 0.7587509751319885,
+            "gloss": "black"
+          },
+          {
+            "confidence": 0.07160478085279465,
+            "gloss": "son"
+          },
+          {
+            "confidence": 0.053737346082925797,
+            "gloss": "hat"
+          },
+          {
+            "confidence": 0.027979757636785507,
+            "gloss": "africa"
+          },
+          {
+            "confidence": 0.02761290967464447,
+            "gloss": "pizza"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "tall",
+        "confidence": 0.9687409400939941,
+        "top_k": [
+          {
+            "confidence": 0.9687409400939941,
+            "gloss": "tall"
+          },
+          {
+            "confidence": 0.010266060009598732,
+            "gloss": "short"
+          },
+          {
+            "confidence": 0.00451313704252243,
+            "gloss": "later"
+          },
+          {
+            "confidence": 0.002130931243300438,
+            "gloss": "go"
+          },
+          {
+            "confidence": 0.0018020742572844028,
+            "gloss": "forget"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "chair black tall",
+    "llm_sentence": "The black chair is tall.",
+    "evaluation": {
+      "raw": {
+        "bleu": 20.374971871270475,
+        "bert": 90.43142795562744,
+        "quality": 0.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 46.14253137181606
+      },
+      "llm": {
+        "bleu": 100.00000000000004,
+        "bert": 99.99999403953552,
+        "quality": 70.19642028808593,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 88.0785669231415
+      }
+    }
+  }
+}

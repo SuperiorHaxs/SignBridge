@@ -1,0 +1,161 @@
+{
+  "id": "work-full-time-doctor-k",
+  "name": "work full time doctor",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "I work as a full-time doctor.",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20251225_111530",
+  "created": "2025-12-25",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "work",
+        "confidence": 0.8804476857185364,
+        "top_k": [
+          {
+            "confidence": 0.8804476857185364,
+            "gloss": "work"
+          },
+          {
+            "confidence": 0.04139288514852524,
+            "gloss": "computer"
+          },
+          {
+            "confidence": 0.01800813525915146,
+            "gloss": "right"
+          },
+          {
+            "confidence": 0.0072530778124928474,
+            "gloss": "graduate"
+          },
+          {
+            "confidence": 0.004211943130940199,
+            "gloss": "time"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "full",
+        "confidence": 0.25654590129852295,
+        "top_k": [
+          {
+            "confidence": 0.25654590129852295,
+            "gloss": "full"
+          },
+          {
+            "confidence": 0.23397453129291534,
+            "gloss": "cheat"
+          },
+          {
+            "confidence": 0.16179035604000092,
+            "gloss": "doctor"
+          },
+          {
+            "confidence": 0.11807235330343246,
+            "gloss": "year"
+          },
+          {
+            "confidence": 0.03986675292253494,
+            "gloss": "table"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "time",
+        "confidence": 0.8028947114944458,
+        "top_k": [
+          {
+            "confidence": 0.8028947114944458,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.0672563910484314,
+            "gloss": "cheat"
+          },
+          {
+            "confidence": 0.05132332444190979,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.04403141140937805,
+            "gloss": "work"
+          },
+          {
+            "confidence": 0.0075337840244174,
+            "gloss": "doctor"
+          }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "segment_file": "segments/segment_004.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_004.mp4",
+        "top_1": "doctor",
+        "confidence": 0.6958526968955994,
+        "top_k": [
+          {
+            "confidence": 0.6958526968955994,
+            "gloss": "doctor"
+          },
+          {
+            "confidence": 0.1026427298784256,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.08438986539840698,
+            "gloss": "work"
+          },
+          {
+            "confidence": 0.020625261589884758,
+            "gloss": "year"
+          },
+          {
+            "confidence": 0.019206393510103226,
+            "gloss": "table"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "work full time doctor",
+    "llm_sentence": "The doctor works full time.",
+    "evaluation": {
+      "raw": {
+        "bleu": 11.521590992286539,
+        "bert": 93.87232065200806,
+        "quality": 40.087702636718745,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 61.537783833932096
+      },
+      "llm": {
+        "bleu": 8.745825313180626,
+        "bert": 93.79194974899292,
+        "quality": 82.51781272888184,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 78.07738883832842
+      }
+    }
+  }
+}

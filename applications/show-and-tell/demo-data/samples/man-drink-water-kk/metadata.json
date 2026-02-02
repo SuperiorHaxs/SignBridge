@@ -1,0 +1,133 @@
+{
+  "id": "man-drink-water-kk",
+  "name": "Man Drink Water",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "The man drinks water",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20260103_185746",
+  "created": "2026-01-03",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "man",
+        "confidence": 0.3961605727672577,
+        "top_k": [
+          {
+            "confidence": 0.3961605727672577,
+            "gloss": "man"
+          },
+          {
+            "confidence": 0.22599808871746063,
+            "gloss": "full"
+          },
+          {
+            "confidence": 0.10275730490684509,
+            "gloss": "tall"
+          },
+          {
+            "confidence": 0.08273857086896896,
+            "gloss": "drink"
+          },
+          {
+            "confidence": 0.03260434418916702,
+            "gloss": "thanksgiving"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "drink",
+        "confidence": 0.5440235137939453,
+        "top_k": [
+          {
+            "confidence": 0.5440235137939453,
+            "gloss": "drink"
+          },
+          {
+            "confidence": 0.19693192839622498,
+            "gloss": "before"
+          },
+          {
+            "confidence": 0.08985386043787003,
+            "gloss": "wrong"
+          },
+          {
+            "confidence": 0.033338457345962524,
+            "gloss": "cow"
+          },
+          {
+            "confidence": 0.01454269140958786,
+            "gloss": "orange"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "water",
+        "confidence": 0.6436958312988281,
+        "top_k": [
+          {
+            "confidence": 0.6436958312988281,
+            "gloss": "water"
+          },
+          {
+            "confidence": 0.05986626073718071,
+            "gloss": "but"
+          },
+          {
+            "confidence": 0.05772998183965683,
+            "gloss": "hot"
+          },
+          {
+            "confidence": 0.049403008073568344,
+            "gloss": "fine"
+          },
+          {
+            "confidence": 0.03002450242638588,
+            "gloss": "birthday"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "man drink water",
+    "llm_sentence": "The man wants to drink water.",
+    "evaluation": {
+      "raw": {
+        "bleu": 24.840753130578644,
+        "bert": 92.96952486038208,
+        "quality": 10.386471354166666,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 51.47460648332988
+      },
+      "llm": {
+        "bleu": 17.965205598154213,
+        "bert": 95.80565690994263,
+        "quality": 88.24280662536621,
+        "coverage_recall": 100.0,
+        "coverage_precision": 75.0,
+        "coverage_f1": 85.71428571428571,
+        "missing_words": [],
+        "hallucinated_words": [
+          "wants"
+        ],
+        "composite": 78.58160630042957
+      }
+    }
+  }
+}
