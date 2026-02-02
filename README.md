@@ -2,6 +2,23 @@
 
 *Building accessible, real-time ASL translation for video conferencing and beyond*
 
+### Demo: Isolated Sign Recognition → Sentence Construction
+
+<p align="center">
+  <img src="docs/images/sign_man.gif" alt="Sign: MAN" width="180"/>
+  <img src="docs/images/sign_drink.gif" alt="Sign: DRINK" width="180"/>
+  <img src="docs/images/sign_water.gif" alt="Sign: WATER" width="180"/>
+</p>
+
+<p align="center"><em>Individual signs recognized by OpenHands-HD (83 keypoints) → LLM constructs: <strong>"The man wants to drink water."</strong></em></p>
+
+<p align="center">
+  <img src="docs/images/pose_skeleton_sentence.gif" alt="Pose skeleton visualization" width="260"/>
+  <img src="docs/images/sentence_demo.gif" alt="Sentence demo" width="300"/>
+</p>
+
+<p align="center"><em>Left: 83-point pose skeleton extraction &nbsp;|&nbsp; Right: Full sentence translation with LLM</em></p>
+
 ---
 
 ## Table of Contents
