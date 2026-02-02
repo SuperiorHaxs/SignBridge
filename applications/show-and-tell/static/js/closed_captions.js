@@ -15,6 +15,7 @@ let signRecorder = null;
 let signChunks = [];
 let config = null;
 let detectedGlosses = [];
+let ccSessionId = null;  // Track session ID client-side (cookies blocked in iframe)
 
 // Caption polling
 let captionPollInterval = null;
@@ -125,6 +126,7 @@ async function startCaptioning() {
             return;
         }
 
+        ccSessionId = result.session_id;
         isRunning = true;
         startBtn.disabled = true;
         stopBtn.disabled = false;
@@ -164,7 +166,11 @@ async function stopCaptioning() {
 
     // Stop backend service and get final caption
     try {
-        const response = await fetch('/api/cc/stop', { method: 'POST' });
+        const response = await fetch('/api/cc/stop', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: ccSessionId })
+        });
         const result = await response.json();
 
         // Update with final caption (includes any flushed remaining glosses)
@@ -193,7 +199,11 @@ async function resetSession() {
 
     // Reset backend
     try {
-        await fetch('/api/cc/reset', { method: 'POST' });
+        await fetch('/api/cc/reset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: ccSessionId })
+        });
     } catch (error) {
         console.error('[CC] Error resetting session:', error);
     }
@@ -334,6 +344,7 @@ async function stopSignRecordingAndProcess() {
                 // Send to backend
                 const formData = new FormData();
                 formData.append('video', blob, 'sign.webm');
+                if (ccSessionId) formData.append('session_id', ccSessionId);
 
                 const response = await fetch('/api/cc/process-sign', {
                     method: 'POST',
@@ -393,7 +404,8 @@ function stopCaptionPolling() {
 
 async function pollCaption() {
     try {
-        const response = await fetch('/api/cc/get-caption');
+        const url = ccSessionId ? `/api/cc/get-caption?session_id=${ccSessionId}` : '/api/cc/get-caption';
+        const response = await fetch(url);
         const result = await response.json();
 
         if (result.caption && result.caption !== lastCaption) {

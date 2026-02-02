@@ -2659,6 +2659,23 @@ _caption_services = {}
 _caption_services_lock = threading.Lock()
 
 
+def _get_cc_session_id():
+    """Get session ID from request body, query params, or Flask session.
+    Cookies may be blocked in iframes (tracking prevention), so accept
+    session_id from request data as a fallback."""
+    # Try request JSON body
+    if request.is_json and request.json and request.json.get('session_id'):
+        return request.json['session_id']
+    # Try form data
+    if request.form.get('session_id'):
+        return request.form['session_id']
+    # Try query params
+    if request.args.get('session_id'):
+        return request.args['session_id']
+    # Fall back to Flask session cookie
+    return session.get('session_id')
+
+
 def get_caption_service(session_id: str) -> CaptionService:
     """Get or create caption service for session."""
     with _caption_services_lock:
@@ -2712,7 +2729,7 @@ def cc_start_session():
 @app.route('/api/cc/stop', methods=['POST'])
 def cc_stop_session():
     """Stop closed-captions session."""
-    session_id = session.get('session_id')
+    session_id = _get_cc_session_id()
     if not session_id:
         return jsonify({'success': False, 'error': 'No active session'}), 400
 
@@ -2733,10 +2750,9 @@ def cc_stop_session():
 @app.route('/api/cc/reset', methods=['POST'])
 def cc_reset_session():
     """Reset closed-captions session."""
-    session_id = session.get('session_id')
+    session_id = _get_cc_session_id()
     if not session_id:
         session_id = str(uuid.uuid4())
-        session['session_id'] = session_id
 
     with _caption_services_lock:
         if session_id in _caption_services:
@@ -2754,10 +2770,9 @@ def cc_process_sign():
     Uses common camera processor (VIDEO_TO_POSE_EXE) for consistent,
     high-quality pose extraction matching Live Mode.
     """
-    session_id = session.get('session_id')
+    session_id = _get_cc_session_id()
     if not session_id:
         session_id = str(uuid.uuid4())
-        session['session_id'] = session_id
 
     if 'video' not in request.files:
         return jsonify({'success': False, 'error': 'No video provided'}), 400
@@ -2809,7 +2824,7 @@ def cc_process_sign():
 @app.route('/api/cc/get-caption', methods=['GET'])
 def cc_get_caption():
     """Get current caption from sentence file."""
-    session_id = session.get('session_id')
+    session_id = _get_cc_session_id()
     if not session_id:
         return jsonify({'caption': '', 'gloss_count': 0, 'gloss_status': []})
 
