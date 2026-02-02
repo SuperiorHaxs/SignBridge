@@ -1,3 +1,12 @@
+---
+title: SignBridge
+emoji: 🤟
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # SignBridge: Real-Time American Sign Language Recognition System
 
 *Building accessible, real-time ASL translation for video conferencing and beyond*
