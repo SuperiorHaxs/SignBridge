@@ -139,6 +139,8 @@ applications/show-and-tell/saved-sessions/
 models/training-scripts/models/
 models/training-scripts/distinct_glosses_v2.json
 models/openhands-modernized/production-models/*/class_index_mapping.json
+# Re-include production model files (must come after the wildcard ignore above)
+!models/openhands-modernized/production-models/wlasl_43_class_50s_model/class_index_mapping.json
 
 # Incremental training artifacts
 project-utilities/training_utils/incremental_training/*.json
