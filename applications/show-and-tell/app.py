@@ -336,6 +336,14 @@ LIVE_TIME_CONFIG = {
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+
+@app.after_request
+def add_permissions_headers(response):
+    """Allow camera/microphone access in HF Spaces iframe"""
+    response.headers['Permissions-Policy'] = 'camera=*, microphone=*'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 # Temp directory for this app
 TEMP_DIR = Path(__file__).parent / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
