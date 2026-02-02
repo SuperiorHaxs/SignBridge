@@ -15,11 +15,12 @@ jobs:
           lfs: true
 
       - name: Install huggingface_hub
-        run: pip install -U huggingface_hub[hf_xet]
+        run: pip install -U "huggingface_hub[hf_xet,cli]"
 
       - name: Upload to Hugging Face Spaces
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
         run: |
-          python -m huggingface_hub.commands.huggingface_cli upload $HF_SPACE_ID . . --repo-type space --token $HF_TOKEN
+          export PATH="$HOME/.local/bin:$PATH"
+          huggingface-cli upload $HF_SPACE_ID . . --repo-type space --token $HF_TOKEN
