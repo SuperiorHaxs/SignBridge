@@ -13,6 +13,8 @@ This module provides:
 """
 
 import os
+import sys
+import shutil
 import subprocess
 import tempfile
 import pickle
@@ -26,8 +28,26 @@ from pose_format import Pose
 # Get paths
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
-VENV_SCRIPTS = PROJECT_ROOT / "venv" / "Scripts"
-VIDEO_TO_POSE_EXE = VENV_SCRIPTS / "video_to_pose.exe"
+
+# Find video_to_pose executable (cross-platform)
+def _find_video_to_pose():
+    """Locate video_to_pose executable on Windows or Linux."""
+    # Check PATH first (works on Linux/Docker where pip installs to /usr/local/bin)
+    found = shutil.which("video_to_pose")
+    if found:
+        return found
+    # Windows venv fallback
+    win_exe = PROJECT_ROOT / "venv" / "Scripts" / "video_to_pose.exe"
+    if win_exe.exists():
+        return str(win_exe)
+    # Linux venv fallback
+    linux_exe = PROJECT_ROOT / "venv" / "bin" / "video_to_pose"
+    if linux_exe.exists():
+        return str(linux_exe)
+    # Last resort: hope it's on PATH at runtime
+    return "video_to_pose"
+
+VIDEO_TO_POSE_EXE = _find_video_to_pose()
 
 
 class CameraProcessor:
