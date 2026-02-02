@@ -103,6 +103,10 @@ OpenHands-HD achieves 80.97% Top-1 accuracy on WLASL-100, surpassing the origina
 | OpenHands Baseline | WLASL-100 | Pose + Transformer | 27 | 71.57% | — | Real-time |
 | **OpenHands-HD (Ours)** | WLASL-100 | Pose + Transformer | 83 | **80.97%** | **91.62%** | Real-time |
 
+<p align="center">
+  <img src="docs/images/chart_model_accuracy.png" alt="Model accuracy comparison" width="600"/>
+</p>
+
 ### End-to-End Sentence-Level Translation
 
 Statistical analysis of SignBridge results using paired t-tests (n=34 sentence pairs) demonstrates significant improvements across all evaluation metrics. For gloss-level selection accuracy, Coverage F1—which measures the overlap of content words between the generated and reference sentences—improved from 74.64 to 87.62 (t(33) = 4.944, p < 0.001, Cohen's d = 0.848), representing a large effect size. This improvement indicates that the LLM pipeline more accurately selects contextually appropriate glosses from the model's top-k predictions, resulting in translations that better capture the intended meaning.
@@ -115,6 +119,14 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 | Quality Score | 39.38 | 74.56 | +35.18 | p < 0.001 |
 | Perfect Translation Rate | 41.2% (14/34) | 67.6% (23/34) | +26.4% | p = 0.004 |
 | **CTQI (introduced by SignBridge)** | **55.56** | **78.16** | **+22.60** | **p < 0.001** |
+
+<p align="center">
+  <img src="docs/images/chart_llm_comparison.png" alt="Baseline vs LLM comparison" width="600"/>
+</p>
+
+<p align="center">
+  <img src="docs/images/chart_ctqi_distribution.png" alt="CTQI score distribution and improvement" width="700"/>
+</p>
 
 ### Demo: Full Pipeline Examples
 
