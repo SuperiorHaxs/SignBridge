@@ -15,11 +15,12 @@ WORKDIR /home/user/app
 # Copy the full project (app imports from multiple directories)
 COPY --chown=user . .
 
-# Install Python dependencies
+# Install PyTorch CPU-only first (separate index)
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install remaining Python dependencies
 RUN pip install --no-cache-dir \
-    flask>=2.0.0 \
-    torch --index-url https://download.pytorch.org/whl/cpu \
-    && pip install --no-cache-dir \
+    flask \
     numpy \
     opencv-python-headless \
     mediapipe \
