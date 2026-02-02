@@ -284,6 +284,7 @@ function startSignRecording() {
 
         signRecorder.start();
         console.log('[CC] Sign recording started');
+        updateStatus('recording', 'Recording sign...');
     } catch (error) {
         console.error('[CC] Error starting recording:', error);
         motionDetector.reset();
@@ -346,10 +347,12 @@ async function stopSignRecordingAndProcess() {
                     glossCount.textContent = detectedGlosses.length;
                 } else {
                     console.error('[CC] Processing failed:', result.error);
+                    updateStatus('error', 'Processing failed: ' + (result.error || 'unknown'));
                 }
 
             } catch (error) {
                 console.error('[CC] Error processing sign:', error);
+                updateStatus('error', 'Network error: ' + error.message);
             }
 
             motionDetector.setProcessing(false);

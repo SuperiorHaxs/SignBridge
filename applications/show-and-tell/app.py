@@ -2836,6 +2836,73 @@ def cc_get_config():
 
 
 # ============================================================================
+# DIAGNOSTICS
+# ============================================================================
+
+@app.route('/api/diagnostics', methods=['GET'])
+def diagnostics():
+    """Check pipeline component status for debugging deployment issues."""
+    checks = {}
+
+    # Check model
+    try:
+        model, tokenizer = get_model()
+        checks['model_loaded'] = model is not None
+        checks['tokenizer_loaded'] = tokenizer is not None
+        checks['num_classes'] = len(tokenizer) if tokenizer else 0
+    except Exception as e:
+        checks['model_loaded'] = False
+        checks['model_error'] = str(e)
+
+    # Check video_to_pose executable
+    import shutil
+    from camera_processor import VIDEO_TO_POSE_EXE
+    checks['video_to_pose_path'] = str(VIDEO_TO_POSE_EXE)
+    checks['video_to_pose_found'] = shutil.which(str(VIDEO_TO_POSE_EXE)) is not None or os.path.isfile(str(VIDEO_TO_POSE_EXE))
+
+    # Check video_to_pose runs
+    try:
+        result = subprocess.run([str(VIDEO_TO_POSE_EXE), '--help'], capture_output=True, text=True, timeout=10)
+        checks['video_to_pose_runs'] = True
+        checks['video_to_pose_returncode'] = result.returncode
+    except FileNotFoundError:
+        checks['video_to_pose_runs'] = False
+        checks['video_to_pose_error'] = 'FileNotFoundError - executable not found'
+    except Exception as e:
+        checks['video_to_pose_runs'] = False
+        checks['video_to_pose_error'] = str(e)
+
+    # Check ffmpeg
+    try:
+        result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
+        checks['ffmpeg_available'] = result.returncode == 0
+    except Exception:
+        checks['ffmpeg_available'] = False
+
+    # Check mediapipe
+    try:
+        import mediapipe
+        checks['mediapipe_available'] = True
+        checks['mediapipe_version'] = mediapipe.__version__
+    except ImportError:
+        checks['mediapipe_available'] = False
+
+    # Check pose_format
+    try:
+        import pose_format
+        checks['pose_format_available'] = True
+    except ImportError:
+        checks['pose_format_available'] = False
+
+    # Platform info
+    import platform
+    checks['platform'] = platform.system()
+    checks['python_version'] = platform.python_version()
+
+    return jsonify(checks)
+
+
+# ============================================================================
 # STATIC FILE SERVING
 # ============================================================================
 
