@@ -31,7 +31,8 @@ RUN pip install --no-cache-dir \
     sacrebleu \
     bert-score \
     scipy \
-    scikit-learn
+    scikit-learn \
+    openai
 
 USER user
 
