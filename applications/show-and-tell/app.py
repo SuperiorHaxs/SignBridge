@@ -1699,12 +1699,11 @@ def evaluate_sentences():
             'hallucinated_words': raw_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for raw
+        # Calculate composite score for raw (CTQI)
+        # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
         raw_composite = metrics_composite_score(
-            bleu=raw_bleu,
-            bertscore=raw_bert,
-            quality=raw_quality,
-            coverage_f1=raw_coverage['f1']
+            gloss_accuracy=raw_coverage['f1'] or 0.0,
+            quality=raw_quality
         ) or 0.0
         raw_metrics['composite'] = raw_composite
 
@@ -1725,12 +1724,11 @@ def evaluate_sentences():
             'hallucinated_words': llm_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for LLM
+        # Calculate composite score for LLM (CTQI)
+        # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
         llm_composite = metrics_composite_score(
-            bleu=llm_bleu,
-            bertscore=llm_bert,
-            quality=llm_quality,
-            coverage_f1=llm_coverage['f1']
+            gloss_accuracy=llm_coverage['f1'] or 0.0,
+            quality=llm_quality
         ) or 0.0
         llm_metrics['composite'] = llm_composite
 
