@@ -172,6 +172,8 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 
 <p align="center"><em>LLM sentence construction → <strong>"It is time for my son to go to bed."</strong></em></p>
 
+**Try the full demo live:** [SignBridge on Hugging Face Spaces](https://huggingface.co/spaces/SuperiorHaxs/SignBridge)
+
 ---
 
 ## 5. 🚀 Getting Started
