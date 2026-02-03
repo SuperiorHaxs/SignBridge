@@ -1971,8 +1971,11 @@ def get_live_config():
 try:
     gloss_categorizer = GlossCategorizer.load_master()
 except FileNotFoundError:
-    print("WARNING: Gloss categorization file not found. Using empty categories.")
-    gloss_categorizer = None
+    print("WARNING: Master categorization file not found. Falling back to seed categories.")
+    gloss_categorizer = GlossCategorizer.from_seed()
+except Exception as e:
+    print(f"WARNING: Failed to load gloss categorizer: {e}. Falling back to seed categories.")
+    gloss_categorizer = GlossCategorizer.from_seed()
 
 
 @app.route('/api/reference-sentences')
