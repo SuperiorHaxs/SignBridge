@@ -1352,7 +1352,7 @@ def process_full_pipeline():
             prompt_template = f.read()
 
         gloss_details = format_gloss_details_for_prompt(predictions)
-        prompt = prompt_template.format(gloss_details=gloss_details)
+        prompt = prompt_template.format(gloss_details=gloss_details, context_section="")
 
         # Call LLM
         llm = create_llm_provider(
@@ -1508,7 +1508,7 @@ def process_pose_full_pipeline():
             prompt_template = f.read()
 
         gloss_details = format_gloss_details_for_prompt(predictions)
-        prompt = prompt_template.format(gloss_details=gloss_details)
+        prompt = prompt_template.format(gloss_details=gloss_details, context_section="")
 
         # Call LLM
         llm = create_llm_provider(
@@ -1582,7 +1582,7 @@ def construct_sentence():
 
         # Format gloss details (same format as predict_sentence.py line 933-949)
         gloss_details = format_gloss_details_for_prompt(predictions)
-        prompt = prompt_template.format(gloss_details=gloss_details)
+        prompt = prompt_template.format(gloss_details=gloss_details, context_section="")
 
         # Use EXISTING LLM provider (Google AI Studio)
         llm = create_llm_provider(
