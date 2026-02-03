@@ -1357,6 +1357,7 @@ def process_full_pipeline():
         # Call LLM
         llm = create_llm_provider(
             provider="googleaistudio",
+            model_name="gemini-2.0-flash",
             max_tokens=500,
             timeout=30
         )
@@ -1513,6 +1514,7 @@ def process_pose_full_pipeline():
         # Call LLM
         llm = create_llm_provider(
             provider="googleaistudio",
+            model_name="gemini-2.0-flash",
             max_tokens=500,
             timeout=30
         )
@@ -1587,6 +1589,7 @@ def construct_sentence():
         # Use EXISTING LLM provider (Google AI Studio)
         llm = create_llm_provider(
             provider="googleaistudio",
+            model_name="gemini-2.0-flash",
             max_tokens=500,
             timeout=30
         )
@@ -2252,9 +2255,14 @@ English sentence:"""
 
         print(f"[LLM] Generating reference for glosses: {glosses}")
 
-        # Call LLM (uses provider from environment config)
-        llm = create_llm_provider()
-        response = llm.generate(prompt, max_tokens=100)
+        # Call LLM
+        llm = create_llm_provider(
+            provider="googleaistudio",
+            model_name="gemini-2.0-flash",
+            max_tokens=100,
+            timeout=30
+        )
+        response = llm.generate(prompt)
 
         # Clean up response
         generated = response.strip()
