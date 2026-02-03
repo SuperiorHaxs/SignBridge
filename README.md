@@ -416,7 +416,7 @@ classes = load_class_mapping(num_classes=100)
 | **1.4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **1.5** | Real-Time Webcam "Show-and-Tell" Demo App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |
 | **1.6** | 100-Class Model Optimization | ✅ **COMPLETED** | • 100-class model<br>• 83pt OpenHands-HD<br>• 50x augmentation<br>• Model optimizations including dropout tuning, label smoothing, learning rate optimization, gradient clipping | • 80%+ Top-1 (100-class) ✅<br>• 90%+ Top-3 (100-class) ✅ | **Achieved:** 80.97% Top-1, 91.62% Top-3 (WLASL-100). 83 keypoints, 279-dim features, 50x augmentation (342 → 17,100 samples) |
-| **1.7** | Deployment & Release | 🔄 **IN PROGRESS** | • Deploy model and application to cloud | • Production-ready cloud deployment | **In Progress:** Cloud deployment |
+| **1.7** | Deployment & Release | ✅ **COMPLETED** | • Deploy model and application to cloud | • Production-ready cloud deployment | **Achieved:** Deployed to Hugging Face Spaces via Docker |
 
 ### Future Phases
 
