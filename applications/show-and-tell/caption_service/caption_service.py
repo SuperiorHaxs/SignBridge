@@ -29,6 +29,7 @@ from .config import (
     ENABLE_DYNAMIC_RECONSTRUCTION,
     RECONSTRUCTION_MODE,
     LLM_PROVIDER,
+    LLM_MODEL,
     LLM_MAX_TOKENS,
     LLM_TIMEOUT,
 )
@@ -94,6 +95,7 @@ class CaptionService:
 
         # Lazy load LLM provider
         self._llm_initialized = False
+        self._last_llm_error = None
 
     # =========================================================================
     # LIFECYCLE
@@ -200,10 +202,11 @@ class CaptionService:
                 from llm_factory import create_llm_provider
                 self.llm_provider = create_llm_provider(
                     provider=LLM_PROVIDER,
+                    model_name=LLM_MODEL,
                     max_tokens=LLM_MAX_TOKENS,
                     timeout=LLM_TIMEOUT
                 )
-                print(f"[CaptionService] Initialized LLM provider: {LLM_PROVIDER}")
+                print(f"[CaptionService] Initialized LLM provider: {LLM_PROVIDER} / {LLM_MODEL}")
             except Exception as e:
                 print(f"[CaptionService] Failed to initialize LLM: {e}")
                 import traceback
@@ -523,6 +526,9 @@ class CaptionService:
 
         except Exception as e:
             print(f"[CaptionService] LLM error: {e}")
+            import traceback
+            traceback.print_exc()
+            self._last_llm_error = f"{type(e).__name__}: {e}"
             # Fallback
             gloss_words = [g.get('gloss', 'UNKNOWN') for g in new_glosses]
             return ' '.join(gloss_words)
@@ -679,4 +685,5 @@ INCREMENTAL MODE: Add the new words to extend the caption naturally.
             'sentence_count': len(self.context.sentence_history),
             'is_running': self._file_watcher_running,
             'gloss_status': self.current_gloss_status,
+            'last_llm_error': self._last_llm_error,
         }

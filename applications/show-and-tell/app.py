@@ -2886,6 +2886,7 @@ def cc_debug():
             'provider_set': service.llm_provider is not None,
             'prompt_loaded': service.prompt_template is not None,
             'prompt_length': len(service.prompt_template) if service.prompt_template else 0,
+            'last_error': service._last_llm_error,
         }
 
         return jsonify({

@@ -79,5 +79,6 @@ CLARIFYING_WORDS = {
 # LLM CONFIGURATION
 # =============================================================================
 LLM_PROVIDER = "googleaistudio"
+LLM_MODEL = "gemini-2.0-flash"
 LLM_MAX_TOKENS = 500
 LLM_TIMEOUT = 30
