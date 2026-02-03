@@ -189,10 +189,14 @@ class CaptionService:
         if self._llm_initialized:
             return
 
+        llm_ok = True
+
         if self.llm_provider is None:
             try:
                 # Import from project utilities
-                sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "project-utilities" / "llm_interface"))
+                llm_path = str(Path(__file__).parent.parent.parent.parent / "project-utilities" / "llm_interface")
+                if llm_path not in sys.path:
+                    sys.path.insert(0, llm_path)
                 from llm_factory import create_llm_provider
                 self.llm_provider = create_llm_provider(
                     provider=LLM_PROVIDER,
@@ -202,6 +206,9 @@ class CaptionService:
                 print(f"[CaptionService] Initialized LLM provider: {LLM_PROVIDER}")
             except Exception as e:
                 print(f"[CaptionService] Failed to initialize LLM: {e}")
+                import traceback
+                traceback.print_exc()
+                llm_ok = False
 
         if self.prompt_template is None:
             try:
@@ -210,10 +217,16 @@ class CaptionService:
                 if prompt_path.exists():
                     self.prompt_template = prompt_path.read_text(encoding='utf-8')
                     print(f"[CaptionService] Loaded closed captions prompt template")
+                else:
+                    print(f"[CaptionService] Prompt file not found: {prompt_path}")
+                    llm_ok = False
             except Exception as e:
                 print(f"[CaptionService] Failed to load prompt template: {e}")
+                llm_ok = False
 
-        self._llm_initialized = True
+        # Only mark as initialized if both provider and prompt are ready
+        # This allows retry on next call if something failed
+        self._llm_initialized = llm_ok
 
     # =========================================================================
     # SIGN PROCESSING
@@ -370,7 +383,10 @@ class CaptionService:
 
     def _file_watcher_loop(self):
         """Background loop that watches gloss file and triggers translation."""
-        print("[CaptionService] File watcher loop started")
+        print(f"[CaptionService] File watcher loop started (buffer_size={CAPTION_BUFFER_SIZE}, check_interval={FILE_CHECK_INTERVAL}s)")
+        print(f"[CaptionService] Watching gloss file: {self.gloss_file}")
+
+        _last_log_count = 0
 
         while self._file_watcher_running:
             try:
@@ -381,6 +397,11 @@ class CaptionService:
 
                 # Calculate new glosses
                 new_gloss_count = current_count - processed_count
+
+                # Log when new glosses appear
+                if current_count != _last_log_count:
+                    print(f"[CaptionService] File has {current_count} glosses, {processed_count} processed, {new_gloss_count} new (need {CAPTION_BUFFER_SIZE})")
+                    _last_log_count = current_count
 
                 if new_gloss_count >= CAPTION_BUFFER_SIZE:
                     # Check cooldown

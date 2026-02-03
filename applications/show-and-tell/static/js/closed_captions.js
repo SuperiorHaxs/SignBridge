@@ -127,6 +127,8 @@ async function startCaptioning() {
         }
 
         ccSessionId = result.session_id;
+        console.log('[CC] Session started:', ccSessionId);
+        console.log('[CC] Debug URL:', `/api/cc/debug?session_id=${ccSessionId}`);
         isRunning = true;
         startBtn.disabled = true;
         stopBtn.disabled = false;

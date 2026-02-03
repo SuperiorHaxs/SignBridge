@@ -2844,6 +2844,65 @@ def cc_get_caption():
     })
 
 
+@app.route('/api/cc/debug', methods=['GET'])
+def cc_debug():
+    """Debug endpoint showing caption service internal state."""
+    session_id = _get_cc_session_id()
+    if not session_id:
+        return jsonify({'error': 'No session_id provided', 'active_sessions': list(_caption_services.keys())})
+
+    with _caption_services_lock:
+        if session_id not in _caption_services:
+            return jsonify({
+                'error': f'No caption service for session {session_id}',
+                'active_sessions': list(_caption_services.keys())[:5]
+            })
+
+        service = _caption_services[session_id]
+        state = service.get_state()
+
+        # Check file contents
+        gloss_file_exists = service.gloss_file.exists()
+        gloss_file_content = ''
+        gloss_file_lines = 0
+        if gloss_file_exists:
+            try:
+                gloss_file_content = service.gloss_file.read_text(encoding='utf-8')
+                gloss_file_lines = len([l for l in gloss_file_content.strip().split('\n') if l.strip()])
+            except Exception as e:
+                gloss_file_content = f'Error reading: {e}'
+
+        sentence_file_exists = service.sentence_file.exists()
+        sentence_content = ''
+        if sentence_file_exists:
+            try:
+                sentence_content = service.sentence_file.read_text(encoding='utf-8')
+            except Exception as e:
+                sentence_content = f'Error reading: {e}'
+
+        # LLM status
+        llm_info = {
+            'initialized': service._llm_initialized,
+            'provider_set': service.llm_provider is not None,
+            'prompt_loaded': service.prompt_template is not None,
+            'prompt_length': len(service.prompt_template) if service.prompt_template else 0,
+        }
+
+        return jsonify({
+            'session_id': session_id,
+            'state': state,
+            'gloss_file': str(service.gloss_file),
+            'gloss_file_exists': gloss_file_exists,
+            'gloss_file_lines': gloss_file_lines,
+            'sentence_file': str(service.sentence_file),
+            'sentence_file_exists': sentence_file_exists,
+            'sentence_content': sentence_content,
+            'llm': llm_info,
+            'file_watcher_running': service._file_watcher_running,
+            'file_watcher_thread_alive': service._file_watcher_thread.is_alive() if service._file_watcher_thread else False,
+        })
+
+
 @app.route('/api/cc/config', methods=['GET'])
 def cc_get_config():
     """Get closed-captions configuration for frontend."""
@@ -2918,6 +2977,51 @@ def diagnostics():
     import platform
     checks['platform'] = platform.system()
     checks['python_version'] = platform.python_version()
+
+    # LLM / Caption Service checks
+    checks['google_api_key_set'] = bool(os.environ.get('GOOGLE_API_KEY'))
+    checks['llm_provider_config'] = cc_config.LLM_PROVIDER
+
+    # Check if LLM prompt file exists
+    prompt_path = PROJECT_ROOT / "project-utilities" / "llm_interface" / "prompts" / "llm_prompt_closed_captions.txt"
+    checks['llm_prompt_exists'] = prompt_path.exists()
+    checks['llm_prompt_path'] = str(prompt_path)
+
+    # Check if llm_factory can be imported
+    try:
+        sys.path.insert(0, str(PROJECT_ROOT / "project-utilities" / "llm_interface"))
+        from llm_factory import create_llm_provider as _test_import
+        checks['llm_factory_importable'] = True
+    except Exception as e:
+        checks['llm_factory_importable'] = False
+        checks['llm_factory_error'] = str(e)
+
+    # Check if google-generativeai is installed
+    try:
+        import google.generativeai
+        checks['google_generativeai_installed'] = True
+    except ImportError:
+        checks['google_generativeai_installed'] = False
+
+    # Check python-dotenv
+    try:
+        import dotenv
+        checks['dotenv_installed'] = True
+    except ImportError:
+        checks['dotenv_installed'] = False
+
+    # Active caption services
+    with _caption_services_lock:
+        active_sessions = {}
+        for sid, svc in _caption_services.items():
+            state = svc.get_state()
+            active_sessions[sid[:8] + '...'] = {
+                'is_running': state['is_running'],
+                'gloss_count': state['gloss_count'],
+                'processed_count': state['processed_count'],
+                'running_caption': state['running_caption'],
+            }
+        checks['active_caption_sessions'] = active_sessions
 
     return jsonify(checks)
 

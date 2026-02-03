@@ -32,7 +32,8 @@ RUN pip install --no-cache-dir \
     bert-score \
     scipy \
     scikit-learn \
-    openai
+    openai \
+    python-dotenv
 
 USER user
 
