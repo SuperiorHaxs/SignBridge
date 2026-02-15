@@ -184,6 +184,20 @@ body {
     background: var(--primary-light);
 }
 
+/* Sign Bank Link */
+.mode-buttons .sign-bank-link {
+    text-decoration: none;
+    background: var(--warning);
+    color: var(--white) !important;
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.mode-buttons .sign-bank-link:hover {
+    background: var(--warning-light);
+    color: var(--gray-800) !important;
+}
+
 /* Phase Breadcrumb Navigation */
 .phase-breadcrumb {
     display: flex;

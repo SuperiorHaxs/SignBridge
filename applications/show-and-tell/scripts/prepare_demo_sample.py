@@ -1349,16 +1349,13 @@ def prepare_sample_from_glosses(glosses, reference, name, sample_id, output_dir,
     evaluation["llm"]["gloss_accuracy"] = calculate_gloss_accuracy(llm_sentence, found_glosses)
     print(f"  Gloss Accuracy - Raw: {evaluation['raw']['gloss_accuracy']:.1f}%, LLM: {evaluation['llm']['gloss_accuracy']:.1f}%")
 
-    # Composite score
-    weights = {'bleu': 0.15, 'bert': 0.20, 'quality': 0.30, 'gloss_accuracy': 0.35}
+    # CTQI v2 (prerequisite chain) - using gloss_accuracy as proxy for both GA and CF1
     for key in ['raw', 'llm']:
-        evaluation[key]['composite'] = (
-            evaluation[key]['bleu'] * weights['bleu'] +
-            evaluation[key]['bert'] * weights['bert'] +
-            evaluation[key]['quality'] * weights['quality'] +
-            evaluation[key]['gloss_accuracy'] * weights['gloss_accuracy']
-        )
-    print(f"  Composite - Raw: {evaluation['raw']['composite']:.1f}, LLM: {evaluation['llm']['composite']:.1f}")
+        ga = evaluation[key].get('gloss_accuracy', 0.0) / 100.0
+        cf1 = ga  # proxy: no separate coverage in this mode
+        p = evaluation[key].get('quality', 0.0) / 100.0
+        evaluation[key]['composite'] = ga * cf1 * (0.5 + 0.5 * p) * 100.0
+    print(f"  CTQI v2 - Raw: {evaluation['raw']['composite']:.1f}, LLM: {evaluation['llm']['composite']:.1f}")
 
     # Save metadata
     print(f"\nSaving metadata...")
@@ -1854,16 +1851,13 @@ def prepare_sample(video_path, reference, name, sample_id, output_dir, descripti
     evaluation["llm"]["gloss_accuracy"] = calculate_gloss_accuracy(llm_sentence, predicted_glosses)
     print(f"  Gloss Accuracy - Raw: {evaluation['raw']['gloss_accuracy']:.1f}%, LLM: {evaluation['llm']['gloss_accuracy']:.1f}%")
 
-    # Composite score (same weights as glosses mode)
-    weights = {'bleu': 0.15, 'bert': 0.20, 'quality': 0.30, 'gloss_accuracy': 0.35}
+    # CTQI v2 (prerequisite chain) - using gloss_accuracy as proxy for both GA and CF1
     for key in ['raw', 'llm']:
-        evaluation[key]['composite'] = (
-            evaluation[key]['bleu'] * weights['bleu'] +
-            evaluation[key]['bert'] * weights['bert'] +
-            evaluation[key]['quality'] * weights['quality'] +
-            evaluation[key]['gloss_accuracy'] * weights['gloss_accuracy']
-        )
-    print(f"  Composite - Raw: {evaluation['raw']['composite']:.1f}, LLM: {evaluation['llm']['composite']:.1f}")
+        ga = evaluation[key].get('gloss_accuracy', 0.0) / 100.0
+        cf1 = ga  # proxy: no separate coverage in this mode
+        p = evaluation[key].get('quality', 0.0) / 100.0
+        evaluation[key]['composite'] = ga * cf1 * (0.5 + 0.5 * p) * 100.0
+    print(f"  CTQI v2 - Raw: {evaluation['raw']['composite']:.1f}, LLM: {evaluation['llm']['composite']:.1f}")
 
     # Create metadata.json
     print("\nSaving metadata...")
@@ -2302,8 +2296,8 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
             calculate_bleu_score,
             calculate_bert_score,
             calculate_quality_score,
-            calculate_composite_score,
-            calculate_coverage,
+            calculate_composite_score_v2_chain,
+            calculate_coverage_v2 as calculate_coverage,
             QualityScorer,
             QUALITY_SCORING_AVAILABLE
         )
@@ -2328,12 +2322,11 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
             'hallucinated_words': raw_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for raw
-        raw_composite = calculate_composite_score(
-            bleu=raw_bleu,
-            bertscore=raw_bert,
-            quality=raw_quality,
-            coverage_f1=raw_coverage['f1']
+        # Calculate CTQI v2 (prerequisite chain) for raw
+        raw_composite = calculate_composite_score_v2_chain(
+            gloss_accuracy=raw_coverage['f1'] or 0.0,
+            coverage_f1=raw_coverage['f1'] or 0.0,
+            plausibility=raw_quality
         ) or 0.0
         evaluation["raw"]["composite"] = raw_composite
 
@@ -2356,12 +2349,11 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
             'hallucinated_words': llm_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for LLM
-        llm_composite = calculate_composite_score(
-            bleu=llm_bleu,
-            bertscore=llm_bert,
-            quality=llm_quality,
-            coverage_f1=llm_coverage['f1']
+        # Calculate CTQI v2 (prerequisite chain) for LLM
+        llm_composite = calculate_composite_score_v2_chain(
+            gloss_accuracy=llm_coverage['f1'] or 0.0,
+            coverage_f1=llm_coverage['f1'] or 0.0,
+            plausibility=llm_quality
         ) or 0.0
         evaluation["llm"]["composite"] = llm_composite
 

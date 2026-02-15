@@ -67,8 +67,8 @@ from evaluation_metrics import (
     calculate_bleu_score,
     calculate_bert_score,
     calculate_quality_score as metrics_quality_score,
-    calculate_composite_score as metrics_composite_score,
-    calculate_coverage,
+    calculate_composite_score_v2_chain as metrics_composite_score,
+    calculate_coverage_v2 as calculate_coverage,
     QualityScorer,
     METRIC_WEIGHTS,
     BLEU_AVAILABLE,
@@ -1667,8 +1667,8 @@ def evaluate_sentences():
     - BLEU Score (n-gram precision)
     - BERTScore (semantic similarity)
     - Quality Score (GPT-2 fluency)
-    - Coverage (recall, precision, F1)
-    - Composite Score (CTQI - weighted combination)
+    - Coverage (recall, precision, F1 with lemmatization)
+    - CTQI v2 (prerequisite chain: accuracy × coverage × plausibility)
     """
     try:
         data = request.get_json()
@@ -1699,11 +1699,12 @@ def evaluate_sentences():
             'hallucinated_words': raw_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for raw (CTQI)
+        # Calculate CTQI v2 (prerequisite chain) for raw
         # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
         raw_composite = metrics_composite_score(
             gloss_accuracy=raw_coverage['f1'] or 0.0,
-            quality=raw_quality
+            coverage_f1=raw_coverage['f1'] or 0.0,
+            plausibility=raw_quality
         ) or 0.0
         raw_metrics['composite'] = raw_composite
 
@@ -1724,11 +1725,12 @@ def evaluate_sentences():
             'hallucinated_words': llm_coverage['hallucinated_words'],
         }
 
-        # Calculate composite score for LLM (CTQI)
+        # Calculate CTQI v2 (prerequisite chain) for LLM
         # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
         llm_composite = metrics_composite_score(
             gloss_accuracy=llm_coverage['f1'] or 0.0,
-            quality=llm_quality
+            coverage_f1=llm_coverage['f1'] or 0.0,
+            plausibility=llm_quality
         ) or 0.0
         llm_metrics['composite'] = llm_composite
 
@@ -2049,13 +2051,32 @@ def get_available_glosses():
 def get_gloss_tutorials():
     """
     Get tutorial video/pose URLs for a list of glosses.
-    Priority: preset demo segment videos > dataset pose files (visualized on-demand).
+    Priority: 1) Sign Bank videos > 2) preset demo segment videos > 3) dataset pose files (visualized on-demand).
     """
     data = request.get_json()
     glosses = data.get('glosses', [])
 
     if not glosses:
         return jsonify({"error": "No glosses provided"}), 400
+
+    # First, check Sign Bank for user-recorded videos (highest priority)
+    gloss_to_sign_bank = {}
+    if SIGN_BANK_DIR.exists():
+        for gloss in glosses:
+            gloss_lower = gloss.lower()
+            mp4_path = SIGN_BANK_DIR / f"{gloss_lower}.mp4"
+            webm_path = SIGN_BANK_DIR / f"{gloss_lower}.webm"
+
+            if mp4_path.exists():
+                gloss_to_sign_bank[gloss] = {
+                    "video_url": f"/api/sign-bank/video/{gloss_lower}",
+                    "source": "sign_bank"
+                }
+            elif webm_path.exists():
+                gloss_to_sign_bank[gloss] = {
+                    "video_url": f"/api/sign-bank/video/{gloss_lower}",
+                    "source": "sign_bank"
+                }
 
     # Build mapping of gloss -> demo sample segment video
     # Two-pass approach: first collect originals, then fallback to pose visualizations
@@ -2119,10 +2140,19 @@ def get_gloss_tutorials():
             if gloss not in gloss_to_demo:
                 gloss_to_demo[gloss] = data
 
-    # Build tutorials response
+    # Build tutorials response - Priority: sign_bank > demo > dataset
     tutorials = []
     for gloss in glosses:
-        if gloss in gloss_to_demo:
+        # 1. Check Sign Bank first (user-recorded videos)
+        if gloss in gloss_to_sign_bank:
+            tutorials.append({
+                "gloss": gloss,
+                "video_url": gloss_to_sign_bank[gloss]["video_url"],
+                "source": "sign_bank",
+                "available": True
+            })
+        # 2. Check demo samples
+        elif gloss in gloss_to_demo:
             tutorials.append({
                 "gloss": gloss,
                 "video_url": gloss_to_demo[gloss]["video_url"],
@@ -3050,6 +3080,141 @@ def serve_temp_file(session_id, filename):
 def serve_segment_file(session_id, filename):
     """Serve segment video files"""
     return send_from_directory(TEMP_DIR / session_id / "segments", filename)
+
+
+# ============================================================================
+# SIGN BANK - Record and manage individual sign videos
+# ============================================================================
+
+# Sign bank storage directory (persistent across sessions)
+SIGN_BANK_DIR = Path(__file__).parent / "sign-bank"
+SIGN_BANK_DIR.mkdir(exist_ok=True)
+
+
+@app.route('/sign-bank')
+def sign_bank_page():
+    """Sign Bank page for recording individual signs"""
+    return render_template('sign_bank.html')
+
+
+@app.route('/api/sign-bank/list')
+def sign_bank_list():
+    """List all recorded signs in the sign bank"""
+    recorded_words = []
+
+    if SIGN_BANK_DIR.exists():
+        for video_file in SIGN_BANK_DIR.glob("*.mp4"):
+            recorded_words.append(video_file.stem.lower())
+
+    return jsonify({
+        'success': True,
+        'recorded_words': sorted(recorded_words),
+        'count': len(recorded_words)
+    })
+
+
+@app.route('/api/sign-bank/save', methods=['POST'])
+def sign_bank_save():
+    """Save a recorded sign video to the sign bank"""
+    try:
+        if 'video' not in request.files:
+            return jsonify({'success': False, 'error': 'No video file provided'}), 400
+
+        video_file = request.files['video']
+        gloss = request.form.get('gloss', '').strip().lower()
+
+        if not gloss:
+            return jsonify({'success': False, 'error': 'No gloss provided'}), 400
+
+        # Save the video file
+        video_path = SIGN_BANK_DIR / f"{gloss}.webm"
+        video_file.save(str(video_path))
+
+        # Convert WebM to MP4 for better compatibility
+        mp4_path = SIGN_BANK_DIR / f"{gloss}.mp4"
+
+        try:
+            # Try to convert using ffmpeg
+            result = subprocess.run([
+                FFMPEG_EXE, '-y', '-i', str(video_path),
+                '-c:v', 'libx264', '-preset', 'fast',
+                '-c:a', 'aac', '-strict', 'experimental',
+                str(mp4_path)
+            ], capture_output=True, timeout=30)
+
+            if result.returncode == 0:
+                # Remove the WebM file after successful conversion
+                video_path.unlink()
+                print(f"[SignBank] Saved and converted: {gloss}.mp4")
+            else:
+                # Keep WebM if conversion fails
+                print(f"[SignBank] Conversion failed, keeping WebM: {gloss}")
+                mp4_path = video_path
+        except Exception as e:
+            print(f"[SignBank] Conversion error: {e}")
+            mp4_path = video_path
+
+        return jsonify({
+            'success': True,
+            'gloss': gloss,
+            'path': str(mp4_path)
+        })
+
+    except Exception as e:
+        print(f"[SignBank] Save error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/sign-bank/video/<gloss>')
+def sign_bank_video(gloss):
+    """Serve a sign bank video file"""
+    gloss = gloss.lower()
+
+    # Try MP4 first, then WebM
+    mp4_path = SIGN_BANK_DIR / f"{gloss}.mp4"
+    webm_path = SIGN_BANK_DIR / f"{gloss}.webm"
+
+    if mp4_path.exists():
+        return send_from_directory(SIGN_BANK_DIR, f"{gloss}.mp4")
+    elif webm_path.exists():
+        return send_from_directory(SIGN_BANK_DIR, f"{gloss}.webm")
+    else:
+        return jsonify({'success': False, 'error': 'Video not found'}), 404
+
+
+@app.route('/api/sign-bank/delete/<gloss>', methods=['DELETE'])
+def sign_bank_delete(gloss):
+    """Delete a sign from the sign bank"""
+    gloss = gloss.lower()
+
+    deleted = False
+    for ext in ['mp4', 'webm']:
+        path = SIGN_BANK_DIR / f"{gloss}.{ext}"
+        if path.exists():
+            path.unlink()
+            deleted = True
+
+    if deleted:
+        return jsonify({'success': True, 'gloss': gloss})
+    else:
+        return jsonify({'success': False, 'error': 'Video not found'}), 404
+
+
+@app.route('/api/sign-bank/has/<gloss>')
+def sign_bank_has(gloss):
+    """Check if a sign exists in the sign bank"""
+    gloss = gloss.lower()
+
+    mp4_path = SIGN_BANK_DIR / f"{gloss}.mp4"
+    webm_path = SIGN_BANK_DIR / f"{gloss}.webm"
+
+    exists = mp4_path.exists() or webm_path.exists()
+
+    return jsonify({
+        'success': True,
+        'gloss': gloss,
+        'exists': exists
+    })
 
 
 # ============================================================================

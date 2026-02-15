@@ -22,6 +22,9 @@ seaborn>=0.12.0
 google-generativeai>=0.3.0
 openai>=1.0.0  # For HuggingFace OpenAI-compatible API
 
+# NLP
+nltk>=3.8.0  # Lemmatization for coverage metrics
+
 # Utilities
 tqdm>=4.65.0
 Pillow>=10.0.0

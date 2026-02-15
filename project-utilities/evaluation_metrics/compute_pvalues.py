@@ -19,12 +19,26 @@ from scipy import stats
 # Default input file path
 DEFAULT_INPUT = Path(__file__).parent / "synthetic_evaluation" / "evaluation_results" / "evaluation_results.json"
 
-# CTQI weights
-CTQI_WEIGHTS = {
-    'gloss_accuracy': 0.4,
-    'quality': 0.4,
-    'perfect_translation_rate': 0.2
-}
+# CTQI v2 prerequisite chain formula
+def _compute_ctqi_v2_chain(ga, cf1, plausibility):
+    """Compute CTQI v2 using prerequisite chain: (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100"""
+    ga_clamped = max(0.0, min(100.0, ga)) / 100.0
+    cf1_clamped = max(0.0, min(100.0, cf1)) / 100.0
+    p_clamped = max(0.0, min(100.0, plausibility)) / 100.0
+    plausibility_modifier = 0.5 + 0.5 * p_clamped
+    return ga_clamped * cf1_clamped * plausibility_modifier * 100.0
+
+# CTQI v2 geometric mean (legacy)
+CTQI_V2_EPSILON = 1.0  # Floor to prevent zero-product collapse
+
+def _compute_ctqi_v2_geomean(ga, q, cf1, epsilon=CTQI_V2_EPSILON):
+    """Compute CTQI v2 geometric mean (legacy). Kept for comparison."""
+    import math
+    ga_safe = max(ga, epsilon) / 100.0
+    q_safe = max(q, epsilon) / 100.0
+    cf1_safe = max(cf1, epsilon) / 100.0
+    w = 1/3  # Equal weights
+    return math.exp(w * math.log(ga_safe) + w * math.log(q_safe) + w * math.log(cf1_safe)) * 100.0
 
 
 def load_evaluation_data(json_path):
@@ -58,6 +72,8 @@ def load_evaluation_data(json_path):
         'model_ptr': [],
         'baseline_ctqi': [],
         'model_ctqi': [],
+        'baseline_ctqi_v2': [],
+        'model_ctqi_v2': [],
     }
 
     for entry in data:
@@ -89,19 +105,25 @@ def load_evaluation_data(json_path):
         metrics['baseline_ptr'].append(baseline_ptr)
         metrics['model_ptr'].append(model_ptr)
 
-        # Calculate CTQI: 0.4 * gloss_accuracy + 0.4 * quality + 0.2 * PTR
-        baseline_ctqi = (
-            CTQI_WEIGHTS['gloss_accuracy'] * baseline_gloss +
-            CTQI_WEIGHTS['quality'] * entry['baseline_quality'] +
-            CTQI_WEIGHTS['perfect_translation_rate'] * baseline_ptr
+        # Calculate CTQI v2 (prerequisite chain: GA × CF1 × plausibility modifier)
+        baseline_ctqi = _compute_ctqi_v2_chain(
+            baseline_gloss, entry['baseline_coverage_f1'], entry['baseline_quality']
         )
-        model_ctqi = (
-            CTQI_WEIGHTS['gloss_accuracy'] * model_gloss +
-            CTQI_WEIGHTS['quality'] * entry['model_quality'] +
-            CTQI_WEIGHTS['perfect_translation_rate'] * model_ptr
+        model_ctqi = _compute_ctqi_v2_chain(
+            model_gloss, entry['model_coverage_f1'], entry['model_quality']
         )
         metrics['baseline_ctqi'].append(baseline_ctqi)
         metrics['model_ctqi'].append(model_ctqi)
+
+        # Calculate CTQI v2 geometric mean (legacy, for comparison)
+        baseline_ctqi_v2 = _compute_ctqi_v2_geomean(
+            baseline_gloss, entry['baseline_quality'], entry['baseline_coverage_f1']
+        )
+        model_ctqi_v2 = _compute_ctqi_v2_geomean(
+            model_gloss, entry['model_quality'], entry['model_coverage_f1']
+        )
+        metrics['baseline_ctqi_v2'].append(baseline_ctqi_v2)
+        metrics['model_ctqi_v2'].append(model_ctqi_v2)
 
     metrics['n'] = n
     return metrics
@@ -188,9 +210,14 @@ def run_synthetic_evaluation_analysis(metrics):
     p3_t, p3_w, d3, b3, m3 = analyze_metric("Quality Score", metrics['baseline_quality'], metrics['model_quality'], n)
 
     print("-" * 80)
-    print("4. CTQI (COMPOSITE TRANSLATION QUALITY INDEX) IMPROVEMENT")
+    print("4. CTQI v2 (PREREQUISITE CHAIN) IMPROVEMENT")
     print("-" * 80)
-    p4_t, p4_w, d4, b4, m4 = analyze_metric("CTQI", metrics['baseline_ctqi'], metrics['model_ctqi'], n)
+    p4_t, p4_w, d4, b4, m4 = analyze_metric("CTQI v2", metrics['baseline_ctqi'], metrics['model_ctqi'], n)
+
+    print("-" * 80)
+    print("4b. CTQI V2 GEOMETRIC MEAN (LEGACY) IMPROVEMENT")
+    print("-" * 80)
+    p4b_t, p4b_w, d4b, b4b, m4b = analyze_metric("CTQI v2 Geomean", metrics['baseline_ctqi_v2'], metrics['model_ctqi_v2'], n)
 
     print("-" * 80)
     print("5. COVERAGE F1 IMPROVEMENT")
@@ -217,7 +244,8 @@ def run_synthetic_evaluation_analysis(metrics):
         ("BLEU Score", b1, m1, p1_t, d1),
         ("BERTScore", b2, m2, p2_t, d2),
         ("Quality Score", b3, m3, p3_t, d3),
-        ("CTQI", b4, m4, p4_t, d4),
+        ("CTQI v2", b4, m4, p4_t, d4),
+        ("CTQI v2 (geomean)", b4b, m4b, p4b_t, d4b),
         ("Coverage F1", b5, m5, p5_t, d5),
         ("Gloss Accuracy (%)", b6, m6, p6_t, d6),
     ]
@@ -235,12 +263,12 @@ def run_synthetic_evaluation_analysis(metrics):
     print("=" * 80)
     print("BONFERRONI CORRECTION (for multiple comparisons)")
     print("=" * 80)
-    p_values = [p1_t, p2_t, p3_t, p4_t, p5_t, p6_t]
+    p_values = [p1_t, p2_t, p3_t, p4_t, p4b_t, p5_t, p6_t]
     bonferroni_threshold = 0.05 / len(p_values)
     print(f"Number of tests: {len(p_values)}")
     print(f"Bonferroni-corrected alpha: {bonferroni_threshold:.4f}")
     print()
-    for name, p in zip(["BLEU", "BERTScore", "Quality", "CTQI", "Coverage F1", "Gloss Accuracy"], p_values):
+    for name, p in zip(["BLEU", "BERTScore", "Quality", "CTQI v2", "CTQI v2 Geomean", "Coverage F1", "Gloss Accuracy"], p_values):
         sig = "SIGNIFICANT" if p < bonferroni_threshold else "not significant"
         print(f"  {name}: p = {p:.2e} -> {sig}")
 
@@ -284,12 +312,14 @@ def run_synthetic_evaluation_analysis(metrics):
     bert_improved = count_improved(metrics['baseline_bert'], metrics['model_bert'])
     quality_improved = count_improved(metrics['baseline_quality'], metrics['model_quality'])
     ctqi_improved = count_improved(metrics['baseline_ctqi'], metrics['model_ctqi'])
+    ctqi_v2_improved = count_improved(metrics['baseline_ctqi_v2'], metrics['model_ctqi_v2'])
     f1_improved = count_improved(metrics['baseline_f1'], metrics['model_f1'])
 
     binomial_test(bleu_improved, n, "BLEU Score")
     binomial_test(bert_improved, n, "BERTScore")
     binomial_test(quality_improved, n, "Quality Score")
-    binomial_test(ctqi_improved, n, "CTQI")
+    binomial_test(ctqi_improved, n, "CTQI v2")
+    binomial_test(ctqi_v2_improved, n, "CTQI v2 Geomean")
     binomial_test(f1_improved, n, "Coverage F1")
 
     # PTR improvement

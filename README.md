@@ -34,7 +34,7 @@ We present SignBridge, an American Sign Language (ASL) translation system that c
 
 Our approach enhances the OpenHands model to OpenHands-HD (expanding from 27 to 83 body points including detailed finger tracking), applies 50x pose data augmentation for training diversity, and uses transformer architecture to generate Top-K sign predictions. Google's Gemini LLM (gemini-2.0-flash) then performs contextual recovery by selecting semantically appropriate signs from the Top-K predictions.
 
-Testing on the WLASL-100 dataset shows substantial improvements: word-level prediction accuracy increased from 71.57% benchmark to 80.97% for Top-1 predictions and 91.62% for Top-3 predictions. Sentence-level grammatical quality (Quality Score) rose from 39.38 to 74.56. To address the absence of comprehensive translation quality assessment frameworks, we introduce Composite Translation Quality Index (CTQI)—a new score that integrates lexical similarity, semantic preservation, grammatical structure, and completeness—improved from 55.56 to 78.16. All improvements achieve statistical significance (p < 0.001, paired t-tests) with large effect sizes (Cohen's d > 0.8) across all measures.
+Testing on the WLASL-100 dataset shows substantial improvements: word-level prediction accuracy increased from 71.57% benchmark to 80.97% for Top-1 predictions and 91.62% for Top-3 predictions. Sentence-level grammatical quality (Quality Score) rose from 39.38 to 74.56. To address the absence of comprehensive translation quality assessment frameworks, we introduce Composite Translation Quality Index v2 (CTQI v2)—a prerequisite chain metric where accuracy gates meaning and meaning gates fluency—improved from 55.56 to 78.16. All improvements achieve statistical significance (p < 0.001, paired t-tests) with large effect sizes (Cohen's d > 0.8) across all measures.
 
 Taken together, SignBridge offers a foundation for more reliable and practical real-time ASL translation systems, helping reduce communication barriers for the Deaf community in education, employment and digital communication.
 
@@ -58,7 +58,7 @@ Taken together, SignBridge offers a foundation for more reliable and practical r
 
 1. Build a sign recognition system that tracks 83 body points including detailed finger positions
 2. Integrate an AI language model to construct grammatically correct sentences from sign predictions
-3. Develop Composite Translation Quality Index (CTQI), a combined quality scoring framework measuring multiple translation dimensions
+3. Develop Composite Translation Quality Index (CTQI v2), a prerequisite chain scoring framework where accuracy gates meaning and meaning gates fluency
 4. Create a working prototype demonstrating practical ASL-to-English translation (SignBridge)
 
 ### Expected Outcomes
@@ -89,13 +89,14 @@ All development and experimentation for this research project were conducted on 
 - **Semantic Coherence Analysis:** LLM selects signs based on semantic coherence (not just confidence), multi-pass prompt engineering, prevents duplicate selections, adds grammatical elements
 - **Output:** Grammatically correct English sentences
 
-### Component 3: CTQI Framework for Comprehensive Evaluation
+### Component 3: CTQI v2 Framework for Comprehensive Evaluation
 
-- **CTQI Formula:** `CTQI = (α × BLEU) + (β × BERTScore) + (γ × Quality)`
-  - **BLEU** for lexical similarity
-  - **BERTScore** for semantic preservation
-  - **Quality** for grammatical correctness (0–100)
-- **Evaluation:** 25-entry synthetic sentence dataset with ground truth, comparing before-LLM (confidence-based) vs. after-LLM (semantic coherence), with statistical analysis of all quality metrics
+- **CTQI v2 Formula:** `CTQI = (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100`
+  - **GA (Gloss Accuracy)** for sign recognition accuracy
+  - **CF1 (Coverage F1)** for semantic content coverage (with lemmatization)
+  - **P (Plausibility)** for grammar + semantic sense + naturalness
+- **Design:** Prerequisite chain — multiplication forces all dimensions to be strong; plausibility is a modifier (0.5x–1.0x), not a gate
+- **Evaluation:** 34-entry synthetic sentence dataset with ground truth, comparing before-LLM (confidence-based) vs. after-LLM (semantic coherence), with statistical analysis of all quality metrics
 
 ---
 
@@ -120,14 +121,14 @@ OpenHands-HD achieves 80.97% Top-1 accuracy on WLASL-100, surpassing the origina
 
 Statistical analysis of SignBridge results using paired t-tests (n=34 sentence pairs) demonstrates significant improvements across all evaluation metrics. For gloss-level selection accuracy, Coverage F1—which measures the overlap of content words between the generated and reference sentences—improved from 74.64 to 87.62 (t(33) = 4.944, p < 0.001, Cohen's d = 0.848), representing a large effect size. This improvement indicates that the LLM pipeline more accurately selects contextually appropriate glosses from the model's top-k predictions, resulting in translations that better capture the intended meaning.
 
-For overall translation quality, the Quality Score (a reference-free grammaticality measure based on GPT-2 perplexity) improved substantially from 39.38 to 74.56 (t(33) = 6.700, p < 0.001, Cohen's d = 1.149), representing a large effect size. Additionally, the Perfect Translation Rate—a binary metric indicating whether all glosses in a sentence were correctly predicted—increased from 41.2% (14/34) to 67.6% (23/34), with p=0.004, confirming this improvement is statistically significant. The Composite Translation Quality Index (CTQI, introduced by SignBridge), which combines Gloss Accuracy (40%), Quality Score (40%), and Perfect Translation Rate (20%), improved from 55.56 to 78.16 (t(33) = 6.403, p < 0.001, Cohen's d = 1.098). Overall, 88.2% of test entries (30/34) showed improvement in CTQI, demonstrating consistent gains across the evaluation dataset.
+For overall translation quality, the Quality Score (a reference-free grammaticality measure based on GPT-2 perplexity) improved substantially from 39.38 to 74.56 (t(33) = 6.700, p < 0.001, Cohen's d = 1.149), representing a large effect size. Additionally, the Perfect Translation Rate—a binary metric indicating whether all glosses in a sentence were correctly predicted—increased from 41.2% (14/34) to 67.6% (23/34), with p=0.004, confirming this improvement is statistically significant. The Composite Translation Quality Index (CTQI v2, introduced by SignBridge), which uses a prerequisite chain formula CTQI = (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100, improved from 55.56 to 78.16 (t(33) = 6.403, p < 0.001, Cohen's d = 1.098). Overall, 88.2% of test entries (30/34) showed improvement in CTQI v2, demonstrating consistent gains across the evaluation dataset.
 
 | Metric | Baseline (No LLM) | With LLM | Improvement | p-value |
 |--------|-------------------|----------|-------------|---------|
 | Coverage F1 | 74.64 | 87.62 | +12.98 | p < 0.001 |
 | Quality Score | 39.38 | 74.56 | +35.18 | p < 0.001 |
 | Perfect Translation Rate | 41.2% (14/34) | 67.6% (23/34) | +26.4% | p = 0.004 |
-| **CTQI (introduced by SignBridge)** | **55.56** | **78.16** | **+22.60** | **p < 0.001** |
+| **CTQI v2 (introduced by SignBridge)** | **55.56** | **78.16** | **+22.60** | **p < 0.001** |
 
 <p align="center">
   <img src="docs/images/chart_llm_comparison.png" alt="Baseline vs LLM comparison" width="600"/>
@@ -215,7 +216,7 @@ signbridge/
 │   └── show-and-tell/          # Web application demo
 │
 ├── project-utilities/
-│   ├── evaluation_metrics/     # CTQI, BLEU, BERTScore, p-values
+│   ├── evaluation_metrics/     # CTQI v2, BLEU, BERTScore, p-values
 │   ├── llm_interface/          # Multi-provider LLM integration
 │   ├── segmentation/           # Hybrid & motion-based segmenters
 │   ├── pose_utils/             # Pose analysis & ranking
@@ -413,7 +414,7 @@ classes = load_class_mapping(num_classes=100)
 | Step | Title | Status | Key Deliverables | Success Criteria | Notes |
 |------|-------|--------|------------------|------------------|-------|
 | **1.1** | Isolated Sign Recognition Model Prototype | ✅ **COMPLETED** | • 20-class model<br>• 50-class model<br>• 75pt OpenHands-HD<br>• 16x augmentation | • 40%+ Top-1 ✅<br>• 60%+ Top-3 ✅ | **Achieved:** 20-class: 42.47% Top-1, 75.29% Top-3. 50-class: 47.27% Top-1, 67.25% Top-3 |
-| **1.2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI 78.16 |
+| **1.2** | LLM-based Self-Correcting Sentence Construction | ✅ **COMPLETED** | • Gemini integration<br>• Smart buffering<br>• Top-K prompts<br>• Context-aware grammar | • Natural sentences ✅<br>• Context disambiguation ✅<br>• 90%+ coherence ✅<br>• BLEU score evaluation ✅ | **Achieved:** Streaming API, 5 trigger strategies, local fallback. BLEU 56.53 (+35.91 vs baseline), BERTScore 96.30, CTQI v2 78.16 |
 | **1.3** | Full Pipeline Integration | ✅ **COMPLETED** | • End-to-end system<br>• File processing<br>• Evaluation framework | • Video → text functional ✅<br>• <2s latency ✅<br>• 75%+ translation accuracy ✅ | **Achieved:** 5-step pipeline |
 | **1.4** | Continuous Sign Detection | ✅ **COMPLETED** | • Temporal segmentation<br>• Boundary detection<br>• Real-world videos | • 85%+ boundary accuracy ✅<br>• Real-time processing ✅<br>• <200ms latency ✅ | **Achieved:** Auto-detect + motion-based segmentation |
 | **1.5** | Real-Time Webcam "Show-and-Tell" Demo App | ✅ **COMPLETED** | • Desktop application<br>• Live inference<br>• Visualization UI | • 15-30 FPS ✅<br>• <500ms latency ✅<br>• Production-ready ✅ | **Achieved:** 2 versions (standard + streaming) |

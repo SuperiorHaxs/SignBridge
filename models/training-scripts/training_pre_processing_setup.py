@@ -204,11 +204,38 @@ def check_directory_structure(num_classes, config):
         print_status(f"No configuration found for {num_classes} classes", "ERROR")
         return False
 
+    # Handle both directory-based and manifest-based configs
     required_dirs = {
-        'train': dataset_paths['train_original'],
-        'test': dataset_paths['test'],
-        'val': dataset_paths.get('val')
+        'train': dataset_paths.get('train_original'),
+        'test': dataset_paths.get('test'),  # May not exist for manifest-based configs
+        'val': dataset_paths.get('val')  # May not exist for manifest-based configs
     }
+
+    # For manifest-based configs, check if manifests exist instead
+    if 'train_manifest' in dataset_paths:
+        print_status("Using manifest-based configuration", "INFO")
+        manifests = {
+            'train_manifest': dataset_paths.get('train_manifest'),
+            'val_manifest': dataset_paths.get('val_manifest'),
+            'test_manifest': dataset_paths.get('test_manifest'),
+        }
+        all_exist = True
+        for name, path in manifests.items():
+            if path and Path(path).exists():
+                print_status(f"{name}: Found at {path}", "SUCCESS")
+            elif path:
+                print_status(f"{name}: Will be created during preprocessing", "INFO")
+        # For manifest-based, we only need train_original to exist
+        train_path = dataset_paths.get('train_original')
+        if train_path and Path(train_path).exists():
+            class_count = len([d for d in Path(train_path).iterdir() if d.is_dir()])
+            print_status(f"TRAIN_ORIGINAL: Found at {train_path}", "SUCCESS")
+            print_status(f"  └─ Contains {class_count} class directories", "INFO")
+            return True
+        else:
+            print_status(f"TRAIN_ORIGINAL: NOT FOUND at {train_path}", "WARNING")
+            print_status("Will use gloss_list to determine classes", "INFO")
+            return True  # Allow to proceed with gloss_list
 
     all_exist = True
     for split_name, split_path in required_dirs.items():
@@ -607,6 +634,8 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
 
     print_status("Phase 1: Splitting families into train/val/test...", "INFO")
     print_status(f"Phase 2: Balancing train to ~{TARGET_TRAIN_SAMPLES_PER_CLASS} samples/class...", "INFO")
+    if gloss_list:
+        print_status(f"Filtering to {len(gloss_list)} classes from gloss_list", "INFO")
     try:
         results = run_two_phase_pipeline(
             input_dir=pickle_pool_dir,
@@ -615,6 +644,7 @@ def generate_augmented_dataset_balanced(num_classes, config, force=False, landma
             seed=42,
             dry_run=False,
             landmark_config=landmark_config,
+            gloss_list=gloss_list,
         )
 
         # Report balancing results

@@ -120,8 +120,8 @@
                 </tr>
                 <tr class="metric-row composite" data-metric="composite">
                     <td class="metric-name">
-                        <span class="metric-title">Composite Translation Quality Index (CTQI)</span>
-                        <span class="metric-desc">Introduced by SignBridge - New combined score weighing all metrics together</span>
+                        <span class="metric-title">Composite Translation Quality Index (CTQI v2)</span>
+                        <span class="metric-desc">Introduced by SignBridge - Prerequisite chain: accuracy × coverage × plausibility</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -131,7 +131,7 @@
         </table>
 
         <div class="metrics-note">
-            <strong>Composite Score Weights:</strong> Quality (40%), Coverage F1 (25%), BERTScore (20%), BLEU (15%)
+            <strong>CTQI v2 Formula:</strong> CTQI = (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100
         </div>
 
         <!-- Coverage Details -->

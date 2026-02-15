@@ -58,9 +58,13 @@ from evaluation_metrics import (
     calculate_bert_score,
     calculate_quality_score,
     calculate_composite_score,
+    calculate_composite_score_v2,
+    calculate_composite_score_v2_chain,
     calculate_coverage,
+    calculate_coverage_v2,
     QualityScorer,
     METRIC_WEIGHTS,
+    METRIC_WEIGHTS_V2,
     BLEU_AVAILABLE,
     BERTSCORE_AVAILABLE,
     QUALITY_SCORING_AVAILABLE,
@@ -910,7 +914,7 @@ class SyntheticDatasetEvaluator:
             return self._extract_top1_glosses(predicted_glosses)
 
     # NOTE: Metric calculation methods moved to evaluation_metrics.metrics module
-    # Use imported functions: calculate_gloss_accuracy, calculate_quality_score, calculate_coverage, calculate_composite_score
+    # Use imported functions: calculate_gloss_accuracy, calculate_quality_score, calculate_coverage_v2, calculate_composite_score_v2_chain
 
     def _calculate_baseline_metrics(self, predicted_top1_glosses, original_glosses, reference_sentence):
         """
@@ -945,8 +949,8 @@ class SyntheticDatasetEvaluator:
         if quality_score is not None and not self.quiet:
             print(f"  BASELINE Quality: {quality_score:.2f}")
 
-        # Calculate Coverage using modular function
-        coverage = calculate_coverage(reference_sentence, baseline_sentence)
+        # Calculate Coverage v2 (with lemmatization) using modular function
+        coverage = calculate_coverage_v2(reference_sentence, baseline_sentence)
         if coverage['recall'] is not None and not self.quiet:
             print(f"  BASELINE Coverage: Recall={coverage['recall']:.1f}%, Precision={coverage['precision']:.1f}%, F1={coverage['f1']:.1f}%")
 
@@ -1226,16 +1230,19 @@ class SyntheticDatasetEvaluator:
             'baseline_bertscore': None,
             'baseline_quality': None,
             'baseline_composite': None,
+            'baseline_composite_v2': None,
             'model_bleu': None,
             'model_bertscore': None,
             'model_quality': None,
             'model_composite': None,
+            'model_composite_v2': None,
             'predicted_sentence': None,
             'predicted_glosses': [],
             'improvement_bleu': None,
             'improvement_bertscore': None,
             'improvement_quality': None,
             'improvement_composite': None,
+            'improvement_composite_v2': None,
             # Gloss coverage metrics (comparative)
             'baseline_coverage_recall': None,
             'baseline_coverage_precision': None,
@@ -1262,7 +1269,7 @@ class SyntheticDatasetEvaluator:
             'effective_gloss_total': 0,
             'effective_gloss_mismatches': [],
             'effective_glosses': [],
-            # Perfect Translation Rate (PTR) - binary metric for CTQI
+            # Perfect Translation Rate (PTR) - binary metric
             'baseline_ptr': None,
             'model_ptr': None,
             'status': 'pending'
@@ -1407,11 +1414,18 @@ class SyntheticDatasetEvaluator:
             # Calculate baseline PTR (Perfect Translation Rate)
             result['baseline_ptr'] = calculate_perfect_translation_rate(top1_glosses, glosses)
 
-            # Calculate baseline CTQI composite score (gloss_accuracy + quality + PTR)
-            result['baseline_composite'] = calculate_composite_score(
+            # Calculate baseline CTQI v2 (prerequisite chain: GA × CF1 × plausibility modifier)
+            result['baseline_composite'] = calculate_composite_score_v2_chain(
+                gloss_accuracy=result['gloss_accuracy'] or 0.0,
+                coverage_f1=baseline_coverage['f1'] or 0.0,
+                plausibility=baseline_quality or 0.0
+            )
+
+            # Calculate baseline CTQI v2 (geometric mean: gloss_accuracy + quality + coverage_f1)
+            result['baseline_composite_v2'] = calculate_composite_score_v2(
                 gloss_accuracy=result['gloss_accuracy'],
                 quality=baseline_quality,
-                perfect_translation_rate=result['baseline_ptr']
+                coverage_f1=baseline_coverage['f1']
             )
 
             # Step 5: Calculate model metrics (from LLM sentence with top-3)
@@ -1420,8 +1434,8 @@ class SyntheticDatasetEvaluator:
             result['model_bertscore'] = model_bertscore
             result['model_quality'] = model_quality
 
-            # Step 5b: Calculate model coverage (vs reference sentence)
-            model_coverage = calculate_coverage(reference_sentence, predicted_sentence)
+            # Step 5b: Calculate model coverage v2 (vs reference sentence, with lemmatization)
+            model_coverage = calculate_coverage_v2(reference_sentence, predicted_sentence)
             result['model_coverage_recall'] = model_coverage['recall']
             result['model_coverage_precision'] = model_coverage['precision']
             result['model_coverage_f1'] = model_coverage['f1']
@@ -1431,11 +1445,18 @@ class SyntheticDatasetEvaluator:
             # Calculate model PTR (Perfect Translation Rate) using effective glosses
             result['model_ptr'] = calculate_perfect_translation_rate(effective_glosses, glosses)
 
-            # Calculate model CTQI composite score (effective_gloss_accuracy + quality + PTR)
-            result['model_composite'] = calculate_composite_score(
+            # Calculate model CTQI v2 (prerequisite chain: GA × CF1 × plausibility modifier)
+            result['model_composite'] = calculate_composite_score_v2_chain(
+                gloss_accuracy=result['effective_gloss_accuracy'] or 0.0,
+                coverage_f1=model_coverage['f1'] or 0.0,
+                plausibility=model_quality or 0.0
+            )
+
+            # Calculate model CTQI v2 (geometric mean: effective_gloss_accuracy + quality + coverage_f1)
+            result['model_composite_v2'] = calculate_composite_score_v2(
                 gloss_accuracy=result['effective_gloss_accuracy'],
                 quality=model_quality,
-                perfect_translation_rate=result['model_ptr']
+                coverage_f1=model_coverage['f1']
             )
 
             # Print model coverage metrics
@@ -1480,7 +1501,12 @@ class SyntheticDatasetEvaluator:
             if result['baseline_composite'] is not None and result['model_composite'] is not None:
                 result['improvement_composite'] = result['model_composite'] - result['baseline_composite']
                 if not self.quiet:
-                    print(f"  COMPOSITE IMPROVEMENT: {result['improvement_composite']:+.2f} ({result['baseline_composite']:.2f} -> {result['model_composite']:.2f})")
+                    print(f"  CTQI v2 IMPROVEMENT: {result['improvement_composite']:+.2f} ({result['baseline_composite']:.2f} -> {result['model_composite']:.2f})")
+
+            if result['baseline_composite_v2'] is not None and result['model_composite_v2'] is not None:
+                result['improvement_composite_v2'] = result['model_composite_v2'] - result['baseline_composite_v2']
+                if not self.quiet:
+                    print(f"  CTQI v2 IMPROVEMENT: {result['improvement_composite_v2']:+.2f} ({result['baseline_composite_v2']:.2f} -> {result['model_composite_v2']:.2f})")
 
             # Calculate coverage improvements
             if result['baseline_coverage_recall'] is not None and result['model_coverage_recall'] is not None:
@@ -1601,10 +1627,15 @@ class SyntheticDatasetEvaluator:
         model_quality_scores = [r['model_quality'] for r in self.results if r['model_quality'] is not None]
         quality_improvements = [r['improvement_quality'] for r in self.results if r['improvement_quality'] is not None]
 
-        # Calculate Composite Score (CTQI) statistics
+        # Calculate CTQI v2 (prerequisite chain) statistics
         baseline_composite_scores = [r['baseline_composite'] for r in self.results if r['baseline_composite'] is not None]
         model_composite_scores = [r['model_composite'] for r in self.results if r['model_composite'] is not None]
         composite_improvements = [r['improvement_composite'] for r in self.results if r['improvement_composite'] is not None]
+
+        # Calculate CTQI v2 geometric mean statistics
+        baseline_composite_v2_scores = [r['baseline_composite_v2'] for r in self.results if r['baseline_composite_v2'] is not None]
+        model_composite_v2_scores = [r['model_composite_v2'] for r in self.results if r['model_composite_v2'] is not None]
+        composite_v2_improvements = [r['improvement_composite_v2'] for r in self.results if r['improvement_composite_v2'] is not None]
 
         # Calculate Perfect Translation Rate (PTR) statistics
         baseline_ptr_scores = [r['baseline_ptr'] for r in self.results if r['baseline_ptr'] is not None]
@@ -1933,18 +1964,32 @@ class SyntheticDatasetEvaluator:
                 f.write(f"PERFECT TRANSLATION IMPROVEMENT: {ptr_improvement:+d} entries\n")
             f.write("\n")
 
-            # Composite Score (CTQI) Summary
-            f.write("CTQI WEIGHTS: Gloss Accuracy=40%, Quality=40%, PTR=20%\n")
+            # CTQI v2 (Prerequisite Chain) Summary
+            f.write("CTQI v2 FORMULA: (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100\n")
             if baseline_composite_scores:
-                f.write(f"BASELINE CTQI: {sum(baseline_composite_scores)/len(baseline_composite_scores):.2f}\n")
+                f.write(f"BASELINE CTQI v2: {sum(baseline_composite_scores)/len(baseline_composite_scores):.2f}\n")
             if model_composite_scores:
-                f.write(f"MODEL CTQI: {sum(model_composite_scores)/len(model_composite_scores):.2f}\n")
+                f.write(f"MODEL CTQI v2: {sum(model_composite_scores)/len(model_composite_scores):.2f}\n")
             if composite_improvements:
-                f.write(f"AVERAGE CTQI IMPROVEMENT: {sum(composite_improvements)/len(composite_improvements):+.2f}\n")
+                f.write(f"AVERAGE CTQI v2 IMPROVEMENT: {sum(composite_improvements)/len(composite_improvements):+.2f}\n")
                 positive_composite = [i for i in composite_improvements if i > 0]
                 if positive_composite:
-                    f.write(f"ENTRIES WITH CTQI IMPROVEMENT: {len(positive_composite)}/{len(composite_improvements)} ({len(positive_composite)/len(composite_improvements)*100:.1f}%)\n")
-                    f.write(f"AVERAGE CTQI IMPROVEMENT (of improved entries): {sum(positive_composite)/len(positive_composite):+.2f}\n")
+                    f.write(f"ENTRIES WITH CTQI v2 IMPROVEMENT: {len(positive_composite)}/{len(composite_improvements)} ({len(positive_composite)/len(composite_improvements)*100:.1f}%)\n")
+                    f.write(f"AVERAGE CTQI v2 IMPROVEMENT (of improved entries): {sum(positive_composite)/len(positive_composite):+.2f}\n")
+            f.write("\n")
+
+            # CTQI v2 Geometric Mean Summary (legacy)
+            f.write("CTQI v2 GEOMEAN: Gloss Accuracy=33.3%, Quality=33.3%, Coverage F1=33.3% (geometric mean)\n")
+            if baseline_composite_v2_scores:
+                f.write(f"BASELINE CTQI v2: {sum(baseline_composite_v2_scores)/len(baseline_composite_v2_scores):.2f}\n")
+            if model_composite_v2_scores:
+                f.write(f"MODEL CTQI v2: {sum(model_composite_v2_scores)/len(model_composite_v2_scores):.2f}\n")
+            if composite_v2_improvements:
+                f.write(f"AVERAGE CTQI v2 IMPROVEMENT: {sum(composite_v2_improvements)/len(composite_v2_improvements):+.2f}\n")
+                positive_composite_v2 = [i for i in composite_v2_improvements if i > 0]
+                if positive_composite_v2:
+                    f.write(f"ENTRIES WITH CTQI v2 IMPROVEMENT: {len(positive_composite_v2)}/{len(composite_v2_improvements)} ({len(positive_composite_v2)/len(composite_v2_improvements)*100:.1f}%)\n")
+                    f.write(f"AVERAGE CTQI v2 IMPROVEMENT (of improved entries): {sum(positive_composite_v2)/len(positive_composite_v2):+.2f}\n")
             f.write("\n")
 
             # LLM Alternative Usage Statistics
@@ -2054,14 +2099,23 @@ class SyntheticDatasetEvaluator:
                     f.write(f"  Baseline Perfect Translation: {baseline_ptr_str}\n")
                     f.write(f"  Model Perfect Translation: {model_ptr_str}\n")
 
-                # CTQI Composite (grouped: baseline, model, improvement)
+                # CTQI v2 (prerequisite chain) (grouped: baseline, model, improvement)
                 if r['baseline_composite'] is not None or r['model_composite'] is not None:
                     if r['baseline_composite'] is not None:
-                        f.write(f"  Baseline CTQI: {r['baseline_composite']:.2f}\n")
+                        f.write(f"  Baseline CTQI v2: {r['baseline_composite']:.2f}\n")
                     if r['model_composite'] is not None:
-                        f.write(f"  Model CTQI: {r['model_composite']:.2f}\n")
+                        f.write(f"  Model CTQI v2: {r['model_composite']:.2f}\n")
                     if r['improvement_composite'] is not None:
-                        f.write(f"  CTQI Improvement: {r['improvement_composite']:+.2f}\n")
+                        f.write(f"  CTQI v2 Improvement: {r['improvement_composite']:+.2f}\n")
+
+                # CTQI v2 Geometric Mean (grouped: baseline, model, improvement)
+                if r.get('baseline_composite_v2') is not None or r.get('model_composite_v2') is not None:
+                    if r.get('baseline_composite_v2') is not None:
+                        f.write(f"  Baseline CTQI v2 Geomean: {r['baseline_composite_v2']:.2f}\n")
+                    if r.get('model_composite_v2') is not None:
+                        f.write(f"  Model CTQI v2 Geomean: {r['model_composite_v2']:.2f}\n")
+                    if r.get('improvement_composite_v2') is not None:
+                        f.write(f"  CTQI v2 Geomean Improvement: {r['improvement_composite_v2']:+.2f}\n")
 
                 # LLM alternative usage
                 if r['llm_used_alternatives'] is not None:
@@ -2173,12 +2227,19 @@ class SyntheticDatasetEvaluator:
                 model_ptr_str = "Yes" if r['model_ptr'] == 100 else "No"
                 print(f"   Perfect Translation: {baseline_ptr_str} -> {model_ptr_str}")
 
-            # Format CTQI Composite scores
+            # Format CTQI v2 (prerequisite chain) scores
             if r['baseline_composite'] is not None or r['model_composite'] is not None:
                 baseline_composite_str = f"{r['baseline_composite']:.2f}" if r['baseline_composite'] is not None else 'N/A'
                 model_composite_str = f"{r['model_composite']:.2f}" if r['model_composite'] is not None else 'N/A'
                 improvement_composite_str = f"{r['improvement_composite']:+.2f}" if r['improvement_composite'] is not None else 'N/A'
-                print(f"   CTQI: {baseline_composite_str} -> {model_composite_str} ({improvement_composite_str})")
+                print(f"   CTQI v2: {baseline_composite_str} -> {model_composite_str} ({improvement_composite_str})")
+
+            # Format CTQI v2 Geometric Mean scores
+            if r.get('baseline_composite_v2') is not None or r.get('model_composite_v2') is not None:
+                baseline_v2_str = f"{r['baseline_composite_v2']:.2f}" if r.get('baseline_composite_v2') is not None else 'N/A'
+                model_v2_str = f"{r['model_composite_v2']:.2f}" if r.get('model_composite_v2') is not None else 'N/A'
+                improvement_v2_str = f"{r['improvement_composite_v2']:+.2f}" if r.get('improvement_composite_v2') is not None else 'N/A'
+                print(f"   CTQI v2 Geomean: {baseline_v2_str} -> {model_v2_str} ({improvement_v2_str})")
 
             print()
 

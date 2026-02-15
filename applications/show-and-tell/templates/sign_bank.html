@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Bank - Record Individual Signs{% endblock %}
+
+{% block head %}
+<style>
+    .sign-bank-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .sign-bank-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .sign-bank-header h2 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .sign-bank-header p {
+        color: #666;
+    }
+
+    .sign-bank-layout {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 30px;
+    }
+
+    /* Left sidebar - word list */
+    .word-list-panel {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .word-list-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .word-list-header h3 {
+        margin: 0;
+        color: #2c3e50;
+    }
+
+    .word-count-badge {
+        background: #3498db;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.85em;
+    }
+
+    .search-box {
+        width: 100%;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 0.95em;
+    }
+
+    .category-section {
+        margin-bottom: 20px;
+    }
+
+    .category-header {
+        font-weight: 600;
+        color: #34495e;
+        padding: 8px 0;
+        border-bottom: 2px solid #3498db;
+        margin-bottom: 10px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .category-header:hover {
+        color: #3498db;
+    }
+
+    .category-toggle {
+        font-size: 0.8em;
+        color: #888;
+    }
+
+    .word-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .word-chip {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 2px solid transparent;
+    }
+
+    .word-chip.not-recorded {
+        background: #ecf0f1;
+        color: #7f8c8d;
+    }
+
+    .word-chip.recorded {
+        background: #d5f4e6;
+        color: #27ae60;
+        border-color: #27ae60;
+    }
+
+    .word-chip.available {
+        background: #d6eaf8;
+        color: #2980b9;
+        border-color: #3498db;
+    }
+
+    .word-chip.selected {
+        background: #9b59b6;
+        color: white;
+        border-color: #8e44ad;
+    }
+
+    .word-chip:hover {
+        transform: scale(1.05);
+    }
+
+    /* Legend */
+    .legend {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        font-size: 0.85em;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .legend-dot.recorded { background: #27ae60; }
+    .legend-dot.available { background: #3498db; }
+    .legend-dot.not-recorded { background: #bdc3c7; }
+
+    /* Right panel - recording area */
+    .recording-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .selected-word-display {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .selected-word-display h2 {
+        font-size: 2.5em;
+        color: #2c3e50;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .selected-word-display .status {
+        font-size: 1em;
+        color: #666;
+        margin-top: 5px;
+    }
+
+    .video-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .video-box {
+        background: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .video-box-header {
+        background: #2c3e50;
+        color: white;
+        padding: 10px 15px;
+        font-weight: 600;
+    }
+
+    .video-box video {
+        width: 100%;
+        height: 300px;
+        object-fit: contain;
+        background: #000;
+    }
+
+    .video-placeholder {
+        width: 100%;
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        background: #1a1a2e;
+    }
+
+    .recording-controls {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .record-btn {
+        padding: 15px 40px;
+        font-size: 1.1em;
+        border: none;
+        border-radius: 30px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .record-btn.start {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .record-btn.start:hover {
+        background: #c0392b;
+    }
+
+    .record-btn.stop {
+        background: #f39c12;
+        color: white;
+    }
+
+    .record-btn.save {
+        background: #27ae60;
+        color: white;
+    }
+
+    .record-btn.save:hover {
+        background: #219a52;
+    }
+
+    .record-btn.discard {
+        background: #95a5a6;
+        color: white;
+    }
+
+    .record-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .recording-indicator {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px;
+        background: #e74c3c;
+        color: white;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .recording-indicator.active {
+        display: flex;
+        animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .recording-dot {
+        width: 12px;
+        height: 12px;
+        background: white;
+        border-radius: 50%;
+    }
+
+    .instructions {
+        background: #e8f6ff;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 20px;
+    }
+
+    .instructions h4 {
+        margin: 0 0 10px 0;
+        color: #2980b9;
+    }
+
+    .instructions ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .instructions li {
+        margin-bottom: 5px;
+        color: #34495e;
+    }
+
+    /* Stats panel */
+    .stats-panel {
+        background: #f0f8ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #3498db;
+    }
+
+    .stat-label {
+        font-size: 0.85em;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sign-bank-container">
+    <div class="sign-bank-header">
+        <h2>Sign Bank - Record Your Signs</h2>
+        <p>Record individual signs for each word. These recordings will be used in the Learn mode as tutorial videos.</p>
+    </div>
+
+    <div class="sign-bank-layout">
+        <!-- Left Panel - Word List -->
+        <div class="word-list-panel">
+            <div class="word-list-header">
+                <h3>Vocabulary</h3>
+                <span class="word-count-badge" id="recorded-count">0/100</span>
+            </div>
+
+            <input type="text" class="search-box" id="word-search" placeholder="Search words...">
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot recorded"></div>
+                    <span>Sign Bank</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot available"></div>
+                    <span>Demo Sample</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot not-recorded"></div>
+                    <span>Not Recorded</span>
+                </div>
+            </div>
+
+            <div id="word-categories">
+                <!-- Categories will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Right Panel - Recording Area -->
+        <div class="recording-panel">
+            <div class="selected-word-display">
+                <h2 id="current-word">Select a word</h2>
+                <div class="status" id="word-status">Click on any word to start recording</div>
+            </div>
+
+            <div class="instructions">
+                <h4>How to Record:</h4>
+                <ol>
+                    <li>Select a word from the list on the left</li>
+                    <li>Click "Start Recording" and perform the sign</li>
+                    <li>Click "Stop" when finished</li>
+                    <li>Review your recording, then Save or Re-record</li>
+                </ol>
+            </div>
+
+            <div class="recording-indicator" id="recording-indicator">
+                <div class="recording-dot"></div>
+                <span>Recording...</span>
+            </div>
+
+            <div class="video-container">
+                <div class="video-box">
+                    <div class="video-box-header">Your Camera</div>
+                    <video id="webcam-video" autoplay muted playsinline></video>
+                </div>
+                <div class="video-box">
+                    <div class="video-box-header">Recording Preview</div>
+                    <video id="preview-video" controls></video>
+                    <div class="video-placeholder" id="preview-placeholder">
+                        Recording will appear here
+                    </div>
+                </div>
+            </div>
+
+            <div class="recording-controls">
+                <button class="record-btn start" id="btn-start-record">
+                    <span>Start Recording</span>
+                </button>
+                <button class="record-btn stop" id="btn-stop-record" style="display: none;">
+                    <span>Stop</span>
+                </button>
+                <button class="record-btn save" id="btn-save" style="display: none;">
+                    <span>Save</span>
+                </button>
+                <button class="record-btn discard" id="btn-discard" style="display: none;">
+                    <span>Re-record</span>
+                </button>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-recorded">0</div>
+                    <div class="stat-label">Recorded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-remaining">100</div>
+                    <div class="stat-label">Remaining</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="stat-percent">0%</div>
+                    <div class="stat-label">Complete</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sign_bank.js') }}"></script>
+{% endblock %}

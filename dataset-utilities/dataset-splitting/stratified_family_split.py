@@ -487,6 +487,7 @@ def run_stratified_split(
     seed: int = 42,
     dry_run: bool = False,
     use_manifests: bool = True,
+    gloss_list: List[str] = None,
 ) -> Tuple[Dict, Dict]:
     """
     Run the complete stratified family-based splitting process.
@@ -498,6 +499,7 @@ def run_stratified_split(
         seed: Random seed
         dry_run: If True, don't create files
         use_manifests: If True, generate manifests instead of copying files
+        gloss_list: Optional list of glosses to include (filters to only these classes)
 
     Returns:
         Tuple of (splits dict, manifest dict)
@@ -510,10 +512,20 @@ def run_stratified_split(
     print(f"Mode: {'Manifest-based (no file copying)' if use_manifests else 'Copy files'}")
     print(f"Dry run: {dry_run}")
     print(f"Random seed: {seed}")
+    if gloss_list:
+        print(f"Filtering to {len(gloss_list)} classes from gloss_list")
 
     # Step 1: Scan and group into families
     print("\n[Step 1] Scanning dataset and grouping into families...")
     families_by_class = scan_augmented_dataset(input_dir)
+
+    # Filter to only classes in gloss_list if provided
+    if gloss_list:
+        gloss_set = set(g.lower() for g in gloss_list)
+        original_count = len(families_by_class)
+        families_by_class = {k: v for k, v in families_by_class.items() if k.lower() in gloss_set}
+        filtered_count = len(families_by_class)
+        print(f"  Filtered from {original_count} to {filtered_count} classes (gloss_list)")
 
     total_families = sum(len(v) for v in families_by_class.values())
     total_classes = len(families_by_class)
@@ -893,6 +905,7 @@ def run_two_phase_pipeline(
     dry_run: bool = False,
     landmark_config: str = '83pt',
     include_z: bool = True,
+    gloss_list: List[str] = None,
 ) -> Dict:
     """
     Run complete two-phase pipeline: split then balance train.
@@ -910,6 +923,7 @@ def run_two_phase_pipeline(
         dry_run: If True, don't generate files
         landmark_config: Landmark extraction config
         include_z: Whether to include z-coordinate (default True for 3D poses)
+        gloss_list: Optional list of glosses to include (filters to only these classes)
 
     Returns:
         Complete pipeline results
@@ -920,6 +934,8 @@ def run_two_phase_pipeline(
     print(f"\nPhase 1: Stratified family-based splitting (manifest-based)")
     print(f"Phase 2: Balance train to {target_train_samples} samples/class")
     print(f"         (new files added to pool, manifest updated)")
+    if gloss_list:
+        print(f"         (filtering to {len(gloss_list)} classes from gloss_list)")
 
     # Phase 1: Stratified split with manifests (no file copying)
     splits, manifest = run_stratified_split(
@@ -929,6 +945,7 @@ def run_two_phase_pipeline(
         seed=seed,
         dry_run=dry_run,
         use_manifests=True,  # Manifest-based, no file copying
+        gloss_list=gloss_list,
     )
 
     # Phase 2: Balance train (generates files in pool, updates train manifest)

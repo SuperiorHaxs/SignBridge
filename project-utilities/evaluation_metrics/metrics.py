@@ -52,6 +52,18 @@ try:
 except ImportError:
     QUALITY_SCORING_AVAILABLE = False
 
+# Try to import NLTK for lemmatization (Coverage v2)
+try:
+    import nltk
+    from nltk.stem import WordNetLemmatizer
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet', quiet=True)
+    NLTK_AVAILABLE = True
+except ImportError:
+    NLTK_AVAILABLE = False
+
 
 # ============================================================================
 # CONFIGURABLE METRIC WEIGHTS FOR COMPOSITE SCORE (CTQI)
@@ -73,6 +85,34 @@ METRIC_WEIGHTS = {
 # Verify weights sum to 1.0
 assert abs(sum(METRIC_WEIGHTS.values()) - 1.0) < 0.001, \
     f"Metric weights must sum to 1.0, got {sum(METRIC_WEIGHTS.values())}"
+
+
+# ============================================================================
+# CONFIGURABLE METRIC WEIGHTS FOR COMPOSITE SCORE V2 (CTQI v2)
+# ============================================================================
+# CTQI v2 uses a weighted geometric mean of three orthogonal dimensions:
+# - Gloss Accuracy: Did we recognize the signs correctly? (continuous, 0-100)
+# - Quality Score: Is the output grammatically fluent? (continuous, 0-100)
+# - Coverage F1: Does the output capture semantic content? (continuous, 0-100)
+#
+# Default: equal weights (1/3 each) - unbiased until PCA calibration is performed.
+# The geometric mean naturally penalizes imbalanced performance (cf. BLEU, UN HDI).
+# PTR is replaced by Coverage F1 because PTR is a binary derivative of Gloss
+# Accuracy (PTR=100 iff GA=100%), making it a redundant component.
+
+METRIC_WEIGHTS_V2 = {
+    'gloss_accuracy': 1/3,    # Sign recognition accuracy (33.3%)
+    'quality': 1/3,           # Reference-free grammaticality/fluency (33.3%)
+    'coverage_f1': 1/3        # Semantic content coverage (33.3%)
+}
+
+# Verify v2 weights sum to 1.0
+assert abs(sum(METRIC_WEIGHTS_V2.values()) - 1.0) < 0.001, \
+    f"CTQI v2 weights must sum to 1.0, got {sum(METRIC_WEIGHTS_V2.values())}"
+
+# Epsilon floor for geometric mean (prevents zero-product collapse)
+# A score of 0 becomes 1.0 on the 0-100 scale (0.01 on the 0-1 scale)
+CTQI_V2_EPSILON = 1.0
 
 
 # ============================================================================
@@ -587,6 +627,121 @@ def calculate_coverage(
 
 
 # ============================================================================
+# COVERAGE METRICS V2 (with lemmatization)
+# ============================================================================
+# Improved coverage that lemmatizes content words before matching.
+# "giving" matches "give", "candies" matches "candy", "likes" matches "like".
+# Falls back to original matching if NLTK is unavailable.
+
+# Extended function words set (includes pronouns and common particles)
+FUNCTION_WORDS_V2 = {
+    'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+    'should', 'may', 'might', 'must', 'can', 'of', 'to', 'in', 'on', 'at',
+    'for', 'with', 'from', 'by', 'about', 'as', 'into', 'through', 'during',
+    'before', 'after', 'above', 'below', 'between', 'under', 'over', 'and',
+    'or', 'but', 'if', 'then', 'so', 'than', 'that', 'this', 'these', 'those',
+    'i', 'me', 'my', 'you', 'your', 'he', 'she', 'it', 'we', 'they',
+    'him', 'her', 'its', 'our', 'their', 'not', 'no', 'yes',
+}
+
+
+def _lemmatize_word(word: str) -> str:
+    """Lemmatize a word by trying all POS tags, returning the shortest result."""
+    if not NLTK_AVAILABLE:
+        return word
+    lemmatizer = WordNetLemmatizer()
+    candidates = set()
+    for pos in ('n', 'v', 'a', 'r'):
+        candidates.add(lemmatizer.lemmatize(word, pos=pos))
+    return min(candidates, key=len)
+
+
+def _extract_content_words_v2(sentence: str) -> list:
+    """Extract and lemmatize content words from a sentence."""
+    translator = str.maketrans('', '', string.punctuation)
+    normalized = sentence.translate(translator).strip().lower()
+    words = [w for w in normalized.split() if w not in FUNCTION_WORDS_V2]
+    return [_lemmatize_word(w) for w in words]
+
+
+def _words_match_v2(word_a: str, word_b: str) -> bool:
+    """Check if two words match (exact, substring, or prefix)."""
+    if word_a == word_b:
+        return True
+    if word_a in word_b or word_b in word_a:
+        return True
+    if len(word_a) >= 4 and word_b.startswith(word_a[:4]):
+        return True
+    if len(word_b) >= 4 and word_a.startswith(word_b[:4]):
+        return True
+    return False
+
+
+def calculate_coverage_v2(
+    reference_sentence: str,
+    output_sentence: str
+) -> Dict[str, Any]:
+    """
+    Calculate semantic coverage metrics with lemmatization-improved matching.
+
+    Improvement over v1: lemmatizes content words before matching, so
+    'giving' matches 'give', 'candies' matches 'candy', etc.
+
+    Args:
+        reference_sentence: Reference sentence (ground truth)
+        output_sentence: Generated/predicted sentence
+
+    Returns:
+        dict with recall, precision, f1 (0-100), missing_words, hallucinated_words
+    """
+    try:
+        reference_words = _extract_content_words_v2(reference_sentence)
+        output_words = _extract_content_words_v2(output_sentence)
+
+        # Recall
+        matched_reference = []
+        missing_words = []
+        for ref_word in reference_words:
+            if any(_words_match_v2(ref_word, out_word) for out_word in output_words):
+                matched_reference.append(ref_word)
+            else:
+                missing_words.append(ref_word)
+        recall = len(matched_reference) / len(reference_words) if reference_words else 0
+
+        # Precision
+        matched_output = []
+        hallucinated_words = []
+        for out_word in output_words:
+            if any(_words_match_v2(out_word, ref_word) for ref_word in reference_words):
+                matched_output.append(out_word)
+            else:
+                hallucinated_words.append(out_word)
+        precision = len(matched_output) / len(output_words) if output_words else 0
+
+        # F1
+        if precision + recall > 0:
+            f1 = 2 * (precision * recall) / (precision + recall)
+        else:
+            f1 = 0
+
+        return {
+            'recall': recall * 100,
+            'precision': precision * 100,
+            'f1': f1 * 100,
+            'missing_words': missing_words,
+            'hallucinated_words': hallucinated_words,
+        }
+
+    except Exception as e:
+        print(f"ERROR: Coverage v2 calculation failed: {e}")
+        return {
+            'recall': None, 'precision': None, 'f1': None,
+            'missing_words': [], 'hallucinated_words': [],
+        }
+
+
+# ============================================================================
 # COMPOSITE SCORE (CTQI - Composite Translation Quality Index)
 # ============================================================================
 
@@ -652,6 +807,125 @@ def calculate_composite_score(
 
 
 # ============================================================================
+# COMPOSITE SCORE V2 (CTQI v2 - Weighted Geometric Mean)
+# ============================================================================
+
+def calculate_composite_score_v2(
+    gloss_accuracy: Optional[float] = None,
+    quality: Optional[float] = None,
+    coverage_f1: Optional[float] = None,
+    weights: Optional[Dict[str, float]] = None,
+    epsilon: float = CTQI_V2_EPSILON
+) -> Optional[float]:
+    """
+    Calculate Composite Translation Quality Index v2 (CTQI v2) using weighted geometric mean.
+
+    CTQI v2 improves on v1 by:
+    1. Using geometric mean instead of arithmetic mean - penalizes imbalanced performance,
+       consistent with BLEU and UN HDI methodology.
+    2. Replacing the binary PTR component with continuous Coverage F1 - an orthogonal
+       dimension measuring semantic completeness (PTR is redundant with Gloss Accuracy
+       since PTR=100 iff GA=100%).
+    3. Supporting data-driven weights via PCA (default: equal 1/3 each).
+
+    Formula: CTQI_v2 = ((GA/100)^w1 * (Q/100)^w2 * (CF1/100)^w3) * 100
+
+    All scores are floored at epsilon (default 1.0) to prevent zero-product collapse
+    in the geometric mean. This is standard practice in composite index construction
+    (cf. World Bank methodology).
+
+    Args:
+        gloss_accuracy: Gloss accuracy score (0-100, continuous)
+        quality: Quality score (0-100, continuous)
+        coverage_f1: Coverage F1 score (0-100, continuous)
+        weights: Optional custom weights dict (keys: 'gloss_accuracy', 'quality', 'coverage_f1').
+                 Must sum to 1.0. If None, uses METRIC_WEIGHTS_V2 (equal 1/3 each).
+        epsilon: Minimum score floor to prevent zero-product collapse (default: 1.0)
+
+    Returns:
+        CTQI v2 composite score (0-100) or None if no metrics available
+    """
+    import math
+
+    # Use provided weights or defaults
+    w = weights if weights is not None else METRIC_WEIGHTS_V2
+
+    # Collect available scores with their weight keys
+    available = {}
+    if gloss_accuracy is not None:
+        available['gloss_accuracy'] = max(gloss_accuracy, epsilon)
+    if quality is not None:
+        available['quality'] = max(quality, epsilon)
+    if coverage_f1 is not None:
+        available['coverage_f1'] = max(coverage_f1, epsilon)
+
+    # Need at least one score
+    if not available:
+        return None
+
+    # Renormalize weights for available components
+    available_weight_sum = sum(w.get(key, 1/3) for key in available)
+    if available_weight_sum == 0:
+        return None
+
+    # Compute weighted geometric mean: product of (score/100)^(normalized_weight), then * 100
+    log_sum = 0.0
+    for key, score in available.items():
+        normalized_weight = w.get(key, 1/3) / available_weight_sum
+        log_sum += normalized_weight * math.log(score / 100.0)
+
+    return math.exp(log_sum) * 100.0
+
+
+# ============================================================================
+# COMPOSITE SCORE V2 PREREQUISITE CHAIN (CTQI v2 - Prerequisite Chain)
+# ============================================================================
+# Redesigned CTQI that uses multiplication instead of weighted averaging.
+#
+# Formula: CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100) * 100
+#
+# - GA gates everything: wrong signs -> score collapses toward 0
+# - CF1 gates plausibility: missing meaning -> score collapses
+# - Plausibility modifies (0.5x to 1.0x): bad grammar halves score,
+#   but correct content is never zeroed out by poor fluency alone
+#
+# No arbitrary weights, no thresholds, no epsilon floors.
+
+def calculate_composite_score_v2_chain(
+    gloss_accuracy: float,
+    coverage_f1: float,
+    plausibility: float,
+) -> float:
+    """
+    Calculate CTQI v2 using the Prerequisite Chain formula.
+
+        CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100) * 100
+
+    Design rationale:
+    - Multiplication enforces that ALL dimensions must be strong.
+    - GA and CF1 are prerequisites: if either is 0, CTQI is 0.
+    - Plausibility is a modifier (0.5x-1.0x): even unreadable correct
+      output retains partial value. Bad grammar halves the score.
+    - No arbitrary weights. The structure IS the design.
+
+    Args:
+        gloss_accuracy: Sign recognition accuracy (0-100)
+        coverage_f1: Semantic coverage F1 score (0-100), use v2 with lemmatization
+        plausibility: Sentence plausibility score (0-100), grammar + semantics
+
+    Returns:
+        CTQI v2 prerequisite chain score (0-100)
+    """
+    ga = max(0.0, min(100.0, gloss_accuracy)) / 100.0
+    cf1 = max(0.0, min(100.0, coverage_f1)) / 100.0
+    p = max(0.0, min(100.0, plausibility)) / 100.0
+
+    plausibility_modifier = 0.5 + 0.5 * p
+
+    return ga * cf1 * plausibility_modifier * 100.0
+
+
+# ============================================================================
 # CONVENIENCE FUNCTIONS
 # ============================================================================
 
@@ -683,13 +957,21 @@ def calculate_all_metrics(
         'quality': calculate_quality_score(hypothesis, scorer=quality_scorer),
     }
 
-    # Calculate coverage
+    # Calculate coverage (v1 - original string matching)
     coverage = calculate_coverage(reference, hypothesis)
     results['coverage_recall'] = coverage['recall']
     results['coverage_precision'] = coverage['precision']
     results['coverage_f1'] = coverage['f1']
     results['missing_words'] = coverage['missing_words']
     results['hallucinated_words'] = coverage['hallucinated_words']
+
+    # Calculate coverage v2 (with lemmatization)
+    coverage_v2 = calculate_coverage_v2(reference, hypothesis)
+    results['coverage_recall_v2'] = coverage_v2['recall']
+    results['coverage_precision_v2'] = coverage_v2['precision']
+    results['coverage_f1_v2'] = coverage_v2['f1']
+    results['missing_words_v2'] = coverage_v2['missing_words']
+    results['hallucinated_words_v2'] = coverage_v2['hallucinated_words']
 
     # Calculate gloss accuracy and PTR if glosses provided
     if predicted_glosses is not None and original_glosses is not None:
@@ -704,16 +986,36 @@ def calculate_all_metrics(
             predicted_glosses, original_glosses
         )
 
-        # Calculate CTQI composite score (gloss_accuracy + quality + PTR)
+        # Calculate CTQI v1 composite score (gloss_accuracy + quality + PTR)
         results['ctqi'] = calculate_composite_score(
             gloss_accuracy=results['gloss_accuracy'],
             quality=results['quality'],
             perfect_translation_rate=results['perfect_translation_rate']
         )
+
+        # Calculate CTQI v2 geometric mean (gloss_accuracy + quality + coverage_f1)
+        results['ctqi_v2'] = calculate_composite_score_v2(
+            gloss_accuracy=results['gloss_accuracy'],
+            quality=results['quality'],
+            coverage_f1=results['coverage_f1']
+        )
+
+        # Calculate CTQI v2 prerequisite chain (GA * CF1_v2 * plausibility_modifier)
+        # Uses Quality Score as plausibility placeholder until LLM scorer is connected
+        if results['quality'] is not None and results['coverage_f1_v2'] is not None:
+            results['ctqi_v2_chain'] = calculate_composite_score_v2_chain(
+                gloss_accuracy=results['gloss_accuracy'],
+                coverage_f1=results['coverage_f1_v2'],
+                plausibility=results['quality'],  # placeholder for plausibility
+            )
+        else:
+            results['ctqi_v2_chain'] = None
     else:
         results['gloss_accuracy'] = None
         results['perfect_translation_rate'] = None
         results['ctqi'] = None
+        results['ctqi_v2'] = None
+        results['ctqi_v2_chain'] = None
 
     return results
 
@@ -781,11 +1083,20 @@ if __name__ == "__main__":
     print(f"  Quality: {quality:.2f}" if quality is not None else "  Quality: Not available")
 
     # Test Coverage
-    print("\n--- Coverage ---")
+    print("\n--- Coverage v1 ---")
     coverage = calculate_coverage(reference, hypothesis)
     print(f"  Recall: {coverage['recall']:.1f}%")
     print(f"  Precision: {coverage['precision']:.1f}%")
     print(f"  F1: {coverage['f1']:.1f}%")
+
+    # Test Coverage v2
+    print(f"\n--- Coverage v2 (lemmatized, NLTK={'Available' if NLTK_AVAILABLE else 'Not available'}) ---")
+    coverage_v2 = calculate_coverage_v2(reference, hypothesis)
+    print(f"  Recall: {coverage_v2['recall']:.1f}%")
+    print(f"  Precision: {coverage_v2['precision']:.1f}%")
+    print(f"  F1: {coverage_v2['f1']:.1f}%")
+    if coverage['f1'] != coverage_v2['f1']:
+        print(f"  Improvement: {coverage['f1']:.1f} -> {coverage_v2['f1']:.1f}")
 
     # Test Composite Score (CTQI)
     print("\n--- Composite Score (CTQI) ---")
@@ -806,6 +1117,42 @@ if __name__ == "__main__":
         perfect_translation_rate=ptr_mismatch
     )
     print(f"  CTQI (with mismatch): {ctqi_mismatch:.2f}" if ctqi_mismatch is not None else "  CTQI: Not available")
+
+    # Test Composite Score V2 (CTQI v2)
+    print("\n--- Composite Score V2 (CTQI v2 - Geometric Mean) ---")
+    print(f"  Weights: Equal 1/3 each (Gloss Accuracy, Quality, Coverage F1)")
+
+    ctqi_v2_perfect = calculate_composite_score_v2(
+        gloss_accuracy=accuracy['accuracy'],
+        quality=quality,
+        coverage_f1=coverage['f1']
+    )
+    print(f"  CTQI v2 (all correct): {ctqi_v2_perfect:.2f}" if ctqi_v2_perfect is not None else "  CTQI v2: Not available")
+
+    ctqi_v2_mismatch = calculate_composite_score_v2(
+        gloss_accuracy=accuracy_mismatch['accuracy'],
+        quality=quality,
+        coverage_f1=coverage['f1']
+    )
+    print(f"  CTQI v2 (with mismatch): {ctqi_v2_mismatch:.2f}" if ctqi_v2_mismatch is not None else "  CTQI v2: Not available")
+
+    # Test Prerequisite Chain (CTQI v2 Chain)
+    print("\n--- CTQI v2 Prerequisite Chain ---")
+    print(f"  Formula: (GA/100) * (CF1_v2/100) * (0.5 + 0.5 * P/100) * 100")
+
+    chain_perfect = calculate_composite_score_v2_chain(
+        gloss_accuracy=accuracy['accuracy'],
+        coverage_f1=coverage_v2['f1'],
+        plausibility=quality if quality is not None else 0,
+    )
+    print(f"  Chain (all correct): {chain_perfect:.2f}")
+
+    chain_mismatch = calculate_composite_score_v2_chain(
+        gloss_accuracy=accuracy_mismatch['accuracy'],
+        coverage_f1=coverage_v2['f1'],
+        plausibility=quality if quality is not None else 0,
+    )
+    print(f"  Chain (with mismatch): {chain_mismatch:.2f}")
 
     # Test all metrics at once
     print("\n--- All Metrics (convenience function) ---")
