@@ -1,0 +1,214 @@
+================================================================================
+FAILURE SCENARIO ANALYSIS - 53 Synthetic Evaluation Cases (v4 - Gemini)
+================================================================================
+Generated: 2026-02-16
+Source: evaluation_results.json (n=53 dataset with Gemini plausibility scoring)
+================================================================================
+
+OVERVIEW
+--------
+Total entries analyzed: 53
+Total glosses: 164
+Successful entries: 53 (100%)
+Entries with gloss mismatches: 18 (34.0%)
+Total gloss mismatches: 18
+
+================================================================================
+MISMATCH CLASSIFICATION
+================================================================================
+
+Type                              | Count | Percentage
+----------------------------------|-------|------------
+Model Prediction Errors           |    8  |   44.4%
+  (correct NOT in top-3)          |       |
+LLM Selection Errors              |   10  |   55.6%
+  (correct WAS in top-3)          |       |
+
+================================================================================
+CATEGORY A: MODEL PREDICTION ERRORS - LATER (8 cases)
+================================================================================
+Description: The correct gloss was NOT in the model's top-3 predictions
+Status: UNRECOVERABLE by LLM
+
+Entry | Ground Truth Glosses      | Mispredicted | Top-1 Prediction | Plausibility
+------|---------------------------|--------------|------------------|-------------
+  46  | LATER, WATER              | LATER        | drink            | 100 (good)
+  47  | LATER, HOT, WATER         | LATER        | drink            | 100 (good)
+  48  | LATER, GIVE, JACKET       | LATER        | drink            | 62
+  49  | LATER, FAMILY, ENJOY...   | LATER        | drink            | 100 (good)
+  50  | LATER, STUDY              | LATER        | drink            | 75
+  51  | LATER, GIVE, HELP         | LATER        | drink            | 94
+  52  | LATER, CHANGE             | LATER        | drink            | 96
+  53  | LATER, GIVE, APPLE        | LATER        | drink            | 74
+
+PATTERN IDENTIFIED:
+ALL 8 model prediction errors are LATER -> DRINK confusion.
+LATER does not appear in top-3 for these cases (drink, deaf, tall instead).
+
+PLAUSIBILITY NOTE:
+Even though LATER is wrong, the LLM creates plausible sentences with DRINK.
+"I drink water" (Plaus=100) is fluent even though it misses "later".
+
+ROOT CAUSE:
+The LATER sign is consistently misclassified as DRINK with 45.1% confidence.
+This is a MODEL TRAINING issue, not recoverable by LLM.
+
+================================================================================
+CATEGORY B: LLM SELECTION ERRORS - FINE/PAPER (1 case)
+================================================================================
+Description: FINE was top-1 correct, but LLM selected PAPER instead
+
+Entry | Ground Truth           | Top-1        | LLM Selected | Plausibility
+------|------------------------|--------------|--------------|-------------
+   9  | CHAIR, FINE, DOCTOR    | fine (34.4%) | paper (23.4%)| 100
+
+PATTERN: LLM swaps FINE -> PAPER when confidence is ~34%.
+Gemini gives Plausibility=100 because "The doctor has a chair and paper" is fluent.
+
+ROOT CAUSE:
+- PAPER as concrete noun is easier to incorporate into sentence
+- LLM doesn't understand FINE is correct despite lower confidence
+
+================================================================================
+CATEGORY C: LLM SELECTION ERRORS - COMPUTER/SON (3 cases)
+================================================================================
+Description: COMPUTER was in top-2, but LLM selected SON (top-1) instead
+
+Entry | Ground Truth               | Top-1      | Top-2         | Plausibility
+------|----------------------------|------------|---------------|-------------
+  43  | COMPUTER, PLAY, BASKETBALL | son (67.2%)| computer(20.5%)| 100
+  44  | COMPUTER, ENJOY, FAMILY    | son (67.2%)| computer(20.5%)| 43
+  45  | COMPUTER, TALL             | son (67.2%)| computer(20.5%)| 100
+
+PATTERN: LLM never recovers COMPUTER from top-2, always picks SON.
+
+PLAUSIBILITY NOTE:
+- "My son plays basketball" -> Plaus=100 (fluent but wrong)
+- "My son enjoys family" -> Plaus=43 (semantically odd)
+- "My son is tall" -> Plaus=100 (fluent but wrong)
+
+ROOT CAUSE:
+- SON at 67.2% is much higher than COMPUTER at 20.5%
+- SON creates grammatically valid sentences in most contexts
+
+================================================================================
+CATEGORY D: LLM SELECTION ERRORS - NEED/BOWLING or TELL (6 cases)
+================================================================================
+Description: NEED was in top-3 at 0.8%, but LLM selected BOWLING or TELL instead
+
+Entry | Ground Truth               | Top-1         | LLM Selected | Plausibility
+------|----------------------------|---------------|--------------|-------------
+  19  | FAMILY, NEED, HELP         | bowling(91.5%)| need (0.8%)  | 72 (wrong!)
+  35  | MAN, NEED, APPLE           | bowling(91.5%)| tell (1.1%)  | 84
+  36  | MAN, NEED, PAPER           | bowling(91.5%)| tell (1.1%)  | 78
+  39  | DOCTOR, NEED, HELP         | bowling(91.5%)| bowling      | 7 (!)
+  40  | MAN, NEED, HELP            | bowling(91.5%)| bowling/need | 100
+  41  | FAMILY, NEED, ORANGE       | bowling(91.5%)| tell (1.1%)  | 75
+
+NOTABLE: Entry #39 "The doctor helps with bowling" got Plausibility=7 (very low!)
+Gemini correctly identified this as semantically implausible.
+
+** SUCCESSFUL NEED RECOVERIES (10 cases) **
+  12  | FAMILY, NEED, CHANGE       | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  20  | DOCTOR, NEED, WATER        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  21  | MAN, NEED, JACKET          | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  31  | FAMILY, NEED, APPLE        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  32  | FAMILY, NEED, WATER        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  33  | DOCTOR, NEED, PAPER        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  34  | DOCTOR, NEED, CHAIR        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  37  | MAN, NEED, WATER           | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  38  | FAMILY, NEED, CHAIR        | bowling(91.5%)| need (0.8%)  | RECOVERED (100)
+  42  | DOCTOR, NEED, APPLE        | bowling(91.5%)| need (0.8%)  | RECOVERED (86)
+
+RECOVERY RATE: 10/16 = 62.5% (improved from 56.3% in v3)
+
+ROOT CAUSE FOR FAILURES:
+- When LLM picked TELL (1.1%) over NEED (0.8%), TELL is slightly higher confidence
+- Entry #19 shows LLM can fail even when it should recover
+
+================================================================================
+SUMMARY STATISTICS
+================================================================================
+
+Category                          | Count | % of Mismatches | Recovery Rate
+----------------------------------|-------|-----------------|---------------
+A. LATER->DRINK (Model Error)     |   8   |     44.4%       |    0/8 (0%)
+B. FINE->PAPER (LLM Error)        |   1   |      5.6%       |    0/1 (0%)
+C. COMPUTER->SON (LLM Error)      |   3   |     16.7%       |    0/3 (0%)
+D. NEED->TELL/BOWLING (LLM Error) |   6   |     33.3%       |  10/16 (62.5%)
+
+Total LLM Selection Errors: 10
+Potential improvement with better LLM: 10 glosses (6.1% of total)
+
+================================================================================
+GEMINI PLAUSIBILITY IMPACT
+================================================================================
+
+Gemini plausibility scoring highlights semantic issues:
+
+| Sentence                          | Gemini | GPT-2 | Assessment
+|-----------------------------------|--------|-------|------------------
+| "The doctor helps with bowling."  |    7   |  44   | Gemini catches semantic error
+| "My son enjoys family."           |   43   |  80   | Gemini catches oddness
+| "The deaf study."                 |   75   |   5   | GPT-2 was too harsh
+| "My son is tall."                 |  100   |  87   | Both agree it's fluent
+
+Gemini better distinguishes:
+- Grammatically correct but semantically wrong (lower scores)
+- Grammatically awkward but meaningful (higher scores than GPT-2)
+
+================================================================================
+CTQI v2 IMPACT ANALYSIS
+================================================================================
+
+Entries with negative CTQI v2 improvement: 4/53 (7.5%)
+
+Entry | Glosses                    | CTQI v2 Change | Primary Cause
+------|----------------------------|----------------|---------------------------
+   9  | CHAIR, FINE, DOCTOR        |     -9.1       | FINE->PAPER LLM error
+  39  | DOCTOR, NEED, HELP         |     -5.8       | NEED->BOWLING, Plaus=7
+   2  | STUDY, BEFORE, PLAY        |     -3.5       | Baseline was near-perfect
+   6  | BASKETBALL, PLAY, TIME     |     -1.0       | Quality dropped slightly
+
+================================================================================
+COMPARISON: v3 (GPT-2) vs v4 (Gemini)
+================================================================================
+
+Metric                     | v3 (GPT-2)| v4 (Gemini)| Improvement
+---------------------------|-----------|------------|------------
+Baseline CTQI v2           |   46.04   |   46.51    |   +0.47
+Model CTQI v2              |   67.79   |   76.05    |   +8.26
+Overall Improvement        |  +21.75   |  +29.55    |   +7.80
+Entries at 90-100          |    24     |    32      |     +8
+Entries negative delta     |     4     |     4      |     0
+NEED Recovery Rate         |   56.3%   |   62.5%    |   +6.2%
+
+KEY INSIGHT:
+Gemini plausibility rewards fluent translations more (100 vs ~85) while
+penalizing semantically broken ones more severely (7 vs 44).
+
+================================================================================
+RECOMMENDATIONS
+================================================================================
+
+1. LATER SIGN (Category A):
+   - CRITICAL: LATER never appears in top-3 predictions
+   - Need additional training data for LATER sign
+   - This is a MODEL issue, not fixable by LLM
+
+2. FINE/PAPER SWAP (Category B):
+   - Improve LLM prompt to prefer adjectives (fine) over nouns (paper)
+   - Consider confidence-based rules: don't swap from top-1 if < 35%
+
+3. COMPUTER/SON (Category C):
+   - SON at 67.2% creates grammatically valid sentences
+   - Need semantic filtering to detect object vs person contexts
+
+4. NEED/TELL/BOWLING (Category D):
+   - 62.5% recovery rate is good but can improve
+   - When LLM picks TELL over NEED, add bias toward common verbs
+   - Entry #39 shows Gemini correctly flags "bowling" as implausible (7)
+
+================================================================================
+END OF ANALYSIS
+================================================================================

@@ -115,6 +115,7 @@ config/settings.json.backup.*
 evaluation_results/
 project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results/
 project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results_*/
+!project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results_latest/
 
 # Application output files
 applications/closed-captions/detected_glosses.txt

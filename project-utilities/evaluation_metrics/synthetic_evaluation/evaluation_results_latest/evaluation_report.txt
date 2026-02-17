@@ -1,0 +1,2497 @@
+================================================================================
+GLOSS SELECTION DEBUG REPORT
+================================================================================
+
+Dataset: ../../../datasets/synthetic_sentences/synthetic_gloss_to_sentence_llm_dataset_43_glosses_50.json
+Total entries: 53
+Successful: 53 (100.0%)
+Failed: 0 (0.0%)
+
+================================================================================
+1. MODEL GLOSS ACCURACY - TOP-1 (Before LLM Selection)
+================================================================================
+Overall Accuracy: 137/164 (83.5%)
+Perfect Predictions (all glosses correct): 26/53 entries (49.1%)
+Average Per Entry: 81.9%
+
+================================================================================
+2. EFFECTIVE GLOSS ACCURACY (After LLM Selection from Top-K)
+================================================================================
+Overall Accuracy: 146/164 (89.0%)
+Perfect Predictions (all glosses correct): 35/53 entries (66.0%)
+Average Per Entry: 87.6%
+
+Improvement from LLM Selection: +5.5% (137/164 -> 146/164)
+Perfect Predictions Gained: 9 entries
+
+================================================================================
+3. GLOSS SELECTION BREAKDOWN
+================================================================================
+Total Gloss Positions: 164
+Correctly Selected from Top-K: 146 (89.0%)
+Incorrectly Selected from Top-K: 18 (11.0%)
+
+================================================================================
+4. MISMATCH ANALYSIS
+================================================================================
+Total Mismatches: 18
+  - LLM Selection Errors (correct answer WAS in top-3): 10 (55.6%)
+  - Model Prediction Errors (correct answer NOT in top-3): 8 (44.4%)
+
+** POTENTIAL IMPROVEMENT: 10 glosses could be fixed with better LLM prompting **
+
+================================================================================
+5. ENTRIES WITH SELECTION ERRORS (Detailed Breakdown)
+================================================================================
+
+Entry 9: CHAIR, FINE, DOCTOR
+  Reference: The doctor's chair is fine.
+  Predicted: The doctor has a chair and paper.
+  Selected Glosses: CHAIR, PAPER, DOCTOR
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'PAPER' (WRONG)
+      Should Be: 'FINE' (CORRECT)
+      Available in Top-3:
+        1. fine (34.4%) ← CORRECT!
+        2. paper (23.4%)
+        3. water (16.3%)
+
+Entry 19: FAMILY, NEED, HELP
+  Reference: The family needs help.
+  Predicted: My family needs to tell you about help.
+  Selected Glosses: FAMILY, TELL, HELP
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'TELL' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 35: MAN, NEED, APPLE
+  Reference: The man needs an apple.
+  Predicted: The man tells about the apple.
+  Selected Glosses: MAN, TELL, APPLE
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'TELL' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 36: MAN, NEED, PAPER
+  Reference: The man needs paper.
+  Predicted: The man tells about the paper.
+  Selected Glosses: MAN, TELL, PAPER
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'TELL' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 39: DOCTOR, NEED, HELP
+  Reference: The doctor needs help.
+  Predicted: The doctor is bowling to help.
+  Selected Glosses: DOCTOR, BOWLING, HELP
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'BOWLING' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 40: MAN, NEED, HELP
+  Reference: The man needs help.
+  Predicted: The man needs help with bowling.
+  Selected Glosses: MAN, BOWLING, HELP
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'BOWLING' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 41: FAMILY, NEED, ORANGE
+  Reference: The family needs an orange.
+  Predicted: The family will tell about the orange.
+  Selected Glosses: FAMILY, TELL, ORANGE
+  Mismatches (1):
+
+    Position 1: [LLM SELECTION ERROR]
+      LLM Selected: 'TELL' (WRONG)
+      Should Be: 'NEED' (CORRECT)
+      Available in Top-3:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) ← CORRECT!
+
+Entry 43: COMPUTER, PLAY, BASKETBALL
+  Reference: Play basketball on the computer.
+  Predicted: My son plays basketball.
+  Selected Glosses: SON, PLAY, BASKETBALL
+  Mismatches (1):
+
+    Position 0: [LLM SELECTION ERROR]
+      LLM Selected: 'SON' (WRONG)
+      Should Be: 'COMPUTER' (CORRECT)
+      Available in Top-3:
+        1. son (67.2%)
+        2. computer (20.5%) ← CORRECT!
+        3. study (1.4%)
+
+Entry 44: COMPUTER, ENJOY, FAMILY
+  Reference: The family enjoys the computer.
+  Predicted: My son enjoys the family.
+  Selected Glosses: SON, ENJOY, FAMILY
+  Mismatches (1):
+
+    Position 0: [LLM SELECTION ERROR]
+      LLM Selected: 'SON' (WRONG)
+      Should Be: 'COMPUTER' (CORRECT)
+      Available in Top-3:
+        1. son (67.2%)
+        2. computer (20.5%) ← CORRECT!
+        3. study (1.4%)
+
+Entry 45: COMPUTER, TALL
+  Reference: The computer is tall.
+  Predicted: My son is tall.
+  Selected Glosses: SON, TALL
+  Mismatches (1):
+
+    Position 0: [LLM SELECTION ERROR]
+      LLM Selected: 'SON' (WRONG)
+      Should Be: 'COMPUTER' (CORRECT)
+      Available in Top-3:
+        1. son (67.2%)
+        2. computer (20.5%) ← CORRECT!
+        3. study (1.4%)
+
+Entry 46: LATER, WATER
+  Reference: Water later.
+  Predicted: I drink water.
+  Selected Glosses: DRINK, WATER
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DRINK' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 47: LATER, HOT, WATER
+  Reference: Hot water later.
+  Predicted: Drink hot water.
+  Selected Glosses: DRINK, HOT, WATER
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DRINK' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 48: LATER, GIVE, JACKET
+  Reference: Give the jacket later.
+  Predicted: I drink and give a jacket.
+  Selected Glosses: DRINK, GIVE, JACKET
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DRINK' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 49: LATER, FAMILY, ENJOY, THANKSGIVING
+  Reference: The family enjoys Thanksgiving later.
+  Predicted: My family enjoys Thanksgiving.
+  Selected Glosses: drink, family, enjoy, thanksgiving
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'drink' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 50: LATER, STUDY
+  Reference: Study later.
+  Predicted: The deaf study.
+  Selected Glosses: DEAF, STUDY
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DEAF' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 51: LATER, GIVE, HELP
+  Reference: Give help later.
+  Predicted: Deaf people give help.
+  Selected Glosses: DEAF, GIVE, HELP
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DEAF' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 52: LATER, CHANGE
+  Reference: Change later.
+  Predicted: Drink to the change.
+  Selected Glosses: DRINK, CHANGE
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DRINK' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+Entry 53: LATER, GIVE, APPLE
+  Reference: Give the apple later.
+  Predicted: I drink and give an apple.
+  Selected Glosses: DRINK, GIVE, APPLE
+  Mismatches (1):
+
+    Position 0: [MODEL PREDICTION ERROR]
+      LLM Selected: 'DRINK' (WRONG)
+      Should Be: 'LATER' (CORRECT)
+      Available in Top-3:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+
+
+
+================================================================================
+PERFORMANCE METRICS
+================================================================================
+
+BASELINE BLEU: 25.67
+MODEL BLEU: 57.39
+AVERAGE BLEU IMPROVEMENT: +31.71
+ENTRIES WITH BLEU IMPROVEMENT: 35/53 (66.0%)
+AVERAGE BLEU IMPROVEMENT (of improved entries): +55.44
+
+BASELINE BERTScore: 91.48
+MODEL BERTScore: 95.68
+AVERAGE BERTScore IMPROVEMENT: +4.20
+ENTRIES WITH BERTScore IMPROVEMENT: 44/53 (83.0%)
+AVERAGE BERTScore IMPROVEMENT (of improved entries): +5.61
+
+BASELINE QUALITY: 31.73
+MODEL QUALITY: 71.52
+AVERAGE QUALITY IMPROVEMENT: +39.79
+ENTRIES WITH QUALITY IMPROVEMENT: 48/53 (90.6%)
+AVERAGE QUALITY IMPROVEMENT (of improved entries): +46.44
+
+BASELINE COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 80.3%
+AVERAGE PRECISION: 81.9%
+AVERAGE F1: 81.0%
+MODEL COVERAGE (vs Reference Sentence):
+AVERAGE RECALL: 87.7%
+AVERAGE PRECISION: 88.1%
+AVERAGE F1: 87.7%
+PERFECT RECALL: 35/53 (66.0%)
+ENTRIES WITH MISSING WORDS: 18/53 (18 total)
+ENTRIES WITH HALLUCINATIONS: 17/53 (18 total)
+AVERAGE RECALL IMPROVEMENT: +7.4%
+AVERAGE PRECISION IMPROVEMENT: +6.1%
+AVERAGE F1 IMPROVEMENT: +6.7%
+ENTRIES WITH RECALL IMPROVEMENT: 13/53 (24.5%)
+
+BASELINE PERFECT TRANSLATIONS: 26/53 (49.1%)
+MODEL PERFECT TRANSLATIONS: 35/53 (66.0%)
+PERFECT TRANSLATION IMPROVEMENT: +9 entries
+
+CTQI v2 FORMULA: (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100
+BASELINE CTQI v2: 46.51
+MODEL CTQI v2: 76.05
+AVERAGE CTQI v2 IMPROVEMENT: +29.55
+ENTRIES WITH CTQI v2 IMPROVEMENT: 49/53 (92.5%)
+AVERAGE CTQI v2 IMPROVEMENT (of improved entries): +32.35
+
+CTQI v2 GEOMEAN: Gloss Accuracy=33.3%, Quality=33.3%, Coverage F1=33.3% (geometric mean)
+BASELINE CTQI v2: 54.65
+MODEL CTQI v2: 80.81
+AVERAGE CTQI v2 IMPROVEMENT: +26.16
+ENTRIES WITH CTQI v2 IMPROVEMENT: 48/53 (90.6%)
+AVERAGE CTQI v2 IMPROVEMENT (of improved entries): +30.19
+
+GEMINI ALTERNATIVE USAGE (Top-2 or Top-3 instead of Top-1):
+TOTAL GLOSS POSITIONS: 164
+ALTERNATIVES USED: 17 (10.4%)
+ENTRIES WITH ALTERNATIVES: 17/53 (32.1%)
+
+
+DETAILED RESULTS:
+--------------------------------------------------------------------------------
+
+Entry 1:
+  Glosses: SON, PLAY, BASKETBALL
+  Reference: My son plays basketball.
+  Predicted: My son plays basketball.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: SON, PLAY, BASKETBALL
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 94.97
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.03
+  Baseline Quality: 58.19
+  Model Quality: 86.56
+  Quality Improvement: +28.36
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 75.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +25.00
+  Baseline CTQI v2 Geomean: 83.49
+  Model CTQI v2 Geomean: 95.30
+  CTQI v2 Geomean Improvement: +11.81
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 2:
+  Glosses: STUDY, BEFORE, PLAY
+  Reference: Study before playing.
+  Predicted: Study before the play.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: STUDY, BEFORE, PLAY
+  Baseline BLEU: 55.03
+  Model BLEU: 31.95
+  BLEU Improvement: -23.08
+  Baseline BERTScore: 95.96
+  Model BERTScore: 94.41
+  BERTScore Improvement: -1.55
+  Baseline Quality: 59.91
+  Model Quality: 84.76
+  Quality Improvement: +24.85
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 99.00
+  Model CTQI v2: 95.50
+  CTQI v2 Improvement: -3.50
+  Baseline CTQI v2 Geomean: 84.30
+  Model CTQI v2 Geomean: 94.64
+  CTQI v2 Geomean Improvement: +10.34
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 3:
+  Glosses: YEAR, BEFORE, CHANGE
+  Reference: It is a year before the change.
+  Predicted: A year before the change.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: YEAR, BEFORE, CHANGE
+  Baseline BLEU: 16.61
+  Model BLEU: 67.03
+  BLEU Improvement: +50.43
+  Baseline BERTScore: 90.19
+  Model BERTScore: 95.53
+  BERTScore Improvement: +5.34
+  Baseline Quality: 58.85
+  Model Quality: 88.38
+  Quality Improvement: +29.53
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 78.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +22.00
+  Baseline CTQI v2 Geomean: 83.80
+  Model CTQI v2 Geomean: 95.97
+  CTQI v2 Geomean Improvement: +12.17
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 4:
+  Glosses: DEAF, SON, PLAY, BASKETBALL
+  Reference: My deaf son plays basketball.
+  Predicted: The deaf son plays basketball.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: DEAF, SON, PLAY, BASKETBALL
+  Baseline BLEU: 27.53
+  Model BLEU: 66.87
+  BLEU Improvement: +39.34
+  Baseline BERTScore: 95.90
+  Model BERTScore: 99.91
+  BERTScore Improvement: +4.01
+  Baseline Quality: 28.47
+  Model Quality: 34.37
+  Quality Improvement: +5.90
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 75.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +25.00
+  Baseline CTQI v2 Geomean: 65.78
+  Model CTQI v2 Geomean: 70.05
+  CTQI v2 Geomean Improvement: +4.27
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 5:
+  Glosses: AFRICA, YEAR, BEFORE
+  Reference: I went to Africa a year before.
+  Predicted: A year before in Africa.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: AFRICA, YEAR, BEFORE
+  Baseline BLEU: 16.61
+  Model BLEU: 28.64
+  BLEU Improvement: +12.04
+  Baseline BERTScore: 89.23
+  Model BERTScore: 92.54
+  BERTScore Improvement: +3.31
+  Baseline Quality: 57.39
+  Model Quality: 69.46
+  Quality Improvement: +12.07
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 80.0%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 80.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: went
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 46.40
+  Model CTQI v2: 63.20
+  CTQI v2 Improvement: +16.80
+  Baseline CTQI v2 Geomean: 77.14
+  Model CTQI v2 Geomean: 82.21
+  CTQI v2 Geomean Improvement: +5.07
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 6:
+  Glosses: BASKETBALL, PLAY, TIME
+  Reference: Basketball playing time.
+  Predicted: Basketball play time.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: BASKETBALL, PLAY, TIME
+  Baseline BLEU: 34.67
+  Model BLEU: 34.67
+  BLEU Improvement: +0.00
+  Baseline BERTScore: 94.82
+  Model BERTScore: 95.68
+  BERTScore Improvement: +0.86
+  Baseline Quality: 74.94
+  Model Quality: 30.24
+  Quality Improvement: -44.70
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 76.00
+  Model CTQI v2: 75.00
+  CTQI v2 Improvement: -1.00
+  Baseline CTQI v2 Geomean: 90.83
+  Model CTQI v2 Geomean: 67.12
+  CTQI v2 Geomean Improvement: -23.71
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 7:
+  Glosses: AFRICA, HOT, TIME
+  Reference: Africa is hot this time.
+  Predicted: Africa is hot this time.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: AFRICA, HOT, TIME
+  Baseline BLEU: 20.37
+  Model BLEU: 100.00
+  BLEU Improvement: +79.63
+  Baseline BERTScore: 88.46
+  Model BERTScore: 100.00
+  BERTScore Improvement: +11.54
+  Baseline Quality: 38.79
+  Model Quality: 74.50
+  Quality Improvement: +35.71
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 95.50
+  CTQI v2 Improvement: +34.00
+  Baseline CTQI v2 Geomean: 72.93
+  Model CTQI v2 Geomean: 90.65
+  CTQI v2 Geomean Improvement: +17.73
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 8:
+  Glosses: TALL, SON, BASKETBALL
+  Reference: My tall son plays basketball.
+  Predicted: My tall son plays basketball.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: TALL, SON, BASKETBALL
+  Baseline BLEU: 32.34
+  Model BLEU: 100.00
+  BLEU Improvement: +67.66
+  Baseline BERTScore: 94.52
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.48
+  Baseline Quality: 9.35
+  Model Quality: 75.76
+  Quality Improvement: +66.41
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 85.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +25.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +14.3%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 50.14
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +49.86
+  Baseline CTQI v2 Geomean: 43.12
+  Model CTQI v2 Geomean: 91.16
+  CTQI v2 Geomean Improvement: +48.04
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 9:
+  Glosses: CHAIR, FINE, DOCTOR
+  Reference: The doctor's chair is fine.
+  Predicted: The doctor has a chair and paper.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: CHAIR, PAPER, DOCTOR
+  Effective Mismatches:
+    Position 1: LLM chose 'PAPER' but should be 'FINE'
+      Available top-k predictions:
+        1. fine (34.4%) [CORRECT!]
+        2. paper (23.4%)
+        3. water (16.3%)
+  Gloss Accuracy Improvement: -33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 7.81
+  BLEU Improvement: -9.99
+  Baseline BERTScore: 90.70
+  Model BERTScore: 90.83
+  BERTScore Improvement: +0.14
+  Baseline Quality: 14.86
+  Model Quality: 82.24
+  Quality Improvement: +67.38
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: -33.3%
+  Coverage Precision Improvement: -33.3%
+  Coverage F1 Improvement: -33.3%
+  Missing Words: fine
+  Hallucinated Words: paper
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: No
+  Baseline CTQI v2: 53.50
+  Model CTQI v2: 44.44
+  CTQI v2 Improvement: -9.06
+  Baseline CTQI v2 Geomean: 52.97
+  Model CTQI v2 Geomean: 71.50
+  CTQI v2 Geomean Improvement: +18.53
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'paper' (top-2, 23.4%) instead of 'fine' (top-1, 34.4%)
+  Status: success
+
+Entry 10:
+  Glosses: SON, WRONG, HELP
+  Reference: My son is wrong to help.
+  Predicted: My son is wrong to help.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: SON, WRONG, HELP
+  Baseline BLEU: 14.60
+  Model BLEU: 100.00
+  BLEU Improvement: +85.40
+  Baseline BERTScore: 89.35
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.65
+  Baseline Quality: 16.87
+  Model Quality: 79.08
+  Quality Improvement: +62.21
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 88.00
+  CTQI v2 Improvement: +26.50
+  Baseline CTQI v2 Geomean: 55.26
+  Model CTQI v2 Geomean: 92.47
+  CTQI v2 Geomean Improvement: +37.22
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 11:
+  Glosses: GIVE, JACKET, SON
+  Reference: Give the jacket to my son.
+  Predicted: Give the jacket to my son.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: GIVE, JACKET, SON
+  Baseline BLEU: 14.60
+  Model BLEU: 100.00
+  BLEU Improvement: +85.40
+  Baseline BERTScore: 91.05
+  Model BERTScore: 100.00
+  BERTScore Improvement: +8.95
+  Baseline Quality: 5.99
+  Model Quality: 91.57
+  Quality Improvement: +85.58
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 66.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +34.00
+  Baseline CTQI v2 Geomean: 39.14
+  Model CTQI v2 Geomean: 97.11
+  CTQI v2 Geomean Improvement: +57.97
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 12:
+  Glosses: FAMILY, NEED, CHANGE
+  Reference: The family needs change.
+  Predicted: The family needs to change.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: FAMILY, NEED, CHANGE
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 24.84
+  Model BLEU: 42.73
+  BLEU Improvement: +17.89
+  Baseline BERTScore: 90.75
+  Model BERTScore: 97.24
+  BERTScore Improvement: +6.49
+  Baseline Quality: 19.29
+  Model Quality: 88.41
+  Quality Improvement: +69.12
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 29.56
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +70.44
+  Baseline CTQI v2 Geomean: 44.09
+  Model CTQI v2 Geomean: 95.98
+  CTQI v2 Geomean Improvement: +51.88
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 13:
+  Glosses: WATER, GIVE, DOCTOR
+  Reference: The doctor gives water.
+  Predicted: Give water to the doctor.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: WATER, GIVE, DOCTOR
+  Baseline BLEU: 24.84
+  Model BLEU: 23.64
+  BLEU Improvement: -1.20
+  Baseline BERTScore: 93.75
+  Model BERTScore: 92.87
+  BERTScore Improvement: -0.88
+  Baseline Quality: 9.61
+  Model Quality: 91.46
+  Quality Improvement: +81.85
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +38.50
+  Baseline CTQI v2 Geomean: 45.81
+  Model CTQI v2 Geomean: 97.07
+  CTQI v2 Geomean Improvement: +51.26
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 14:
+  Glosses: STUDY, TIME, CHANGE
+  Reference: Study time changes.
+  Predicted: Study time for a change.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: STUDY, TIME, CHANGE
+  Baseline BLEU: 55.03
+  Model BLEU: 21.36
+  BLEU Improvement: -33.67
+  Baseline BERTScore: 96.01
+  Model BERTScore: 86.62
+  BERTScore Improvement: -9.39
+  Baseline Quality: 66.10
+  Model Quality: 87.30
+  Quality Improvement: +21.20
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 72.00
+  Model CTQI v2: 97.00
+  CTQI v2 Improvement: +25.00
+  Baseline CTQI v2 Geomean: 87.11
+  Model CTQI v2 Geomean: 95.57
+  CTQI v2 Geomean Improvement: +8.46
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 15:
+  Glosses: TALL, MAN, GIVE, APPLE, SON
+  Reference: The tall man gives an apple to my son.
+  Predicted: The tall man gives the apple to my son.
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: TALL, MAN, GIVE, APPLE, SON
+  Baseline BLEU: 11.42
+  Model BLEU: 59.69
+  BLEU Improvement: +48.28
+  Baseline BERTScore: 91.45
+  Model BERTScore: 98.43
+  BERTScore Improvement: +6.97
+  Baseline Quality: 8.41
+  Model Quality: 86.81
+  Quality Improvement: +78.40
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 66.50
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +33.50
+  Baseline CTQI v2 Geomean: 43.81
+  Model CTQI v2 Geomean: 95.39
+  CTQI v2 Geomean Improvement: +51.58
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 16:
+  Glosses: FAMILY, ENJOY, PLAY, BASKETBALL, THURSDAY
+  Reference: The family enjoys playing basketball on Thursday.
+  Predicted: The family enjoys playing basketball on Thursday.
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: FAMILY, ENJOY, PLAY, BASKETBALL, THURSDAY
+  Baseline BLEU: 9.42
+  Model BLEU: 100.00
+  BLEU Improvement: +90.58
+  Baseline BERTScore: 92.48
+  Model BERTScore: 100.00
+  BERTScore Improvement: +7.52
+  Baseline Quality: 29.25
+  Model Quality: 82.26
+  Quality Improvement: +53.01
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 74.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +26.00
+  Baseline CTQI v2 Geomean: 66.38
+  Model CTQI v2 Geomean: 93.70
+  CTQI v2 Geomean Improvement: +27.32
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 17:
+  Glosses: DEAF, SON, GIVE, HELP, DOCTOR
+  Reference: My deaf son gives help to the doctor.
+  Predicted: The deaf son gives help to the doctor.
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: DEAF, SON, GIVE, HELP, DOCTOR
+  Baseline BLEU: 13.94
+  Model BLEU: 84.09
+  BLEU Improvement: +70.15
+  Baseline BERTScore: 95.55
+  Model BERTScore: 99.89
+  BERTScore Improvement: +4.33
+  Baseline Quality: 8.90
+  Model Quality: 77.01
+  Quality Improvement: +68.11
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 97.00
+  CTQI v2 Improvement: +35.50
+  Baseline CTQI v2 Geomean: 44.65
+  Model CTQI v2 Geomean: 91.66
+  CTQI v2 Geomean Improvement: +47.01
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 18:
+  Glosses: STUDY, TIME, BEFORE, PLAY, BASKETBALL
+  Reference: Study time is before playing basketball.
+  Predicted: Study time before playing basketball.
+  Model Gloss Accuracy (top-1): 5/5 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 5/5 (100.0%)
+  Effective Glosses: STUDY, TIME, BEFORE, PLAY, BASKETBALL
+  Baseline BLEU: 20.80
+  Model BLEU: 40.94
+  BLEU Improvement: +20.14
+  Baseline BERTScore: 95.38
+  Model BERTScore: 95.85
+  BERTScore Improvement: +0.47
+  Baseline Quality: 53.14
+  Model Quality: 62.89
+  Quality Improvement: +9.75
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 66.00
+  Model CTQI v2: 81.00
+  CTQI v2 Improvement: +15.00
+  Baseline CTQI v2 Geomean: 81.00
+  Model CTQI v2 Geomean: 85.67
+  CTQI v2 Geomean Improvement: +4.68
+  LLM Alternatives Used: 0/5
+  Status: success
+
+Entry 19:
+  Glosses: FAMILY, NEED, HELP
+  Reference: The family needs help.
+  Predicted: My family needs to tell you about help.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: FAMILY, TELL, HELP
+  Effective Mismatches:
+    Position 1: LLM chose 'TELL' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 24.84
+  Model BLEU: 12.22
+  BLEU Improvement: -12.62
+  Baseline BERTScore: 89.61
+  Model BERTScore: 93.05
+  BERTScore Improvement: +3.44
+  Baseline Quality: 17.66
+  Model Quality: 91.51
+  Quality Improvement: +73.85
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +8.3%
+  Coverage F1 Improvement: +19.0%
+  Hallucinated Words: tell
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 29.33
+  Model CTQI v2: 49.14
+  CTQI v2 Improvement: +19.81
+  Baseline CTQI v2 Geomean: 42.82
+  Model CTQI v2 Geomean: 80.57
+  CTQI v2 Geomean Improvement: +37.75
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'tell' (top-2, 1.1%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 20:
+  Glosses: DOCTOR, NEED, WATER
+  Reference: The doctor needs water.
+  Predicted: The doctor needs water.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: DOCTOR, NEED, WATER
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 89.72
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.28
+  Baseline Quality: 15.34
+  Model Quality: 45.02
+  Quality Improvement: +29.68
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 24.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +76.00
+  Baseline CTQI v2 Geomean: 40.85
+  Model CTQI v2 Geomean: 76.64
+  CTQI v2 Geomean Improvement: +35.79
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 21:
+  Glosses: MAN, NEED, JACKET
+  Reference: The man needs a jacket.
+  Predicted: The man needs a jacket.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: MAN, NEED, JACKET
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 100.00
+  BLEU Improvement: +82.20
+  Baseline BERTScore: 89.93
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.07
+  Baseline Quality: 27.11
+  Model Quality: 78.99
+  Quality Improvement: +51.89
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 32.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +68.00
+  Baseline CTQI v2 Geomean: 49.39
+  Model CTQI v2 Geomean: 92.44
+  CTQI v2 Geomean Improvement: +43.05
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 22:
+  Glosses: THURSDAY, DOCTOR, HELP
+  Reference: The doctor helps on Thursday.
+  Predicted: On Thursday, the doctor will help.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: THURSDAY, DOCTOR, HELP
+  Baseline BLEU: 17.80
+  Model BLEU: 22.96
+  BLEU Improvement: +5.16
+  Baseline BERTScore: 90.37
+  Model BERTScore: 92.28
+  BERTScore Improvement: +1.91
+  Baseline Quality: 0.00
+  Model Quality: 78.65
+  Quality Improvement: +78.65
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 66.50
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +33.50
+  Baseline CTQI v2 Geomean: 21.54
+  Model CTQI v2 Geomean: 92.30
+  CTQI v2 Geomean Improvement: +70.76
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 23:
+  Glosses: WRONG, GIVE, PAPER
+  Reference: It is wrong to give the paper.
+  Predicted: It is wrong to give the paper.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: WRONG, GIVE, PAPER
+  Baseline BLEU: 10.46
+  Model BLEU: 100.00
+  BLEU Improvement: +89.54
+  Baseline BERTScore: 91.57
+  Model BERTScore: 100.00
+  BERTScore Improvement: +8.43
+  Baseline Quality: 16.39
+  Model Quality: 87.24
+  Quality Improvement: +70.85
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 92.00
+  CTQI v2 Improvement: +30.50
+  Baseline CTQI v2 Geomean: 54.73
+  Model CTQI v2 Geomean: 95.55
+  CTQI v2 Geomean Improvement: +40.82
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 24:
+  Glosses: HOT, WATER, DOCTOR
+  Reference: The doctor needs hot water.
+  Predicted: The hot water is for the doctor.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: HOT, WATER, DOCTOR
+  Baseline BLEU: 32.34
+  Model BLEU: 18.58
+  BLEU Improvement: -13.77
+  Baseline BERTScore: 89.56
+  Model BERTScore: 93.27
+  BERTScore Improvement: +3.72
+  Baseline Quality: 43.65
+  Model Quality: 87.03
+  Quality Improvement: +43.38
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 85.7%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: needs
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 55.29
+  Model CTQI v2: 79.71
+  CTQI v2 Improvement: +24.43
+  Baseline CTQI v2 Geomean: 72.06
+  Model CTQI v2 Geomean: 90.69
+  CTQI v2 Geomean Improvement: +18.64
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 25:
+  Glosses: MAN, TALL
+  Reference: The man is tall.
+  Predicted: The man is tall.
+  Model Gloss Accuracy (top-1): 2/2 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 2/2 (100.0%)
+  Effective Glosses: MAN, TALL
+  Baseline BLEU: 26.01
+  Model BLEU: 100.00
+  BLEU Improvement: +73.99
+  Baseline BERTScore: 94.03
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.97
+  Baseline Quality: 38.54
+  Model Quality: 80.58
+  Quality Improvement: +42.05
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +38.50
+  Baseline CTQI v2 Geomean: 72.77
+  Model CTQI v2 Geomean: 93.06
+  CTQI v2 Geomean Improvement: +20.29
+  LLM Alternatives Used: 0/2
+  Status: success
+
+Entry 26:
+  Glosses: ORANGE, APPLE, ENJOY, FAMILY
+  Reference: The family enjoys orange and apple.
+  Predicted: The orange and apple are enjoyed by my family.
+  Model Gloss Accuracy (top-1): 4/4 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 4/4 (100.0%)
+  Effective Glosses: ORANGE, APPLE, ENJOY, FAMILY
+  Baseline BLEU: 12.75
+  Model BLEU: 20.16
+  BLEU Improvement: +7.41
+  Baseline BERTScore: 91.90
+  Model BERTScore: 93.73
+  BERTScore Improvement: +1.83
+  Baseline Quality: 8.49
+  Model Quality: 81.90
+  Quality Improvement: +73.40
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 54.00
+  Model CTQI v2: 97.00
+  CTQI v2 Improvement: +43.00
+  Baseline CTQI v2 Geomean: 43.96
+  Model CTQI v2 Geomean: 93.56
+  CTQI v2 Geomean Improvement: +49.60
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 27:
+  Glosses: AFRICA, HOT
+  Reference: Africa is hot.
+  Predicted: Africa is hot.
+  Model Gloss Accuracy (top-1): 2/2 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 2/2 (100.0%)
+  Effective Glosses: AFRICA, HOT
+  Baseline BLEU: 42.89
+  Model BLEU: 100.00
+  BLEU Improvement: +57.11
+  Baseline BERTScore: 90.26
+  Model BERTScore: 100.00
+  BERTScore Improvement: +9.74
+  Baseline Quality: 20.83
+  Model Quality: 79.08
+  Quality Improvement: +58.25
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 61.50
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +38.50
+  Baseline CTQI v2 Geomean: 59.28
+  Model CTQI v2 Geomean: 92.48
+  CTQI v2 Geomean Improvement: +33.20
+  LLM Alternatives Used: 0/2
+  Status: success
+
+Entry 28:
+  Glosses: MAN, DRINK, WATER
+  Reference: The man drinks water.
+  Predicted: The man drinks water.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: MAN, DRINK, WATER
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 94.17
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.83
+  Baseline Quality: 58.68
+  Model Quality: 64.85
+  Quality Improvement: +6.17
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 81.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +19.00
+  Baseline CTQI v2 Geomean: 83.72
+  Model CTQI v2 Geomean: 86.56
+  CTQI v2 Geomean Improvement: +2.84
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 29:
+  Glosses: FAMILY, ENJOY, THANKSGIVING
+  Reference: My family enjoys Thanksgiving.
+  Predicted: My family enjoys Thanksgiving.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: FAMILY, ENJOY, THANKSGIVING
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 94.24
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.76
+  Baseline Quality: 64.21
+  Model Quality: 59.42
+  Quality Improvement: -4.79
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 83.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +17.00
+  Baseline CTQI v2 Geomean: 86.27
+  Model CTQI v2 Geomean: 84.07
+  CTQI v2 Geomean Improvement: -2.20
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 30:
+  Glosses: DOCTOR, GIVE, HELP
+  Reference: The doctor gives help.
+  Predicted: The doctor gives help.
+  Model Gloss Accuracy (top-1): 3/3 (100.0%)
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: DOCTOR, GIVE, HELP
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 94.81
+  Model BERTScore: 100.00
+  BERTScore Improvement: +5.19
+  Baseline Quality: 63.53
+  Model Quality: 48.92
+  Quality Improvement: -14.62
+  Baseline Coverage Recall: 100.0%
+  Baseline Coverage Precision: 100.0%
+  Baseline Coverage F1: 100.0%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Baseline Perfect Translation: Yes
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 75.00
+  Model CTQI v2: 90.00
+  CTQI v2 Improvement: +15.00
+  Baseline CTQI v2 Geomean: 85.97
+  Model CTQI v2 Geomean: 78.79
+  CTQI v2 Geomean Improvement: -7.17
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 31:
+  Glosses: FAMILY, NEED, APPLE
+  Reference: The family needs an apple.
+  Predicted: The family needs an apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: FAMILY, NEED, APPLE
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 100.00
+  BLEU Improvement: +82.20
+  Baseline BERTScore: 89.32
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.68
+  Baseline Quality: 0.00
+  Model Quality: 58.97
+  Quality Improvement: +58.97
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 23.78
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +76.22
+  Baseline CTQI v2 Geomean: 16.44
+  Model CTQI v2 Geomean: 83.86
+  CTQI v2 Geomean Improvement: +67.42
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 32:
+  Glosses: FAMILY, NEED, WATER
+  Reference: The family needs water.
+  Predicted: The family needs water.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: FAMILY, NEED, WATER
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 89.53
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.47
+  Baseline Quality: 15.65
+  Model Quality: 61.61
+  Quality Improvement: +45.96
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 26.67
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +73.33
+  Baseline CTQI v2 Geomean: 41.13
+  Model CTQI v2 Geomean: 85.09
+  CTQI v2 Geomean Improvement: +43.97
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 33:
+  Glosses: DOCTOR, NEED, PAPER
+  Reference: The doctor needs paper.
+  Predicted: The doctor needs the paper.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: DOCTOR, NEED, PAPER
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 24.84
+  Model BLEU: 42.73
+  BLEU Improvement: +17.89
+  Baseline BERTScore: 88.83
+  Model BERTScore: 96.94
+  BERTScore Improvement: +8.11
+  Baseline Quality: 14.35
+  Model Quality: 61.00
+  Quality Improvement: +46.65
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 23.78
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +76.22
+  Baseline CTQI v2 Geomean: 39.96
+  Model CTQI v2 Geomean: 84.81
+  CTQI v2 Geomean Improvement: +44.85
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 34:
+  Glosses: DOCTOR, NEED, CHAIR
+  Reference: The doctor needs a chair.
+  Predicted: The doctor needs a chair.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: DOCTOR, NEED, CHAIR
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 100.00
+  BLEU Improvement: +82.20
+  Baseline BERTScore: 90.02
+  Model BERTScore: 100.00
+  BERTScore Improvement: +9.98
+  Baseline Quality: 27.58
+  Model Quality: 70.81
+  Quality Improvement: +43.23
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 24.00
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +76.00
+  Baseline CTQI v2 Geomean: 49.68
+  Model CTQI v2 Geomean: 89.13
+  CTQI v2 Geomean Improvement: +39.46
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 35:
+  Glosses: MAN, NEED, APPLE
+  Reference: The man needs an apple.
+  Predicted: The man tells about the apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: MAN, TELL, APPLE
+  Effective Mismatches:
+    Position 1: LLM chose 'TELL' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 17.80
+  Model BLEU: 17.97
+  BLEU Improvement: +0.17
+  Baseline BERTScore: 88.50
+  Model BERTScore: 91.09
+  BERTScore Improvement: +2.60
+  Baseline Quality: 0.00
+  Model Quality: 59.02
+  Quality Improvement: +59.02
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: needs
+  Hallucinated Words: tells
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 26.67
+  Model CTQI v2: 40.89
+  CTQI v2 Improvement: +14.22
+  Baseline CTQI v2 Geomean: 16.44
+  Model CTQI v2 Geomean: 64.01
+  CTQI v2 Geomean Improvement: +47.57
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'tell' (top-2, 1.1%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 36:
+  Glosses: MAN, NEED, PAPER
+  Reference: The man needs paper.
+  Predicted: The man tells about the paper.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: MAN, TELL, PAPER
+  Effective Mismatches:
+    Position 1: LLM chose 'TELL' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 24.84
+  Model BLEU: 17.97
+  BLEU Improvement: -6.88
+  Baseline BERTScore: 89.14
+  Model BERTScore: 90.57
+  BERTScore Improvement: +1.43
+  Baseline Quality: 8.36
+  Model Quality: 66.66
+  Quality Improvement: +58.30
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: needs
+  Hallucinated Words: tells
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 28.67
+  Model CTQI v2: 39.56
+  CTQI v2 Improvement: +10.89
+  Baseline CTQI v2 Geomean: 33.37
+  Model CTQI v2 Geomean: 66.66
+  CTQI v2 Geomean Improvement: +33.29
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'tell' (top-2, 1.1%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 37:
+  Glosses: MAN, NEED, WATER
+  Reference: The man needs water.
+  Predicted: The man needs water.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: MAN, NEED, WATER
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 24.84
+  Model BLEU: 100.00
+  BLEU Improvement: +75.16
+  Baseline BERTScore: 89.25
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.75
+  Baseline Quality: 11.02
+  Model Quality: 59.89
+  Quality Improvement: +48.87
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 28.44
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +71.56
+  Baseline CTQI v2 Geomean: 36.59
+  Model CTQI v2 Geomean: 84.29
+  CTQI v2 Geomean Improvement: +47.70
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 38:
+  Glosses: FAMILY, NEED, CHAIR
+  Reference: The family needs a chair.
+  Predicted: The family needs a chair.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: FAMILY, NEED, CHAIR
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 100.00
+  BLEU Improvement: +82.20
+  Baseline BERTScore: 90.07
+  Model BERTScore: 100.00
+  BERTScore Improvement: +9.93
+  Baseline Quality: 32.36
+  Model Quality: 79.70
+  Quality Improvement: +47.34
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 27.78
+  Model CTQI v2: 100.00
+  CTQI v2 Improvement: +72.22
+  Baseline CTQI v2 Geomean: 52.39
+  Model CTQI v2 Geomean: 92.72
+  CTQI v2 Geomean Improvement: +40.32
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 39:
+  Glosses: DOCTOR, NEED, HELP
+  Reference: The doctor needs help.
+  Predicted: The doctor is bowling to help.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: DOCTOR, BOWLING, HELP
+  Effective Mismatches:
+    Position 1: LLM chose 'BOWLING' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 24.84
+  Model BLEU: 17.97
+  BLEU Improvement: -6.88
+  Baseline BERTScore: 90.28
+  Model BERTScore: 92.88
+  BERTScore Improvement: +2.59
+  Baseline Quality: 20.73
+  Model Quality: 61.08
+  Quality Improvement: +40.35
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: needs
+  Hallucinated Words: bowling
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 29.56
+  Model CTQI v2: 23.78
+  CTQI v2 Improvement: -5.78
+  Baseline CTQI v2 Geomean: 45.16
+  Model CTQI v2 Geomean: 64.75
+  CTQI v2 Geomean Improvement: +19.59
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 40:
+  Glosses: MAN, NEED, HELP
+  Reference: The man needs help.
+  Predicted: The man needs help with bowling.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: MAN, BOWLING, HELP
+  Effective Mismatches:
+    Position 1: LLM chose 'BOWLING' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 24.84
+  Model BLEU: 50.81
+  BLEU Improvement: +25.97
+  Baseline BERTScore: 89.36
+  Model BERTScore: 95.32
+  BERTScore Improvement: +5.96
+  Baseline Quality: 20.87
+  Model Quality: 70.54
+  Quality Improvement: +49.67
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 75.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +8.3%
+  Coverage F1 Improvement: +19.0%
+  Hallucinated Words: bowling
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 29.56
+  Model CTQI v2: 57.14
+  CTQI v2 Improvement: +27.59
+  Baseline CTQI v2 Geomean: 45.26
+  Model CTQI v2 Geomean: 73.87
+  CTQI v2 Geomean Improvement: +28.61
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 41:
+  Glosses: FAMILY, NEED, ORANGE
+  Reference: The family needs an orange.
+  Predicted: The family will tell about the orange.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: FAMILY, TELL, ORANGE
+  Effective Mismatches:
+    Position 1: LLM chose 'TELL' but should be 'NEED'
+      Available top-k predictions:
+        1. bowling (91.5%)
+        2. tell (1.1%)
+        3. need (0.8%) [CORRECT!]
+  Baseline BLEU: 17.80
+  Model BLEU: 14.54
+  BLEU Improvement: -3.26
+  Baseline BERTScore: 89.13
+  Model BERTScore: 91.43
+  BERTScore Improvement: +2.29
+  Baseline Quality: 8.55
+  Model Quality: 64.21
+  Quality Improvement: +55.66
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: needs
+  Hallucinated Words: tell
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 24.00
+  Model CTQI v2: 38.89
+  CTQI v2 Improvement: +14.89
+  Baseline CTQI v2 Geomean: 33.62
+  Model CTQI v2 Geomean: 65.84
+  CTQI v2 Geomean Improvement: +32.22
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'tell' (top-2, 1.1%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 42:
+  Glosses: DOCTOR, NEED, APPLE
+  Reference: The doctor needs an apple.
+  Predicted: The doctor needs an apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 1: 'bowling' vs 'NEED'
+  Effective Gloss Accuracy (LLM-selected): 3/3 (100.0%)
+  Effective Glosses: DOCTOR, NEED, APPLE
+  Gloss Accuracy Improvement: +33.3%
+  Baseline BLEU: 17.80
+  Model BLEU: 100.00
+  BLEU Improvement: +82.20
+  Baseline BERTScore: 89.13
+  Model BERTScore: 100.00
+  BERTScore Improvement: +10.87
+  Baseline Quality: 0.00
+  Model Quality: 52.72
+  Quality Improvement: +52.72
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 100.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 100.0%
+  Coverage Recall Improvement: +33.3%
+  Coverage Precision Improvement: +33.3%
+  Coverage F1 Improvement: +33.3%
+  Baseline Perfect Translation: No
+  Model Perfect Translation: Yes
+  Baseline CTQI v2: 24.00
+  Model CTQI v2: 93.00
+  CTQI v2 Improvement: +69.00
+  Baseline CTQI v2 Geomean: 16.44
+  Model CTQI v2 Geomean: 80.78
+  CTQI v2 Geomean Improvement: +64.34
+  LLM Alternatives Used: 1/3
+    Position 1: Used 'need' (top-3, 0.8%) instead of 'bowling' (top-1, 91.5%)
+  Status: success
+
+Entry 43:
+  Glosses: COMPUTER, PLAY, BASKETBALL
+  Reference: Play basketball on the computer.
+  Predicted: My son plays basketball.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'son' vs 'COMPUTER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: SON, PLAY, BASKETBALL
+  Effective Mismatches:
+    Position 0: LLM chose 'SON' but should be 'COMPUTER'
+      Available top-k predictions:
+        1. son (67.2%)
+        2. computer (20.5%) [CORRECT!]
+        3. study (1.4%)
+  Baseline BLEU: 28.25
+  Model BLEU: 12.44
+  BLEU Improvement: -15.81
+  Baseline BERTScore: 92.74
+  Model BERTScore: 90.76
+  BERTScore Improvement: -1.98
+  Baseline Quality: 58.19
+  Model Quality: 86.56
+  Quality Improvement: +28.36
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: computer
+  Hallucinated Words: son
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 33.33
+  Model CTQI v2: 44.44
+  CTQI v2 Improvement: +11.11
+  Baseline CTQI v2 Geomean: 63.71
+  Model CTQI v2 Geomean: 72.73
+  CTQI v2 Geomean Improvement: +9.02
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 44:
+  Glosses: COMPUTER, ENJOY, FAMILY
+  Reference: The family enjoys the computer.
+  Predicted: My son enjoys the family.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'son' vs 'COMPUTER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: SON, ENJOY, FAMILY
+  Effective Mismatches:
+    Position 0: LLM chose 'SON' but should be 'COMPUTER'
+      Available top-k predictions:
+        1. son (67.2%)
+        2. computer (20.5%) [CORRECT!]
+        3. study (1.4%)
+  Baseline BLEU: 14.13
+  Model BLEU: 28.12
+  BLEU Improvement: +13.99
+  Baseline BERTScore: 91.94
+  Model BERTScore: 93.56
+  BERTScore Improvement: +1.62
+  Baseline Quality: 41.23
+  Model Quality: 80.17
+  Quality Improvement: +38.94
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: computer
+  Hallucinated Words: son
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 29.78
+  Model CTQI v2: 31.78
+  CTQI v2 Improvement: +2.00
+  Baseline CTQI v2 Geomean: 56.80
+  Model CTQI v2 Geomean: 70.89
+  CTQI v2 Geomean Improvement: +14.09
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 45:
+  Glosses: COMPUTER, TALL
+  Reference: The computer is tall.
+  Predicted: My son is tall.
+  Model Gloss Accuracy (top-1): 1/2 (50.0%)
+  Top-1 Mismatches:
+    Position 0: 'son' vs 'COMPUTER'
+  Effective Gloss Accuracy (LLM-selected): 1/2 (50.0%)
+  Effective Glosses: SON, TALL
+  Effective Mismatches:
+    Position 0: LLM chose 'SON' but should be 'COMPUTER'
+      Available top-k predictions:
+        1. son (67.2%)
+        2. computer (20.5%) [CORRECT!]
+        3. study (1.4%)
+  Baseline BLEU: 18.39
+  Model BLEU: 31.95
+  BLEU Improvement: +13.55
+  Baseline BERTScore: 92.79
+  Model BERTScore: 94.61
+  BERTScore Improvement: +1.82
+  Baseline Quality: 38.39
+  Model Quality: 87.17
+  Quality Improvement: +48.77
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 50.0%
+  Baseline Coverage F1: 50.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 50.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: computer
+  Hallucinated Words: son
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 15.38
+  Model CTQI v2: 25.00
+  CTQI v2 Improvement: +9.62
+  Baseline CTQI v2 Geomean: 45.79
+  Model CTQI v2 Geomean: 60.18
+  CTQI v2 Geomean Improvement: +14.39
+  LLM Alternatives Used: 0/2
+  Status: success
+
+Entry 46:
+  Glosses: LATER, WATER
+  Reference: Water later.
+  Predicted: I drink water.
+  Model Gloss Accuracy (top-1): 1/2 (50.0%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 1/2 (50.0%)
+  Effective Glosses: DRINK, WATER
+  Effective Mismatches:
+    Position 0: LLM chose 'DRINK' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 50.00
+  Model BLEU: 27.52
+  BLEU Improvement: -22.48
+  Baseline BERTScore: 87.27
+  Model BERTScore: 88.45
+  BERTScore Improvement: +1.18
+  Baseline Quality: 84.38
+  Model Quality: 79.55
+  Quality Improvement: -4.83
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 50.0%
+  Baseline Coverage F1: 50.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 50.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: drink
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 22.75
+  Model CTQI v2: 25.00
+  CTQI v2 Improvement: +2.25
+  Baseline CTQI v2 Geomean: 59.53
+  Model CTQI v2 Geomean: 58.37
+  CTQI v2 Geomean Improvement: -1.16
+  LLM Alternatives Used: 0/2
+  Status: success
+
+Entry 47:
+  Glosses: LATER, HOT, WATER
+  Reference: Hot water later.
+  Predicted: Drink hot water.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: DRINK, HOT, WATER
+  Effective Mismatches:
+    Position 0: LLM chose 'DRINK' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 55.03
+  Model BLEU: 55.03
+  BLEU Improvement: +0.00
+  Baseline BERTScore: 90.04
+  Model BERTScore: 91.67
+  BERTScore Improvement: +1.63
+  Baseline Quality: 83.05
+  Model Quality: 86.86
+  Quality Improvement: +3.80
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: drink
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 43.11
+  Model CTQI v2: 44.44
+  CTQI v2 Improvement: +1.33
+  Baseline CTQI v2 Geomean: 71.73
+  Model CTQI v2 Geomean: 72.81
+  CTQI v2 Geomean Improvement: +1.08
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 48:
+  Glosses: LATER, GIVE, JACKET
+  Reference: Give the jacket later.
+  Predicted: I drink and give a jacket.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: DRINK, GIVE, JACKET
+  Effective Mismatches:
+    Position 0: LLM chose 'DRINK' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 24.84
+  Model BLEU: 9.65
+  BLEU Improvement: -15.19
+  Baseline BERTScore: 91.26
+  Model BERTScore: 89.05
+  BERTScore Improvement: -2.21
+  Baseline Quality: 8.96
+  Model Quality: 62.78
+  Quality Improvement: +53.81
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: drink
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 24.00
+  Model CTQI v2: 36.00
+  CTQI v2 Improvement: +12.00
+  Baseline CTQI v2 Geomean: 34.15
+  Model CTQI v2 Geomean: 65.34
+  CTQI v2 Geomean Improvement: +31.19
+  LLM Alternatives Used: 0/3
+  Status: success
+
+Entry 49:
+  Glosses: LATER, FAMILY, ENJOY, THANKSGIVING
+  Reference: The family enjoys Thanksgiving later.
+  Predicted: My family enjoys Thanksgiving.
+  Model Gloss Accuracy (top-1): 3/4 (75.0%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 3/4 (75.0%)
+  Effective Glosses: drink, family, enjoy, thanksgiving
+  Effective Mismatches:
+    Position 0: LLM chose 'drink' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 14.79
+  Model BLEU: 46.31
+  BLEU Improvement: +31.51
+  Baseline BERTScore: 95.59
+  Model BERTScore: 97.13
+  BERTScore Improvement: +1.53
+  Baseline Quality: 46.50
+  Model Quality: 59.42
+  Quality Improvement: +12.92
+  Baseline Coverage Recall: 75.0%
+  Baseline Coverage Precision: 75.0%
+  Baseline Coverage F1: 75.0%
+  Model Coverage Recall: 75.0%
+  Model Coverage Precision: 100.0%
+  Model Coverage F1: 85.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +25.0%
+  Coverage F1 Improvement: +10.7%
+  Missing Words: later
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 34.59
+  Model CTQI v2: 64.29
+  CTQI v2 Improvement: +29.69
+  Baseline CTQI v2 Geomean: 63.95
+  Model CTQI v2 Geomean: 72.56
+  CTQI v2 Geomean Improvement: +8.60
+  LLM Alternatives Used: 0/4
+  Status: success
+
+Entry 50:
+  Glosses: LATER, STUDY
+  Reference: Study later.
+  Predicted: The deaf study.
+  Model Gloss Accuracy (top-1): 1/2 (50.0%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 1/2 (50.0%)
+  Effective Glosses: DEAF, STUDY
+  Effective Mismatches:
+    Position 0: LLM chose 'DEAF' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 50.00
+  Model BLEU: 27.52
+  BLEU Improvement: -22.48
+  Baseline BERTScore: 90.48
+  Model BERTScore: 88.50
+  BERTScore Improvement: -1.99
+  Baseline Quality: 56.55
+  Model Quality: 5.12
+  Quality Improvement: -51.43
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 50.0%
+  Baseline Coverage F1: 50.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 50.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: deaf
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 16.50
+  Model CTQI v2: 21.88
+  CTQI v2 Improvement: +5.38
+  Baseline CTQI v2 Geomean: 52.09
+  Model CTQI v2 Geomean: 23.40
+  CTQI v2 Geomean Improvement: -28.70
+  LLM Alternatives Used: 1/2
+    Position 0: Used 'deaf' (top-2, 14.7%) instead of 'drink' (top-1, 45.1%)
+  Status: success
+
+Entry 51:
+  Glosses: LATER, GIVE, HELP
+  Reference: Give help later.
+  Predicted: Deaf people give help.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: DEAF, GIVE, HELP
+  Effective Mismatches:
+    Position 0: LLM chose 'DEAF' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 55.03
+  Model BLEU: 31.95
+  BLEU Improvement: -23.08
+  Baseline BERTScore: 90.85
+  Model BERTScore: 87.69
+  BERTScore Improvement: -3.17
+  Baseline Quality: 39.89
+  Model Quality: 69.02
+  Quality Improvement: +29.13
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 57.1%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: -16.7%
+  Coverage F1 Improvement: -9.5%
+  Missing Words: later
+  Hallucinated Words: deaf, people
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 27.33
+  Model CTQI v2: 36.95
+  CTQI v2 Improvement: +9.62
+  Baseline CTQI v2 Geomean: 56.18
+  Model CTQI v2 Geomean: 64.06
+  CTQI v2 Geomean Improvement: +7.89
+  LLM Alternatives Used: 1/3
+    Position 0: Used 'deaf' (top-2, 14.7%) instead of 'drink' (top-1, 45.1%)
+  Status: success
+
+Entry 52:
+  Glosses: LATER, CHANGE
+  Reference: Change later.
+  Predicted: Drink to the change.
+  Model Gloss Accuracy (top-1): 1/2 (50.0%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 1/2 (50.0%)
+  Effective Glosses: DRINK, CHANGE
+  Effective Mismatches:
+    Position 0: LLM chose 'DRINK' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 50.00
+  Model BLEU: 15.97
+  BLEU Improvement: -34.03
+  Baseline BERTScore: 91.15
+  Model BERTScore: 89.26
+  BERTScore Improvement: -1.89
+  Baseline Quality: 59.74
+  Model Quality: 77.77
+  Quality Improvement: +18.03
+  Baseline Coverage Recall: 50.0%
+  Baseline Coverage Precision: 50.0%
+  Baseline Coverage F1: 50.0%
+  Model Coverage Recall: 50.0%
+  Model Coverage Precision: 50.0%
+  Model Coverage F1: 50.0%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: drink
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 16.75
+  Model CTQI v2: 24.50
+  CTQI v2 Improvement: +7.75
+  Baseline CTQI v2 Geomean: 53.06
+  Model CTQI v2 Geomean: 57.93
+  CTQI v2 Geomean Improvement: +4.88
+  LLM Alternatives Used: 0/2
+  Status: success
+
+Entry 53:
+  Glosses: LATER, GIVE, APPLE
+  Reference: Give the apple later.
+  Predicted: I drink and give an apple.
+  Model Gloss Accuracy (top-1): 2/3 (66.7%)
+  Top-1 Mismatches:
+    Position 0: 'drink' vs 'LATER'
+  Effective Gloss Accuracy (LLM-selected): 2/3 (66.7%)
+  Effective Glosses: DRINK, GIVE, APPLE
+  Effective Mismatches:
+    Position 0: LLM chose 'DRINK' but should be 'LATER'
+      Available top-k predictions:
+        1. drink (45.1%)
+        2. deaf (14.7%)
+        3. tall (14.6%)
+  Baseline BLEU: 24.84
+  Model BLEU: 9.65
+  BLEU Improvement: -15.19
+  Baseline BERTScore: 91.05
+  Model BERTScore: 89.91
+  BERTScore Improvement: -1.14
+  Baseline Quality: 12.53
+  Model Quality: 73.51
+  Quality Improvement: +60.98
+  Baseline Coverage Recall: 66.7%
+  Baseline Coverage Precision: 66.7%
+  Baseline Coverage F1: 66.7%
+  Model Coverage Recall: 66.7%
+  Model Coverage Precision: 66.7%
+  Model Coverage F1: 66.7%
+  Coverage Recall Improvement: +0.0%
+  Coverage Precision Improvement: +0.0%
+  Coverage F1 Improvement: +0.0%
+  Missing Words: later
+  Hallucinated Words: drink
+  Baseline Perfect Translation: No
+  Model Perfect Translation: No
+  Baseline CTQI v2: 26.67
+  Model CTQI v2: 38.67
+  CTQI v2 Improvement: +12.00
+  Baseline CTQI v2 Geomean: 38.19
+  Model CTQI v2 Geomean: 68.88
+  CTQI v2 Geomean Improvement: +30.68
+  LLM Alternatives Used: 0/3
+  Status: success

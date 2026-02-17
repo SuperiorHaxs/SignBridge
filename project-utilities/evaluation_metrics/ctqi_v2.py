@@ -24,6 +24,7 @@ import json
 import re
 import string
 import sys
+import time
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple, Any
 
@@ -248,10 +249,17 @@ class PlausibilityScorer:
 
     Evaluates grammaticality, semantic plausibility, and naturalness using
     Gemini. Falls back to GPT-2 perplexity (QualityScorer) if unavailable.
+
+    Rate limiting: Uses a minimum delay between API calls to stay within
+    Google AI Studio free tier limits (15 requests/minute).
     """
 
+    # Minimum delay between API calls (seconds) to respect rate limits
+    # Free tier: 15 requests/minute = 4 seconds between requests
+    MIN_REQUEST_DELAY = 4.5  # Slightly higher for safety margin
+
     def __init__(self, verbose: bool = True, provider_name: str = 'googleaistudio',
-                 api_key: Optional[str] = None):
+                 api_key: Optional[str] = None, rate_limit_delay: Optional[float] = None):
         self._provider = None
         self._fallback_scorer = None
         self._initialized = False
@@ -259,6 +267,8 @@ class PlausibilityScorer:
         self.verbose = verbose
         self._provider_name = provider_name
         self._api_key = api_key
+        self._last_request_time = 0.0
+        self._rate_limit_delay = rate_limit_delay if rate_limit_delay is not None else self.MIN_REQUEST_DELAY
 
     def _init_provider(self) -> None:
         """Initialize the LLM provider (Gemini)."""
@@ -330,6 +340,17 @@ class PlausibilityScorer:
 
         return None, "Failed to parse response"
 
+    def _apply_rate_limit(self):
+        """Apply rate limiting delay if needed."""
+        if self._rate_limit_delay > 0:
+            elapsed = time.time() - self._last_request_time
+            if elapsed < self._rate_limit_delay:
+                wait_time = self._rate_limit_delay - elapsed
+                if self.verbose:
+                    print(f"  [Rate limit] Waiting {wait_time:.1f}s before next Gemini request...")
+                time.sleep(wait_time)
+            self._last_request_time = time.time()
+
     def calculate(self, sentence: str, debug: bool = False) -> Optional[float]:
         """
         Calculate plausibility score for a sentence.
@@ -353,6 +374,9 @@ class PlausibilityScorer:
             return None
 
         try:
+            # Apply rate limiting for Gemini API
+            self._apply_rate_limit()
+
             prompt = PLAUSIBILITY_PROMPT.format(sentence=sentence)
             response = self._provider.generate(prompt, temperature=0.15, max_tokens=200)
             score, justification = self._parse_llm_response(response)

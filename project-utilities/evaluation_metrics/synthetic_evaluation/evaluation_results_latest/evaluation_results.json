@@ -1,0 +1,6585 @@
+[
+  {
+    "entry_id": 0,
+    "glosses": [
+      "SON",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "reference_sentence": "My son plays basketball.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 94.97121572494507,
+    "baseline_quality": 58.193886718749994,
+    "baseline_plausibility": 50.0,
+    "baseline_composite": 75.0,
+    "baseline_composite_v2": 83.48833270415228,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00001192092896,
+    "model_quality": 86.55742492675782,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 95.30187443136488,
+    "predicted_sentence": "My son plays basketball.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 5.028796195983887,
+    "improvement_quality": 28.363538208007824,
+    "improvement_composite": 25.0,
+    "improvement_composite_v2": 11.813541727212595,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "SON",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"son\", \"play\", \"basketball\"],\n  \"sentence\": \"My son plays basketball.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 1,
+    "glosses": [
+      "STUDY",
+      "BEFORE",
+      "PLAY"
+    ],
+    "reference_sentence": "Study before playing.",
+    "baseline_bleu": 55.03212081491043,
+    "baseline_bertscore": 95.96020579338074,
+    "baseline_quality": 59.906957397460936,
+    "baseline_plausibility": 98.0,
+    "baseline_composite": 99.0,
+    "baseline_composite_v2": 84.29964665833789,
+    "model_bleu": 31.947155212313625,
+    "model_bertscore": 94.40585374832153,
+    "model_quality": 84.76123580932617,
+    "model_plausibility": 91.0,
+    "model_composite": 95.5,
+    "model_composite_v2": 94.63804495843637,
+    "predicted_sentence": "Study before the play.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "study",
+        "confidence": 0.8044493794441223,
+        "top_k": [
+          {
+            "gloss": "study",
+            "confidence": 0.8044493794441223
+          },
+          {
+            "gloss": "enjoy",
+            "confidence": 0.04377465322613716
+          },
+          {
+            "gloss": "give",
+            "confidence": 0.037299931049346924
+          }
+        ]
+      },
+      {
+        "top_prediction": "before",
+        "confidence": 0.9651268124580383,
+        "top_k": [
+          {
+            "gloss": "before",
+            "confidence": 0.9651268124580383
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.007664903532713652
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0034379244316369295
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -23.084965602596803,
+    "improvement_bertscore": -1.554352045059204,
+    "improvement_quality": 24.85427841186523,
+    "improvement_composite": -3.5,
+    "improvement_composite_v2": 10.338398300098476,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "STUDY",
+      "BEFORE",
+      "PLAY"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"study\", \"before\", \"play\"],\n  \"sentence\": \"Study before the play.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 2,
+    "glosses": [
+      "YEAR",
+      "BEFORE",
+      "CHANGE"
+    ],
+    "reference_sentence": "It is a year before the change.",
+    "baseline_bleu": 16.605579150202516,
+    "baseline_bertscore": 90.19221067428589,
+    "baseline_quality": 58.85190307617188,
+    "baseline_plausibility": 56.0,
+    "baseline_composite": 78.0,
+    "baseline_composite_v2": 83.80183022423321,
+    "model_bleu": 67.03200460356396,
+    "model_bertscore": 95.5323576927185,
+    "model_quality": 88.38437004089356,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 95.96771557670706,
+    "predicted_sentence": "A year before the change.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "year",
+        "confidence": 0.9275057911872864,
+        "top_k": [
+          {
+            "gloss": "year",
+            "confidence": 0.9275057911872864
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.018379375338554382
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.006506671197712421
+          }
+        ]
+      },
+      {
+        "top_prediction": "before",
+        "confidence": 0.9651268124580383,
+        "top_k": [
+          {
+            "gloss": "before",
+            "confidence": 0.9651268124580383
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.007664903532713652
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0034379244316369295
+          }
+        ]
+      },
+      {
+        "top_prediction": "change",
+        "confidence": 0.7165296077728271,
+        "top_k": [
+          {
+            "gloss": "change",
+            "confidence": 0.7165296077728271
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.14666542410850525
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.024474304169416428
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 50.426425453361446,
+    "improvement_bertscore": 5.340147018432617,
+    "improvement_quality": 29.532466964721678,
+    "improvement_composite": 22.0,
+    "improvement_composite_v2": 12.16588535247385,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "YEAR",
+      "BEFORE",
+      "CHANGE"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"year\", \"before\", \"change\"],\n  \"sentence\": \"A year before the change.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 3,
+    "glosses": [
+      "DEAF",
+      "SON",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "reference_sentence": "My deaf son plays basketball.",
+    "baseline_bleu": 27.534765745159184,
+    "baseline_bertscore": 95.90312838554382,
+    "baseline_quality": 28.467864583333334,
+    "baseline_plausibility": 50.0,
+    "baseline_composite": 75.0,
+    "baseline_composite_v2": 65.7837000605784,
+    "model_bleu": 66.87403049764218,
+    "model_bertscore": 99.91344809532166,
+    "model_quality": 34.37205810546875,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 70.04898483260166,
+    "predicted_sentence": "The deaf son plays basketball.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "deaf",
+        "confidence": 0.9149866700172424,
+        "top_k": [
+          {
+            "gloss": "deaf",
+            "confidence": 0.9149866700172424
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.029412394389510155
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.007763383910059929
+          }
+        ]
+      },
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 39.339264752483,
+    "improvement_bertscore": 4.010319709777832,
+    "improvement_quality": 5.904193522135419,
+    "improvement_composite": 25.0,
+    "improvement_composite_v2": 4.265284772023264,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 4,
+    "gloss_total": 4,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 4,
+    "effective_gloss_total": 4,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DEAF",
+      "SON",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"deaf\", \"son\", \"play\", \"basketball\"],\n  \"sentence\": \"The deaf son plays basketball.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 4,
+    "glosses": [
+      "AFRICA",
+      "YEAR",
+      "BEFORE"
+    ],
+    "reference_sentence": "I went to Africa a year before.",
+    "baseline_bleu": 16.605579150202516,
+    "baseline_bertscore": 89.23256993293762,
+    "baseline_quality": 57.38817138671875,
+    "baseline_plausibility": 16.0,
+    "baseline_composite": 46.4,
+    "baseline_composite_v2": 77.1443500731971,
+    "model_bleu": 28.641904579795423,
+    "model_bertscore": 92.5378143787384,
+    "model_quality": 69.46168670654296,
+    "model_plausibility": 58.0,
+    "model_composite": 63.20000000000001,
+    "model_composite_v2": 82.21387227332984,
+    "predicted_sentence": "A year before in Africa.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "africa",
+        "confidence": 0.6595798134803772,
+        "top_k": [
+          {
+            "gloss": "africa",
+            "confidence": 0.6595798134803772
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.2486276775598526
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.008270664140582085
+          }
+        ]
+      },
+      {
+        "top_prediction": "year",
+        "confidence": 0.9275057911872864,
+        "top_k": [
+          {
+            "gloss": "year",
+            "confidence": 0.9275057911872864
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.018379375338554382
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.006506671197712421
+          }
+        ]
+      },
+      {
+        "top_prediction": "before",
+        "confidence": 0.9651268124580383,
+        "top_k": [
+          {
+            "gloss": "before",
+            "confidence": 0.9651268124580383
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.007664903532713652
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0034379244316369295
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 12.036325429592907,
+    "improvement_bertscore": 3.3052444458007812,
+    "improvement_quality": 12.07351531982421,
+    "improvement_composite": 16.80000000000001,
+    "improvement_composite_v2": 5.069522200132738,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 80.0,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 80.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "went"
+    ],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "AFRICA",
+      "YEAR",
+      "BEFORE"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"africa\", \"year\", \"before\"],\n  \"sentence\": \"A year before in Africa.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 5,
+    "glosses": [
+      "BASKETBALL",
+      "PLAY",
+      "TIME"
+    ],
+    "reference_sentence": "Basketball playing time.",
+    "baseline_bleu": 34.66806371753173,
+    "baseline_bertscore": 94.81725692749023,
+    "baseline_quality": 74.94038543701171,
+    "baseline_plausibility": 52.0,
+    "baseline_composite": 76.0,
+    "baseline_composite_v2": 90.83195062731586,
+    "model_bleu": 34.66806371753173,
+    "model_bertscore": 95.67806720733643,
+    "model_quality": 30.2388427734375,
+    "model_plausibility": 50.0,
+    "model_composite": 75.0,
+    "model_composite_v2": 67.12048031253397,
+    "predicted_sentence": "Basketball play time.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "time",
+        "confidence": 0.9688311219215393,
+        "top_k": [
+          {
+            "gloss": "time",
+            "confidence": 0.9688311219215393
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0033781148958951235
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.0016205405117943883
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 0.0,
+    "improvement_bertscore": 0.8608102798461914,
+    "improvement_quality": -44.701542663574216,
+    "improvement_composite": -1.0,
+    "improvement_composite_v2": -23.71147031478189,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "BASKETBALL",
+      "PLAY",
+      "TIME"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"basketball\", \"play\", \"time\"],\n  \"sentence\": \"Basketball play time.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 6,
+    "glosses": [
+      "AFRICA",
+      "HOT",
+      "TIME"
+    ],
+    "reference_sentence": "Africa is hot this time.",
+    "baseline_bleu": 20.374971871270475,
+    "baseline_bertscore": 88.46113085746765,
+    "baseline_quality": 38.7854833984375,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 72.92723304924628,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99999403953552,
+    "model_quality": 74.49667510986328,
+    "model_plausibility": 91.0,
+    "model_composite": 95.5,
+    "model_composite_v2": 90.65232838619308,
+    "predicted_sentence": "Africa is hot this time.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "africa",
+        "confidence": 0.6595798134803772,
+        "top_k": [
+          {
+            "gloss": "africa",
+            "confidence": 0.6595798134803772
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.2486276775598526
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.008270664140582085
+          }
+        ]
+      },
+      {
+        "top_prediction": "hot",
+        "confidence": 0.9040523767471313,
+        "top_k": [
+          {
+            "gloss": "hot",
+            "confidence": 0.9040523767471313
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.025799144059419632
+          },
+          {
+            "gloss": "birthday",
+            "confidence": 0.015118817798793316
+          }
+        ]
+      },
+      {
+        "top_prediction": "time",
+        "confidence": 0.9688311219215393,
+        "top_k": [
+          {
+            "gloss": "time",
+            "confidence": 0.9688311219215393
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0033781148958951235
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.0016205405117943883
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 79.62502812872957,
+    "improvement_bertscore": 11.538863182067871,
+    "improvement_quality": 35.711191711425776,
+    "improvement_composite": 34.0,
+    "improvement_composite_v2": 17.725095336946794,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "AFRICA",
+      "HOT",
+      "TIME"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"africa\", \"hot\", \"time\"],\n  \"sentence\": \"Africa is hot this time.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 7,
+    "glosses": [
+      "TALL",
+      "SON",
+      "BASKETBALL"
+    ],
+    "reference_sentence": "My tall son plays basketball.",
+    "baseline_bleu": 32.34325178227722,
+    "baseline_bertscore": 94.51918005943298,
+    "baseline_quality": 9.35234814453125,
+    "baseline_plausibility": 17.0,
+    "baseline_composite": 50.14285714285713,
+    "baseline_composite_v2": 43.11793550076097,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 75.76098175048828,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 91.16228408280904,
+    "predicted_sentence": "My tall son plays basketball.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "tall",
+        "confidence": 0.9205083250999451,
+        "top_k": [
+          {
+            "gloss": "tall",
+            "confidence": 0.9205083250999451
+          },
+          {
+            "gloss": "later",
+            "confidence": 0.020213190466165543
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.01318050455302
+          }
+        ]
+      },
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 67.65674821772282,
+    "improvement_bertscore": 5.480819940567017,
+    "improvement_quality": 66.40863360595704,
+    "improvement_composite": 49.85714285714287,
+    "improvement_composite_v2": 48.044348582048066,
+    "baseline_coverage_recall": 75.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 85.71428571428571,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 25.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 14.285714285714292,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "TALL",
+      "SON",
+      "BASKETBALL"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"tall\", \"son\", \"basketball\"],\n  \"sentence\": \"My tall son plays basketball.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 8,
+    "glosses": [
+      "CHAIR",
+      "FINE",
+      "DOCTOR"
+    ],
+    "reference_sentence": "The doctor's chair is fine.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 90.69706201553345,
+    "baseline_quality": 14.862018229166667,
+    "baseline_plausibility": 7.0,
+    "baseline_composite": 53.5,
+    "baseline_composite_v2": 52.96950687990872,
+    "model_bleu": 7.809849842300637,
+    "model_bertscore": 90.83449840545654,
+    "model_quality": 82.24290390014649,
+    "model_plausibility": 100.0,
+    "model_composite": 44.44444444444443,
+    "model_composite_v2": 71.49987887465319,
+    "predicted_sentence": "The doctor has a chair and paper.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "chair",
+        "confidence": 0.9465219974517822,
+        "top_k": [
+          {
+            "gloss": "chair",
+            "confidence": 0.9465219974517822
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.014330639503896236
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.00809132307767868
+          }
+        ]
+      },
+      {
+        "top_prediction": "fine",
+        "confidence": 0.34437453746795654,
+        "top_k": [
+          {
+            "gloss": "fine",
+            "confidence": 0.34437453746795654
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.233596071600914
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.16293779015541077
+          }
+        ]
+      },
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -9.989327553992837,
+    "improvement_bertscore": 0.1374363899230957,
+    "improvement_quality": 67.38088567097982,
+    "improvement_composite": -9.055555555555571,
+    "improvement_composite_v2": 18.53037199474447,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": -33.33333333333334,
+    "improvement_coverage_precision": -33.33333333333334,
+    "improvement_coverage_f1": -33.33333333333334,
+    "missing_words": [
+      "fine"
+    ],
+    "hallucinated_words": [
+      "paper"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "fine",
+        "top1_confidence": 0.34437453746795654,
+        "used": "paper",
+        "used_confidence": 0.233596071600914,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "PAPER",
+        "original": "FINE"
+      }
+    ],
+    "effective_glosses": [
+      "CHAIR",
+      "PAPER",
+      "DOCTOR"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"chair\", \"paper\", \"doctor\"],\n  \"sentence\": \"The doctor has a chair and paper.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 9,
+    "glosses": [
+      "SON",
+      "WRONG",
+      "HELP"
+    ],
+    "reference_sentence": "My son is wrong to help.",
+    "baseline_bleu": 14.599305297825525,
+    "baseline_bertscore": 89.34714198112488,
+    "baseline_quality": 16.8725830078125,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 55.25783404982748,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99998807907104,
+    "model_quality": 79.0782543182373,
+    "model_plausibility": 76.0,
+    "model_composite": 88.0,
+    "model_composite_v2": 92.47386817445931,
+    "predicted_sentence": "My son is wrong to help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      },
+      {
+        "top_prediction": "wrong",
+        "confidence": 0.8081533908843994,
+        "top_k": [
+          {
+            "gloss": "wrong",
+            "confidence": 0.8081533908843994
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.09673050791025162
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.012046950869262218
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 85.40069470217452,
+    "improvement_bertscore": 10.652846097946167,
+    "improvement_quality": 62.2056713104248,
+    "improvement_composite": 26.5,
+    "improvement_composite_v2": 37.21603412463183,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "SON",
+      "WRONG",
+      "HELP"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"son\", \"wrong\", \"help\"],\n  \"sentence\": \"My son is wrong to help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 10,
+    "glosses": [
+      "GIVE",
+      "JACKET",
+      "SON"
+    ],
+    "reference_sentence": "Give the jacket to my son.",
+    "baseline_bleu": 14.599305297825525,
+    "baseline_bertscore": 91.04776978492737,
+    "baseline_quality": 5.994396484375,
+    "baseline_plausibility": 32.0,
+    "baseline_composite": 66.0,
+    "baseline_composite_v2": 39.136485381311736,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00001192092896,
+    "model_quality": 91.57411651611328,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 97.10857453672273,
+    "predicted_sentence": "Give the jacket to my son.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "jacket",
+        "confidence": 0.9595763683319092,
+        "top_k": [
+          {
+            "gloss": "jacket",
+            "confidence": 0.9595763683319092
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.004829389043152332
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0031220633536577225
+          }
+        ]
+      },
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 85.40069470217452,
+    "improvement_bertscore": 8.952242136001587,
+    "improvement_quality": 85.57972003173828,
+    "improvement_composite": 34.0,
+    "improvement_composite_v2": 57.97208915541099,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "GIVE",
+      "JACKET",
+      "SON"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"give\", \"jacket\", \"son\"],\n  \"sentence\": \"Give the jacket to my son.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 11,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "CHANGE"
+    ],
+    "reference_sentence": "The family needs change.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 90.75307250022888,
+    "baseline_quality": 19.28920735677083,
+    "baseline_plausibility": 33.0,
+    "baseline_composite": 29.555555555555546,
+    "baseline_composite_v2": 44.09377563002867,
+    "model_bleu": 42.72870063962342,
+    "model_bertscore": 97.24454283714294,
+    "model_quality": 88.41223754882813,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 95.97780069336544,
+    "predicted_sentence": "The family needs to change.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "change",
+        "confidence": 0.7165296077728271,
+        "top_k": [
+          {
+            "gloss": "change",
+            "confidence": 0.7165296077728271
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.14666542410850525
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.024474304169416428
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 17.887947509044775,
+    "improvement_bertscore": 6.4914703369140625,
+    "improvement_quality": 69.1230301920573,
+    "improvement_composite": 70.44444444444446,
+    "improvement_composite_v2": 51.88402506333677,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "NEED",
+      "CHANGE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"need\", \"change\"],\n  \"sentence\": \"The family needs to change.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 12,
+    "glosses": [
+      "WATER",
+      "GIVE",
+      "DOCTOR"
+    ],
+    "reference_sentence": "The doctor gives water.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 93.75101923942566,
+    "baseline_quality": 9.61204150390625,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 45.80770626019513,
+    "model_bleu": 23.643540225079384,
+    "model_bertscore": 92.87059307098389,
+    "model_quality": 91.46185760498047,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 97.06887714603836,
+    "predicted_sentence": "Give water to the doctor.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -1.19721290549926,
+    "improvement_bertscore": -0.8804261684417725,
+    "improvement_quality": 81.84981610107421,
+    "improvement_composite": 38.5,
+    "improvement_composite_v2": 51.26117088584323,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "WATER",
+      "GIVE",
+      "DOCTOR"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"water\", \"give\", \"doctor\"],\n  \"sentence\": \"Give water to the doctor.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 13,
+    "glosses": [
+      "STUDY",
+      "TIME",
+      "CHANGE"
+    ],
+    "reference_sentence": "Study time changes.",
+    "baseline_bleu": 55.03212081491043,
+    "baseline_bertscore": 96.0083544254303,
+    "baseline_quality": 66.09609146118164,
+    "baseline_plausibility": 44.0,
+    "baseline_composite": 72.0,
+    "baseline_composite_v2": 87.10811039843371,
+    "model_bleu": 21.3643503198117,
+    "model_bertscore": 86.61767244338989,
+    "model_quality": 87.29699821472168,
+    "model_plausibility": 94.0,
+    "model_composite": 97.0,
+    "model_composite_v2": 95.57253453997971,
+    "predicted_sentence": "Study time for a change.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "study",
+        "confidence": 0.8044493794441223,
+        "top_k": [
+          {
+            "gloss": "study",
+            "confidence": 0.8044493794441223
+          },
+          {
+            "gloss": "enjoy",
+            "confidence": 0.04377465322613716
+          },
+          {
+            "gloss": "give",
+            "confidence": 0.037299931049346924
+          }
+        ]
+      },
+      {
+        "top_prediction": "time",
+        "confidence": 0.9688311219215393,
+        "top_k": [
+          {
+            "gloss": "time",
+            "confidence": 0.9688311219215393
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0033781148958951235
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.0016205405117943883
+          }
+        ]
+      },
+      {
+        "top_prediction": "change",
+        "confidence": 0.7165296077728271,
+        "top_k": [
+          {
+            "gloss": "change",
+            "confidence": 0.7165296077728271
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.14666542410850525
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.024474304169416428
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -33.66777049509873,
+    "improvement_bertscore": -9.390681982040405,
+    "improvement_quality": 21.20090675354004,
+    "improvement_composite": 25.0,
+    "improvement_composite_v2": 8.464424141546004,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "STUDY",
+      "TIME",
+      "CHANGE"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"study\", \"time\", \"change\"],\n  \"sentence\": \"Study time for a change.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 14,
+    "glosses": [
+      "TALL",
+      "MAN",
+      "GIVE",
+      "APPLE",
+      "SON"
+    ],
+    "reference_sentence": "The tall man gives an apple to my son.",
+    "baseline_bleu": 11.415938068117505,
+    "baseline_bertscore": 91.45295023918152,
+    "baseline_quality": 8.41021630859375,
+    "baseline_plausibility": 33.0,
+    "baseline_composite": 66.5,
+    "baseline_composite_v2": 43.81293917358069,
+    "model_bleu": 59.694917920196445,
+    "model_bertscore": 98.42771291732788,
+    "model_quality": 86.80900840759277,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 95.39411833859073,
+    "predicted_sentence": "The tall man gives the apple to my son.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "tall",
+        "confidence": 0.9205083250999451,
+        "top_k": [
+          {
+            "gloss": "tall",
+            "confidence": 0.9205083250999451
+          },
+          {
+            "gloss": "later",
+            "confidence": 0.020213190466165543
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.01318050455302
+          }
+        ]
+      },
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      },
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 48.27897985207894,
+    "improvement_bertscore": 6.974762678146362,
+    "improvement_quality": 78.39879209899902,
+    "improvement_composite": 33.5,
+    "improvement_composite_v2": 51.58117916501004,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 5,
+    "gloss_total": 5,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 5,
+    "effective_gloss_total": 5,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "TALL",
+      "MAN",
+      "GIVE",
+      "APPLE",
+      "SON"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"tall\", \"man\", \"give\", \"apple\", \"son\"],\n  \"sentence\": \"The tall man gives the apple to my son.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 15,
+    "glosses": [
+      "FAMILY",
+      "ENJOY",
+      "PLAY",
+      "BASKETBALL",
+      "THURSDAY"
+    ],
+    "reference_sentence": "The family enjoys playing basketball on Thursday.",
+    "baseline_bleu": 9.423716574733431,
+    "baseline_bertscore": 92.4773097038269,
+    "baseline_quality": 29.2506591796875,
+    "baseline_plausibility": 48.0,
+    "baseline_composite": 74.0,
+    "baseline_composite_v2": 66.38121836258584,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 82.25802841186524,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 93.697089067183,
+    "predicted_sentence": "The family enjoys playing basketball on Thursday.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "enjoy",
+        "confidence": 0.9558631181716919,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.9558631181716919
+          },
+          {
+            "gloss": "son",
+            "confidence": 0.009808244183659554
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.004084677901118994
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      },
+      {
+        "top_prediction": "thursday",
+        "confidence": 0.8373931646347046,
+        "top_k": [
+          {
+            "gloss": "thursday",
+            "confidence": 0.8373931646347046
+          },
+          {
+            "gloss": "no",
+            "confidence": 0.10700196772813797
+          },
+          {
+            "gloss": "apple",
+            "confidence": 0.010262401774525642
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 90.57628342526661,
+    "improvement_bertscore": 7.522690296173096,
+    "improvement_quality": 53.00736923217774,
+    "improvement_composite": 26.0,
+    "improvement_composite_v2": 27.31587070459716,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 5,
+    "gloss_total": 5,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 5,
+    "effective_gloss_total": 5,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "ENJOY",
+      "PLAY",
+      "BASKETBALL",
+      "THURSDAY"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"enjoy\", \"play\", \"basketball\", \"thursday\"],\n  \"sentence\": \"The family enjoys playing basketball on Thursday.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 16,
+    "glosses": [
+      "DEAF",
+      "SON",
+      "GIVE",
+      "HELP",
+      "DOCTOR"
+    ],
+    "reference_sentence": "My deaf son gives help to the doctor.",
+    "baseline_bleu": 13.943458243384402,
+    "baseline_bertscore": 95.5538272857666,
+    "baseline_quality": 8.90351025390625,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 44.65331999289096,
+    "model_bleu": 84.08964152537145,
+    "model_bertscore": 99.88600015640259,
+    "model_quality": 77.01409149169922,
+    "model_plausibility": 94.0,
+    "model_composite": 97.0,
+    "model_composite_v2": 91.66215544779341,
+    "predicted_sentence": "The deaf son gives help to the doctor.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "deaf",
+        "confidence": 0.9149866700172424,
+        "top_k": [
+          {
+            "gloss": "deaf",
+            "confidence": 0.9149866700172424
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.029412394389510155
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.007763383910059929
+          }
+        ]
+      },
+      {
+        "top_prediction": "son",
+        "confidence": 0.9453277587890625,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.9453277587890625
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.010470747016370296
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.008239847607910633
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      },
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 70.14618328198705,
+    "improvement_bertscore": 4.332172870635986,
+    "improvement_quality": 68.11058123779297,
+    "improvement_composite": 35.5,
+    "improvement_composite_v2": 47.00883545490245,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 5,
+    "gloss_total": 5,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 5,
+    "effective_gloss_total": 5,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DEAF",
+      "SON",
+      "GIVE",
+      "HELP",
+      "DOCTOR"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"deaf\", \"son\", \"give\", \"help\", \"doctor\"],\n  \"sentence\": \"The deaf son gives help to the doctor.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 17,
+    "glosses": [
+      "STUDY",
+      "TIME",
+      "BEFORE",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "reference_sentence": "Study time is before playing basketball.",
+    "baseline_bleu": 20.80119537801062,
+    "baseline_bertscore": 95.38474082946777,
+    "baseline_quality": 53.13966064453125,
+    "baseline_plausibility": 32.0,
+    "baseline_composite": 66.0,
+    "baseline_composite_v2": 80.99774451095499,
+    "model_bleu": 40.93653765389909,
+    "model_bertscore": 95.85149884223938,
+    "model_quality": 62.886845397949216,
+    "model_plausibility": 62.0,
+    "model_composite": 81.0,
+    "model_composite_v2": 85.67483365817972,
+    "predicted_sentence": "Study time before playing basketball.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "study",
+        "confidence": 0.8044493794441223,
+        "top_k": [
+          {
+            "gloss": "study",
+            "confidence": 0.8044493794441223
+          },
+          {
+            "gloss": "enjoy",
+            "confidence": 0.04377465322613716
+          },
+          {
+            "gloss": "give",
+            "confidence": 0.037299931049346924
+          }
+        ]
+      },
+      {
+        "top_prediction": "time",
+        "confidence": 0.9688311219215393,
+        "top_k": [
+          {
+            "gloss": "time",
+            "confidence": 0.9688311219215393
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.0033781148958951235
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.0016205405117943883
+          }
+        ]
+      },
+      {
+        "top_prediction": "before",
+        "confidence": 0.9651268124580383,
+        "top_k": [
+          {
+            "gloss": "before",
+            "confidence": 0.9651268124580383
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.007664903532713652
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0034379244316369295
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 20.13534227588847,
+    "improvement_bertscore": 0.46675801277160645,
+    "improvement_quality": 9.747184753417969,
+    "improvement_composite": 15.0,
+    "improvement_composite_v2": 4.677089147224734,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 5,
+    "gloss_total": 5,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 5,
+    "effective_gloss_total": 5,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "STUDY",
+      "TIME",
+      "BEFORE",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"study\", \"time\", \"before\", \"play\", \"basketball\"],\n  \"sentence\": \"Study time before playing basketball.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 18,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "HELP"
+    ],
+    "reference_sentence": "The family needs help.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.61307406425476,
+    "baseline_quality": 17.661442057291666,
+    "baseline_plausibility": 32.0,
+    "baseline_composite": 29.33333333333332,
+    "baseline_composite_v2": 42.81683364680966,
+    "model_bleu": 12.22307556087252,
+    "model_bertscore": 93.05158257484436,
+    "model_quality": 91.51275787353515,
+    "model_plausibility": 72.0,
+    "model_composite": 49.14285714285713,
+    "model_composite_v2": 80.56526964715562,
+    "predicted_sentence": "My family needs to tell you about help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -12.617677569706125,
+    "improvement_bertscore": 3.4385085105895996,
+    "improvement_quality": 73.85131581624348,
+    "improvement_composite": 19.80952380952381,
+    "improvement_composite_v2": 37.748436000345954,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 75.0,
+    "model_coverage_f1": 85.71428571428571,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 8.333333333333343,
+    "improvement_coverage_f1": 19.04761904761905,
+    "missing_words": [],
+    "hallucinated_words": [
+      "tell"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "tell",
+        "used_confidence": 0.01120806485414505,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "TELL",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "FAMILY",
+      "TELL",
+      "HELP"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"tell\", \"help\"],\n  \"sentence\": \"My family needs to tell you about help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 19,
+    "glosses": [
+      "DOCTOR",
+      "NEED",
+      "WATER"
+    ],
+    "reference_sentence": "The doctor needs water.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.72406387329102,
+    "baseline_quality": 15.339889322916667,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 23.99999999999999,
+    "baseline_composite_v2": 40.85199179680558,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 45.0183837890625,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 76.64137713045997,
+    "predicted_sentence": "The doctor needs water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 10.275936126708984,
+    "improvement_quality": 29.67849446614583,
+    "improvement_composite": 76.00000000000001,
+    "improvement_composite_v2": 35.789385333654394,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DOCTOR",
+      "NEED",
+      "WATER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"need\", \"water\"],\n  \"sentence\": \"The doctor needs water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 20,
+    "glosses": [
+      "MAN",
+      "NEED",
+      "JACKET"
+    ],
+    "reference_sentence": "The man needs a jacket.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 89.93155360221863,
+    "baseline_quality": 27.105475260416668,
+    "baseline_plausibility": 44.0,
+    "baseline_composite": 31.999999999999986,
+    "baseline_composite_v2": 49.38838626920098,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99999403953552,
+    "model_quality": 78.99242706298828,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 92.44040068721367,
+    "predicted_sentence": "The man needs a jacket.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "jacket",
+        "confidence": 0.9595763683319092,
+        "top_k": [
+          {
+            "gloss": "jacket",
+            "confidence": 0.9595763683319092
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.004829389043152332
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0031220633536577225
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 82.20082260370657,
+    "improvement_bertscore": 10.068440437316895,
+    "improvement_quality": 51.886951802571616,
+    "improvement_composite": 68.00000000000001,
+    "improvement_composite_v2": 43.05201441801269,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "MAN",
+      "NEED",
+      "JACKET"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"need\", \"jacket\"],\n  \"sentence\": \"The man needs a jacket.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 21,
+    "glosses": [
+      "THURSDAY",
+      "DOCTOR",
+      "HELP"
+    ],
+    "reference_sentence": "The doctor helps on Thursday.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 90.36940336227417,
+    "baseline_quality": 0,
+    "baseline_plausibility": 33.0,
+    "baseline_composite": 66.5,
+    "baseline_composite_v2": 21.544346900318846,
+    "model_bleu": 22.957488466614336,
+    "model_bertscore": 92.28425621986389,
+    "model_quality": 78.64571113586426,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 92.30495493404757,
+    "predicted_sentence": "On Thursday, the doctor will help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "thursday",
+        "confidence": 0.8373931646347046,
+        "top_k": [
+          {
+            "gloss": "thursday",
+            "confidence": 0.8373931646347046
+          },
+          {
+            "gloss": "no",
+            "confidence": 0.10700196772813797
+          },
+          {
+            "gloss": "apple",
+            "confidence": 0.010262401774525642
+          }
+        ]
+      },
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 5.158311070320863,
+    "improvement_bertscore": 1.9148528575897217,
+    "improvement_quality": 78.64571113586426,
+    "improvement_composite": 33.5,
+    "improvement_composite_v2": 70.76060803372873,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "THURSDAY",
+      "DOCTOR",
+      "HELP"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"thursday\", \"doctor\", \"help\"],\n  \"sentence\": \"On Thursday, the doctor will help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 22,
+    "glosses": [
+      "WRONG",
+      "GIVE",
+      "PAPER"
+    ],
+    "reference_sentence": "It is wrong to give the paper.",
+    "baseline_bleu": 10.460859358517785,
+    "baseline_bertscore": 91.57482981681824,
+    "baseline_quality": 16.393374023437502,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 54.72966408176288,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 87.24096908569337,
+    "model_plausibility": 84.0,
+    "model_composite": 92.0,
+    "model_composite_v2": 95.55208331406246,
+    "predicted_sentence": "It is wrong to give the paper.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "wrong",
+        "confidence": 0.8081533908843994,
+        "top_k": [
+          {
+            "gloss": "wrong",
+            "confidence": 0.8081533908843994
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.09673050791025162
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.012046950869262218
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "paper",
+        "confidence": 0.7236359715461731,
+        "top_k": [
+          {
+            "gloss": "paper",
+            "confidence": 0.7236359715461731
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.22355720400810242
+          },
+          {
+            "gloss": "family",
+            "confidence": 0.006375579629093409
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 89.53914064148226,
+    "improvement_bertscore": 8.425170183181763,
+    "improvement_quality": 70.84759506225586,
+    "improvement_composite": 30.5,
+    "improvement_composite_v2": 40.82241923229958,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "WRONG",
+      "GIVE",
+      "PAPER"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"wrong\", \"give\", \"paper\"],\n  \"sentence\": \"It is wrong to give the paper.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 23,
+    "glosses": [
+      "HOT",
+      "WATER",
+      "DOCTOR"
+    ],
+    "reference_sentence": "The doctor needs hot water.",
+    "baseline_bleu": 32.34325178227722,
+    "baseline_bertscore": 89.55510258674622,
+    "baseline_quality": 43.6483935546875,
+    "baseline_plausibility": 29.0,
+    "baseline_composite": 55.285714285714285,
+    "baseline_composite_v2": 72.05660977508992,
+    "model_bleu": 18.575057999133602,
+    "model_bertscore": 93.27031373977661,
+    "model_quality": 87.02891120910644,
+    "model_plausibility": 86.0,
+    "model_composite": 79.71428571428571,
+    "model_composite_v2": 90.69268373727472,
+    "predicted_sentence": "The hot water is for the doctor.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "hot",
+        "confidence": 0.9040523767471313,
+        "top_k": [
+          {
+            "gloss": "hot",
+            "confidence": 0.9040523767471313
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.025799144059419632
+          },
+          {
+            "gloss": "birthday",
+            "confidence": 0.015118817798793316
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      },
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -13.76819378314362,
+    "improvement_bertscore": 3.7152111530303955,
+    "improvement_quality": 43.38051765441894,
+    "improvement_composite": 24.428571428571423,
+    "improvement_composite_v2": 18.636073962184796,
+    "baseline_coverage_recall": 75.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 85.71428571428571,
+    "model_coverage_recall": 75.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 85.71428571428571,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "needs"
+    ],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "HOT",
+      "WATER",
+      "DOCTOR"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"hot\", \"water\", \"doctor\"],\n  \"sentence\": \"The hot water is for the doctor.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 24,
+    "glosses": [
+      "MAN",
+      "TALL"
+    ],
+    "reference_sentence": "The man is tall.",
+    "baseline_bleu": 26.013004751144457,
+    "baseline_bertscore": 94.03099417686462,
+    "baseline_quality": 38.53510009765625,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 72.76996462659577,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99999403953552,
+    "model_quality": 80.58198280334473,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 93.05634339797204,
+    "predicted_sentence": "The man is tall.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "tall",
+        "confidence": 0.9205083250999451,
+        "top_k": [
+          {
+            "gloss": "tall",
+            "confidence": 0.9205083250999451
+          },
+          {
+            "gloss": "later",
+            "confidence": 0.020213190466165543
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.01318050455302
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 73.98699524885558,
+    "improvement_bertscore": 5.968999862670898,
+    "improvement_quality": 42.04688270568848,
+    "improvement_composite": 38.5,
+    "improvement_composite_v2": 20.286378771376278,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 2,
+    "gloss_total": 2,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "MAN",
+      "TALL"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"tall\"],\n  \"sentence\": \"The man is tall.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 25,
+    "glosses": [
+      "ORANGE",
+      "APPLE",
+      "ENJOY",
+      "FAMILY"
+    ],
+    "reference_sentence": "The family enjoys orange and apple.",
+    "baseline_bleu": 12.750736437345598,
+    "baseline_bertscore": 91.90489649772644,
+    "baseline_quality": 8.49370654296875,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 54.0,
+    "baseline_composite_v2": 43.95744256834473,
+    "model_bleu": 20.164945583740657,
+    "model_bertscore": 93.73261332511902,
+    "model_quality": 81.89834632873536,
+    "model_plausibility": 94.0,
+    "model_composite": 97.0,
+    "model_composite_v2": 93.56032266208513,
+    "predicted_sentence": "The orange and apple are enjoyed by my family.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "orange",
+        "confidence": 0.9610919952392578,
+        "top_k": [
+          {
+            "gloss": "orange",
+            "confidence": 0.9610919952392578
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.009843415580689907
+          },
+          {
+            "gloss": "change",
+            "confidence": 0.0022455991711467505
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      },
+      {
+        "top_prediction": "enjoy",
+        "confidence": 0.9558631181716919,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.9558631181716919
+          },
+          {
+            "gloss": "son",
+            "confidence": 0.009808244183659554
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.004084677901118994
+          }
+        ]
+      },
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 7.414209146395059,
+    "improvement_bertscore": 1.8277168273925781,
+    "improvement_quality": 73.4046397857666,
+    "improvement_composite": 43.0,
+    "improvement_composite_v2": 49.602880093740396,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 4,
+    "gloss_total": 4,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 4,
+    "effective_gloss_total": 4,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "ORANGE",
+      "APPLE",
+      "ENJOY",
+      "FAMILY"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"orange\", \"apple\", \"enjoy\", \"family\"],\n  \"sentence\": \"The orange and apple are enjoyed by my family.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 26,
+    "glosses": [
+      "AFRICA",
+      "HOT"
+    ],
+    "reference_sentence": "Africa is hot.",
+    "baseline_bleu": 42.88819424803536,
+    "baseline_bertscore": 90.26417136192322,
+    "baseline_quality": 20.831173502604166,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 61.5,
+    "baseline_composite_v2": 59.27950639404671,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00001192092896,
+    "model_quality": 79.08482437133789,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 92.47642910352228,
+    "predicted_sentence": "Africa is hot.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "africa",
+        "confidence": 0.6595798134803772,
+        "top_k": [
+          {
+            "gloss": "africa",
+            "confidence": 0.6595798134803772
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.2486276775598526
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.008270664140582085
+          }
+        ]
+      },
+      {
+        "top_prediction": "hot",
+        "confidence": 0.9040523767471313,
+        "top_k": [
+          {
+            "gloss": "hot",
+            "confidence": 0.9040523767471313
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.025799144059419632
+          },
+          {
+            "gloss": "birthday",
+            "confidence": 0.015118817798793316
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 57.11180575196468,
+    "improvement_bertscore": 9.735840559005737,
+    "improvement_quality": 58.25365086873372,
+    "improvement_composite": 38.5,
+    "improvement_composite_v2": 33.196922709475565,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 2,
+    "gloss_total": 2,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "AFRICA",
+      "HOT"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"africa\", \"hot\"],\n  \"sentence\": \"Africa is hot.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 27,
+    "glosses": [
+      "MAN",
+      "DRINK",
+      "WATER"
+    ],
+    "reference_sentence": "The man drinks water.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 94.1729724407196,
+    "baseline_quality": 58.68200439453125,
+    "baseline_plausibility": 62.0,
+    "baseline_composite": 81.0,
+    "baseline_composite_v2": 83.72111041326423,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00001192092896,
+    "model_quality": 64.84768753051758,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 86.55619658134187,
+    "predicted_sentence": "The man drinks water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "drink",
+        "confidence": 0.9666592478752136,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.9666592478752136
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.00511562917381525
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.0036774633917957544
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 5.827039480209351,
+    "improvement_quality": 6.165683135986328,
+    "improvement_composite": 19.0,
+    "improvement_composite_v2": 2.8350861680776376,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "MAN",
+      "DRINK",
+      "WATER"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"drink\", \"water\"],\n  \"sentence\": \"The man drinks water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 28,
+    "glosses": [
+      "FAMILY",
+      "ENJOY",
+      "THANKSGIVING"
+    ],
+    "reference_sentence": "My family enjoys Thanksgiving.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 94.24192309379578,
+    "baseline_quality": 64.21056747436523,
+    "baseline_plausibility": 66.0,
+    "baseline_composite": 83.0,
+    "baseline_composite_v2": 86.27179536253216,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 59.41695190429687,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 84.06917577566998,
+    "predicted_sentence": "My family enjoys Thanksgiving.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "enjoy",
+        "confidence": 0.9558631181716919,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.9558631181716919
+          },
+          {
+            "gloss": "son",
+            "confidence": 0.009808244183659554
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.004084677901118994
+          }
+        ]
+      },
+      {
+        "top_prediction": "thanksgiving",
+        "confidence": 0.29065239429473877,
+        "top_k": [
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.29065239429473877
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.22416484355926514
+          },
+          {
+            "gloss": "no",
+            "confidence": 0.14408116042613983
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 5.758076906204224,
+    "improvement_quality": -4.793615570068361,
+    "improvement_composite": 17.0,
+    "improvement_composite_v2": -2.202619586862184,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "ENJOY",
+      "THANKSGIVING"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"enjoy\", \"thanksgiving\"],\n  \"sentence\": \"My family enjoys Thanksgiving.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 29,
+    "glosses": [
+      "DOCTOR",
+      "GIVE",
+      "HELP"
+    ],
+    "reference_sentence": "The doctor gives help.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 94.81337666511536,
+    "baseline_quality": 63.530886840820315,
+    "baseline_plausibility": 50.0,
+    "baseline_composite": 75.0,
+    "baseline_composite_v2": 85.96631402930934,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00001192092896,
+    "model_quality": 48.91542724609375,
+    "model_plausibility": 80.0,
+    "model_composite": 90.0,
+    "model_composite_v2": 78.79196842292717,
+    "predicted_sentence": "The doctor gives help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 5.186635255813599,
+    "improvement_quality": -14.615459594726566,
+    "improvement_composite": 15.0,
+    "improvement_composite_v2": -7.174345606382175,
+    "baseline_coverage_recall": 100.0,
+    "baseline_coverage_precision": 100.0,
+    "baseline_coverage_f1": 100.0,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 100.0,
+    "gloss_correct": 3,
+    "gloss_total": 3,
+    "gloss_mismatches": [],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DOCTOR",
+      "GIVE",
+      "HELP"
+    ],
+    "baseline_ptr": 100.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"give\", \"help\"],\n  \"sentence\": \"The doctor gives help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 30,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "APPLE"
+    ],
+    "reference_sentence": "The family needs an apple.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 89.32133913040161,
+    "baseline_quality": 0,
+    "baseline_plausibility": 7.0,
+    "baseline_composite": 23.77777777777777,
+    "baseline_composite_v2": 16.4414138288698,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 58.97305786132813,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 83.8592966954377,
+    "predicted_sentence": "The family needs an apple.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 82.20082260370657,
+    "improvement_bertscore": 10.678660869598389,
+    "improvement_quality": 58.97305786132813,
+    "improvement_composite": 76.22222222222223,
+    "improvement_composite_v2": 67.41788286656791,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "NEED",
+      "APPLE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"need\", \"apple\"],\n  \"sentence\": \"The family needs an apple.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 31,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "WATER"
+    ],
+    "reference_sentence": "The family needs water.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.5276129245758,
+    "baseline_quality": 15.652063802083333,
+    "baseline_plausibility": 20.0,
+    "baseline_composite": 26.666666666666654,
+    "baseline_composite_v2": 41.12725246604241,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.00002384185791,
+    "model_quality": 61.61404037475586,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 85.09288134143769,
+    "predicted_sentence": "The family needs water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 10.472410917282104,
+    "improvement_quality": 45.961976572672526,
+    "improvement_composite": 73.33333333333334,
+    "improvement_composite_v2": 43.96562887539528,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "NEED",
+      "WATER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"need\", \"water\"],\n  \"sentence\": \"The family needs water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 32,
+    "glosses": [
+      "DOCTOR",
+      "NEED",
+      "PAPER"
+    ],
+    "reference_sentence": "The doctor needs paper.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 88.83443474769592,
+    "baseline_quality": 14.353059895833333,
+    "baseline_plausibility": 7.0,
+    "baseline_composite": 23.77777777777777,
+    "baseline_composite_v2": 39.956489628937454,
+    "model_bleu": 42.72870063962342,
+    "model_bertscore": 96.94148898124695,
+    "model_quality": 61.00082702636719,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 84.80964415907762,
+    "predicted_sentence": "The doctor needs the paper.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "paper",
+        "confidence": 0.7236359715461731,
+        "top_k": [
+          {
+            "gloss": "paper",
+            "confidence": 0.7236359715461731
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.22355720400810242
+          },
+          {
+            "gloss": "family",
+            "confidence": 0.006375579629093409
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 17.887947509044775,
+    "improvement_bertscore": 8.107054233551025,
+    "improvement_quality": 46.64776713053386,
+    "improvement_composite": 76.22222222222223,
+    "improvement_composite_v2": 44.853154530140166,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DOCTOR",
+      "NEED",
+      "PAPER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"need\", \"paper\"],\n  \"sentence\": \"The doctor needs the paper.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 33,
+    "glosses": [
+      "DOCTOR",
+      "NEED",
+      "CHAIR"
+    ],
+    "reference_sentence": "The doctor needs a chair.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 90.01923203468323,
+    "baseline_quality": 27.581861979166668,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 23.99999999999999,
+    "baseline_composite_v2": 49.676046041788105,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99998807907104,
+    "model_quality": 70.81416320800781,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 89.13331164366353,
+    "predicted_sentence": "The doctor needs a chair.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "chair",
+        "confidence": 0.9465219974517822,
+        "top_k": [
+          {
+            "gloss": "chair",
+            "confidence": 0.9465219974517822
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.014330639503896236
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.00809132307767868
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 82.20082260370657,
+    "improvement_bertscore": 9.980756044387817,
+    "improvement_quality": 43.232301228841145,
+    "improvement_composite": 76.00000000000001,
+    "improvement_composite_v2": 39.45726560187543,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DOCTOR",
+      "NEED",
+      "CHAIR"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"need\", \"chair\"],\n  \"sentence\": \"The doctor needs a chair.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 34,
+    "glosses": [
+      "MAN",
+      "NEED",
+      "APPLE"
+    ],
+    "reference_sentence": "The man needs an apple.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 88.49818110466003,
+    "baseline_quality": 0,
+    "baseline_plausibility": 20.0,
+    "baseline_composite": 26.666666666666654,
+    "baseline_composite_v2": 16.4414138288698,
+    "model_bleu": 17.965205598154213,
+    "model_bertscore": 91.09435677528381,
+    "model_quality": 59.0165087890625,
+    "model_plausibility": 84.0,
+    "model_composite": 40.88888888888887,
+    "model_composite_v2": 64.01233442429024,
+    "predicted_sentence": "The man tells about the apple.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 0.1660282018607404,
+    "improvement_bertscore": 2.5961756706237793,
+    "improvement_quality": 59.0165087890625,
+    "improvement_composite": 14.222222222222218,
+    "improvement_composite_v2": 47.570920595420446,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "needs"
+    ],
+    "hallucinated_words": [
+      "tells"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "tell",
+        "used_confidence": 0.01120806485414505,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "TELL",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "MAN",
+      "TELL",
+      "APPLE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"tell\", \"apple\"],\n  \"sentence\": \"The man tells about the apple.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 35,
+    "glosses": [
+      "MAN",
+      "NEED",
+      "PAPER"
+    ],
+    "reference_sentence": "The man needs paper.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.1447365283966,
+    "baseline_quality": 8.36228662109375,
+    "baseline_plausibility": 29.0,
+    "baseline_composite": 28.666666666666657,
+    "baseline_composite_v2": 33.371893094159404,
+    "model_bleu": 17.965205598154213,
+    "model_bertscore": 90.57167172431946,
+    "model_quality": 66.65966262817383,
+    "model_plausibility": 78.0,
+    "model_composite": 39.555555555555536,
+    "model_composite_v2": 66.66433190540334,
+    "predicted_sentence": "The man tells about the paper.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "paper",
+        "confidence": 0.7236359715461731,
+        "top_k": [
+          {
+            "gloss": "paper",
+            "confidence": 0.7236359715461731
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.22355720400810242
+          },
+          {
+            "gloss": "family",
+            "confidence": 0.006375579629093409
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -6.875547532424431,
+    "improvement_bertscore": 1.4269351959228516,
+    "improvement_quality": 58.29737600708008,
+    "improvement_composite": 10.888888888888879,
+    "improvement_composite_v2": 33.29243881124394,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "needs"
+    ],
+    "hallucinated_words": [
+      "tells"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "tell",
+        "used_confidence": 0.01120806485414505,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "TELL",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "MAN",
+      "TELL",
+      "PAPER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"tell\", \"paper\"],\n  \"sentence\": \"The man tells about the paper.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 36,
+    "glosses": [
+      "MAN",
+      "NEED",
+      "WATER"
+    ],
+    "reference_sentence": "The man needs water.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.25225138664246,
+    "baseline_quality": 11.022919921875,
+    "baseline_plausibility": 28.0,
+    "baseline_composite": 28.444444444444432,
+    "baseline_composite_v2": 36.590755627666006,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99998807907104,
+    "model_quality": 59.89017578125,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 84.29177435937892,
+    "predicted_sentence": "The man needs water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 75.1592468694214,
+    "improvement_bertscore": 10.747736692428589,
+    "improvement_quality": 48.867255859375,
+    "improvement_composite": 71.55555555555557,
+    "improvement_composite_v2": 47.701018731712914,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "MAN",
+      "NEED",
+      "WATER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"need\", \"water\"],\n  \"sentence\": \"The man needs water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 37,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "CHAIR"
+    ],
+    "reference_sentence": "The family needs a chair.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 90.06867408752441,
+    "baseline_quality": 32.36173095703125,
+    "baseline_plausibility": 25.0,
+    "baseline_composite": 27.777777777777768,
+    "baseline_composite_v2": 52.394183279679496,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 100.0,
+    "model_quality": 79.70406303405761,
+    "model_plausibility": 100.0,
+    "model_composite": 100.0,
+    "model_composite_v2": 92.717167091104,
+    "predicted_sentence": "The family needs a chair.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "chair",
+        "confidence": 0.9465219974517822,
+        "top_k": [
+          {
+            "gloss": "chair",
+            "confidence": 0.9465219974517822
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.014330639503896236
+          },
+          {
+            "gloss": "time",
+            "confidence": 0.00809132307767868
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 82.20082260370657,
+    "improvement_bertscore": 9.931325912475586,
+    "improvement_quality": 47.34233207702636,
+    "improvement_composite": 72.22222222222223,
+    "improvement_composite_v2": 40.32298381142451,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "FAMILY",
+      "NEED",
+      "CHAIR"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"need\", \"chair\"],\n  \"sentence\": \"The family needs a chair.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 38,
+    "glosses": [
+      "DOCTOR",
+      "NEED",
+      "HELP"
+    ],
+    "reference_sentence": "The doctor needs help.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 90.28412103652954,
+    "baseline_quality": 20.725926106770835,
+    "baseline_plausibility": 33.0,
+    "baseline_composite": 29.555555555555546,
+    "baseline_composite_v2": 45.16241346649157,
+    "model_bleu": 17.965205598154213,
+    "model_bertscore": 92.87569522857666,
+    "model_quality": 61.080590057373044,
+    "model_plausibility": 7.0,
+    "model_composite": 23.77777777777777,
+    "model_composite_v2": 64.75006895289428,
+    "predicted_sentence": "The doctor is bowling to help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -6.875547532424431,
+    "improvement_bertscore": 2.591574192047119,
+    "improvement_quality": 40.35466395060221,
+    "improvement_composite": -5.777777777777775,
+    "improvement_composite_v2": 19.58765548640271,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "needs"
+    ],
+    "hallucinated_words": [
+      "bowling"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "BOWLING",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "DOCTOR",
+      "BOWLING",
+      "HELP"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"bowling\", \"help\"],\n  \"sentence\": \"The doctor is bowling to help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 39,
+    "glosses": [
+      "MAN",
+      "NEED",
+      "HELP"
+    ],
+    "reference_sentence": "The man needs help.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 89.35937881469727,
+    "baseline_quality": 20.86509765625,
+    "baseline_plausibility": 33.0,
+    "baseline_composite": 29.555555555555546,
+    "baseline_composite_v2": 45.26327437109735,
+    "model_bleu": 50.81327481546149,
+    "model_bertscore": 95.31606435775757,
+    "model_quality": 70.5384910583496,
+    "model_plausibility": 100.0,
+    "model_composite": 57.14285714285713,
+    "model_composite_v2": 73.86908260695608,
+    "predicted_sentence": "The man needs help with bowling.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "man",
+        "confidence": 0.951565682888031,
+        "top_k": [
+          {
+            "gloss": "man",
+            "confidence": 0.951565682888031
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.017193201929330826
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.004716632887721062
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 25.972521684882846,
+    "improvement_bertscore": 5.956685543060303,
+    "improvement_quality": 49.673393402099606,
+    "improvement_composite": 27.587301587301585,
+    "improvement_composite_v2": 28.60580823585873,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 75.0,
+    "model_coverage_f1": 85.71428571428571,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 8.333333333333343,
+    "improvement_coverage_f1": 19.04761904761905,
+    "missing_words": [],
+    "hallucinated_words": [
+      "bowling"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "BOWLING",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "MAN",
+      "BOWLING",
+      "HELP"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"man\", \"bowling\", \"help\"],\n  \"sentence\": \"The man needs help with bowling.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 40,
+    "glosses": [
+      "FAMILY",
+      "NEED",
+      "ORANGE"
+    ],
+    "reference_sentence": "The family needs an orange.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 89.13078308105469,
+    "baseline_quality": 8.546905761718751,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 23.99999999999999,
+    "baseline_composite_v2": 33.6156979244525,
+    "model_bleu": 14.535768424205482,
+    "model_bertscore": 91.42506122589111,
+    "model_quality": 64.21082153320313,
+    "model_plausibility": 75.0,
+    "model_composite": 38.88888888888887,
+    "model_composite_v2": 65.83778875359079,
+    "predicted_sentence": "The family will tell about the orange.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "orange",
+        "confidence": 0.9610919952392578,
+        "top_k": [
+          {
+            "gloss": "orange",
+            "confidence": 0.9610919952392578
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.009843415580689907
+          },
+          {
+            "gloss": "change",
+            "confidence": 0.0022455991711467505
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -3.2634089720879906,
+    "improvement_bertscore": 2.294278144836426,
+    "improvement_quality": 55.66391577148438,
+    "improvement_composite": 14.888888888888882,
+    "improvement_composite_v2": 32.22209082913829,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "needs"
+    ],
+    "hallucinated_words": [
+      "tell"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "tell",
+        "used_confidence": 0.01120806485414505,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "TELL",
+        "original": "NEED"
+      }
+    ],
+    "effective_glosses": [
+      "FAMILY",
+      "TELL",
+      "ORANGE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"tell\", \"orange\"],\n  \"sentence\": \"The family will tell about the orange.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 41,
+    "glosses": [
+      "DOCTOR",
+      "NEED",
+      "APPLE"
+    ],
+    "reference_sentence": "The doctor needs an apple.",
+    "baseline_bleu": 17.799177396293473,
+    "baseline_bertscore": 89.13007974624634,
+    "baseline_quality": 0,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 23.99999999999999,
+    "baseline_composite_v2": 16.4414138288698,
+    "model_bleu": 100.00000000000004,
+    "model_bertscore": 99.99998807907104,
+    "model_quality": 52.71921630859375,
+    "model_plausibility": 86.0,
+    "model_composite": 93.0,
+    "model_composite_v2": 80.7835588814386,
+    "predicted_sentence": "The doctor needs an apple.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "doctor",
+        "confidence": 0.9826762676239014,
+        "top_k": [
+          {
+            "gloss": "doctor",
+            "confidence": 0.9826762676239014
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.0016805636696517467
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.0010909168049693108
+          }
+        ]
+      },
+      {
+        "top_prediction": "bowling",
+        "confidence": 0.9150696396827698,
+        "top_k": [
+          {
+            "gloss": "bowling",
+            "confidence": 0.9150696396827698
+          },
+          {
+            "gloss": "tell",
+            "confidence": 0.01120806485414505
+          },
+          {
+            "gloss": "need",
+            "confidence": 0.008244085125625134
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 82.20082260370657,
+    "improvement_bertscore": 10.869908332824707,
+    "improvement_quality": 52.71921630859375,
+    "improvement_composite": 69.00000000000001,
+    "improvement_composite_v2": 64.3421450525688,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 100.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 100.0,
+    "improvement_coverage_recall": 33.33333333333334,
+    "improvement_coverage_precision": 33.33333333333334,
+    "improvement_coverage_f1": 33.33333333333334,
+    "missing_words": [],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 1,
+        "top1": "bowling",
+        "top1_confidence": 0.9150696396827698,
+        "used": "need",
+        "used_confidence": 0.008244085125625134,
+        "rank": 3
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 1,
+        "predicted": "bowling",
+        "original": "NEED"
+      }
+    ],
+    "effective_gloss_accuracy": 100.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [],
+    "effective_glosses": [
+      "DOCTOR",
+      "NEED",
+      "APPLE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 100.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"doctor\", \"need\", \"apple\"],\n  \"sentence\": \"The doctor needs an apple.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 42,
+    "glosses": [
+      "COMPUTER",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "reference_sentence": "Play basketball on the computer.",
+    "baseline_bleu": 28.254432923044853,
+    "baseline_bertscore": 92.74094700813293,
+    "baseline_quality": 58.193886718749994,
+    "baseline_plausibility": 50.0,
+    "baseline_composite": 33.33333333333332,
+    "baseline_composite_v2": 63.71352235564949,
+    "model_bleu": 12.44023474812678,
+    "model_bertscore": 90.76009392738342,
+    "model_quality": 86.55742492675782,
+    "model_plausibility": 100.0,
+    "model_composite": 44.44444444444443,
+    "model_composite_v2": 72.72894200240839,
+    "predicted_sentence": "My son plays basketball.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "son",
+        "confidence": 0.6722973585128784,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.6722973585128784
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.20529727637767792
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.013650872744619846
+          }
+        ]
+      },
+      {
+        "top_prediction": "play",
+        "confidence": 0.9335314631462097,
+        "top_k": [
+          {
+            "gloss": "play",
+            "confidence": 0.9335314631462097
+          },
+          {
+            "gloss": "jacket",
+            "confidence": 0.025160061195492744
+          },
+          {
+            "gloss": "year",
+            "confidence": 0.005810779519379139
+          }
+        ]
+      },
+      {
+        "top_prediction": "basketball",
+        "confidence": 0.8904054164886475,
+        "top_k": [
+          {
+            "gloss": "basketball",
+            "confidence": 0.8904054164886475
+          },
+          {
+            "gloss": "cow",
+            "confidence": 0.027947889640927315
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.020644590258598328
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -15.814198174918072,
+    "improvement_bertscore": -1.9808530807495117,
+    "improvement_quality": 28.363538208007824,
+    "improvement_composite": 11.111111111111107,
+    "improvement_composite_v2": 9.0154196467589,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "computer"
+    ],
+    "hallucinated_words": [
+      "son"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "son",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "SON",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_glosses": [
+      "SON",
+      "PLAY",
+      "BASKETBALL"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"son\", \"play\", \"basketball\"],\n  \"sentence\": \"My son plays basketball.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 43,
+    "glosses": [
+      "COMPUTER",
+      "ENJOY",
+      "FAMILY"
+    ],
+    "reference_sentence": "The family enjoys the computer.",
+    "baseline_bleu": 14.127216461522432,
+    "baseline_bertscore": 91.94368124008179,
+    "baseline_quality": 41.22857666015625,
+    "baseline_plausibility": 34.0,
+    "baseline_composite": 29.777777777777764,
+    "baseline_composite_v2": 56.79872774641388,
+    "model_bleu": 28.117066259517458,
+    "model_bertscore": 93.55868697166443,
+    "model_quality": 80.16849861145019,
+    "model_plausibility": 43.0,
+    "model_composite": 31.77777777777776,
+    "model_composite_v2": 70.89360764792453,
+    "predicted_sentence": "My son enjoys the family.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "son",
+        "confidence": 0.6722973585128784,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.6722973585128784
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.20529727637767792
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.013650872744619846
+          }
+        ]
+      },
+      {
+        "top_prediction": "enjoy",
+        "confidence": 0.9558631181716919,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.9558631181716919
+          },
+          {
+            "gloss": "son",
+            "confidence": 0.009808244183659554
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.004084677901118994
+          }
+        ]
+      },
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 13.989849797995026,
+    "improvement_bertscore": 1.6150057315826416,
+    "improvement_quality": 38.93992195129394,
+    "improvement_composite": 1.9999999999999964,
+    "improvement_composite_v2": 14.094879901510645,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "computer"
+    ],
+    "hallucinated_words": [
+      "son"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "son",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "SON",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_glosses": [
+      "SON",
+      "ENJOY",
+      "FAMILY"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"son\", \"enjoy\", \"family\"],\n  \"sentence\": \"My son enjoys the family.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 44,
+    "glosses": [
+      "COMPUTER",
+      "TALL"
+    ],
+    "reference_sentence": "The computer is tall.",
+    "baseline_bleu": 18.393972058572114,
+    "baseline_bertscore": 92.79127717018127,
+    "baseline_quality": 38.3948193359375,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 15.375,
+    "baseline_composite_v2": 45.786510449823005,
+    "model_bleu": 31.947155212313625,
+    "model_bertscore": 94.60857510566711,
+    "model_quality": 87.16681480407715,
+    "model_plausibility": 100.0,
+    "model_composite": 25.0,
+    "model_composite_v2": 60.17698087641169,
+    "predicted_sentence": "My son is tall.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "son",
+        "confidence": 0.6722973585128784,
+        "top_k": [
+          {
+            "gloss": "son",
+            "confidence": 0.6722973585128784
+          },
+          {
+            "gloss": "computer",
+            "confidence": 0.20529727637767792
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.013650872744619846
+          }
+        ]
+      },
+      {
+        "top_prediction": "tall",
+        "confidence": 0.9205083250999451,
+        "top_k": [
+          {
+            "gloss": "tall",
+            "confidence": 0.9205083250999451
+          },
+          {
+            "gloss": "later",
+            "confidence": 0.020213190466165543
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.01318050455302
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 13.55318315374151,
+    "improvement_bertscore": 1.8172979354858398,
+    "improvement_quality": 48.77199546813965,
+    "improvement_composite": 9.625,
+    "improvement_composite_v2": 14.390470426588685,
+    "baseline_coverage_recall": 50.0,
+    "baseline_coverage_precision": 50.0,
+    "baseline_coverage_f1": 50.0,
+    "model_coverage_recall": 50.0,
+    "model_coverage_precision": 50.0,
+    "model_coverage_f1": 50.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "computer"
+    ],
+    "hallucinated_words": [
+      "son"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 50.0,
+    "gloss_correct": 1,
+    "gloss_total": 2,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "son",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_gloss_accuracy": 50.0,
+    "effective_gloss_correct": 1,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "SON",
+        "original": "COMPUTER"
+      }
+    ],
+    "effective_glosses": [
+      "SON",
+      "TALL"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"son\", \"tall\"],\n  \"sentence\": \"My son is tall.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 45,
+    "glosses": [
+      "LATER",
+      "WATER"
+    ],
+    "reference_sentence": "Water later.",
+    "baseline_bleu": 49.99999999999999,
+    "baseline_bertscore": 87.26901412010193,
+    "baseline_quality": 84.37585258483887,
+    "baseline_plausibility": 82.0,
+    "baseline_composite": 22.749999999999996,
+    "baseline_composite_v2": 59.52773995095735,
+    "model_bleu": 27.516060407455225,
+    "model_bertscore": 88.44558596611023,
+    "model_quality": 79.54911346435547,
+    "model_plausibility": 100.0,
+    "model_composite": 25.0,
+    "model_composite_v2": 58.37028102397893,
+    "predicted_sentence": "I drink water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -22.48393959254477,
+    "improvement_bertscore": 1.1765718460083008,
+    "improvement_quality": -4.826739120483396,
+    "improvement_composite": 2.2500000000000036,
+    "improvement_composite_v2": -1.1574589269784141,
+    "baseline_coverage_recall": 50.0,
+    "baseline_coverage_precision": 50.0,
+    "baseline_coverage_f1": 50.0,
+    "model_coverage_recall": 50.0,
+    "model_coverage_precision": 50.0,
+    "model_coverage_f1": 50.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "drink"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 50.0,
+    "gloss_correct": 1,
+    "gloss_total": 2,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 50.0,
+    "effective_gloss_correct": 1,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DRINK",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DRINK",
+      "WATER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"drink\", \"water\"],\n  \"sentence\": \"I drink water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 46,
+    "glosses": [
+      "LATER",
+      "HOT",
+      "WATER"
+    ],
+    "reference_sentence": "Hot water later.",
+    "baseline_bleu": 55.03212081491043,
+    "baseline_bertscore": 90.04191160202026,
+    "baseline_quality": 83.05210876464844,
+    "baseline_plausibility": 94.0,
+    "baseline_composite": 43.111111111111086,
+    "baseline_composite_v2": 71.73361462766654,
+    "model_bleu": 55.03212081491043,
+    "model_bertscore": 91.67466759681702,
+    "model_quality": 86.85519218444824,
+    "model_plausibility": 100.0,
+    "model_composite": 44.44444444444443,
+    "model_composite_v2": 72.81224512601096,
+    "predicted_sentence": "Drink hot water.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "hot",
+        "confidence": 0.9040523767471313,
+        "top_k": [
+          {
+            "gloss": "hot",
+            "confidence": 0.9040523767471313
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.025799144059419632
+          },
+          {
+            "gloss": "birthday",
+            "confidence": 0.015118817798793316
+          }
+        ]
+      },
+      {
+        "top_prediction": "water",
+        "confidence": 0.9438815116882324,
+        "top_k": [
+          {
+            "gloss": "water",
+            "confidence": 0.9438815116882324
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.018617896363139153
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.004548699129372835
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 0.0,
+    "improvement_bertscore": 1.632755994796753,
+    "improvement_quality": 3.8030834197998047,
+    "improvement_composite": 1.3333333333333428,
+    "improvement_composite_v2": 1.078630498344424,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "drink"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DRINK",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DRINK",
+      "HOT",
+      "WATER"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"drink\", \"hot\", \"water\"],\n  \"sentence\": \"Drink hot water.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 47,
+    "glosses": [
+      "LATER",
+      "GIVE",
+      "JACKET"
+    ],
+    "reference_sentence": "Give the jacket later.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 91.25565886497498,
+    "baseline_quality": 8.9646220703125,
+    "baseline_plausibility": 8.0,
+    "baseline_composite": 23.99999999999999,
+    "baseline_composite_v2": 34.15464867492586,
+    "model_bleu": 9.652434877402245,
+    "model_bertscore": 89.04774188995361,
+    "model_quality": 62.77568893432617,
+    "model_plausibility": 62.0,
+    "model_composite": 35.999999999999986,
+    "model_composite_v2": 65.34358981036942,
+    "predicted_sentence": "I drink and give a jacket.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "jacket",
+        "confidence": 0.9595763683319092,
+        "top_k": [
+          {
+            "gloss": "jacket",
+            "confidence": 0.9595763683319092
+          },
+          {
+            "gloss": "doctor",
+            "confidence": 0.004829389043152332
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0031220633536577225
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -15.1883182531764,
+    "improvement_bertscore": -2.2079169750213623,
+    "improvement_quality": 53.81106686401367,
+    "improvement_composite": 11.999999999999996,
+    "improvement_composite_v2": 31.188941135443564,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "drink"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DRINK",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DRINK",
+      "GIVE",
+      "JACKET"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"drink\", \"give\", \"jacket\"],\n  \"sentence\": \"I drink and give a jacket.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 48,
+    "glosses": [
+      "LATER",
+      "FAMILY",
+      "ENJOY",
+      "THANKSGIVING"
+    ],
+    "reference_sentence": "The family enjoys Thanksgiving later.",
+    "baseline_bleu": 14.794015674776452,
+    "baseline_bertscore": 95.59438228607178,
+    "baseline_quality": 46.500756835937494,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 34.59375,
+    "baseline_composite_v2": 63.95298933802026,
+    "model_bleu": 46.30777161991026,
+    "model_bertscore": 97.12550044059753,
+    "model_quality": 59.41695190429687,
+    "model_plausibility": 100.0,
+    "model_composite": 64.28571428571428,
+    "model_composite_v2": 72.5562698715299,
+    "predicted_sentence": "My family enjoys Thanksgiving.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "family",
+        "confidence": 0.9746435880661011,
+        "top_k": [
+          {
+            "gloss": "family",
+            "confidence": 0.9746435880661011
+          },
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.0038499494548887014
+          },
+          {
+            "gloss": "before",
+            "confidence": 0.0024363636039197445
+          }
+        ]
+      },
+      {
+        "top_prediction": "enjoy",
+        "confidence": 0.9558631181716919,
+        "top_k": [
+          {
+            "gloss": "enjoy",
+            "confidence": 0.9558631181716919
+          },
+          {
+            "gloss": "son",
+            "confidence": 0.009808244183659554
+          },
+          {
+            "gloss": "study",
+            "confidence": 0.004084677901118994
+          }
+        ]
+      },
+      {
+        "top_prediction": "thanksgiving",
+        "confidence": 0.29065239429473877,
+        "top_k": [
+          {
+            "gloss": "thanksgiving",
+            "confidence": 0.29065239429473877
+          },
+          {
+            "gloss": "man",
+            "confidence": 0.22416484355926514
+          },
+          {
+            "gloss": "no",
+            "confidence": 0.14408116042613983
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": 31.51375594513381,
+    "improvement_bertscore": 1.5311181545257568,
+    "improvement_quality": 12.916195068359379,
+    "improvement_composite": 29.691964285714278,
+    "improvement_composite_v2": 8.603280533509647,
+    "baseline_coverage_recall": 75.0,
+    "baseline_coverage_precision": 75.0,
+    "baseline_coverage_f1": 75.0,
+    "model_coverage_recall": 75.0,
+    "model_coverage_precision": 100.0,
+    "model_coverage_f1": 85.71428571428571,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 25.0,
+    "improvement_coverage_f1": 10.714285714285708,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 75.0,
+    "gloss_correct": 3,
+    "gloss_total": 4,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 75.0,
+    "effective_gloss_correct": 3,
+    "effective_gloss_total": 4,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "drink",
+      "family",
+      "enjoy",
+      "thanksgiving"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"family\", \"enjoy\", \"thanksgiving\"],\n  \"sentence\": \"My family enjoys Thanksgiving.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 49,
+    "glosses": [
+      "LATER",
+      "STUDY"
+    ],
+    "reference_sentence": "Study later.",
+    "baseline_bleu": 49.99999999999999,
+    "baseline_bertscore": 90.4836356639862,
+    "baseline_quality": 56.548538818359376,
+    "baseline_plausibility": 32.0,
+    "baseline_composite": 16.5,
+    "baseline_composite_v2": 52.093931190636035,
+    "model_bleu": 27.516060407455225,
+    "model_bertscore": 88.4955108165741,
+    "model_quality": 5.122787109375,
+    "model_plausibility": 75.0,
+    "model_composite": 21.875,
+    "model_composite_v2": 23.39638569681798,
+    "predicted_sentence": "The deaf study.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "study",
+        "confidence": 0.8044493794441223,
+        "top_k": [
+          {
+            "gloss": "study",
+            "confidence": 0.8044493794441223
+          },
+          {
+            "gloss": "enjoy",
+            "confidence": 0.04377465322613716
+          },
+          {
+            "gloss": "give",
+            "confidence": 0.037299931049346924
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -22.48393959254477,
+    "improvement_bertscore": -1.9881248474121094,
+    "improvement_quality": -51.42575170898438,
+    "improvement_composite": 5.375,
+    "improvement_composite_v2": -28.697545493818055,
+    "baseline_coverage_recall": 50.0,
+    "baseline_coverage_precision": 50.0,
+    "baseline_coverage_f1": 50.0,
+    "model_coverage_recall": 50.0,
+    "model_coverage_precision": 50.0,
+    "model_coverage_f1": 50.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "deaf"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 0,
+        "top1": "drink",
+        "top1_confidence": 0.4509830176830292,
+        "used": "deaf",
+        "used_confidence": 0.14717456698417664,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 50.0,
+    "gloss_correct": 1,
+    "gloss_total": 2,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 50.0,
+    "effective_gloss_correct": 1,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DEAF",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DEAF",
+      "STUDY"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"deaf\", \"study\"],\n  \"sentence\": \"The deaf study.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 50,
+    "glosses": [
+      "LATER",
+      "GIVE",
+      "HELP"
+    ],
+    "reference_sentence": "Give help later.",
+    "baseline_bleu": 55.03212081491043,
+    "baseline_bertscore": 90.85476398468018,
+    "baseline_quality": 39.88879638671875,
+    "baseline_plausibility": 23.0,
+    "baseline_composite": 27.33333333333332,
+    "baseline_composite_v2": 56.17668890240427,
+    "model_bleu": 31.947155212313625,
+    "model_bertscore": 87.68678903579712,
+    "model_quality": 69.01967239379883,
+    "model_plausibility": 94.0,
+    "model_composite": 36.95238095238095,
+    "model_composite_v2": 64.06407038443854,
+    "predicted_sentence": "Deaf people give help.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "help",
+        "confidence": 0.9714698195457458,
+        "top_k": [
+          {
+            "gloss": "help",
+            "confidence": 0.9714698195457458
+          },
+          {
+            "gloss": "wrong",
+            "confidence": 0.00437647569924593
+          },
+          {
+            "gloss": "play",
+            "confidence": 0.0015514265978708863
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -23.084965602596803,
+    "improvement_bertscore": -3.1679749488830566,
+    "improvement_quality": 29.130876007080076,
+    "improvement_composite": 9.619047619047628,
+    "improvement_composite_v2": 7.8873814820342645,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 50.0,
+    "model_coverage_f1": 57.14285714285715,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": -16.666666666666657,
+    "improvement_coverage_f1": -9.523809523809504,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "deaf",
+      "people"
+    ],
+    "llm_used_alternatives": 1,
+    "llm_alternative_details": [
+      {
+        "position": 0,
+        "top1": "drink",
+        "top1_confidence": 0.4509830176830292,
+        "used": "deaf",
+        "used_confidence": 0.14717456698417664,
+        "rank": 2
+      }
+    ],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DEAF",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DEAF",
+      "GIVE",
+      "HELP"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"deaf\", \"give\", \"help\"],\n  \"sentence\": \"Deaf people give help.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 51,
+    "glosses": [
+      "LATER",
+      "CHANGE"
+    ],
+    "reference_sentence": "Change later.",
+    "baseline_bleu": 49.99999999999999,
+    "baseline_bertscore": 91.14737510681152,
+    "baseline_quality": 59.74009765625,
+    "baseline_plausibility": 34.0,
+    "baseline_composite": 16.75,
+    "baseline_composite_v2": 53.05609868057755,
+    "model_bleu": 15.97357760615681,
+    "model_bertscore": 89.2582893371582,
+    "model_quality": 77.76886596679688,
+    "model_plausibility": 96.0,
+    "model_composite": 24.5,
+    "model_composite_v2": 57.93156463794239,
+    "predicted_sentence": "Drink to the change.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "change",
+        "confidence": 0.7165296077728271,
+        "top_k": [
+          {
+            "gloss": "change",
+            "confidence": 0.7165296077728271
+          },
+          {
+            "gloss": "but",
+            "confidence": 0.14666542410850525
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.024474304169416428
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -34.026422393843184,
+    "improvement_bertscore": -1.8890857696533203,
+    "improvement_quality": 18.02876831054688,
+    "improvement_composite": 7.75,
+    "improvement_composite_v2": 4.875465957364838,
+    "baseline_coverage_recall": 50.0,
+    "baseline_coverage_precision": 50.0,
+    "baseline_coverage_f1": 50.0,
+    "model_coverage_recall": 50.0,
+    "model_coverage_precision": 50.0,
+    "model_coverage_f1": 50.0,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "drink"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 50.0,
+    "gloss_correct": 1,
+    "gloss_total": 2,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 50.0,
+    "effective_gloss_correct": 1,
+    "effective_gloss_total": 2,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DRINK",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DRINK",
+      "CHANGE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"drink\", \"change\"],\n  \"sentence\": \"Drink to the change.\",\n  \"low_confidence\": false\n}\n```"
+  },
+  {
+    "entry_id": 52,
+    "glosses": [
+      "LATER",
+      "GIVE",
+      "APPLE"
+    ],
+    "reference_sentence": "Give the apple later.",
+    "baseline_bleu": 24.840753130578644,
+    "baseline_bertscore": 91.04511737823486,
+    "baseline_quality": 12.533818359375001,
+    "baseline_plausibility": 20.0,
+    "baseline_composite": 26.666666666666654,
+    "baseline_composite_v2": 38.191521416954814,
+    "model_bleu": 9.652434877402245,
+    "model_bertscore": 89.90858197212219,
+    "model_quality": 73.51406021118164,
+    "model_plausibility": 74.0,
+    "model_composite": 38.66666666666665,
+    "model_composite_v2": 68.87516155006062,
+    "predicted_sentence": "I drink and give an apple.",
+    "predicted_glosses": [
+      {
+        "top_prediction": "drink",
+        "confidence": 0.4509830176830292,
+        "top_k": [
+          {
+            "gloss": "drink",
+            "confidence": 0.4509830176830292
+          },
+          {
+            "gloss": "deaf",
+            "confidence": 0.14717456698417664
+          },
+          {
+            "gloss": "tall",
+            "confidence": 0.1458730250597
+          }
+        ]
+      },
+      {
+        "top_prediction": "give",
+        "confidence": 0.9714799523353577,
+        "top_k": [
+          {
+            "gloss": "give",
+            "confidence": 0.9714799523353577
+          },
+          {
+            "gloss": "paper",
+            "confidence": 0.005218258127570152
+          },
+          {
+            "gloss": "water",
+            "confidence": 0.0023694972041994333
+          }
+        ]
+      },
+      {
+        "top_prediction": "apple",
+        "confidence": 0.9108265042304993,
+        "top_k": [
+          {
+            "gloss": "apple",
+            "confidence": 0.9108265042304993
+          },
+          {
+            "gloss": "orange",
+            "confidence": 0.03512747213244438
+          },
+          {
+            "gloss": "drink",
+            "confidence": 0.006004324182868004
+          }
+        ]
+      }
+    ],
+    "improvement_bleu": -15.1883182531764,
+    "improvement_bertscore": -1.136535406112671,
+    "improvement_quality": 60.98024185180664,
+    "improvement_composite": 11.999999999999996,
+    "improvement_composite_v2": 30.68364013310581,
+    "baseline_coverage_recall": 66.66666666666666,
+    "baseline_coverage_precision": 66.66666666666666,
+    "baseline_coverage_f1": 66.66666666666666,
+    "model_coverage_recall": 66.66666666666666,
+    "model_coverage_precision": 66.66666666666666,
+    "model_coverage_f1": 66.66666666666666,
+    "improvement_coverage_recall": 0.0,
+    "improvement_coverage_precision": 0.0,
+    "improvement_coverage_f1": 0.0,
+    "missing_words": [
+      "later"
+    ],
+    "hallucinated_words": [
+      "drink"
+    ],
+    "llm_used_alternatives": 0,
+    "llm_alternative_details": [],
+    "gloss_accuracy": 66.66666666666666,
+    "gloss_correct": 2,
+    "gloss_total": 3,
+    "gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "drink",
+        "original": "LATER"
+      }
+    ],
+    "effective_gloss_accuracy": 66.66666666666666,
+    "effective_gloss_correct": 2,
+    "effective_gloss_total": 3,
+    "effective_gloss_mismatches": [
+      {
+        "position": 0,
+        "predicted": "DRINK",
+        "original": "LATER"
+      }
+    ],
+    "effective_glosses": [
+      "DRINK",
+      "GIVE",
+      "APPLE"
+    ],
+    "baseline_ptr": 0.0,
+    "model_ptr": 0.0,
+    "status": "success",
+    "predicted_response_raw": "```json\n{\n  \"selections\": [\"drink\", \"give\", \"apple\"],\n  \"sentence\": \"I drink and give an apple.\",\n  \"low_confidence\": false\n}\n```"
+  }
+]

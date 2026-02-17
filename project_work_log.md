@@ -118,6 +118,10 @@
 - Fixed data leakage issue in train/val splits
 - 50-class training: 47.27% val accuracy
 
+**Observations:**
+- Some visually similar signs remain difficult to distinguish (e.g., NEED/BOWLING share hand motion)
+- Signs with similar initial poses prone to confusion despite augmentation
+
 **Major Milestone:**
 - First significant results beating baselines
 - Data leakage fix critical for valid evaluation
@@ -148,6 +152,11 @@
 - Auto-concatenation of glosses
 - Case-insensitive comparison
 
+**Evaluation Challenges:**
+- GPT-2 perplexity scores sometimes too harsh on grammatically awkward but meaningful sentences
+- Need for semantic plausibility scoring beyond grammatical correctness
+- Mismatch recovery rate tracking needed for LLM pipeline evaluation
+
 **Deliverables:**
 - BLEU evaluation framework
 - Synthetic evaluation scripts
@@ -162,6 +171,11 @@
 - Smart buffering system (5 trigger strategies)
 - Context-aware sentence construction
 - Top-K prediction support for disambiguation
+
+**Challenges Observed:**
+- LLM sometimes selects incorrect glosses from top-3 when confidence differences are small
+- Concrete nouns (e.g., PAPER) often preferred over abstract adjectives (e.g., FINE) despite lower confidence
+- High-confidence predictions (>65%) dominate LLM selection even when incorrect
 
 **Deliverables:**
 - LLM-powered sentence construction module
@@ -248,6 +262,11 @@
 - 43-class model training: 80.97% top-1, 91.62% top-3
 - Production model saved
 
+**Model Confusion Patterns Identified:**
+- NEED → BOWLING (91.5% confidence) - Model consistently misclassifies NEED sign
+- COMPUTER → SON (67.2% confidence) - Similar hand motion causes confusion
+- LATER → DRINK (45.1% confidence) - LATER never appears in top-3 for some videos
+
 **Major Milestone:**
 - 43-class model achieves 80.97% - best result to date
 - Smart gloss selection for vocabulary expansion
@@ -274,17 +293,63 @@
 
 ---
 
+## Week 19: February 14-16, 2026
+**Hours: 5**
+
+**Tasks Completed:**
+- Expanded synthetic evaluation dataset from n=34 to n=53 samples
+- Integrated Gemini API for plausibility scoring (replacing GPT-2 perplexity)
+- Implemented CTQI v2 formula: `(GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100`
+- Comprehensive failure scenario analysis across all 53 entries
+
+**Evaluation Results (n=53, Gemini v4):**
+
+| Metric | Baseline | Model | Improvement |
+|--------|----------|-------|-------------|
+| **CTQI v2** | 46.51 | 76.05 | **+29.55** |
+| **Entries Improved** | - | 50/53 | 94.3% |
+
+**Accuracy Metrics:**
+- Top-1 Accuracy: 83.5% (137/164 glosses)
+- Effective Accuracy: 89.0% (146/164 glosses) - after LLM recovery
+- Top-3 Accuracy: 95.1% (156/164 glosses)
+- LLM Improvement: +5.5% (9 additional glosses recovered)
+
+**Failure Scenario Breakdown:**
+- **Model Prediction Errors (44.4%):** LATER → DRINK confusion in 8 cases; LATER never appears in top-3, unrecoverable by LLM
+- **LLM Selection Errors (55.6%):** FINE → PAPER (1 case), COMPUTER → SON (3 cases), NEED recovery failures (6 cases)
+- **NEED Recovery Rate:** 62.5% (10/16 cases) - improved from 56.3% in v3
+
+**Gemini vs GPT-2 Comparison:**
+- Model CTQI v2: 76.05 (Gemini) vs 67.79 (GPT-2) = **+8.26 improvement**
+- Gemini rewards fluent sentences more (100 vs ~85) while penalizing semantically broken ones more severely (7 vs 44)
+- 32 entries now score 90-100 (vs 24 with GPT-2)
+
+**Key Insights:**
+- LATER sign requires additional training data (model-level fix needed)
+- LLM tends to prefer concrete nouns over abstract adjectives at similar confidence levels
+- High-confidence misclassifications (>90%) difficult to recover without semantic filtering
+
+**Deliverables:**
+- evaluation_results.json with per-entry CTQI v2 metrics
+- failure_scenario_analysis.txt with detailed mismatch classification
+- comparison_table.md for side-by-side entry comparison
+
+---
+
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Total Weeks** | 18 |
-| **Total Hours** | ~75 |
+| **Total Weeks** | 19 |
+| **Total Hours** | ~80 |
 | **Models Trained** | 15+ experiments |
 | **Best 20-class** | 42.47% top-1, 75.29% top-3 |
 | **Best 50-class** | 47.27% top-1, 50.91% top-3 |
 | **Best 43-class** | 80.97% top-1, 91.62% top-3 |
 | **Best 100-class** | 48.65% top-1 (in progress) |
+| **Synthetic Eval (n=53)** | CTQI v2: 76.05 (+29.55 improvement) |
+| **LLM Recovery Rate** | +5.5% (9/27 mismatches recovered) |
 | **Improvement over baseline** | 8.5x - 35.2x |
 
 ### Key Deliverables
@@ -295,3 +360,5 @@
 5. Closed-captions real-time translation
 6. Smart gloss selection for vocabulary expansion
 7. Comprehensive research documentation
+8. CTQI v2 evaluation framework with Gemini plausibility scoring (n=53)
+9. Failure scenario analysis with mismatch classification

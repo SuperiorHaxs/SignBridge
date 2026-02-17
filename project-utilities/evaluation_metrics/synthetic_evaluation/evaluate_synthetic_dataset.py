@@ -63,15 +63,17 @@ from evaluation_metrics import (
     calculate_coverage,
     calculate_coverage_v2,
     QualityScorer,
+    PlausibilityScorer,
     METRIC_WEIGHTS,
     METRIC_WEIGHTS_V2,
     BLEU_AVAILABLE,
     BERTSCORE_AVAILABLE,
     QUALITY_SCORING_AVAILABLE,
+    GEMINI_AVAILABLE,
 )
 
 # Print availability status
-print(f"Metrics availability: BLEU={BLEU_AVAILABLE}, BERTScore={BERTSCORE_AVAILABLE}, Quality={QUALITY_SCORING_AVAILABLE}")
+print(f"Metrics availability: BLEU={BLEU_AVAILABLE}, BERTScore={BERTSCORE_AVAILABLE}, Quality={QUALITY_SCORING_AVAILABLE}, Gemini={GEMINI_AVAILABLE}")
 
 # Import two-stage pipeline and LLM interface for two-phase mode
 TWO_STAGE_AVAILABLE = False
@@ -104,7 +106,9 @@ class SyntheticDatasetEvaluator:
         use_two_stage=False,
         prompt_file=None,
         use_manifest=False,
-        no_mask=False
+        no_mask=False,
+        use_gemini_plausibility=False,
+        gemini_rate_limit=4.5
     ):
         self.dataset_path = dataset_path
         self.checkpoint_path = checkpoint_path
@@ -189,6 +193,21 @@ class SyntheticDatasetEvaluator:
         self.quality_scorer = None
         if QUALITY_SCORING_AVAILABLE:
             self.quality_scorer = QualityScorer(verbose=not self.quiet)
+
+        # Initialize Gemini plausibility scorer for CTQI v2 if requested
+        self.use_gemini_plausibility = use_gemini_plausibility
+        self.gemini_rate_limit = gemini_rate_limit
+        self.plausibility_scorer = None
+        if use_gemini_plausibility:
+            if GEMINI_AVAILABLE:
+                self.plausibility_scorer = PlausibilityScorer(
+                    verbose=not self.quiet,
+                    rate_limit_delay=gemini_rate_limit
+                )
+                rate_info = f"rate limit: {gemini_rate_limit}s" if gemini_rate_limit > 0 else "no rate limit"
+                print(f"Gemini PlausibilityScorer: INITIALIZED for CTQI v2 ({rate_info})")
+            else:
+                print("Warning: --use-gemini-plausibility requested but Gemini not available, falling back to GPT-2 Quality")
 
     def _load_dataset(self):
         """Load synthetic dataset JSON"""
@@ -919,7 +938,7 @@ class SyntheticDatasetEvaluator:
     def _calculate_baseline_metrics(self, predicted_top1_glosses, original_glosses, reference_sentence):
         """
         Calculate baseline metrics (predicted top-1 glosses → simple sentence vs reference)
-        Returns: (bleu_score, bertscore_f1, quality_score, coverage_dict)
+        Returns: (bleu_score, bertscore_f1, quality_score, plausibility_score, coverage_dict)
         This represents the baseline performance without LLM sentence construction.
 
         Args:
@@ -944,17 +963,27 @@ class SyntheticDatasetEvaluator:
         if bertscore_f1 is not None and not self.quiet:
             print(f"  BASELINE BERTScore: {bertscore_f1:.2f}")
 
-        # Calculate Quality Score using modular function
+        # Calculate Quality Score using modular function (GPT-2 perplexity)
         quality_score = calculate_quality_score(baseline_sentence, scorer=self.quality_scorer)
         if quality_score is not None and not self.quiet:
-            print(f"  BASELINE Quality: {quality_score:.2f}")
+            print(f"  BASELINE Quality (GPT-2): {quality_score:.2f}")
+
+        # Calculate Plausibility Score using Gemini if available, else use quality_score
+        plausibility_score = None
+        if self.plausibility_scorer is not None:
+            plausibility_score = self.plausibility_scorer.calculate(baseline_sentence)
+            if plausibility_score is not None and not self.quiet:
+                print(f"  BASELINE Plausibility (Gemini): {plausibility_score:.2f}")
+        else:
+            # Fall back to quality_score for plausibility
+            plausibility_score = quality_score
 
         # Calculate Coverage v2 (with lemmatization) using modular function
         coverage = calculate_coverage_v2(reference_sentence, baseline_sentence)
         if coverage['recall'] is not None and not self.quiet:
             print(f"  BASELINE Coverage: Recall={coverage['recall']:.1f}%, Precision={coverage['precision']:.1f}%, F1={coverage['f1']:.1f}%")
 
-        return bleu_score, bertscore_f1, quality_score, coverage
+        return bleu_score, bertscore_f1, quality_score, plausibility_score, coverage
 
     def _run_prediction(self, pose_file, metadata_file):
         """
@@ -1179,12 +1208,12 @@ class SyntheticDatasetEvaluator:
     def _calculate_model_metrics(self, predicted_glosses, predicted_sentence, reference_sentence):
         """
         Calculate model metrics (LLM sentence with top-3 predictions vs reference)
-        Returns: (bleu_score, bertscore_f1, quality_score)
+        Returns: (bleu_score, bertscore_f1, quality_score, plausibility_score)
         Directly compares predicted sentence (constructed by LLM from top-3) to reference sentence.
         This represents the performance with LLM sentence construction.
         """
         if not predicted_sentence:
-            return None, None, None
+            return None, None, None, None
 
         if not self.quiet:
             print(f"  MODEL PREDICTION (LLM with top-3): '{predicted_sentence}'")
@@ -1200,12 +1229,22 @@ class SyntheticDatasetEvaluator:
         if bertscore_f1 is not None and not self.quiet:
             print(f"  MODEL BERTScore: {bertscore_f1:.2f}")
 
-        # Calculate Quality Score using modular function
+        # Calculate Quality Score using modular function (GPT-2 perplexity)
         quality_score = calculate_quality_score(predicted_sentence, scorer=self.quality_scorer)
         if quality_score is not None and not self.quiet:
-            print(f"  MODEL Quality: {quality_score:.2f}")
+            print(f"  MODEL Quality (GPT-2): {quality_score:.2f}")
 
-        return bleu_score, bertscore_f1, quality_score
+        # Calculate Plausibility Score using Gemini if available, else use quality_score
+        plausibility_score = None
+        if self.plausibility_scorer is not None:
+            plausibility_score = self.plausibility_scorer.calculate(predicted_sentence)
+            if plausibility_score is not None and not self.quiet:
+                print(f"  MODEL Plausibility (Gemini): {plausibility_score:.2f}")
+        else:
+            # Fall back to quality_score for plausibility
+            plausibility_score = quality_score
+
+        return bleu_score, bertscore_f1, quality_score, plausibility_score
 
     def evaluate_entry(self, entry, entry_id):
         """
@@ -1229,11 +1268,13 @@ class SyntheticDatasetEvaluator:
             'baseline_bleu': None,
             'baseline_bertscore': None,
             'baseline_quality': None,
+            'baseline_plausibility': None,  # Gemini-based plausibility for CTQI v2
             'baseline_composite': None,
             'baseline_composite_v2': None,
             'model_bleu': None,
             'model_bertscore': None,
             'model_quality': None,
+            'model_plausibility': None,  # Gemini-based plausibility for CTQI v2
             'model_composite': None,
             'model_composite_v2': None,
             'predicted_sentence': None,
@@ -1401,12 +1442,13 @@ class SyntheticDatasetEvaluator:
                     print(f"  ACCURACY IMPROVEMENT (effective - top-1): {improvement:+.1f}%")
 
             # Step 4: Calculate baseline metrics (from top-1 predicted glosses)
-            baseline_bleu, baseline_bertscore, baseline_quality, baseline_coverage = self._calculate_baseline_metrics(
+            baseline_bleu, baseline_bertscore, baseline_quality, baseline_plausibility, baseline_coverage = self._calculate_baseline_metrics(
                 top1_glosses, glosses, reference_sentence
             )
             result['baseline_bleu'] = baseline_bleu
             result['baseline_bertscore'] = baseline_bertscore
             result['baseline_quality'] = baseline_quality
+            result['baseline_plausibility'] = baseline_plausibility  # Gemini-based if available
             result['baseline_coverage_recall'] = baseline_coverage['recall']
             result['baseline_coverage_precision'] = baseline_coverage['precision']
             result['baseline_coverage_f1'] = baseline_coverage['f1']
@@ -1415,10 +1457,11 @@ class SyntheticDatasetEvaluator:
             result['baseline_ptr'] = calculate_perfect_translation_rate(top1_glosses, glosses)
 
             # Calculate baseline CTQI v2 (prerequisite chain: GA × CF1 × plausibility modifier)
+            # Use Gemini plausibility if available, else fall back to GPT-2 quality
             result['baseline_composite'] = calculate_composite_score_v2_chain(
                 gloss_accuracy=result['gloss_accuracy'] or 0.0,
                 coverage_f1=baseline_coverage['f1'] or 0.0,
-                plausibility=baseline_quality or 0.0
+                plausibility=baseline_plausibility or 0.0
             )
 
             # Calculate baseline CTQI v2 (geometric mean: gloss_accuracy + quality + coverage_f1)
@@ -1429,10 +1472,11 @@ class SyntheticDatasetEvaluator:
             )
 
             # Step 5: Calculate model metrics (from LLM sentence with top-3)
-            model_bleu, model_bertscore, model_quality = self._calculate_model_metrics(predicted_glosses, predicted_sentence, reference_sentence)
+            model_bleu, model_bertscore, model_quality, model_plausibility = self._calculate_model_metrics(predicted_glosses, predicted_sentence, reference_sentence)
             result['model_bleu'] = model_bleu
             result['model_bertscore'] = model_bertscore
             result['model_quality'] = model_quality
+            result['model_plausibility'] = model_plausibility  # Gemini-based if available
 
             # Step 5b: Calculate model coverage v2 (vs reference sentence, with lemmatization)
             model_coverage = calculate_coverage_v2(reference_sentence, predicted_sentence)
@@ -1446,10 +1490,11 @@ class SyntheticDatasetEvaluator:
             result['model_ptr'] = calculate_perfect_translation_rate(effective_glosses, glosses)
 
             # Calculate model CTQI v2 (prerequisite chain: GA × CF1 × plausibility modifier)
+            # Use Gemini plausibility if available, else fall back to GPT-2 quality
             result['model_composite'] = calculate_composite_score_v2_chain(
                 gloss_accuracy=result['effective_gloss_accuracy'] or 0.0,
                 coverage_f1=model_coverage['f1'] or 0.0,
-                plausibility=model_quality or 0.0
+                plausibility=model_plausibility or 0.0
             )
 
             # Calculate model CTQI v2 (geometric mean: effective_gloss_accuracy + quality + coverage_f1)
@@ -2324,6 +2369,17 @@ def main():
         action="store_true",
         help="Disable class masking (use all classes even if masked_classes.json exists)"
     )
+    parser.add_argument(
+        "--use-gemini-plausibility",
+        action="store_true",
+        help="Use Gemini LLM for plausibility scoring (CTQI v2) instead of GPT-2 quality"
+    )
+    parser.add_argument(
+        "--gemini-rate-limit",
+        type=float,
+        default=4.5,
+        help="Seconds to wait between Gemini API calls (default: 4.5 for free tier, set to 0 for paid tier)"
+    )
 
     args = parser.parse_args()
 
@@ -2343,7 +2399,9 @@ def main():
             use_two_stage=args.two_stage,
             prompt_file=args.prompt_file,
             use_manifest=args.use_manifest,
-            no_mask=args.no_mask
+            no_mask=args.no_mask,
+            use_gemini_plausibility=args.use_gemini_plausibility,
+            gemini_rate_limit=args.gemini_rate_limit
         )
 
         # Run evaluation
