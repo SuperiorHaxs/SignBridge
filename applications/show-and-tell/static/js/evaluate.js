@@ -124,7 +124,7 @@ function useDemoEvaluation() {
 }
 
 function displayMetrics(rawMetrics, llmMetrics) {
-    const metrics = ['bleu', 'bert', 'quality', 'coverage_recall', 'coverage_precision', 'coverage_f1', 'composite'];
+    const metrics = ['gloss_accuracy', 'coverage_f1', 'quality', 'composite'];
 
     metrics.forEach(metric => {
         const row = document.querySelector(`.metric-row[data-metric="${metric}"]`);
