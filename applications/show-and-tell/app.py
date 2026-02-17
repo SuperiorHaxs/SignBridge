@@ -756,8 +756,8 @@ def get_samples():
             sample_dir = DEMO_SAMPLES_DIR / sample['id']
             original_video = None
 
-            # Check for common video extensions
-            for ext in ['.MOV', '.mov', '.mp4', '.MP4', '.webm', '.avi']:
+            # Check for common video extensions (prefer .mp4 for better browser compatibility)
+            for ext in ['.mp4', '.MP4', '.webm', '.MOV', '.mov', '.avi']:
                 video_path = sample_dir / f"original_video{ext}"
                 if video_path.exists():
                     original_video = f"original_video{ext}"

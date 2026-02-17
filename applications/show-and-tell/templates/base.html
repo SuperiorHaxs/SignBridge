@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SignBridge - Show And Tell Demo{% endblock %}</title>
+    <title>{% block title %}SignBridge{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block head %}{% endblock %}
 </head>
@@ -12,15 +12,15 @@
         <div class="header-row">
             <div class="header-left">
                 <div class="header-content">
-                    <h1 class="app-title">SignBridge - Show And Tell Demo</h1>
+                    <h1 class="app-title">SignBridge</h1>
                     <p class="app-subtitle">Real-Time ASL Translation with LLM-Augmented Contextual Selection</p>
                 </div>
                 <div class="mode-toggle">
                     <span class="mode-label-text">Mode:</span>
                     <div class="mode-buttons" id="mode-toggle">
                         <button class="mode-btn" data-mode="demo" id="mode-btn-demo">Preset Demo</button>
-                        <button class="mode-btn" data-mode="live_detailed" id="mode-btn-live-detailed">Upload</button>
                         <button class="mode-btn" data-mode="live" id="mode-btn-live">Live</button>
+                        <button class="mode-btn" data-mode="live_detailed" id="mode-btn-live-detailed">Upload</button>
                         <!-- Captions mode hidden until fully tested locally
                         <button class="mode-btn" data-mode="closed_captions" id="mode-btn-cc">Captions</button>
                         -->
