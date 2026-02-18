@@ -248,12 +248,15 @@ async function processDetectedGlossesWithLLM() {
             sessionStorage.setItem('llmSentence', result.llm_sentence);
             sessionStorage.setItem('segments', JSON.stringify(predictions));
             sessionStorage.setItem('segmentCount', predictions.length.toString());
+            // Store LLM-selected glosses for Effective GA calculation
+            sessionStorage.setItem('selectedGlosses', JSON.stringify(result.selections || []));
             // Reference is already in session storage as 'liveReference'
             sessionStorage.setItem('referenceSentence', reference);
 
             console.log('LLM processing complete:', {
                 raw: result.raw_sentence,
-                llm: result.llm_sentence
+                llm: result.llm_sentence,
+                selections: result.selections
             });
 
             updateStatus('Complete', 'success');
