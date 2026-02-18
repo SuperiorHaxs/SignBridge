@@ -2159,8 +2159,17 @@ def get_gloss_tutorials():
                 with open(metadata_path) as f:
                     metadata = json.load(f)
 
-                for seg in metadata.get('precomputed', {}).get('segments', []):
-                    gloss = seg.get('top_1') or seg.get('expected_gloss')
+                segments = metadata.get('precomputed', {}).get('segments', [])
+                # Use LLM selections if available, otherwise fall back to top_1
+                selections = metadata.get('precomputed', {}).get('selections', [])
+
+                for idx, seg in enumerate(segments):
+                    # Priority: LLM selection > top_1 > expected_gloss
+                    if selections and idx < len(selections):
+                        gloss = selections[idx]
+                    else:
+                        gloss = seg.get('top_1') or seg.get('expected_gloss')
+
                     if not gloss:
                         continue
 
