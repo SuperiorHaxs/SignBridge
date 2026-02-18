@@ -133,6 +133,7 @@
     ],
     "raw_sentence": "work full time doctor",
     "llm_sentence": "The doctor works full time.",
+    "selections": ["work", "full", "time", "doctor"],
     "evaluation": {
       "raw": {
         "bleu": 11.521590992286539,

@@ -99,6 +99,7 @@
     ],
     "raw_sentence": "son enjoy work",
     "llm_sentence": "The son enjoys work.",
+    "selections": ["son", "enjoy", "work"],
     "evaluation": {
       "raw": {
         "bleu": 17.799177396293473,

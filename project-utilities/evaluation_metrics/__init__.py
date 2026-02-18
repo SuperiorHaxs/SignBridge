@@ -24,6 +24,12 @@ CTQI v2 (Prerequisite Chain):
 - Gloss Accuracy (GA): Sign recognition accuracy
 - Coverage F1 (CF1): Semantic content coverage (improved with lemmatization)
 - Plausibility (P): LLM-assessed grammar + semantics + naturalness
+
+CTQI v3 (Human-Validated Formula):
+- CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100 * GA/100) * 100
+- Key improvement: Plausibility's contribution scales with GA
+- Prevents high plausibility from masking translation errors
+- Human correlation: r=0.9427 (highest among all formulas tested)
 """
 
 from .metrics import (
@@ -36,6 +42,7 @@ from .metrics import (
     calculate_composite_score,
     calculate_composite_score_v2,
     calculate_composite_score_v2_chain,
+    calculate_composite_score_v3,
     calculate_coverage,
     calculate_coverage_v2,
     calculate_all_metrics,
@@ -88,6 +95,8 @@ __all__ = [
     # v2 metrics from metrics.py
     'calculate_composite_score_v2_chain',
     'calculate_coverage_v2',
+    # v3 metric (human-validated)
+    'calculate_composite_score_v3',
     # v2 metrics from ctqi_v2.py (Prerequisite Chain standalone)
     'calculate_ctqi_v2',
     'calculate_plausibility',

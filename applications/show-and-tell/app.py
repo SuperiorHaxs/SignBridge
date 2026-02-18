@@ -67,7 +67,7 @@ from evaluation_metrics import (
     calculate_bleu_score,
     calculate_bert_score,
     calculate_quality_score as metrics_quality_score,
-    calculate_composite_score_v2_chain as metrics_composite_score,
+    calculate_composite_score_v3 as metrics_composite_score,
     calculate_coverage_v2 as calculate_coverage,
     QualityScorer,
     METRIC_WEIGHTS,
@@ -1619,6 +1619,7 @@ def construct_sentence():
         # Store for evaluation
         session['raw_sentence'] = raw_sentence
         session['llm_sentence'] = llm_sentence
+        session['selected_glosses'] = selections  # LLM-selected glosses for Effective GA
 
         return jsonify({
             "success": True,
@@ -1664,23 +1665,73 @@ def evaluate_sentences():
     Compares raw concatenated glosses vs LLM-constructed sentence against reference.
 
     Returns metrics for both raw and LLM sentences including:
-    - BLEU Score (n-gram precision)
-    - BERTScore (semantic similarity)
-    - Quality Score (GPT-2 fluency)
-    - Coverage (recall, precision, F1 with lemmatization)
-    - CTQI v2 (prerequisite chain: accuracy × coverage × plausibility)
+    - Gloss Accuracy: Model GA (top-1) for raw, Effective GA (LLM-selected) for LLM
+    - Coverage F1 (semantic overlap with reference)
+    - Plausibility Score (GPT-2 fluency)
+    - CTQI v3 (human-validated: GA × CF1 × (0.5 + 0.5 × P × GA))
     """
     try:
         data = request.get_json()
         raw_sentence = data.get('raw_sentence', session.get('raw_sentence', ''))
         llm_sentence = data.get('llm_sentence', session.get('llm_sentence', ''))
         reference = data.get('reference', '')
+        predicted_glosses = data.get('predicted_glosses', [])  # Model top-1 predictions
+        selected_glosses = data.get('selected_glosses', session.get('selected_glosses', []))  # LLM-selected from top-k
+        expected_glosses = data.get('expected_glosses', [])    # Ground truth glosses
 
         if not reference:
             return jsonify({"success": False, "error": "Reference sentence required"}), 400
 
         # Get quality scorer (cached)
         scorer = get_quality_scorer()
+
+        # If predicted_glosses not provided, extract from raw_sentence (model top-1)
+        if not predicted_glosses and raw_sentence:
+            predicted_glosses = raw_sentence.lower().split()
+
+        # If selected_glosses not provided, default to predicted_glosses
+        if not selected_glosses:
+            selected_glosses = predicted_glosses
+
+        # If expected_glosses not provided, derive from reference (content words, lemmatized)
+        if not expected_glosses and reference:
+            # Use same lemmatization as coverage calculation for consistency
+            import re
+            try:
+                from nltk.stem import WordNetLemmatizer
+                lemmatizer = WordNetLemmatizer()
+                # Extract content words from reference (filter stopwords)
+                stopwords = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+                            'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                            'should', 'may', 'might', 'must', 'shall', 'can', 'to', 'of', 'in',
+                            'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
+                            'during', 'before', 'after', 'above', 'below', 'between', 'under',
+                            'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where',
+                            'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some',
+                            'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than',
+                            'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until',
+                            'while', 'although', 'though', 'since', 'unless', 'i', 'me', 'my',
+                            'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
+                            'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her',
+                            'hers', 'herself', 'it', 'its', 'itself', 'they', 'them', 'their',
+                            'theirs', 'themselves', 'what', 'which', 'who', 'whom', 'this', 'that',
+                            'these', 'those', 'am'}
+                words = re.findall(r'\b[a-zA-Z]+\b', reference.lower())
+                expected_glosses = [lemmatizer.lemmatize(w, 'v') for w in words if w not in stopwords]
+            except ImportError:
+                # Fallback: just use content words without lemmatization
+                words = re.findall(r'\b[a-zA-Z]+\b', reference.lower())
+                stopwords = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'in', 'for',
+                            'on', 'with', 'at', 'by', 'from', 'and', 'or', 'but', 'his', 'her', 'its'}
+                expected_glosses = [w for w in words if w not in stopwords]
+
+        # Calculate Model Gloss Accuracy (top-1 predictions vs expected)
+        model_ga_result = metrics_gloss_accuracy(predicted_glosses, expected_glosses)
+        model_gloss_accuracy = model_ga_result.get('accuracy', 0.0)
+
+        # Calculate Effective Gloss Accuracy (LLM-selected vs expected)
+        effective_ga_result = metrics_gloss_accuracy(selected_glosses, expected_glosses)
+        effective_gloss_accuracy = effective_ga_result.get('accuracy', 0.0)
 
         # Calculate all metrics for raw sentence (concatenated glosses)
         raw_bleu = calculate_bleu_score(raw_sentence, reference) or 0.0
@@ -1691,6 +1742,8 @@ def evaluate_sentences():
         raw_metrics = {
             'bleu': raw_bleu,
             'bert': raw_bert,
+            'model_gloss_accuracy': model_gloss_accuracy,
+            'effective_gloss_accuracy': model_gloss_accuracy,  # Raw uses top-1, same as Model GA
             'quality': raw_quality,
             'coverage_recall': raw_coverage['recall'] or 0.0,
             'coverage_precision': raw_coverage['precision'] or 0.0,
@@ -1699,10 +1752,10 @@ def evaluate_sentences():
             'hallucinated_words': raw_coverage['hallucinated_words'],
         }
 
-        # Calculate CTQI v2 (prerequisite chain) for raw
-        # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
+        # Calculate CTQI v3 for raw (uses Model GA)
+        # Formula: GA × CF1 × (0.5 + 0.5 × P/100 × GA/100) × 100
         raw_composite = metrics_composite_score(
-            gloss_accuracy=raw_coverage['f1'] or 0.0,
+            gloss_accuracy=model_gloss_accuracy,
             coverage_f1=raw_coverage['f1'] or 0.0,
             plausibility=raw_quality
         ) or 0.0
@@ -1717,6 +1770,8 @@ def evaluate_sentences():
         llm_metrics = {
             'bleu': llm_bleu,
             'bert': llm_bert,
+            'model_gloss_accuracy': model_gloss_accuracy,  # Same as raw (model accuracy)
+            'effective_gloss_accuracy': effective_gloss_accuracy,  # LLM-selected glosses
             'quality': llm_quality,
             'coverage_recall': llm_coverage['recall'] or 0.0,
             'coverage_precision': llm_coverage['precision'] or 0.0,
@@ -1725,10 +1780,10 @@ def evaluate_sentences():
             'hallucinated_words': llm_coverage['hallucinated_words'],
         }
 
-        # Calculate CTQI v2 (prerequisite chain) for LLM
-        # Map coverage_f1 → gloss_accuracy (word-level accuracy proxy)
+        # Calculate CTQI v3 for LLM (uses Effective GA)
+        # Formula: GA × CF1 × (0.5 + 0.5 × P/100 × GA/100) × 100
         llm_composite = metrics_composite_score(
-            gloss_accuracy=llm_coverage['f1'] or 0.0,
+            gloss_accuracy=effective_gloss_accuracy,
             coverage_f1=llm_coverage['f1'] or 0.0,
             plausibility=llm_quality
         ) or 0.0

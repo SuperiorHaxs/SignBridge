@@ -133,6 +133,7 @@
     ],
     "raw_sentence": "what time finish basketball",
     "llm_sentence": "What time do you finish playing basketball?",
+    "selections": ["what", "time", "finish", "basketball"],
     "evaluation": {
       "raw": {
         "bleu": 17.946048174042403,

@@ -94,6 +94,7 @@ async function constructSentence() {
             // Store for evaluation
             sessionStorage.setItem('rawSentence', state.rawSentence);
             sessionStorage.setItem('llmSentence', state.llmSentence);
+            sessionStorage.setItem('selectedGlosses', JSON.stringify(state.selections));
 
             displayResults();
         } else {
@@ -117,11 +118,16 @@ function useDemoConstruction() {
 
         state.rawSentence = precomputed.raw_sentence;
         state.llmSentence = precomputed.llm_sentence;
-        state.selections = [];
+
+        // For demos, use stored selections if available, otherwise default to top_1 glosses
+        const segments = precomputed.segments || [];
+        state.selections = precomputed.selections || segments.map(s => s.top_1 || '');
+        console.log('Demo selections:', state.selections);
 
         // Store for evaluation
         sessionStorage.setItem('rawSentence', state.rawSentence);
         sessionStorage.setItem('llmSentence', state.llmSentence);
+        sessionStorage.setItem('selectedGlosses', JSON.stringify(state.selections));
 
         displayResults();
     }, 300);

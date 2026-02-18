@@ -25,6 +25,7 @@ Usage (glosses mode):
 Or for interactive mode:
     python prepare_demo_sample.py --interactive
 """
+from __future__ import annotations
 
 import os
 import sys
@@ -2143,12 +2144,11 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
     saved_predictions = session_metadata.get('predictions', [])
     saved_model_classes = session_metadata.get('model_classes', 100)
 
-    # Warn if model classes don't match (only when not using custom model path)
-    # When --model is specified, we trust the user knows what model to use for re-prediction
+    # Use session's model classes when we have saved predictions
+    # Only re-run predictions if user explicitly specifies --model
     if saved_predictions and saved_model_classes != num_classes and not model_path:
-        print(f"  WARNING: Session used {saved_model_classes}-class model, but you requested {num_classes}-class")
-        print(f"  Re-running predictions with {num_classes}-class model...")
-        saved_predictions = []  # Force re-prediction
+        print(f"  NOTE: Session used {saved_model_classes}-class model (using saved predictions)")
+        # Don't clear predictions - use what the session saved
 
     if saved_predictions and len(saved_predictions) == len(segments_data):
         print(f"  Using saved predictions from session metadata ({len(saved_predictions)} predictions)")

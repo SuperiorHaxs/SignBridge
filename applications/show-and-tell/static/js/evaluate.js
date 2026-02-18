@@ -87,13 +87,18 @@ async function evaluateSentences() {
     showLoading();
 
     try {
+        // Get selected glosses (LLM selections from top-k) for Effective GA
+        const selectedGlossesJson = sessionStorage.getItem('selectedGlosses');
+        const selectedGlosses = selectedGlossesJson ? JSON.parse(selectedGlossesJson) : [];
+
         const response = await fetch('/api/evaluate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 raw_sentence: state.rawSentence,
                 llm_sentence: state.llmSentence,
-                reference: state.referenceSentence
+                reference: state.referenceSentence,
+                selected_glosses: selectedGlosses  // For Effective GA calculation
             })
         });
 
@@ -113,25 +118,101 @@ async function evaluateSentences() {
     }
 }
 
-function useDemoEvaluation() {
+async function useDemoEvaluation() {
     showLoading();
 
-    // Small delay for visual feedback
-    setTimeout(() => {
-        const evaluation = state.demoSample.precomputed.evaluation;
-        displayMetrics(evaluation.raw, evaluation.llm);
-    }, 300);
+    // Re-fetch sample to ensure we have latest metadata (including selections)
+    const sampleId = state.demoSample.id;
+
+    try {
+        const response = await fetch(`/api/samples/${sampleId}?t=${Date.now()}`);  // Cache bust
+        if (response.ok) {
+            const freshSample = await response.json();
+            state.demoSample = freshSample;
+            setSelectedSample(freshSample);  // Update sessionStorage
+        }
+    } catch (e) {
+        // Silently continue with cached sample if fetch fails
+    }
+
+    const evaluation = state.demoSample.precomputed.evaluation;
+    const rawMetrics = { ...evaluation.raw };
+    const llmMetrics = { ...evaluation.llm };
+
+    // Calculate gloss_accuracy if not present in precomputed data
+    if (rawMetrics.model_gloss_accuracy === undefined || llmMetrics.effective_gloss_accuracy === undefined) {
+        const segments = state.demoSample.precomputed.segments || [];
+        const predictedGlosses = segments.map(s => (s.top_1 || '').toLowerCase());
+
+        // Expected glosses derived from REFERENCE sentence (content words)
+        const reference = state.referenceSentence.toLowerCase();
+        const stopwords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'to', 'of', 'in',
+            'for', 'on', 'with', 'at', 'by', 'from', 'and', 'or', 'but', 'his', 'her', 'its',
+            'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he', 'him', 'she', 'they', 'them',
+            'their', 'it', 'this', 'that', 'these', 'those', 'be', 'been', 'being', 'have',
+            'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may',
+            'might', 'must', 'shall', 'can', 'playing']);
+        const refWords = reference.match(/\b[a-z]+\b/g) || [];
+        const expectedGlosses = refWords.filter(w => !stopwords.has(w));
+
+        // LLM-selected glosses - use precomputed.selections (freshly fetched)
+        const precomputedSelections = state.demoSample.precomputed.selections;
+        let selectedGlosses;
+        if (precomputedSelections && precomputedSelections.length > 0) {
+            selectedGlosses = precomputedSelections.map(g => g.toLowerCase());
+        } else {
+            selectedGlosses = predictedGlosses;
+        }
+
+        // Simple lemmatizer for comparison - only remove suffix if result is 3+ chars
+        const lemmatize = (word) => {
+            const result = word.replace(/(es|ed|ing|ly|s)$/, '');
+            return result.length >= 3 ? result : word;  // Don't over-lemmatize short words
+        };
+
+        // Calculate Model GA (top-1 predictions vs expected)
+        let modelCorrect = 0;
+        const modelTotal = Math.max(predictedGlosses.length, expectedGlosses.length);
+        if (modelTotal > 0) {
+            for (let i = 0; i < modelTotal; i++) {
+                const pred = lemmatize(predictedGlosses[i] || '');
+                const exp = lemmatize(expectedGlosses[i] || '');
+                if (pred && exp && pred === exp) modelCorrect++;
+            }
+        }
+        const modelGA = modelTotal > 0 ? (modelCorrect / modelTotal) * 100 : 0;
+
+        // Calculate Effective GA (LLM-selected vs expected)
+        let effectiveCorrect = 0;
+        const effectiveTotal = Math.max(selectedGlosses.length, expectedGlosses.length);
+        if (effectiveTotal > 0) {
+            for (let i = 0; i < effectiveTotal; i++) {
+                const sel = lemmatize(selectedGlosses[i] || '');
+                const exp = lemmatize(expectedGlosses[i] || '');
+                if (sel && exp && sel === exp) effectiveCorrect++;
+            }
+        }
+        const effectiveGA = effectiveTotal > 0 ? (effectiveCorrect / effectiveTotal) * 100 : 0;
+
+        // Store both Model GA and Effective GA
+        rawMetrics.model_gloss_accuracy = modelGA;
+        rawMetrics.effective_gloss_accuracy = modelGA;  // Raw uses top-1, so same as Model GA
+        llmMetrics.model_gloss_accuracy = modelGA;      // Model GA is same for both
+        llmMetrics.effective_gloss_accuracy = effectiveGA;  // LLM may have better selections
+    }
+
+    displayMetrics(rawMetrics, llmMetrics);
 }
 
 function displayMetrics(rawMetrics, llmMetrics) {
-    const metrics = ['gloss_accuracy', 'coverage_f1', 'quality', 'composite'];
+    const metrics = ['model_gloss_accuracy', 'effective_gloss_accuracy', 'coverage_f1', 'quality', 'composite'];
 
     metrics.forEach(metric => {
         const row = document.querySelector(`.metric-row[data-metric="${metric}"]`);
         if (!row) return;
 
-        const rawValue = rawMetrics[metric] || 0;
-        const llmValue = llmMetrics[metric] || 0;
+        const rawValue = rawMetrics[metric] ?? 0;
+        const llmValue = llmMetrics[metric] ?? 0;
         const delta = llmValue - rawValue;
 
         // Update values

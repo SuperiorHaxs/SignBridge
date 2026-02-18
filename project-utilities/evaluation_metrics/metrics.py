@@ -926,6 +926,63 @@ def calculate_composite_score_v2_chain(
 
 
 # ============================================================================
+# COMPOSITE SCORE V3 (CTQI v3 - Human-Validated Formula)
+# ============================================================================
+# Evolved from CTQI v2 based on human survey validation (n=53, 5 raters).
+#
+# Key insight: CTQI v2's plausibility component gave full credit to
+# grammatically correct but semantically wrong translations (e.g.,
+# "My son plays basketball" for glosses "COMPUTER PLAY BASKETBALL").
+#
+# Solution: Scale plausibility's contribution by gloss accuracy.
+# When GA is low, plausibility can't inflate the score.
+#
+# Formula: CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100 * GA/100) * 100
+#
+# Human correlation: r=0.9427 (beats v2's r=0.7750 and v1's r=0.9381)
+
+def calculate_composite_score_v3(
+    gloss_accuracy: float,
+    coverage_f1: float,
+    plausibility: float,
+) -> float:
+    """
+    Calculate CTQI v3 using the Human-Validated formula.
+
+        CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100 * GA/100) * 100
+
+    Key improvement over v2:
+    - Plausibility's contribution is scaled by gloss accuracy
+    - Prevents high plausibility from masking translation errors
+    - When GA=100%, behaves identically to v2
+    - When GA<100%, plausibility's boost is proportionally reduced
+
+    Validated against human ratings:
+    - Pearson r = 0.9427 (highest among all formulas tested)
+    - Beats v2 (r=0.7750) by +0.1677
+    - Beats v1 (r=0.9381) by +0.0046
+
+    Args:
+        gloss_accuracy: Sign recognition accuracy (0-100), use effective_gloss_accuracy
+        coverage_f1: Semantic coverage F1 score (0-100), use v2 with lemmatization
+        plausibility: Sentence plausibility score (0-100), from LLM evaluation
+
+    Returns:
+        CTQI v3 human-validated score (0-100)
+    """
+    ga = max(0.0, min(100.0, gloss_accuracy)) / 100.0
+    cf1 = max(0.0, min(100.0, coverage_f1)) / 100.0
+    p = max(0.0, min(100.0, plausibility)) / 100.0
+
+    # Plausibility modifier scales with GA
+    # At GA=100%: modifier = 0.5 + 0.5*P (same as v2)
+    # At GA=67%:  modifier = 0.5 + 0.5*P*0.67 (reduced plausibility boost)
+    plausibility_modifier = 0.5 + 0.5 * p * ga
+
+    return ga * cf1 * plausibility_modifier * 100.0
+
+
+# ============================================================================
 # CONVENIENCE FUNCTIONS
 # ============================================================================
 

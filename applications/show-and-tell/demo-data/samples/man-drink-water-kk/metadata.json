@@ -103,6 +103,7 @@
     ],
     "raw_sentence": "man drink water",
     "llm_sentence": "The man wants to drink water.",
+    "selections": ["man", "drink", "water"],
     "evaluation": {
       "raw": {
         "bleu": 24.840753130578644,

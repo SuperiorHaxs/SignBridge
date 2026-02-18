@@ -29,6 +29,11 @@
       "id": "man-drink-water-kk",
       "name": "Man Drink Water",
       "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "doctor_need_water",
+      "name": "Doctor Needs Water",
+      "thumbnail": "pose_video.mp4"
     }
   ]
 }

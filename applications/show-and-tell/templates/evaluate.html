@@ -48,7 +48,7 @@
     <div class="loading-state" id="loading-state" style="display: none;">
         <div class="spinner-large"></div>
         <p>Calculating metrics...</p>
-        <p class="loading-detail">Gloss Accuracy, Coverage F1, Plausibility, CTQI v2</p>
+        <p class="loading-detail">Model GA, Effective GA, Coverage F1, Plausibility, CTQI v3</p>
     </div>
 
     <!-- Metrics Section -->
@@ -64,10 +64,19 @@
                 </tr>
             </thead>
             <tbody>
-                <tr class="metric-row" data-metric="gloss_accuracy">
+                <tr class="metric-row" data-metric="model_gloss_accuracy">
                     <td class="metric-name">
-                        <span class="metric-title">Gloss Accuracy (GA)</span>
-                        <span class="metric-desc">How accurately the ASL signs were recognized</span>
+                        <span class="metric-title">Model Gloss Accuracy</span>
+                        <span class="metric-desc">How accurately the model's top-1 predictions match expected signs</span>
+                    </td>
+                    <td class="metric-value raw-value">-</td>
+                    <td class="metric-value llm-value">-</td>
+                    <td class="metric-delta">-</td>
+                </tr>
+                <tr class="metric-row" data-metric="effective_gloss_accuracy">
+                    <td class="metric-name">
+                        <span class="metric-title">Effective Gloss Accuracy (GA)</span>
+                        <span class="metric-desc">Accuracy after LLM selects from top-k options (used in CTQI v3)</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -93,8 +102,7 @@
                 </tr>
                 <tr class="metric-row composite" data-metric="composite">
                     <td class="metric-name">
-                        <span class="metric-title">CTQI v2</span>
-                        <span class="metric-desc">Composite Translation Quality Index: GA × CF1 × (0.5 + 0.5 × P)</span>
+                        <span class="metric-title">Composite Translation Quality Index (CTQI v3)</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -102,10 +110,6 @@
                 </tr>
             </tbody>
         </table>
-
-        <div class="metrics-note">
-            <strong>CTQI v2 Formula:</strong> CTQI = (GA/100) × (CF1/100) × (0.5 + 0.5 × P/100) × 100
-        </div>
 
         <!-- Coverage Details -->
         <div class="coverage-details" id="coverage-details" style="display: none;">

@@ -103,6 +103,7 @@
     ],
     "raw_sentence": "chair black tall",
     "llm_sentence": "The black chair is tall.",
+    "selections": ["chair", "black", "tall"],
     "evaluation": {
       "raw": {
         "bleu": 20.374971871270475,
