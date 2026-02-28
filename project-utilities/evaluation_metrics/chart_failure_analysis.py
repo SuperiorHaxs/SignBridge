@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """
-Generate failure scenario analysis charts.
-Left: Donut of all 164 glosses (correct vs error types).
-Right: Breakdown of the 18 mismatches by category.
+Generate failure scenario analysis charts as two separate files.
+Chart 1: Donut of all 164 glosses (correct vs error types).
+Chart 2: Breakdown of the 18 mismatches by category.
 """
 
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use('Agg')
+from pathlib import Path
 
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+output_dir = Path(__file__).parent
 
 # =========================================================================
-# LEFT: Donut chart - Overall gloss outcomes (164 total)
+# CHART 1: Donut chart - Overall gloss outcomes (164 total)
 # =========================================================================
+fig1, ax1 = plt.subplots(figsize=(7, 6))
+
 labels_left = ['Correct\n(146)', 'Model Error\n(8)', 'LLM Error\n(10)']
 sizes_left = [146, 8, 10]
 colors_left = ['#2E7D32', '#D32F2F', '#F57C00']
@@ -31,36 +34,36 @@ for at in autotexts1:
     at.set_color('white')
 
 ax1.set_title('Gloss-Level Outcomes\n(164 total glosses)', fontsize=15, fontweight='bold', pad=15)
-
-# Center text
 ax1.text(0, 0, '89.0%\nAccuracy', ha='center', va='center',
          fontsize=16, fontweight='bold', color='#333333')
 
+plt.tight_layout()
+out1 = str(output_dir / 'chart_failure_donut')
+fig1.savefig(out1 + '.png', dpi=300, bbox_inches='tight')
+fig1.savefig(out1 + '.pdf', bbox_inches='tight')
+print(f"Saved {out1}.png and {out1}.pdf")
+
 # =========================================================================
-# RIGHT: Horizontal bar chart - Mismatch category breakdown (18 total)
+# CHART 2: Horizontal bar chart - Mismatch category breakdown (18 total)
 # =========================================================================
+fig2, ax2 = plt.subplots(figsize=(8, 5))
+
 categories = [
-    'D. NEED Recovery\n(LLM Error)',
-    'C. COMPUTER\u2192SON\n(LLM Error)',
-    'B. FINE\u2192PAPER\n(LLM Error)',
-    'A. LATER\u2192DRINK\n(Model Prediction Error)',
+    'D. Semantic Preference Bias',
+    'C. Plausibility-Driven\nMisselection',
+    'B. Failed Recovery Despite\nError Detection',
+    'A. Sign Misclassification',
 ]
-counts = [6, 3, 1, 8]
+counts = [1, 3, 6, 8]
 colors_right = ['#F57C00', '#F57C00', '#F57C00', '#D32F2F']
-recovery = ['10/16 recovered', '0/3 recovered', '0/1 recovered', 'Unrecoverable']
 
 bars = ax2.barh(categories, counts, color=colors_right, edgecolor='white', linewidth=1.5, height=0.6)
 
-# Add count labels and recovery info
-for bar, count, rec in zip(bars, counts, recovery):
-    # Count on bar
+for bar, count in zip(bars, counts):
     ax2.text(bar.get_width() + 0.2, bar.get_y() + bar.get_height() / 2,
              f'{count}', va='center', ha='left', fontsize=14, fontweight='bold', color='#333333')
-    # Recovery info
-    ax2.text(bar.get_width() + 1.2, bar.get_y() + bar.get_height() / 2,
-             f'({rec})', va='center', ha='left', fontsize=11, color='#666666', fontstyle='italic')
 
-ax2.set_xlim(0, 14)
+ax2.set_xlim(0, 11)
 ax2.set_xlabel('Number of Mismatches', fontsize=13, fontweight='bold')
 ax2.set_title('Mismatch Breakdown by Category\n(18 total mismatches)', fontsize=15, fontweight='bold', pad=15)
 ax2.tick_params(axis='y', labelsize=12)
@@ -71,8 +74,7 @@ ax2.spines['top'].set_visible(False)
 ax2.spines['right'].set_visible(False)
 
 plt.tight_layout()
-
-output = __file__.replace('.py', '')
-plt.savefig(output + '.png', dpi=300, bbox_inches='tight')
-plt.savefig(output + '.pdf', bbox_inches='tight')
-print(f"Saved chart to {output}.png and {output}.pdf")
+out2 = str(output_dir / 'chart_failure_breakdown')
+fig2.savefig(out2 + '.png', dpi=300, bbox_inches='tight')
+fig2.savefig(out2 + '.pdf', bbox_inches='tight')
+print(f"Saved {out2}.png and {out2}.pdf")
