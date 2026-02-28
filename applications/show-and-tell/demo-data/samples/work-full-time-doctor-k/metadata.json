@@ -133,29 +133,34 @@
     ],
     "raw_sentence": "work full time doctor",
     "llm_sentence": "The doctor works full time.",
-    "selections": ["work", "full", "time", "doctor"],
+    "selections": [
+      "work",
+      "full",
+      "time",
+      "doctor"
+    ],
     "evaluation": {
       "raw": {
         "bleu": 11.521590992286539,
         "bert": 93.87232065200806,
-        "quality": 40.087702636718745,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 61.537783833932096
+        "composite": 61.537783833932096,
+        "plausibility": 40.087702636718745
       },
       "llm": {
         "bleu": 8.745825313180626,
         "bert": 93.79194974899292,
-        "quality": 82.51781272888184,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 78.07738883832842
+        "composite": 78.07738883832842,
+        "plausibility": 82.51781272888184
       }
     }
   }

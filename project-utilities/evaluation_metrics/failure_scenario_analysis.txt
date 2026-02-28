@@ -1,0 +1,21 @@
+Failure Scenario Analysis (18 mismatches out of 164 glosses, 11.0%)
+
+Of 164 total gloss positions across 53 sentences, 18 mismatches were identified in two root categories: model prediction errors (8 cases) where the correct gloss never appeared in Top-3, and LLM selection errors (10 cases) where the correct gloss was available but the LLM chose incorrectly. Of 53 sentences, 4 (8%) showed CTQI regression: 2 are attributable to gloss-level errors (Categories A and D below), and 2 reflect minor phrasing variations with no gloss mismatch (-3.5 and -1.0 points).
+
+A. Sign Misclassification (8 cases - 44.4% of errors). The recognition model consistently confuses visually similar signs, and the correct sign never appears in the Top-3 candidates - making the error unrecoverable regardless of LLM performance. Example: Signed glosses: LATER, GIVE, JACKET. Model predictions for LATER: [DRINK (45.1%), DEAF, TALL] - LATER never appears. LLM selects DRINK and constructs "I drink and give a jacket" (Plausibility = 100). Should be: "Give the jacket later." The temporal meaning is lost entirely, but the fluent output masks the error.
+
+B. Failed Recovery Despite Error Detection (6 cases - 33.3% of errors). The correct sign appears in Top-3 at extremely low confidence behind a dominant wrong prediction. The wrong candidate produces implausible output, signaling an error - but in 6 of 16 such cases the LLM still fails to select the correct sign. Example: Signed glosses: DOCTOR, NEED, HELP. Model predictions for NEED: [BOWLING (91.5%), TELL (1.1%), NEED (0.8%)]. LLM selects BOWLING and constructs "The doctor is bowling to help" (Plausibility = 7). Should be: "The doctor needs help." The LLM detects the implausibility but cannot recover the correct sign at 0.8% confidence.
+
+C. Plausibility-Driven Misselection (3 cases - 16.7% of errors). The correct sign is available in Top-3, but the dominant wrong candidate produces an equally fluent sentence - giving the LLM no plausibility signal to override the selection. Example: Signed glosses: COMPUTER, PLAY, BASKETBALL. Model predictions for COMPUTER: [SON (67.2%), COMPUTER (20.5%)]. LLM selects SON and constructs "My son plays basketball" (Plausibility = 100). Should be: "Play basketball on the computer." Both sentences are perfectly fluent, so plausibility cannot distinguish correct from incorrect.
+
+D. Semantic Preference Bias (1 case - 5.6% of errors). The correct sign is the model's highest-confidence prediction, but the LLM overrides it in favor of a concrete noun that produces an equally fluent alternative. Example: Signed glosses: CHAIR, FINE, DOCTOR. Model predictions for FINE: [FINE (34.4%), PAPER (23.4%)]. LLM selects PAPER and constructs "The doctor has a chair and paper" (Plausibility = 100). Should be: "The doctor's chair is fine." The LLM prefers the concrete noun PAPER over the adjective FINE despite FINE having higher confidence.
+
+Key Takeaways
+
+1. Model training still has room for improvement: 44.4% of all mismatches are unrecoverable errors where the correct gloss never enters the Top-3 candidate pool. Additional training data for visually confusable signs would eliminate these failures entirely.
+
+2. LLM coherence selection works but has limits: The LLM can override high-confidence wrong predictions when the output is semantically implausible, but fails when the wrong candidate produces an equally fluent sentence — leaving no signal to distinguish correct from incorrect.
+
+3. Plausibility scoring validates the approach: The plausibility component reliably flags semantically broken output while scoring fluent translations highly, confirming its value as an error detection signal.
+
+4. Prompt improvement potential: 10 LLM selection errors affect 6.1% of total glosses. With improved prompting and additional training data, the theoretical ceiling is 0 mismatches in this 53-sentence evaluation set.

@@ -66,17 +66,17 @@ from evaluation_metrics import (
     calculate_gloss_accuracy as metrics_gloss_accuracy,
     calculate_bleu_score,
     calculate_bert_score,
-    calculate_quality_score as metrics_quality_score,
+    calculate_plausibility as metrics_plausibility_score,
     calculate_composite_score_v3 as metrics_composite_score,
     calculate_coverage_v2 as calculate_coverage,
-    QualityScorer,
+    PlausibilityScorer,
     METRIC_WEIGHTS,
     BLEU_AVAILABLE,
     BERTSCORE_AVAILABLE,
-    QUALITY_SCORING_AVAILABLE,
+    GEMINI_AVAILABLE,
 )
 
-print(f"Metrics availability: BLEU={BLEU_AVAILABLE}, BERTScore={BERTSCORE_AVAILABLE}, Quality={QUALITY_SCORING_AVAILABLE}")
+print(f"Metrics availability: BLEU={BLEU_AVAILABLE}, BERTScore={BERTSCORE_AVAILABLE}, Plausibility(Gemini)={GEMINI_AVAILABLE}")
 
 # Pose format for file handling
 try:
@@ -129,8 +129,20 @@ def get_holistic():
             print("[MediaPipe] Holistic model ready")
         return _holistic_instance
 
+def reset_holistic():
+    """Reset MediaPipe holistic instance to clear timestamp state."""
+    global _holistic_instance
+    with _holistic_lock:
+        if _holistic_instance is not None:
+            try:
+                _holistic_instance.close()
+            except:
+                pass
+            _holistic_instance = None
+            print("[MediaPipe] Holistic instance reset (timestamp state cleared)")
 
-def extract_poses_from_frames(frames, target_frames=15):
+
+def extract_poses_from_frames(frames, target_frames=15, _retry=False):
     """
     Extract 83-point pose landmarks from video frames using MediaPipe.
 
@@ -170,7 +182,20 @@ def extract_poses_from_frames(frames, target_frames=15):
     for frame in frames_to_process:
         # Convert BGR to RGB
         image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = holistic.process(image_rgb)
+        try:
+            results = holistic.process(image_rgb)
+        except Exception as e:
+            error_msg = str(e)
+            # Check for timestamp mismatch errors - need to reset MediaPipe instance
+            if 'timestamp' in error_msg.lower() or 'bound' in error_msg.lower():
+                if not _retry:
+                    print(f"[MediaPipe] Timestamp error detected, resetting instance and retrying...")
+                    reset_holistic()
+                    return extract_poses_from_frames(frames, target_frames, _retry=True)
+                else:
+                    print(f"[MediaPipe] Timestamp error persists after reset: {e}")
+                    return None
+            raise
 
         landmarks = []
 
@@ -351,8 +376,8 @@ TEMP_DIR.mkdir(exist_ok=True)
 # Global model cache (loaded once)
 _model_cache = {"model": None, "tokenizer": None, "num_classes": None, "masked_class_ids": None}
 
-# Global quality scorer (from evaluation_metrics library)
-_quality_scorer = None
+# Global plausibility scorer (Gemini-based, from evaluation_metrics library)
+_plausibility_scorer = None
 
 
 def get_model():
@@ -383,14 +408,14 @@ def get_model_num_classes():
     return _model_cache["num_classes"]
 
 
-def get_quality_scorer():
-    """Get cached quality scorer (using evaluation_metrics library)"""
-    global _quality_scorer
-    if not QUALITY_SCORING_AVAILABLE:
+def get_plausibility_scorer():
+    """Get cached plausibility scorer (Gemini-based, from evaluation_metrics library)"""
+    global _plausibility_scorer
+    if not GEMINI_AVAILABLE:
         return None
-    if _quality_scorer is None:
-        _quality_scorer = QualityScorer(verbose=True)
-    return _quality_scorer
+    if _plausibility_scorer is None:
+        _plausibility_scorer = PlausibilityScorer(verbose=True)
+    return _plausibility_scorer
 
 
 def get_session_dir():
@@ -1683,7 +1708,7 @@ def evaluate_sentences():
             return jsonify({"success": False, "error": "Reference sentence required"}), 400
 
         # Get quality scorer (cached)
-        scorer = get_quality_scorer()
+        scorer = get_plausibility_scorer()
 
         # If predicted_glosses not provided, extract from raw_sentence (model top-1)
         if not predicted_glosses and raw_sentence:
@@ -1736,7 +1761,7 @@ def evaluate_sentences():
         # Calculate all metrics for raw sentence (concatenated glosses)
         raw_bleu = calculate_bleu_score(raw_sentence, reference) or 0.0
         raw_bert = calculate_bert_score(raw_sentence, reference) or 0.0
-        raw_quality = metrics_quality_score(raw_sentence, scorer=scorer) or 0.0
+        raw_plausibility = metrics_plausibility_score(raw_sentence, scorer=scorer) or 0.0
         raw_coverage = calculate_coverage(reference, raw_sentence)
 
         raw_metrics = {
@@ -1744,7 +1769,7 @@ def evaluate_sentences():
             'bert': raw_bert,
             'model_gloss_accuracy': model_gloss_accuracy,
             'effective_gloss_accuracy': model_gloss_accuracy,  # Raw uses top-1, same as Model GA
-            'quality': raw_quality,
+            'plausibility': raw_plausibility,
             'coverage_recall': raw_coverage['recall'] or 0.0,
             'coverage_precision': raw_coverage['precision'] or 0.0,
             'coverage_f1': raw_coverage['f1'] or 0.0,
@@ -1757,14 +1782,14 @@ def evaluate_sentences():
         raw_composite = metrics_composite_score(
             gloss_accuracy=model_gloss_accuracy,
             coverage_f1=raw_coverage['f1'] or 0.0,
-            plausibility=raw_quality
+            plausibility=raw_plausibility
         ) or 0.0
         raw_metrics['composite'] = raw_composite
 
         # Calculate all metrics for LLM sentence
         llm_bleu = calculate_bleu_score(llm_sentence, reference) or 0.0
         llm_bert = calculate_bert_score(llm_sentence, reference) or 0.0
-        llm_quality = metrics_quality_score(llm_sentence, scorer=scorer) or 0.0
+        llm_plausibility = metrics_plausibility_score(llm_sentence, scorer=scorer) or 0.0
         llm_coverage = calculate_coverage(reference, llm_sentence)
 
         llm_metrics = {
@@ -1772,7 +1797,7 @@ def evaluate_sentences():
             'bert': llm_bert,
             'model_gloss_accuracy': model_gloss_accuracy,  # Same as raw (model accuracy)
             'effective_gloss_accuracy': effective_gloss_accuracy,  # LLM-selected glosses
-            'quality': llm_quality,
+            'plausibility': llm_plausibility,
             'coverage_recall': llm_coverage['recall'] or 0.0,
             'coverage_precision': llm_coverage['precision'] or 0.0,
             'coverage_f1': llm_coverage['f1'] or 0.0,
@@ -1785,7 +1810,7 @@ def evaluate_sentences():
         llm_composite = metrics_composite_score(
             gloss_accuracy=effective_gloss_accuracy,
             coverage_f1=llm_coverage['f1'] or 0.0,
-            plausibility=llm_quality
+            plausibility=llm_plausibility
         ) or 0.0
         llm_metrics['composite'] = llm_composite
 
@@ -1950,14 +1975,19 @@ def save_session():
                         except Exception as e:
                             print(f"  Error creating {pose_file.name}: {e}")
 
-        # Save metadata including predictions
+        # Save metadata including predictions, selections, and evaluation
         predictions = session.get('live_predictions', [])
+        selections = data.get('selections', session.get('selected_glosses', []))
+        evaluation = data.get('evaluation', {})
+
         metadata = {
             "saved_at": datetime.now().isoformat(),
             "reference": reference,
             "raw_sentence": raw_sentence,
             "llm_sentence": llm_sentence,
             "predictions": predictions,
+            "selections": selections,
+            "evaluation": evaluation,
             "model_classes": get_model_num_classes(),
             "original_session_id": session.get('session_id', 'unknown')
         }
@@ -2412,6 +2442,9 @@ def process_sign():
 
         # FAST PATH: Use in-memory MediaPipe if available
         if MEDIAPIPE_AVAILABLE:
+            # Reset MediaPipe instance to clear timestamp state (prevents timestamp mismatch errors)
+            reset_holistic()
+
             # Step 1: Decode video to frames in memory
             t1 = time.time()
             frames = decode_video_to_frames(video_bytes)
@@ -3298,7 +3331,7 @@ if __name__ == '__main__':
     print(f"LLM Prompt: {LLM_PROMPT_PATH} (exists: {LLM_PROMPT_PATH.exists()})")
     print(f"BLEU Available: {BLEU_AVAILABLE}")
     print(f"BERTScore Available: {BERTSCORE_AVAILABLE}")
-    print(f"Quality Scoring Available: {QUALITY_SCORING_AVAILABLE}")
+    print(f"Plausibility (Gemini) Available: {GEMINI_AVAILABLE}")
     print("=" * 60)
     port = int(os.environ.get('PORT', 5000))
     print(f"Starting server on http://localhost:{port}")

@@ -133,12 +133,16 @@
     ],
     "raw_sentence": "what time finish basketball",
     "llm_sentence": "What time do you finish playing basketball?",
-    "selections": ["what", "time", "finish", "basketball"],
+    "selections": [
+      "what",
+      "time",
+      "finish",
+      "basketball"
+    ],
     "evaluation": {
       "raw": {
         "bleu": 17.946048174042403,
         "bert": 89.24136757850647,
-        "quality": 0.0,
         "coverage_recall": 66.66666666666666,
         "coverage_precision": 100.0,
         "coverage_f1": 80.0,
@@ -147,18 +151,19 @@
           "playing"
         ],
         "hallucinated_words": [],
-        "composite": 40.54018074180765
+        "composite": 57.99999999999999,
+        "plausibility": 45.0
       },
       "llm": {
         "bleu": 100.00000000000004,
         "bert": 99.97020959854126,
-        "quality": 99.41604919433594,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 99.76046159744263
+        "composite": 99.70802459716796,
+        "plausibility": 99.41604919433594
       }
     }
   }

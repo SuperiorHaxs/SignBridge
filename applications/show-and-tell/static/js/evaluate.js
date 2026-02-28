@@ -8,7 +8,9 @@ const state = {
     referenceSentence: '',
     rawSentence: '',
     llmSentence: '',
-    demoSample: null
+    demoSample: null,
+    selections: [],
+    evaluation: null  // Stores { raw: {...}, llm: {...} } after evaluation
 };
 
 const elements = {
@@ -105,6 +107,9 @@ async function evaluateSentences() {
         const result = await response.json();
 
         if (result.success) {
+            // Store evaluation results and selections in state for save-session
+            state.evaluation = { raw: result.raw, llm: result.llm };
+            state.selections = selectedGlosses;
             displayMetrics(result.raw, result.llm);
         } else {
             throw new Error(result.error || 'Evaluation failed');
@@ -201,11 +206,15 @@ async function useDemoEvaluation() {
         llmMetrics.effective_gloss_accuracy = effectiveGA;  // LLM may have better selections
     }
 
+    // Store evaluation and selections in state for save-session
+    state.evaluation = { raw: rawMetrics, llm: llmMetrics };
+    state.selections = state.demoSample.precomputed.selections || [];
+
     displayMetrics(rawMetrics, llmMetrics);
 }
 
 function displayMetrics(rawMetrics, llmMetrics) {
-    const metrics = ['model_gloss_accuracy', 'effective_gloss_accuracy', 'coverage_f1', 'quality', 'composite'];
+    const metrics = ['model_gloss_accuracy', 'effective_gloss_accuracy', 'coverage_f1', 'plausibility', 'composite'];
 
     metrics.forEach(metric => {
         const row = document.querySelector(`.metric-row[data-metric="${metric}"]`);
@@ -309,7 +318,9 @@ async function saveSession() {
             body: JSON.stringify({
                 reference: state.referenceSentence,
                 raw_sentence: state.rawSentence,
-                llm_sentence: state.llmSentence
+                llm_sentence: state.llmSentence,
+                selections: state.selections,
+                evaluation: state.evaluation
             })
         });
 

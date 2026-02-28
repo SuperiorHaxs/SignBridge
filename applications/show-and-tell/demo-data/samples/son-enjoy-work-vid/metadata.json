@@ -99,29 +99,37 @@
     ],
     "raw_sentence": "son enjoy work",
     "llm_sentence": "The son enjoys work.",
-    "selections": ["son", "enjoy", "work"],
+    "selections": [
+      "son",
+      "enjoy",
+      "work"
+    ],
     "evaluation": {
       "raw": {
         "bleu": 17.799177396293473,
         "bert": 91.59098267555237,
-        "quality": 0.63,
         "coverage_recall": 75.0,
         "coverage_precision": 100.0,
         "coverage_f1": 85.71,
-        "missing_words": ["his"],
+        "missing_words": [
+          "his"
+        ],
         "hallucinated_words": [],
-        "composite": 55.98807314455449
+        "composite": 55.98807314455449,
+        "plausibility": 0.63
       },
       "llm": {
         "bleu": 49.76093899250716,
         "bert": 96.37925028800964,
-        "quality": 32.12,
         "coverage_recall": 75.0,
         "coverage_precision": 100.0,
         "coverage_f1": 85.71,
-        "missing_words": ["his"],
+        "missing_words": [
+          "his"
+        ],
         "hallucinated_words": [],
-        "composite": 61.739990906478
+        "composite": 61.739990906478,
+        "plausibility": 32.12
       }
     }
   }

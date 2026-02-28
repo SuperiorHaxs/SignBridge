@@ -1,0 +1,163 @@
+{
+  "id": "what-help-doctor-give",
+  "name": "What Help Doctor Give",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "What help does the doctor give?",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20260218_171744",
+  "created": "2026-02-18",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "what",
+        "confidence": 0.3924153447151184,
+        "top_k": [
+          {
+            "confidence": 0.3924153447151184,
+            "gloss": "what"
+          },
+          {
+            "confidence": 0.24506022036075592,
+            "gloss": "before"
+          },
+          {
+            "confidence": 0.11052277684211731,
+            "gloss": "help"
+          },
+          {
+            "confidence": 0.06419873982667923,
+            "gloss": "play"
+          },
+          {
+            "confidence": 0.03144079074263573,
+            "gloss": "thursday"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "help",
+        "confidence": 0.9712076783180237,
+        "top_k": [
+          {
+            "confidence": 0.9712076783180237,
+            "gloss": "help"
+          },
+          {
+            "confidence": 0.0032558117527514696,
+            "gloss": "year"
+          },
+          {
+            "confidence": 0.001919585862196982,
+            "gloss": "wrong"
+          },
+          {
+            "confidence": 0.0015295087359845638,
+            "gloss": "fine"
+          },
+          {
+            "confidence": 0.0014319452457129955,
+            "gloss": "family"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "doctor",
+        "confidence": 0.9463272094726562,
+        "top_k": [
+          {
+            "confidence": 0.9463272094726562,
+            "gloss": "doctor"
+          },
+          {
+            "confidence": 0.008143659681081772,
+            "gloss": "before"
+          },
+          {
+            "confidence": 0.008053804747760296,
+            "gloss": "enjoy"
+          },
+          {
+            "confidence": 0.004537821747362614,
+            "gloss": "jacket"
+          },
+          {
+            "confidence": 0.002613562159240246,
+            "gloss": "year"
+          }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "segment_file": "segments/segment_004.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_004.mp4",
+        "top_1": "give",
+        "confidence": 0.9640412926673889,
+        "top_k": [
+          {
+            "confidence": 0.9640412926673889,
+            "gloss": "give"
+          },
+          {
+            "confidence": 0.0036411050241440535,
+            "gloss": "paper"
+          },
+          {
+            "confidence": 0.0029848802369087934,
+            "gloss": "what"
+          },
+          {
+            "confidence": 0.0029671685770154,
+            "gloss": "but"
+          },
+          {
+            "confidence": 0.0021927000489085913,
+            "gloss": "hot"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "what help doctor give",
+    "llm_sentence": "What help can the doctor give?",
+    "selections": [
+      "what",
+      "help",
+      "doctor",
+      "give"
+    ],
+    "evaluation": {
+      "raw": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 100.0,
+        "plausibility": 35.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 67.5
+      },
+      "llm": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 100.0,
+        "plausibility": 88.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 94.0
+      }
+    }
+  }
+}

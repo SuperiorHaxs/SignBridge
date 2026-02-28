@@ -59,9 +59,24 @@ sys.path.insert(0, str(OPENHANDS_SRC))
 sys.path.insert(0, str(OPENHANDS_SRC / "util"))
 
 # Paths to executables
+# Handle both venv (scripts in same dir as python) and system Python (scripts in Scripts subdir)
 VENV_SCRIPTS = Path(sys.executable).parent
-VIDEO_TO_POSE_EXE = VENV_SCRIPTS / "video_to_pose.exe"
-VISUALIZE_POSE_EXE = VENV_SCRIPTS / "visualize_pose.exe"
+SCRIPTS_SUBDIR = VENV_SCRIPTS / "Scripts"
+
+# Check both locations for executables
+def _find_exe(name):
+    """Find executable in venv dir or Scripts subdir."""
+    # Check venv/Scripts first (system Python on Windows)
+    if (SCRIPTS_SUBDIR / name).exists():
+        return SCRIPTS_SUBDIR / name
+    # Check venv dir (typical venv structure)
+    if (VENV_SCRIPTS / name).exists():
+        return VENV_SCRIPTS / name
+    # Fallback to Scripts subdir path
+    return SCRIPTS_SUBDIR / name
+
+VIDEO_TO_POSE_EXE = _find_exe("video_to_pose.exe")
+VISUALIZE_POSE_EXE = _find_exe("visualize_pose.exe")
 
 # LLM prompt path
 LLM_PROMPT_PATH = PROJECT_UTILITIES_DIR / "llm_interface" / "prompts" / "llm_prompt_topk.txt"
@@ -2052,32 +2067,49 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
     # capture.pose which was created from a re-encoded concatenated video)
     capture_pose = output_dir / "capture.pose"
     if segment_type == "pose":
-        print(f"\n  Creating capture.pose from {len(segments_data)} segment poses...")
-        try:
-            segment_poses = []
-            for seg in segments_data:
-                seg_pose_path = output_dir / seg['segment_file']
-                if seg_pose_path.exists():
-                    with open(seg_pose_path, 'rb') as f:
-                        pose = Pose.read(f.read())
-                    segment_poses.append(pose)
+        if not POSE_FORMAT_AVAILABLE:
+            print(f"\n  Skipping capture.pose creation (pose_format library not available)")
+            print(f"  Install with: pip install pose-format")
+            # Copy capture.pose from session if it exists
+            session_capture_pose = session_path / "capture.pose"
+            if session_capture_pose.exists() and not capture_pose.exists():
+                shutil.copy2(session_capture_pose, capture_pose)
+                print(f"  Copied capture.pose from session")
+        else:
+            print(f"\n  Creating capture.pose from {len(segments_data)} segment poses...")
+            try:
+                segment_poses = []
+                for seg in segments_data:
+                    seg_pose_path = output_dir / seg['segment_file']
+                    if seg_pose_path.exists():
+                        with open(seg_pose_path, 'rb') as f:
+                            pose = Pose.read(f.read())
+                        segment_poses.append(pose)
 
-            if segment_poses:
-                # Concatenate without gaps (gap_seconds=0) since these are continuous captures
-                concatenated = concatenate_poses(segment_poses, gap_seconds=0, normalize=False)
-                with open(capture_pose, 'wb') as f:
-                    concatenated.write(f)
-                total_frames = concatenated.body.data.shape[0]
-                print(f"  Created capture.pose: {total_frames} frames ({capture_pose.stat().st_size:,} bytes)")
-            else:
-                print(f"  WARNING: No segment poses found to concatenate")
-        except Exception as e:
-            print(f"  ERROR creating capture.pose: {e}")
-            import traceback
-            traceback.print_exc()
+                if segment_poses:
+                    # Concatenate without gaps (gap_seconds=0) since these are continuous captures
+                    concatenated = concatenate_poses(segment_poses, gap_seconds=0, normalize=False)
+                    with open(capture_pose, 'wb') as f:
+                        concatenated.write(f)
+                    total_frames = concatenated.body.data.shape[0]
+                    print(f"  Created capture.pose: {total_frames} frames ({capture_pose.stat().st_size:,} bytes)")
+                else:
+                    print(f"  WARNING: No segment poses found to concatenate")
+            except Exception as e:
+                print(f"  ERROR creating capture.pose: {e}")
+                import traceback
+                traceback.print_exc()
 
     # Step 2: Generate pose visualization if needed
     print("\n[2/5] Generating visualizations...")
+
+    # Check if visualize_pose is available
+    visualize_available = VISUALIZE_POSE_EXE.exists()
+    if not visualize_available:
+        print(f"  WARNING: visualize_pose not found at {VISUALIZE_POSE_EXE}")
+        print(f"  Install with: pip install pose-format vidgear")
+        print(f"  Skipping pose visualization generation...")
+        print(f"  Segment videos will use original webcam recordings instead of pose visualizations")
 
     # First, rename any raw video files (from webcam) to _original
     # so we can create pose visualizations in their place
@@ -2093,49 +2125,51 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
     # Generate pose_video from capture.pose (created from concatenated segments above)
     pose_video = output_dir / "pose_video.mp4"
 
-    if capture_pose.exists() and not pose_video.exists():
-        print(f"  Creating pose_video from capture.pose...")
-        pose_video_raw = output_dir / "pose_video_raw.mp4"
-        cmd = [
-            str(VISUALIZE_POSE_EXE),
-            "-i", str(capture_pose),
-            "-o", str(pose_video_raw),
-            "--normalize"
-        ]
-        if run_command(cmd, "visualize_pose"):
-            resample_video_to_30fps(str(pose_video_raw), str(pose_video))
-            pose_video_raw.unlink(missing_ok=True)
-            print(f"  Created: {pose_video.name}")
-        else:
-            print(f"  WARNING: Failed to visualize capture.pose")
-    elif pose_video.exists():
-        print("  pose_video.mp4 already exists")
-    else:
-        print("  No capture.pose available for visualization")
-
-    # Generate segment pose visualizations from .pose files
-    for seg in segments_data:
-        seg_id = seg['segment_id']
-        seg_pose = segments_dir / f"segment_{seg_id:03d}.pose"
-        seg_video = segments_dir / f"segment_{seg_id:03d}.mp4"
-
-        if seg_pose.exists():
-            # Always create pose visualization (we renamed raw video to _original)
-            seg_video_raw = segments_dir / f"segment_{seg_id:03d}_viz_raw.mp4"
+    if visualize_available:
+        if capture_pose.exists() and not pose_video.exists():
+            print(f"  Creating pose_video from capture.pose...")
+            pose_video_raw = output_dir / "pose_video_raw.mp4"
             cmd = [
                 str(VISUALIZE_POSE_EXE),
-                "-i", str(seg_pose),
-                "-o", str(seg_video_raw),
+                "-i", str(capture_pose),
+                "-o", str(pose_video_raw),
                 "--normalize"
             ]
-            if run_command(cmd, f"visualize segment {seg_id}"):
-                resample_video_to_30fps(str(seg_video_raw), str(seg_video))
-                seg_video_raw.unlink(missing_ok=True)
-                print(f"  Created pose visualization: segment_{seg_id:03d}.mp4")
+            if run_command(cmd, "visualize_pose"):
+                resample_video_to_30fps(str(pose_video_raw), str(pose_video))
+                pose_video_raw.unlink(missing_ok=True)
+                print(f"  Created: {pose_video.name}")
             else:
-                print(f"  WARNING: Failed to visualize segment_{seg_id:03d}.pose")
+                print(f"  WARNING: Failed to visualize capture.pose")
+        elif pose_video.exists():
+            print("  pose_video.mp4 already exists")
         else:
-            print(f"  No .pose file for segment {seg_id}")
+            print("  No capture.pose available for visualization")
+
+    # Generate segment pose visualizations from .pose files
+    if visualize_available:
+        for seg in segments_data:
+            seg_id = seg['segment_id']
+            seg_pose = segments_dir / f"segment_{seg_id:03d}.pose"
+            seg_video = segments_dir / f"segment_{seg_id:03d}.mp4"
+
+            if seg_pose.exists():
+                # Always create pose visualization (we renamed raw video to _original)
+                seg_video_raw = segments_dir / f"segment_{seg_id:03d}_viz_raw.mp4"
+                cmd = [
+                    str(VISUALIZE_POSE_EXE),
+                    "-i", str(seg_pose),
+                    "-o", str(seg_video_raw),
+                    "--normalize"
+                ]
+                if run_command(cmd, f"visualize segment {seg_id}"):
+                    resample_video_to_30fps(str(seg_video_raw), str(seg_video))
+                    seg_video_raw.unlink(missing_ok=True)
+                    print(f"  Created pose visualization: segment_{seg_id:03d}.mp4")
+                else:
+                    print(f"  WARNING: Failed to visualize segment_{seg_id:03d}.pose")
+            else:
+                print(f"  No .pose file for segment {seg_id}")
 
     # Step 3: Run model predictions (skip if already in session metadata)
     print("\n[3/5] Running model predictions...")
@@ -2286,84 +2320,147 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
 
     # Step 5: Calculate evaluation metrics (using same library as live mode)
     print("\n[5/5] Calculating evaluation metrics...")
-    evaluation = {
-        "raw": {"bleu": 0.0, "bert": 0.0, "quality": 0.0, "coverage_recall": 0.0, "coverage_precision": 0.0, "coverage_f1": 0.0, "composite": 0.0},
-        "llm": {"bleu": 0.0, "bert": 0.0, "quality": 0.0, "coverage_recall": 0.0, "coverage_precision": 0.0, "coverage_f1": 0.0, "composite": 0.0}
-    }
 
-    try:
-        from evaluation_metrics import (
-            calculate_bleu_score,
-            calculate_bert_score,
-            calculate_quality_score,
-            calculate_composite_score_v2_chain,
-            calculate_coverage_v2 as calculate_coverage,
-            QualityScorer,
-            QUALITY_SCORING_AVAILABLE
-        )
+    # Extract selections from session metadata or default to top-1 predictions
+    selections = session_metadata.get('selections', [])
+    if not selections:
+        # Default to top-1 predictions
+        selections = [seg['top_1'] for seg in segments_data]
+    print(f"  Selections: {selections}")
 
-        # Get quality scorer
-        scorer = QualityScorer(verbose=False) if QUALITY_SCORING_AVAILABLE else None
+    # Get top-1 predictions (for Model GA)
+    predicted_glosses = [seg['top_1'] for seg in segments_data]
+    print(f"  Top-1 predictions: {predicted_glosses}")
 
-        # Calculate all metrics for raw sentence
-        raw_bleu = calculate_bleu_score(raw_sentence, reference) or 0.0
-        raw_bert = calculate_bert_score(raw_sentence, reference) or 0.0
-        raw_quality = calculate_quality_score(raw_sentence, scorer=scorer) or 0.0
-        raw_coverage = calculate_coverage(reference, raw_sentence)
+    # Check if session already has evaluation data (saved from live mode)
+    saved_evaluation = session_metadata.get('evaluation', {})
+    if saved_evaluation and saved_evaluation.get('raw', {}).get('plausibility', 0) > 0:
+        print("  Using saved evaluation from session metadata")
+        evaluation = saved_evaluation
+        model_gloss_accuracy = saved_evaluation.get('raw', {}).get('model_gloss_accuracy', 0.0)
+        effective_gloss_accuracy = saved_evaluation.get('llm', {}).get('effective_gloss_accuracy', 0.0)
+        print(f"  Model GA: {model_gloss_accuracy:.1f}%, Effective GA: {effective_gloss_accuracy:.1f}%")
+        print(f"  Plausibility - Raw: {evaluation['raw'].get('plausibility', 0):.1f}, LLM: {evaluation['llm'].get('plausibility', 0):.1f}")
+        print(f"  CTQI - Raw: {evaluation['raw'].get('composite', 0):.1f}, LLM: {evaluation['llm'].get('composite', 0):.1f}")
+    else:
+        # Calculate evaluation metrics fresh
+        print("  No saved evaluation found, calculating metrics...")
 
-        evaluation["raw"] = {
-            'bleu': raw_bleu,
-            'bert': raw_bert,
-            'quality': raw_quality,
-            'coverage_recall': raw_coverage['recall'] or 0.0,
-            'coverage_precision': raw_coverage['precision'] or 0.0,
-            'coverage_f1': raw_coverage['f1'] or 0.0,
-            'missing_words': raw_coverage['missing_words'],
-            'hallucinated_words': raw_coverage['hallucinated_words'],
+        # Default values for gloss accuracies (will be computed if evaluation succeeds)
+        model_gloss_accuracy = 0.0
+        effective_gloss_accuracy = 0.0
+
+        evaluation = {
+            "raw": {"model_gloss_accuracy": 0.0, "effective_gloss_accuracy": 0.0, "coverage_f1": 0.0, "plausibility": 0.0, "composite": 0.0, "missing_words": [], "hallucinated_words": []},
+            "llm": {"model_gloss_accuracy": 0.0, "effective_gloss_accuracy": 0.0, "coverage_f1": 0.0, "plausibility": 0.0, "composite": 0.0, "missing_words": [], "hallucinated_words": []}
         }
 
-        # Calculate CTQI v2 (prerequisite chain) for raw
-        raw_composite = calculate_composite_score_v2_chain(
-            gloss_accuracy=raw_coverage['f1'] or 0.0,
-            coverage_f1=raw_coverage['f1'] or 0.0,
-            plausibility=raw_quality
-        ) or 0.0
-        evaluation["raw"]["composite"] = raw_composite
+        try:
+            from evaluation_metrics import (
+                calculate_bleu_score,
+                calculate_bert_score,
+                calculate_plausibility,
+                calculate_composite_score_v2_chain,
+                calculate_coverage_v2 as calculate_coverage,
+                calculate_gloss_accuracy,
+                PlausibilityScorer,
+                GEMINI_AVAILABLE
+            )
 
-        print(f"  Raw - BLEU: {raw_bleu:.1f}, BERT: {raw_bert:.1f}, Quality: {raw_quality:.1f}, Coverage F1: {raw_coverage['f1']:.1f}")
+            # Get quality scorer
+            scorer = PlausibilityScorer(verbose=False) if GEMINI_AVAILABLE else None
 
-        # Calculate all metrics for LLM sentence
-        llm_bleu = calculate_bleu_score(llm_sentence, reference) or 0.0
-        llm_bert = calculate_bert_score(llm_sentence, reference) or 0.0
-        llm_quality = calculate_quality_score(llm_sentence, scorer=scorer) or 0.0
-        llm_coverage = calculate_coverage(reference, llm_sentence)
+            # Extract expected glosses from reference sentence (same method as live mode)
+            # Note: ASL signs include question words (what, who, where, etc.) so we keep those
+            # We only filter out English grammar words (articles, prepositions, auxiliary verbs)
+            import re
+            words = re.findall(r'\b[a-zA-Z]+\b', reference.lower())
 
-        evaluation["llm"] = {
-            'bleu': llm_bleu,
-            'bert': llm_bert,
-            'quality': llm_quality,
-            'coverage_recall': llm_coverage['recall'] or 0.0,
-            'coverage_precision': llm_coverage['precision'] or 0.0,
-            'coverage_f1': llm_coverage['f1'] or 0.0,
-            'missing_words': llm_coverage['missing_words'],
-            'hallucinated_words': llm_coverage['hallucinated_words'],
-        }
+            # Stopwords: English grammar words NOT signed in ASL
+            # Keep: what, who, where, when, why, how (question words ARE signed in ASL)
+            stopwords = {
+                'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+                'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+                'should', 'may', 'might', 'must', 'shall', 'can', 'to', 'of', 'in',
+                'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through',
+                'during', 'above', 'below', 'between', 'under', 'again', 'further',
+                'then', 'once', 'here', 'there', 'all', 'each', 'few', 'more', 'most',
+                'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same',
+                'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or',
+                'because', 'until', 'while', 'although', 'though', 'since', 'unless',
+                'i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves',
+                'you', 'your', 'yours', 'yourself', 'yourselves',
+                'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
+                'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
+                'which', 'whom', 'this', 'that', 'these', 'those', 'am'
+            }
+            expected_glosses = [w for w in words if w not in stopwords]
+            print(f"  Expected glosses (from reference): {expected_glosses}")
 
-        # Calculate CTQI v2 (prerequisite chain) for LLM
-        llm_composite = calculate_composite_score_v2_chain(
-            gloss_accuracy=llm_coverage['f1'] or 0.0,
-            coverage_f1=llm_coverage['f1'] or 0.0,
-            plausibility=llm_quality
-        ) or 0.0
-        evaluation["llm"]["composite"] = llm_composite
+            # Calculate Model Gloss Accuracy (top-1 predictions vs expected)
+            model_ga_result = calculate_gloss_accuracy(predicted_glosses, expected_glosses)
+            model_gloss_accuracy = model_ga_result.get('accuracy', 0.0)
+            print(f"  Model GA: {model_gloss_accuracy:.1f}%")
 
-        print(f"  LLM - BLEU: {llm_bleu:.1f}, BERT: {llm_bert:.1f}, Quality: {llm_quality:.1f}, Coverage F1: {llm_coverage['f1']:.1f}")
-        print(f"  Composite - Raw: {raw_composite:.1f}, LLM: {llm_composite:.1f}")
+            # Calculate Effective Gloss Accuracy (LLM-selected vs expected)
+            effective_ga_result = calculate_gloss_accuracy(selections, expected_glosses)
+            effective_gloss_accuracy = effective_ga_result.get('accuracy', 0.0)
+            print(f"  Effective GA: {effective_gloss_accuracy:.1f}%")
 
-    except Exception as e:
-        print(f"  WARNING: Evaluation metrics calculation failed: {e}")
-        import traceback
-        traceback.print_exc()
+            # Calculate all metrics for raw sentence
+            raw_bleu = calculate_bleu_score(raw_sentence, reference) or 0.0
+            raw_bert = calculate_bert_score(raw_sentence, reference) or 0.0
+            raw_plausibility = calculate_plausibility(raw_sentence, scorer=scorer) or 0.0
+            raw_coverage = calculate_coverage(reference, raw_sentence)
+
+            evaluation["raw"] = {
+                'model_gloss_accuracy': model_gloss_accuracy,
+                'effective_gloss_accuracy': model_gloss_accuracy,  # Raw uses top-1, same as Model GA
+                'coverage_f1': raw_coverage['f1'] or 0.0,
+                'plausibility': raw_plausibility,
+                'missing_words': raw_coverage['missing_words'],
+                'hallucinated_words': raw_coverage['hallucinated_words'],
+            }
+
+            # Calculate CTQI v2 (prerequisite chain) for raw - uses Model GA
+            raw_composite = calculate_composite_score_v2_chain(
+                gloss_accuracy=model_gloss_accuracy,
+                coverage_f1=raw_coverage['f1'] or 0.0,
+                plausibility=raw_plausibility
+            ) or 0.0
+            evaluation["raw"]["composite"] = raw_composite
+
+            print(f"  Raw - Model GA: {model_gloss_accuracy:.1f}%, Plausibility: {raw_plausibility:.1f}, Coverage F1: {raw_coverage['f1']:.1f}, CTQI: {raw_composite:.1f}")
+
+            # Calculate all metrics for LLM sentence
+            llm_bleu = calculate_bleu_score(llm_sentence, reference) or 0.0
+            llm_bert = calculate_bert_score(llm_sentence, reference) or 0.0
+            llm_plausibility = calculate_plausibility(llm_sentence, scorer=scorer) or 0.0
+            llm_coverage = calculate_coverage(reference, llm_sentence)
+
+            evaluation["llm"] = {
+                'model_gloss_accuracy': model_gloss_accuracy,  # Same as raw (model accuracy)
+                'effective_gloss_accuracy': effective_gloss_accuracy,  # LLM-selected glosses
+                'coverage_f1': llm_coverage['f1'] or 0.0,
+                'plausibility': llm_plausibility,
+                'missing_words': llm_coverage['missing_words'],
+                'hallucinated_words': llm_coverage['hallucinated_words'],
+            }
+
+            # Calculate CTQI v2 (prerequisite chain) for LLM - uses Effective GA
+            llm_composite = calculate_composite_score_v2_chain(
+                gloss_accuracy=effective_gloss_accuracy,
+                coverage_f1=llm_coverage['f1'] or 0.0,
+                plausibility=llm_plausibility
+            ) or 0.0
+            evaluation["llm"]["composite"] = llm_composite
+
+            print(f"  LLM - Effective GA: {effective_gloss_accuracy:.1f}%, Plausibility: {llm_plausibility:.1f}, Coverage F1: {llm_coverage['f1']:.1f}, CTQI: {llm_composite:.1f}")
+
+        except Exception as e:
+            print(f"  WARNING: Evaluation metrics calculation failed: {e}")
+            import traceback
+            traceback.print_exc()
 
     # Save metadata
     print("\nSaving metadata...")
@@ -2381,6 +2478,7 @@ def prepare_sample_from_session(session_path, reference, name, sample_id, output
             "segments": segments_data,
             "raw_sentence": raw_sentence,
             "llm_sentence": llm_sentence,
+            "selections": selections,
             "evaluation": evaluation
         }
     }

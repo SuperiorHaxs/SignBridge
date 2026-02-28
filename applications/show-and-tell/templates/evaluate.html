@@ -32,7 +32,7 @@
         </div>
 
         <div class="sentence-box llm-sentence">
-            <div class="sentence-label">LLM Constructed</div>
+            <div class="sentence-label">SignBridge Constructed</div>
             <div class="sentence-text" id="llm-sentence"></div>
         </div>
     </div>
@@ -59,7 +59,7 @@
                 <tr>
                     <th>Metric</th>
                     <th>Raw Score</th>
-                    <th>LLM Score</th>
+                    <th>SignBridge Score</th>
                     <th>Improvement</th>
                 </tr>
             </thead>
@@ -76,7 +76,7 @@
                 <tr class="metric-row" data-metric="effective_gloss_accuracy">
                     <td class="metric-name">
                         <span class="metric-title">Effective Gloss Accuracy (GA)</span>
-                        <span class="metric-desc">Accuracy after LLM selects from top-k options (used in CTQI v3)</span>
+                        <span class="metric-desc">Accuracy after SignBridge selects from top-k options (used in CTQI v3)</span>
                     </td>
                     <td class="metric-value raw-value">-</td>
                     <td class="metric-value llm-value">-</td>
@@ -91,7 +91,7 @@
                     <td class="metric-value llm-value">-</td>
                     <td class="metric-delta">-</td>
                 </tr>
-                <tr class="metric-row" data-metric="quality">
+                <tr class="metric-row" data-metric="plausibility">
                     <td class="metric-name">
                         <span class="metric-title">Plausibility Score (P)</span>
                         <span class="metric-desc">How natural and grammatically correct the sentence sounds</span>
@@ -127,7 +127,7 @@
                     </div>
                 </div>
                 <div class="coverage-column">
-                    <h5>LLM Sentence</h5>
+                    <h5>SignBridge Sentence</h5>
                     <div class="word-list missing" id="llm-missing-words">
                         <span class="list-label">Missing words:</span>
                         <span class="words"></span>

@@ -103,29 +103,33 @@
     ],
     "raw_sentence": "chair black tall",
     "llm_sentence": "The black chair is tall.",
-    "selections": ["chair", "black", "tall"],
+    "selections": [
+      "chair",
+      "black",
+      "tall"
+    ],
     "evaluation": {
       "raw": {
         "bleu": 20.374971871270475,
         "bert": 90.43142795562744,
-        "quality": 0.0,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 46.14253137181606
+        "composite": 61.5,
+        "plausibility": 23.0
       },
       "llm": {
         "bleu": 100.00000000000004,
         "bert": 99.99999403953552,
-        "quality": 70.19642028808593,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 88.0785669231415
+        "composite": 85.09821014404298,
+        "plausibility": 70.19642028808593
       }
     }
   }

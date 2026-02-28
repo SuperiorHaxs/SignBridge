@@ -722,9 +722,9 @@ async function loadSamples() {
         const response = await fetch('/api/samples');
         const data = await response.json();
 
-        state.samples = data.samples || [];
+        const sampleList = data.samples || [];
 
-        if (state.samples.length === 0) {
+        if (sampleList.length === 0) {
             demoElements.samplesGrid.innerHTML = `
                 <div class="no-samples">
                     <p>No demo samples available.</p>
@@ -734,6 +734,20 @@ async function loadSamples() {
             return;
         }
 
+        // Fetch full metadata for each sample to get evaluation metrics
+        const samplesWithMetadata = await Promise.all(
+            sampleList.map(async (sample) => {
+                try {
+                    const metaResponse = await fetch(`/api/samples/${sample.id}`);
+                    const fullSample = await metaResponse.json();
+                    return { ...sample, ...fullSample };
+                } catch (e) {
+                    return sample;
+                }
+            })
+        );
+
+        state.samples = samplesWithMetadata;
         renderSamples();
 
     } catch (error) {
@@ -747,44 +761,163 @@ async function loadSamples() {
     }
 }
 
+function categorizeSamples(samples) {
+    // Category definitions based on CTQI improvement (SignBridge CTQI - Raw CTQI)
+    const categories = {
+        transforms: {
+            title: 'SignBridge Transforms Quality',
+            subtitle: 'Δ > +30',
+            icon: '⭐',
+            samples: []
+        },
+        improves: {
+            title: 'SignBridge Improves Quality',
+            subtitle: 'Δ 0 to +30',
+            icon: '✨',
+            samples: []
+        },
+        rawBetter: {
+            title: 'Raw Outperforms SignBridge',
+            subtitle: 'Δ < 0',
+            icon: '⚠️',
+            samples: []
+        }
+    };
+
+    // Special samples where SignBridge selected from top-k (not top-1)
+    const topKSampleIds = ['doctor_need_water'];
+
+    samples.forEach(sample => {
+        const evaluation = sample.precomputed?.evaluation;
+        if (!evaluation) {
+            categories.improves.samples.push(sample);
+            return;
+        }
+
+        const rawCtqi = evaluation.raw?.composite || 0;
+        const llmCtqi = evaluation.llm?.composite || 0;
+        const delta = llmCtqi - rawCtqi;
+        const isTopK = topKSampleIds.includes(sample.id);
+
+        const sampleData = { ...sample, rawCtqi, llmCtqi, delta, isTopK };
+
+        if (delta < 0) {
+            categories.rawBetter.samples.push(sampleData);
+        } else if (delta > 30 || isTopK) {
+            // Top-K samples and high delta go to transforms category
+            categories.transforms.samples.push(sampleData);
+        } else {
+            // All other positive improvements (0 to 30)
+            categories.improves.samples.push(sampleData);
+        }
+    });
+
+    // Sort samples within each category by delta (descending), but top-k first
+    Object.values(categories).forEach(cat => {
+        cat.samples.sort((a, b) => {
+            // Top-K samples first
+            if (a.isTopK && !b.isTopK) return -1;
+            if (!a.isTopK && b.isTopK) return 1;
+            return (b.delta || 0) - (a.delta || 0);
+        });
+    });
+
+    return categories;
+}
+
 function renderSamples() {
     demoElements.samplesGrid.innerHTML = '';
 
-    state.samples.forEach(sample => {
-        const card = document.createElement('div');
-        card.className = 'sample-card';
-        card.dataset.sampleId = sample.id;
+    const categories = categorizeSamples(state.samples);
 
-        // Use original video if available, otherwise fall back to pose video
-        const videoFile = sample.has_original_video && sample.original_video
-            ? sample.original_video
-            : 'pose_video.mp4';
-        const isOriginalVideo = sample.has_original_video && sample.original_video;
+    // Render each category that has samples
+    const categoryOrder = ['transforms', 'improves', 'rawBetter'];
 
-        card.innerHTML = `
-            <div class="sample-thumbnail ${isOriginalVideo ? 'has-original' : 'pose-only'}">
-                <video src="/demo-data/samples/${sample.id}/${videoFile}" muted loop playsinline></video>
-                ${isOriginalVideo ? '<span class="video-badge">Video</span>' : '<span class="video-badge pose-badge">Pose</span>'}
-            </div>
-            <div class="sample-info">
-                <h4 class="sample-name">${sample.name}</h4>
-            </div>
-            <div class="sample-selected-indicator">&#10003;</div>
+    categoryOrder.forEach(catKey => {
+        const category = categories[catKey];
+        if (category.samples.length === 0) return;
+
+        // Create category section
+        const section = document.createElement('div');
+        section.className = 'sample-category';
+
+        // Category header
+        const header = document.createElement('div');
+        header.className = 'category-header';
+        header.innerHTML = `
+            <span class="category-icon">${category.icon}</span>
+            <span class="category-title">${category.title} <span class="category-subtitle">(${category.subtitle})</span></span>
         `;
+        section.appendChild(header);
 
-        // Hover to play video
-        const video = card.querySelector('video');
-        card.addEventListener('mouseenter', () => video.play());
-        card.addEventListener('mouseleave', () => {
-            video.pause();
-            video.currentTime = 0;
+        // Sample cards container
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'category-samples';
+
+        category.samples.forEach(sample => {
+            const card = createSampleCard(sample);
+            cardsContainer.appendChild(card);
         });
 
-        // Click to select
-        card.addEventListener('click', () => selectSample(sample.id));
-
-        demoElements.samplesGrid.appendChild(card);
+        section.appendChild(cardsContainer);
+        demoElements.samplesGrid.appendChild(section);
     });
+}
+
+function createSampleCard(sample) {
+    const card = document.createElement('div');
+    card.className = 'sample-card' + (sample.isTopK ? ' topk-sample' : '');
+    card.dataset.sampleId = sample.id;
+
+    // Use thumbnail field from samples.json if set, otherwise auto-detect
+    const videoFile = sample.thumbnail
+        ? sample.thumbnail
+        : (sample.has_original_video && sample.original_video
+            ? sample.original_video
+            : 'pose_video.mp4');
+    const isOriginalVideo = videoFile !== 'pose_video.mp4';
+
+    // Format CTQI scores
+    const rawCtqi = sample.rawCtqi !== undefined ? sample.rawCtqi.toFixed(1) : '-';
+    const llmCtqi = sample.llmCtqi !== undefined ? sample.llmCtqi.toFixed(1) : '-';
+    const delta = sample.delta !== undefined ? (sample.delta >= 0 ? '+' : '') + sample.delta.toFixed(1) : '';
+    const deltaClass = sample.delta > 0 ? 'positive' : (sample.delta < 0 ? 'negative' : 'neutral');
+
+    // Top-K badge for samples where SignBridge selected from alternatives
+    const topKBadge = sample.isTopK
+        ? '<span class="topk-badge" title="SignBridge selected better gloss from Top-K">🎯 Top-K</span>'
+        : '';
+
+    card.innerHTML = `
+        <div class="sample-thumbnail ${isOriginalVideo ? 'has-original' : 'pose-only'}">
+            <video src="/demo-data/samples/${sample.id}/${videoFile}" muted loop playsinline></video>
+            ${isOriginalVideo ? '<span class="video-badge">Video</span>' : '<span class="video-badge pose-badge">Pose</span>'}
+            ${topKBadge}
+        </div>
+        <div class="sample-info">
+            <h4 class="sample-name">${sample.name}</h4>
+            <div class="sample-scores">
+                <span class="score-raw" title="Raw CTQI">${rawCtqi}</span>
+                <span class="score-arrow">→</span>
+                <span class="score-llm" title="SignBridge CTQI">${llmCtqi}</span>
+                <span class="score-delta ${deltaClass}" title="Improvement">${delta}</span>
+            </div>
+        </div>
+        <div class="sample-selected-indicator">&#10003;</div>
+    `;
+
+    // Hover to play video
+    const video = card.querySelector('video');
+    card.addEventListener('mouseenter', () => video.play());
+    card.addEventListener('mouseleave', () => {
+        video.pause();
+        video.currentTime = 0;
+    });
+
+    // Click to select
+    card.addEventListener('click', () => selectSample(sample.id));
+
+    return card;
 }
 
 async function selectSample(sampleId) {

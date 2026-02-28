@@ -1,29 +1,39 @@
 {
   "samples": [
     {
+      "id": "give-jacket-son",
+      "name": "Give Jacket Son",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "walk-before-dance",
+      "name": "Walk Before Dance",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
       "id": "son-enjoy-work-vid",
       "name": "Son Enjoy Work",
-      "thumbnail": "pose_video.mp4"
+      "thumbnail": "original_video.mp4"
     },
     {
       "id": "what-time-finish-basketball-k",
       "name": "what time finish basketball",
-      "thumbnail": "pose_video.mp4"
+      "thumbnail": "original_video.mp4"
     },
     {
       "id": "chair-black-tall-k",
       "name": "chair black tall",
-      "thumbnail": "pose_video.mp4"
+      "thumbnail": "original_video.mp4"
     },
     {
       "id": "time-son-go-bed-k",
       "name": "time son go bed",
-      "thumbnail": "pose_video.mp4"
+      "thumbnail": "original_video.mp4"
     },
     {
       "id": "work-full-time-doctor-k",
       "name": "work full time doctor",
-      "thumbnail": "pose_video.mp4"
+      "thumbnail": "original_video.mp4"
     },
     {
       "id": "man-drink-water-kk",
@@ -33,6 +43,11 @@
     {
       "id": "doctor_need_water",
       "name": "Doctor Needs Water",
+      "thumbnail": "pose_video.mp4"
+    },
+    {
+      "id": "what-help-doctor-give",
+      "name": "What Help Doctor Give",
       "thumbnail": "pose_video.mp4"
     }
   ]

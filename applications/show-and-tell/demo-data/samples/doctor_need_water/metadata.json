@@ -1,0 +1,140 @@
+{
+  "id": "doctor_need_water",
+  "name": "Doctor Needs Water",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "The doctor needs water.",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20260217_194702",
+  "created": "2026-02-17",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "doctor",
+        "confidence": 0.9457303285598755,
+        "top_k": [
+          {
+            "confidence": 0.9457303285598755,
+            "gloss": "doctor"
+          },
+          {
+            "confidence": 0.011507187969982624,
+            "gloss": "full"
+          },
+          {
+            "confidence": 0.008409903384745121,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.0028629847802221775,
+            "gloss": "thursday"
+          },
+          {
+            "confidence": 0.0027104890905320644,
+            "gloss": "jacket"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "thursday",
+        "confidence": 0.2151309698820114,
+        "top_k": [
+          {
+            "confidence": 0.2151309698820114,
+            "gloss": "thursday"
+          },
+          {
+            "confidence": 0.1990250200033188,
+            "gloss": "thanksgiving"
+          },
+          {
+            "confidence": 0.18581600487232208,
+            "gloss": "need"
+          },
+          {
+            "confidence": 0.11922357976436615,
+            "gloss": "but"
+          },
+          {
+            "confidence": 0.10302950441837311,
+            "gloss": "deaf"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "water",
+        "confidence": 0.7407408356666565,
+        "top_k": [
+          {
+            "confidence": 0.7407408356666565,
+            "gloss": "water"
+          },
+          {
+            "confidence": 0.08537562191486359,
+            "gloss": "but"
+          },
+          {
+            "confidence": 0.02149157226085663,
+            "gloss": "give"
+          },
+          {
+            "confidence": 0.02140647917985916,
+            "gloss": "paper"
+          },
+          {
+            "confidence": 0.019002102315425873,
+            "gloss": "fine"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "doctor thursday water",
+    "llm_sentence": "The doctor needs water.",
+    "selections": [
+      "doctor",
+      "need",
+      "water"
+    ],
+    "evaluation": {
+      "raw": {
+        "bleu": 24.840753130578644,
+        "bert": 85.5858862400055,
+        "coverage_recall": 66.66666666666666,
+        "coverage_precision": 66.66666666666666,
+        "coverage_f1": 66.66666666666666,
+        "missing_words": [
+          "needs"
+        ],
+        "hallucinated_words": [
+          "thursday"
+        ],
+        "composite": 39.33333333333332,
+        "plausibility": 18.0
+      },
+      "llm": {
+        "bleu": 100.00000000000004,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 72.50919189453124,
+        "plausibility": 45.0183837890625
+      }
+    }
+  }
+}

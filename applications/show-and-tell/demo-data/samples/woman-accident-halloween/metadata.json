@@ -110,16 +110,16 @@
       "raw": {
         "bleu": 10.460859358517785,
         "bert": 88.41609954833984,
-        "quality": 0,
-        "composite": 54.252348813445636,
-        "gloss_accuracy": 100.0
+        "composite": 58.5,
+        "gloss_accuracy": 100.0,
+        "plausibility": 17.0
       },
       "llm": {
         "bleu": 100.00000000000004,
         "bert": 99.99998807907104,
-        "quality": 32.04418357342664,
-        "composite": 79.6132526878422,
-        "gloss_accuracy": 100.0
+        "composite": 66.02209178671332,
+        "gloss_accuracy": 100.0,
+        "plausibility": 32.04418357342664
       }
     }
   }

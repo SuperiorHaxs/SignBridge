@@ -1,0 +1,136 @@
+{
+  "id": "walk-before-dance",
+  "name": "Walk Before Dance",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "You have to walk before you can dance.",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20260218_174452",
+  "created": "2026-02-18",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "walk",
+        "confidence": 0.2621651589870453,
+        "top_k": [
+          {
+            "confidence": 0.2621651589870453,
+            "gloss": "walk"
+          },
+          {
+            "confidence": 0.23093648254871368,
+            "gloss": "before"
+          },
+          {
+            "confidence": 0.15160146355628967,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.11193321645259857,
+            "gloss": "study"
+          },
+          {
+            "confidence": 0.03425547853112221,
+            "gloss": "jacket"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "before",
+        "confidence": 0.9180793166160583,
+        "top_k": [
+          {
+            "confidence": 0.9180793166160583,
+            "gloss": "before"
+          },
+          {
+            "confidence": 0.030878037214279175,
+            "gloss": "enjoy"
+          },
+          {
+            "confidence": 0.0071326857432723045,
+            "gloss": "jacket"
+          },
+          {
+            "confidence": 0.005899772513657808,
+            "gloss": "give"
+          },
+          {
+            "confidence": 0.0030050643254071474,
+            "gloss": "study"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "dance",
+        "confidence": 0.49667075276374817,
+        "top_k": [
+          {
+            "confidence": 0.49667075276374817,
+            "gloss": "dance"
+          },
+          {
+            "confidence": 0.22041407227516174,
+            "gloss": "time"
+          },
+          {
+            "confidence": 0.049226026982069016,
+            "gloss": "table"
+          },
+          {
+            "confidence": 0.03406158462166786,
+            "gloss": "drink"
+          },
+          {
+            "confidence": 0.025973066687583923,
+            "gloss": "son"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "walk before dance",
+    "llm_sentence": "Walk before the time.",
+    "selections": [
+      "walk",
+      "before",
+      "dance"
+    ],
+    "evaluation": {
+      "raw": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 100.0,
+        "plausibility": 96.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 98.0
+      },
+      "llm": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 50.0,
+        "plausibility": 50.0,
+        "missing_words": [
+          "dance"
+        ],
+        "hallucinated_words": [
+          "time"
+        ],
+        "composite": 37.5
+      }
+    }
+  }
+}

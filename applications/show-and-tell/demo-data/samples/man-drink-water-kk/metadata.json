@@ -103,23 +103,26 @@
     ],
     "raw_sentence": "man drink water",
     "llm_sentence": "The man wants to drink water.",
-    "selections": ["man", "drink", "water"],
+    "selections": [
+      "man",
+      "drink",
+      "water"
+    ],
     "evaluation": {
       "raw": {
         "bleu": 24.840753130578644,
         "bert": 92.96952486038208,
-        "quality": 10.386471354166666,
         "coverage_recall": 100.0,
         "coverage_precision": 100.0,
         "coverage_f1": 100.0,
         "missing_words": [],
         "hallucinated_words": [],
-        "composite": 51.47460648332988
+        "composite": 51.47460648332988,
+        "plausibility": 10.386471354166666
       },
       "llm": {
         "bleu": 17.965205598154213,
         "bert": 95.80565690994263,
-        "quality": 88.24280662536621,
         "coverage_recall": 100.0,
         "coverage_precision": 75.0,
         "coverage_f1": 85.71428571428571,
@@ -127,7 +130,8 @@
         "hallucinated_words": [
           "wants"
         ],
-        "composite": 78.58160630042957
+        "composite": 78.58160630042957,
+        "plausibility": 88.24280662536621
       }
     }
   }

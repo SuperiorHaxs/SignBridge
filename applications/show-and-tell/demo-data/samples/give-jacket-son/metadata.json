@@ -1,0 +1,132 @@
+{
+  "id": "give-jacket-son",
+  "name": "Give Jacket Son",
+  "description": "Demo sample from Live mode session",
+  "reference_sentence": "Give the jacket to your son.",
+  "source": "live_session",
+  "source_session": "C:\\Users\\ashwi\\Projects\\WLASL-proj\\asl-v1\\applications\\show-and-tell\\saved-sessions\\session_20260218_091528",
+  "created": "2026-02-18",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "segment_file": "segments/segment_001.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "give",
+        "confidence": 0.6270878911018372,
+        "top_k": [
+          {
+            "confidence": 0.6270878911018372,
+            "gloss": "give"
+          },
+          {
+            "confidence": 0.15316905081272125,
+            "gloss": "water"
+          },
+          {
+            "confidence": 0.07704459130764008,
+            "gloss": "hot"
+          },
+          {
+            "confidence": 0.019047517329454422,
+            "gloss": "deaf"
+          },
+          {
+            "confidence": 0.016020014882087708,
+            "gloss": "tell"
+          }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "segment_file": "segments/segment_002.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "jacket",
+        "confidence": 0.7517539262771606,
+        "top_k": [
+          {
+            "confidence": 0.7517539262771606,
+            "gloss": "jacket"
+          },
+          {
+            "confidence": 0.041620925068855286,
+            "gloss": "but"
+          },
+          {
+            "confidence": 0.04134282097220421,
+            "gloss": "chair"
+          },
+          {
+            "confidence": 0.020498253405094147,
+            "gloss": "change"
+          },
+          {
+            "confidence": 0.018973015248775482,
+            "gloss": "time"
+          }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "segment_file": "segments/segment_003.pose",
+        "segment_type": "pose",
+        "video_file": "segments/segment_003.mp4",
+        "top_1": "son",
+        "confidence": 0.9192289710044861,
+        "top_k": [
+          {
+            "confidence": 0.9192289710044861,
+            "gloss": "son"
+          },
+          {
+            "confidence": 0.02505837008357048,
+            "gloss": "man"
+          },
+          {
+            "confidence": 0.007435081992298365,
+            "gloss": "full"
+          },
+          {
+            "confidence": 0.003939121030271053,
+            "gloss": "fine"
+          },
+          {
+            "confidence": 0.0038747494108974934,
+            "gloss": "enjoy"
+          }
+        ]
+      }
+    ],
+    "raw_sentence": "give jacket son",
+    "llm_sentence": "Give the jacket to my son.",
+    "selections": [
+      "give",
+      "jacket",
+      "son"
+    ],
+    "evaluation": {
+      "raw": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 67.0,
+        "plausibility": 34.0
+      },
+      "llm": {
+        "model_gloss_accuracy": 100.0,
+        "effective_gloss_accuracy": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 100.0
+      }
+    }
+  }
+}

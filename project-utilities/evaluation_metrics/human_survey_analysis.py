@@ -344,6 +344,101 @@ def create_scatter_plots(human_scores, metrics, output_dir):
     print(f"Saved scatter plots to {output_path}")
 
 
+def create_baseline_vs_signbridge_scatter(human_scores, eval_results, output_dir):
+    """
+    Create a scatter plot comparing baseline vs SignBridge CTQI v3 against human ratings.
+    Uses big blue dots for baseline and big purple dots for SignBridge.
+    """
+    valid_indices = [i for i, h in enumerate(human_scores) if not np.isnan(h)]
+    human_valid = [human_scores[i] for i in valid_indices]
+
+    # Extract baseline and model CTQI v3 scores
+    baseline_ctqi_v3 = []
+    model_ctqi_v3 = []
+
+    for entry in eval_results:
+        baseline_ctqi_v3.append(entry.get('baseline_composite_v3', 0) or 0)
+        model_ctqi_v3.append(entry.get('model_composite_v3', 0) or 0)
+
+    baseline_valid = [baseline_ctqi_v3[i] for i in valid_indices]
+    model_valid = [model_ctqi_v3[i] for i in valid_indices]
+
+    # Create the scatter plot
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Plot baseline with big blue dots
+    ax.scatter(baseline_valid, human_valid,
+               c='#2563EB',  # Blue
+               s=150,  # Big dots
+               alpha=0.7,
+               edgecolors='#1e40af',
+               linewidths=1.5,
+               label='Baseline (Raw)',
+               marker='o',
+               zorder=3)
+
+    # Plot SignBridge with big purple dots
+    ax.scatter(model_valid, human_valid,
+               c='#7C3AED',  # Purple
+               s=150,  # Big dots
+               alpha=0.7,
+               edgecolors='#5b21b6',
+               linewidths=1.5,
+               label='SignBridge',
+               marker='o',
+               zorder=3)
+
+    # Add trend lines
+    # Baseline trend line (blue dashed)
+    z_baseline = np.polyfit(baseline_valid, human_valid, 1)
+    p_baseline = np.poly1d(z_baseline)
+    x_line = np.linspace(0, 100, 100)
+    ax.plot(x_line, p_baseline(x_line), '--', color='#2563EB', alpha=0.6, linewidth=2)
+
+    # SignBridge trend line (purple dashed)
+    z_model = np.polyfit(model_valid, human_valid, 1)
+    p_model = np.poly1d(z_model)
+    ax.plot(x_line, p_model(x_line), '--', color='#7C3AED', alpha=0.6, linewidth=2)
+
+    # Compute correlations
+    r_baseline, _ = stats.pearsonr(baseline_valid, human_valid)
+    r_model, _ = stats.pearsonr(model_valid, human_valid)
+
+    # Labels and title
+    ax.set_xlabel('CTQI v3 Score', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Human Rating (0-5)', fontsize=14, fontweight='bold')
+    ax.set_title('CTQI v3 vs Human Ratings: Baseline vs SignBridge\n(n=53 sentences, 5 raters)',
+                 fontsize=14, fontweight='bold')
+
+    # Set axis limits
+    ax.set_xlim(-5, 105)
+    ax.set_ylim(0, 5.5)
+
+    # Grid
+    ax.grid(True, alpha=0.3, zorder=1)
+    ax.set_axisbelow(True)
+
+    # Legend with correlation values
+    legend_labels = [
+        f'Baseline (r = {r_baseline:.3f})',
+        f'SignBridge (r = {r_model:.3f})'
+    ]
+    ax.legend(legend_labels, loc='lower right', fontsize=12,
+              framealpha=0.95, edgecolor='black')
+
+    # Add annotation for improvement
+    improvement = r_model - r_baseline
+    ax.text(0.02, 0.98, f'SignBridge correlation improvement: +{improvement:.3f}',
+            transform=ax.transAxes, fontsize=11, fontweight='bold',
+            verticalalignment='top', color='#7C3AED')
+
+    plt.tight_layout()
+    output_path = output_dir / 'baseline_vs_signbridge_scatter.png'
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.savefig(output_path.with_suffix('.pdf'), bbox_inches='tight')
+    print(f"Saved baseline vs SignBridge scatter to {output_path}")
+
+
 def generate_report(human_scores, metrics, correlations, output_path):
     """Generate a detailed analysis report."""
 
@@ -520,6 +615,9 @@ def main():
     # Scatter plots
     create_scatter_plots(human_scores, metrics, OUTPUT_DIR)
 
+    # Baseline vs SignBridge scatter plot
+    create_baseline_vs_signbridge_scatter(human_scores, eval_results, OUTPUT_DIR)
+
     # Report
     report_path = OUTPUT_DIR / 'human_survey_analysis_report.txt'
     report = generate_report(human_scores, metrics, correlations, report_path)
@@ -530,6 +628,7 @@ def main():
     print("Analysis complete! Output files saved to:")
     print(f"  - {chart_path}")
     print(f"  - {OUTPUT_DIR / 'human_survey_scatter_plots.png'}")
+    print(f"  - {OUTPUT_DIR / 'baseline_vs_signbridge_scatter.png'}")
     print(f"  - {report_path}")
     print("=" * 60)
 

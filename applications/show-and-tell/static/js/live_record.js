@@ -20,7 +20,7 @@ let motionDetector = null;
 let webcamVideo, referenceDisplay, glossesDisplay;
 let statusBadge, liveStatusDot, liveStatusText, motionScoreValue;
 let currentPrediction, predictionConfidence, allPredictions;
-let detectedSignsSection, detectedSignsList;
+let detectedSignsSection, detectedSignsList, glossCountDisplay;
 let startBtn, stopBtn, backBtn, finishBtn, restartBtn;
 
 // Initialize on page load
@@ -62,6 +62,7 @@ function initializeElements() {
     allPredictions = document.getElementById('live-all-predictions');
     detectedSignsSection = document.getElementById('detected-signs-section');
     detectedSignsList = document.getElementById('detected-signs-list');
+    glossCountDisplay = document.getElementById('live-gloss-count');
     startBtn = document.getElementById('start-btn');
     stopBtn = document.getElementById('stop-btn');
     backBtn = document.getElementById('back-btn');
@@ -148,6 +149,9 @@ async function restartRecording() {
     allPredictions.textContent = '';
     detectedSignsSection.style.display = 'none';
     detectedSignsList.innerHTML = '';
+    if (glossCountDisplay) {
+        glossCountDisplay.textContent = '0';
+    }
 }
 
 function updateStatus(text, type) {
@@ -480,6 +484,11 @@ function updateDetectedSignsDisplay() {
             <span class="sign-conf">${(g.confidence * 100).toFixed(0)}%</span>
         </span>
     `).join('');
+
+    // Update the Signs counter in the status bar
+    if (glossCountDisplay) {
+        glossCountDisplay.textContent = detectedGlosses.length;
+    }
 }
 
 // Cleanup on page unload
