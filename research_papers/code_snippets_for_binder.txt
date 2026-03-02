@@ -1,0 +1,144 @@
+SignBridge — Key Code Snippets
+================================
+
+1. CTQI v3: HUMAN-VALIDATED TRANSLATION QUALITY METRIC (metrics.py)
+--------------------------------------------------------------------
+Our core contribution — a "prerequisite chain" formula validated against human
+survey data (n=53 sentences, 5 raters, Pearson r=0.9427). Evolved from v2 by
+scaling plausibility's contribution by gloss accuracy, preventing high fluency
+from masking translation errors. Wrong signs cascade to failure, and the LLM
+can't inflate scores by generating grammatically correct but wrong sentences.
+
+    # CTQI v3 — Human-Validated Formula
+    # Beats v2 (r=0.7750) by +0.1677 and v1 (r=0.9381) by +0.0046
+    def calculate_composite_score_v3(gloss_accuracy, coverage_f1, plausibility):
+        """CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5 * P/100 * GA/100) * 100"""
+        ga  = max(0.0, min(100.0, gloss_accuracy))  / 100.0
+        cf1 = max(0.0, min(100.0, coverage_f1))      / 100.0
+        p   = max(0.0, min(100.0, plausibility))      / 100.0
+        # Plausibility modifier now scales with GA:
+        # At GA=100%: modifier = 0.5 + 0.5*P       (same as v2)
+        # At GA=67%:  modifier = 0.5 + 0.5*P*0.67  (reduced plausibility boost)
+        plausibility_modifier = 0.5 + 0.5 * p * ga
+        return ga * cf1 * plausibility_modifier * 100.0
+
+
+2. LEMMATIZATION-ENHANCED SEMANTIC COVERAGE (ctqi_v2.py)
+---------------------------------------------------------
+Intelligent word matching that understands "giving" = "give", "candies" = "candy"
+so our coverage metric measures meaning, not just surface-level string overlap.
+
+    def _lemmatize_word(word):
+        """Try all POS tags and return the shortest (most reduced) form."""
+        lemmatizer = WordNetLemmatizer()
+        candidates = set()
+        for pos in ('n', 'v', 'a', 'r'):          # noun, verb, adj, adverb
+            candidates.add(lemmatizer.lemmatize(word, pos=pos))
+        return min(candidates, key=len)
+
+    def _words_match(word_a, word_b):
+        """Exact match on lemmas + bidirectional substring + 4-char prefix."""
+        if word_a == word_b:                        return True
+        if word_a in word_b or word_b in word_a:    return True
+        if len(word_a) >= 4 and word_b.startswith(word_a[:4]): return True
+        return False
+
+
+3. LLM-BASED PLAUSIBILITY SCORING (ctqi_v2.py)
+------------------------------------------------
+Uses Google Gemini to judge translation quality across 3 linguistic dimensions,
+with rate limiting for the free API tier and fallback to GPT-2 perplexity.
+
+    class PlausibilityScorer:
+        """LLM scorer: evaluates grammaticality, semantics, naturalness."""
+        MIN_REQUEST_DELAY = 4.5   # 15 req/min free tier
+
+        def _apply_rate_limit(self):
+            elapsed = time.time() - self._last_request_time
+            if elapsed < self._rate_limit_delay:
+                time.sleep(self._rate_limit_delay - elapsed)
+            self._last_request_time = time.time()
+
+        def calculate(self, sentence, debug=False):
+            self._init_provider()           # Lazy-init Gemini
+            if self._fallback_mode:          # Gemini unavailable
+                return self._fallback_scorer.calculate(sentence)
+            self._apply_rate_limit()
+            response = self._provider.complete(PLAUSIBILITY_PROMPT.format(sentence=sentence))
+            score, justification = self._parse_response(response)
+            return score   # 0-100
+
+
+4. MEDIAPIPE POSE EXTRACTION — 83-POINT SKELETON (app.py)
+----------------------------------------------------------
+Extracts body, hand, and face landmarks from each video frame. Downsamples
+long videos to 15 frames for real-time performance (~2 sec total).
+
+    def extract_poses_from_frames(frames, target_frames=15):
+        """Returns array of shape (num_frames, 83, 4)
+           83 = 33 body + 21 left hand + 21 right hand + 8 face
+            4 = x, y, z, visibility"""
+        FACE_INDICES = [1, 61, 291, 152, 107, 336, 33, 263]
+
+        if len(frames) > target_frames:
+            step = len(frames) / target_frames
+            frames = [frames[int(i * step)] for i in range(target_frames)]
+
+        for frame in frames:
+            image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            results = holistic.process(image_rgb)
+            # Collect 33 body + 21 left hand + 21 right hand + 8 face landmarks
+
+
+5. TRANSFORMER MODEL INFERENCE WITH TOP-K (openhands_modernized_inference.py)
+------------------------------------------------------------------------------
+Runs the trained sign language model on a pose sequence. Outputs top-5
+predictions with confidence scores and supports class masking.
+
+    def predict_pose_file(pickle_path, model, tokenizer, masked_class_ids=None):
+        pose_sequence = processor.load_pickle_pose(pickle_path)
+        pose_sequence = processor.preprocess_pose_sequence(pose_sequence)
+        pose_tensor = torch.tensor(pose_sequence).unsqueeze(0)      # (1,T,83,3)
+
+        with torch.no_grad():
+            logits = model(pose_tensor, mask_tensor, finger_features=finger_features)
+            if masked_class_ids:
+                for cid in masked_class_ids:
+                    logits[:, cid] = float('-inf')         # suppress weak classes
+            probs = torch.softmax(logits, dim=-1)
+            top_probs, top_ids = torch.topk(probs, k=5)   # top-5 predictions
+        return {'gloss': predicted_gloss, 'confidence': confidence,
+                'top_k_predictions': top_k_predictions}
+
+
+6. POSE TRANSFORMER ARCHITECTURE (pose_transformer_architecture.py)
+--------------------------------------------------------------------
+Custom transformer with attention-based temporal pooling — learns which
+video frames are most important for recognizing each sign.
+
+    class PoseTransformer(nn.Module):
+        """Video → Pose Embedding → Positional Encoding → Transformer Encoder
+           → Attention Pooling → Classification Head"""
+        def __init__(self, config):
+            self.pose_embedding  = PoseEmbedding(config)
+            self.pos_encoding    = PositionalEncoding(config.d_model, config.max_seq_length)
+            self.transformer_encoder = nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(d_model=config.d_model, nhead=config.nhead,
+                    dim_feedforward=config.dim_feedforward, dropout=config.dropout),
+                num_layers=config.num_encoder_layers)
+            self.pooling    = AttentionPooling(config.d_model)
+            self.classifier = nn.Sequential(
+                nn.Linear(config.d_model, config.d_model // 2), nn.ReLU(),
+                nn.Dropout(config.dropout),
+                nn.Linear(config.d_model // 2, config.vocab_size))
+
+    class AttentionPooling(nn.Module):
+        """Learnable query attends to all frames — finds which matter most."""
+        def __init__(self, d_model):
+            self.attention = nn.MultiheadAttention(d_model, num_heads=1)
+            self.query = nn.Parameter(torch.randn(1, 1, d_model))
+        def forward(self, x, attention_mask):
+            query = self.query.expand(x.size(0), -1, -1)
+            attended, _ = self.attention(query, x, x,
+                key_padding_mask=~attention_mask.bool())
+            return attended.squeeze(1)
