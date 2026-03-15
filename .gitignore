@@ -122,11 +122,15 @@ applications/closed-captions/detected_glosses.txt
 applications/closed-captions/translated_sentence.txt
 applications/show-and-tell/saved-sessions/
 
-# Include production model for HF Spaces deployment
+# Include production model files for deployment
 !models/openhands-modernized/production-models/wlasl_43_class_50s_model/pytorch_model.bin
 !models/openhands-modernized/production-models/wlasl_43_class_50s_model/config.json
 !models/openhands-modernized/production-models/wlasl_43_class_50s_model/class_index_mapping.json
 !models/openhands-modernized/production-models/wlasl_43_class_50s_model/masked_classes.json
+!models/openhands-modernized/production-models/wlasl_77_class_model/pytorch_model.bin
+!models/openhands-modernized/production-models/wlasl_77_class_model/config.json
+!models/openhands-modernized/production-models/wlasl_77_class_model/class_index_mapping.json
+!models/openhands-modernized/production-models/registry.json
 
 # Include demo data for HF Spaces deployment
 !applications/show-and-tell/demo-data/samples/*/metadata.json
@@ -140,14 +144,16 @@ applications/show-and-tell/saved-sessions/
 models/training-scripts/models/
 models/training-scripts/distinct_glosses_v2.json
 models/openhands-modernized/production-models/*/class_index_mapping.json
-# Re-include production model files (must come after the wildcard ignore above)
+# Re-include production model class mappings (must come after the wildcard ignore above)
 !models/openhands-modernized/production-models/wlasl_43_class_50s_model/class_index_mapping.json
+!models/openhands-modernized/production-models/wlasl_77_class_model/class_index_mapping.json
 
 # Incremental training artifacts
 project-utilities/training_utils/incremental_training/*.json
 
-# Kaggle staging directory
+# Kaggle staging and output directories
 kaggle-staging/
+kaggle-output/
 
 # Junk files
 nul

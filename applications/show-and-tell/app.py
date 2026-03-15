@@ -326,6 +326,10 @@ LLM_PROMPT_PATH = PROJECT_UTILITIES_DIR / "llm_interface" / "prompts" / "llm_pro
 # Model checkpoint path - use production models folder
 CHECKPOINT_PATH = MODELS_DIR / "openhands-modernized" / "production-models" / "wlasl_43_class_50s_model"
 
+# Inference API configuration
+INFERENCE_API_URL = os.environ.get('INFERENCE_API_URL', 'http://localhost:3006')
+_use_inference_api = None  # None = not yet checked, True/False after first check
+
 # METRIC_WEIGHTS imported from evaluation_metrics library
 
 # ============================================================================
@@ -380,8 +384,39 @@ _model_cache = {"model": None, "tokenizer": None, "num_classes": None, "masked_c
 _plausibility_scorer = None
 
 
-def get_model():
-    """Get cached model or load it"""
+def _check_inference_api():
+    """Check if the inference API service is available."""
+    global _use_inference_api
+    if _use_inference_api is not None:
+        return _use_inference_api
+    try:
+        import requests
+        resp = requests.get(f"{INFERENCE_API_URL}/health", timeout=2)
+        _use_inference_api = resp.status_code == 200
+        if _use_inference_api:
+            print(f"[Inference API] Connected to {INFERENCE_API_URL}")
+        else:
+            print(f"[Inference API] Not available, using direct model loading")
+    except Exception:
+        _use_inference_api = False
+        print(f"[Inference API] Not available at {INFERENCE_API_URL}, using direct model loading")
+    return _use_inference_api
+
+
+def predict_via_api(pickle_path: str, domain: str = "generic") -> dict:
+    """Predict via the inference API service."""
+    import requests
+    resp = requests.post(
+        f"{INFERENCE_API_URL}/predict",
+        json={"pickle_path": str(pickle_path), "domain": domain},
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_model(domain: str = None):
+    """Get cached model or load it. Falls back to direct loading if inference API unavailable."""
     if _model_cache["model"] is None:
         print("Loading model from checkpoint...")
         # vocab_size will be read from config.json in checkpoint directory
@@ -406,6 +441,27 @@ def get_model_num_classes():
     if _model_cache["num_classes"] is None:
         get_model()  # Ensure model is loaded
     return _model_cache["num_classes"]
+
+
+def run_prediction(pickle_path: str, domain: str = "generic") -> dict:
+    """
+    Run sign prediction — routes through inference API if available, otherwise direct.
+
+    Args:
+        pickle_path: Path to pose pickle file
+        domain: Model domain (e.g., "generic", "healthcare")
+
+    Returns:
+        dict: {gloss, confidence, top_k_predictions}
+    """
+    if _check_inference_api():
+        return predict_via_api(pickle_path, domain=domain)
+    else:
+        model, tokenizer = get_model()
+        return predict_pose_file(
+            str(pickle_path), model=model, tokenizer=tokenizer,
+            masked_class_ids=_model_cache.get("masked_class_ids")
+        )
 
 
 def get_plausibility_scorer():
@@ -1114,12 +1170,7 @@ def segment_pose():
             pickle_path = convert_pose_to_pickle(seg_file)
 
             if pickle_path:
-                # Use EXISTING predict_pose_file function
-                prediction = predict_pose_file(
-                    pickle_path,
-                    model=model,
-                    tokenizer=tokenizer
-                )
+                prediction = run_prediction(pickle_path)
 
                 results.append({
                     "segment_id": i + 1,
@@ -1336,6 +1387,7 @@ def process_full_pipeline():
         # Step 3: Load model and predict for each segment using camera processor
         model, tokenizer = get_model()
         processor = get_camera_processor(model, tokenizer)
+        processor.set_predict_fn(run_prediction)
 
         predictions = []
         for i, seg_file in enumerate(segment_files):
@@ -1501,11 +1553,7 @@ def process_pose_full_pipeline():
             pickle_path = convert_pose_to_pickle(seg_file, debug=(i == 0))
 
             if pickle_path:
-                prediction = predict_pose_file(
-                    pickle_path,
-                    model=model,
-                    tokenizer=tokenizer
-                )
+                prediction = run_prediction(pickle_path)
 
                 print(f"[FAST MODE - POSE] Segment {i+1}: {prediction['gloss']} ({prediction['confidence']:.2%})")
 
@@ -2559,12 +2607,7 @@ def process_sign():
                 print(f"  Note: Could not save .pose file: {e}")
 
             # Step 5: Run model inference
-            model, tokenizer = get_model()
-            prediction = predict_pose_file(
-                str(pickle_path),
-                model=model,
-                tokenizer=tokenizer
-            )
+            prediction = run_prediction(str(pickle_path))
             model_time = time.time() - t3
 
             # Store prediction in session for later saving
@@ -2640,12 +2683,7 @@ def process_sign():
                     "error": "Failed to convert pose to pickle format"
                 }), 500
 
-            model, tokenizer = get_model()
-            prediction = predict_pose_file(
-                pickle_path,
-                model=model,
-                tokenizer=tokenizer
-            )
+            prediction = run_prediction(pickle_path)
 
             # Keep segment files for session saving (only clean up temp video)
 
@@ -2743,18 +2781,13 @@ def process_signs_batch():
             }), 400
 
         # Step 3: Predict each segment
-        model, tokenizer = get_model()
         predictions = []
 
         for i, seg_file in enumerate(segment_files):
             pickle_path = convert_pose_to_pickle(seg_file)
 
             if pickle_path:
-                prediction = predict_pose_file(
-                    pickle_path,
-                    model=model,
-                    tokenizer=tokenizer
-                )
+                prediction = run_prediction(pickle_path)
 
                 predictions.append({
                     "segment_id": i + 1,
@@ -2923,6 +2956,7 @@ def cc_process_sign():
         # Get model and camera processor
         model, tokenizer = get_model()
         processor = get_camera_processor(model, tokenizer)
+        processor.set_predict_fn(run_prediction)
 
         # Use common camera processor (same as Live Mode)
         # This uses VIDEO_TO_POSE_EXE for better hand detection

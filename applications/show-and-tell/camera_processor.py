@@ -58,7 +58,8 @@ class CameraProcessor:
     which provides better hand detection than in-app MediaPipe.
     """
 
-    def __init__(self, model=None, tokenizer=None, temp_dir: Optional[Path] = None):
+    def __init__(self, model=None, tokenizer=None, temp_dir: Optional[Path] = None,
+                 predict_fn=None):
         """
         Initialize the camera processor.
 
@@ -66,13 +67,15 @@ class CameraProcessor:
             model: Pre-loaded OpenHands model (optional, can set later)
             tokenizer: Model's id_to_gloss mapping (optional, can set later)
             temp_dir: Directory for temporary files (optional, uses system temp)
+            predict_fn: Optional prediction function override (e.g., run_prediction from app.py)
         """
         self.model = model
         self.tokenizer = tokenizer
         self.temp_dir = temp_dir or Path(tempfile.gettempdir()) / "asl_camera_processor"
         self.temp_dir.mkdir(parents=True, exist_ok=True)
+        self._external_predict_fn = predict_fn
 
-        # Import prediction function
+        # Import prediction function as fallback
         from openhands_modernized_inference import predict_pose_file
         self._predict_pose_file = predict_pose_file
 
@@ -80,6 +83,10 @@ class CameraProcessor:
         """Set or update the model and tokenizer."""
         self.model = model
         self.tokenizer = tokenizer
+
+    def set_predict_fn(self, predict_fn):
+        """Set an external prediction function (e.g., one that routes through inference API)."""
+        self._external_predict_fn = predict_fn
 
     def video_bytes_to_pose(self, video_bytes: bytes, video_format: str = 'webm') -> Optional[Path]:
         """
@@ -281,11 +288,15 @@ class CameraProcessor:
         Returns:
             Dict with 'gloss', 'confidence', 'top_k_predictions', or None on failure
         """
-        if self.model is None or self.tokenizer is None:
-            print("[CameraProcessor] Model not loaded")
-            return None
-
         try:
+            # Use external prediction function if available (routes through inference API)
+            if self._external_predict_fn:
+                return self._external_predict_fn(str(pickle_path))
+
+            if self.model is None or self.tokenizer is None:
+                print("[CameraProcessor] Model not loaded")
+                return None
+
             result = self._predict_pose_file(
                 str(pickle_path),
                 model=self.model,
