@@ -1109,6 +1109,9 @@ Examples:
   # Setup with custom gloss list (auto-detects class count)
   python training_pre_processing_setup.py --gloss-file distinct_glosses.json --setup
 
+  # Setup with base glosses + domain-specific glosses (concatenated)
+  python training_pre_processing_setup.py --gloss-file base_43.json --domain-glosses healthcare_57.json --setup
+
   # Force fresh start (delete and regenerate)
   python training_pre_processing_setup.py --classes 100 --setup --force-fresh
 
@@ -1153,6 +1156,13 @@ Examples:
         help='Only verify existing setup, do not create anything'
     )
     parser.add_argument(
+        '--domain-glosses',
+        type=str,
+        default=None,
+        help='Path to JSON file with domain-specific glosses to append to --gloss-file. '
+             'Glosses are deduplicated. Use with --gloss-file for base + domain training.'
+    )
+    parser.add_argument(
         '--create-splits',
         action='store_true',
         help='Only create dataset splits (no augmentation, no config update)'
@@ -1178,16 +1188,38 @@ Examples:
     if args.gloss_file:
         try:
             glosses = load_glosses_from_file(args.gloss_file)
+
+            # Concatenate domain glosses if provided
+            if args.domain_glosses:
+                domain_glosses = load_glosses_from_file(args.domain_glosses)
+                base_count = len(glosses)
+                # Deduplicate while preserving order
+                existing = set(g.lower() for g in glosses)
+                new_domain = [g for g in domain_glosses if g.lower() not in existing]
+                glosses = glosses + new_domain
+                print(f"Base glosses: {base_count} from {args.gloss_file}")
+                print(f"Domain glosses: {len(new_domain)} new from {args.domain_glosses} ({len(domain_glosses) - len(new_domain)} duplicates skipped)")
+
+                # Write combined list to temp file for downstream use
+                combined_path = Path(args.gloss_file).parent / f"_combined_{len(glosses)}_class.json"
+                with open(combined_path, 'w') as f:
+                    json.dump(glosses, f)
+                args.gloss_file = str(combined_path)
+                print(f"Combined gloss list: {combined_path}")
+
             detected_count = len(glosses)
             if args.classes is None:
                 args.classes = detected_count
-                print(f"Auto-detected {args.classes} classes from {args.gloss_file}")
+                print(f"Auto-detected {args.classes} classes from gloss file(s)")
             elif args.classes != detected_count:
                 print(f"Note: --classes={args.classes} overridden by gloss file ({detected_count} glosses)")
                 args.classes = detected_count
         except Exception as e:
             print(f"ERROR: Failed to load gloss file: {e}")
             sys.exit(1)
+    elif args.domain_glosses:
+        print("ERROR: --domain-glosses requires --gloss-file for base classes")
+        sys.exit(1)
     elif args.classes is None:
         print("ERROR: Must provide either --classes or --gloss-file")
         sys.exit(1)

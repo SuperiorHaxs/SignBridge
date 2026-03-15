@@ -1,650 +1,1046 @@
 {
-  "timestamp": "2026-01-02T08:28:37.711404",
+  "timestamp": "2026-03-14T02:39:44.115249",
   "threshold": 80.0,
   "top3_threshold": 100.0,
   "criteria": "top1 >= 80.0% AND top3 >= 100.0%",
   "summary": {
-    "total_classes": 43,
-    "total_samples": 704,
-    "overall_accuracy": 80.68,
-    "overall_top3_accuracy": 88.78,
-    "classes_above_threshold": 31,
-    "classes_below_threshold": 12
+    "total_classes": 57,
+    "total_samples": 3601,
+    "overall_accuracy": 69.84,
+    "overall_top3_accuracy": 82.2,
+    "classes_above_threshold": 28,
+    "classes_below_threshold": 29
   },
   "recommendations": {
     "keep_classes": [
-      "BEFORE",
-      "BOWLING",
-      "BUT",
-      "CHAIR",
-      "DEAF",
+      "CAN",
+      "HEADACHE",
+      "MEDICINE",
+      "MORE",
+      "NAME",
+      "SICK",
+      "STOMACH",
+      "STOP",
+      "TODAY",
+      "WAIT",
+      "YES",
+      "ADDRESS",
+      "BLOOD",
       "DOCTOR",
-      "DRINK",
-      "ENJOY",
-      "FAMILY",
-      "GIVE",
-      "HOT",
-      "MAN",
-      "ORANGE",
-      "PAPER",
-      "SON",
-      "TALL",
-      "TIME",
-      "WATER",
-      "HELP",
-      "PLAY",
-      "STUDY",
-      "AFRICA",
-      "APPLE",
-      "CHANGE",
-      "JACKET",
-      "THURSDAY",
-      "WRONG",
-      "YEAR",
-      "BASKETBALL",
-      "FINE",
-      "THANKSGIVING"
+      "HERE",
+      "HOW",
+      "KNOW",
+      "MORNING",
+      "SIT",
+      "SURGERY",
+      "STAND",
+      "ALLERGY",
+      "ANSWER",
+      "BREATHE",
+      "TEMPERATURE",
+      "FEEL",
+      "WANT",
+      "WORSE"
     ],
     "drop_classes": [
-      "TABLE",
-      "COMPUTER",
-      "TELL",
-      "DANCE",
-      "FULL",
-      "NO",
-      "WALK",
-      "LATER",
-      "BIRTHDAY",
-      "COW",
-      "NEED",
-      "WHAT"
+      "APPOINTMENT",
+      "COUGH",
+      "WHERE",
+      "HEAR",
+      "THANK YOU",
+      "BETTER",
+      "STRESS",
+      "NIGHT",
+      "EAT",
+      "RIGHT",
+      "INSURANCE",
+      "PATIENT",
+      "BATHROOM",
+      "AGE",
+      "WHEN",
+      "QUESTION",
+      "PAIN",
+      "SEE",
+      "DIZZY",
+      "HOSPITAL",
+      "PHONE",
+      "PREGNANT",
+      "EMERGENCY",
+      "HEART",
+      "INFECTION",
+      "MOTHER",
+      "NURSE",
+      "SLEEP",
+      "UNDERSTAND"
     ]
   },
   "per_class_stats": {
-    "BEFORE": {
-      "class_id": 3,
-      "total_samples": 16,
-      "correct": 16,
+    "CAN": {
+      "class_id": 9,
+      "total_samples": 61,
+      "correct": 61,
       "accuracy": 100.0,
-      "top3_correct": 16,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
       "top_confusions": []
     },
-    "BOWLING": {
-      "class_id": 5,
-      "total_samples": 16,
-      "correct": 16,
+    "HEADACHE": {
+      "class_id": 16,
+      "total_samples": 61,
+      "correct": 61,
       "accuracy": 100.0,
-      "top3_correct": 16,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
       "top_confusions": []
     },
-    "BUT": {
-      "class_id": 6,
-      "total_samples": 16,
-      "correct": 16,
+    "MEDICINE": {
+      "class_id": 25,
+      "total_samples": 61,
+      "correct": 61,
       "accuracy": 100.0,
-      "top3_correct": 16,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
       "top_confusions": []
     },
-    "CHAIR": {
+    "MORE": {
+      "class_id": 26,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "NAME": {
+      "class_id": 29,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "SICK": {
+      "class_id": 39,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "STOMACH": {
+      "class_id": 43,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "STOP": {
+      "class_id": 44,
+      "total_samples": 66,
+      "correct": 66,
+      "accuracy": 100.0,
+      "top3_correct": 66,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "TODAY": {
+      "class_id": 49,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "WAIT": {
+      "class_id": 51,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "YES": {
+      "class_id": 56,
+      "total_samples": 61,
+      "correct": 61,
+      "accuracy": 100.0,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": []
+    },
+    "ADDRESS": {
+      "class_id": 0,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "PAIN",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "APPOINTMENT": {
+      "class_id": 4,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "SURGERY",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "BLOOD": {
       "class_id": 7,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
-      "top_confusions": []
+      "top_confusions": [
+        {
+          "gloss": "WAIT",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
     },
-    "DEAF": {
-      "class_id": 12,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
+    "COUGH": {
+      "class_id": 10,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "HEART",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
     },
     "DOCTOR": {
-      "class_id": 13,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
+      "class_id": 12,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
-      "top_confusions": []
+      "top_confusions": [
+        {
+          "gloss": "NURSE",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
     },
-    "DRINK": {
-      "class_id": 14,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "ENJOY": {
-      "class_id": 15,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "FAMILY": {
-      "class_id": 16,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "GIVE": {
+    "HERE": {
       "class_id": 19,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
-      "top_confusions": []
+      "top_confusions": [
+        {
+          "gloss": "WANT",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
     },
-    "HOT": {
+    "HOW": {
       "class_id": 21,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "MAN": {
-      "class_id": 24,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "ORANGE": {
-      "class_id": 27,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "PAPER": {
-      "class_id": 28,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "SON": {
-      "class_id": 30,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "TALL": {
-      "class_id": 33,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "TIME": {
-      "class_id": 37,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "WATER": {
-      "class_id": 39,
-      "total_samples": 16,
-      "correct": 16,
-      "accuracy": 100.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": []
-    },
-    "HELP": {
-      "class_id": 20,
-      "total_samples": 32,
-      "correct": 30,
-      "accuracy": 93.75,
-      "top3_correct": 32,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "YEAR",
-          "count": 2,
-          "percent": 6.2
-        }
-      ]
-    },
-    "PLAY": {
-      "class_id": 29,
-      "total_samples": 16,
-      "correct": 15,
-      "accuracy": 93.75,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "JACKET",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "STUDY": {
-      "class_id": 31,
-      "total_samples": 16,
-      "correct": 15,
-      "accuracy": 93.75,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "ENJOY",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "AFRICA": {
-      "class_id": 0,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "MAN",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "APPLE": {
-      "class_id": 1,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "ORANGE",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "CHANGE": {
-      "class_id": 8,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "BUT",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "JACKET": {
-      "class_id": 22,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "PLAY",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "TABLE": {
-      "class_id": 32,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 14,
-      "top3_accuracy": 87.5,
-      "top_confusions": [
-        {
-          "gloss": "LATER",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "THURSDAY": {
-      "class_id": 36,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "THANKSGIVING",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "WRONG": {
-      "class_id": 41,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "DRINK",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "YEAR": {
-      "class_id": 42,
-      "total_samples": 16,
-      "correct": 14,
-      "accuracy": 87.5,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "TIME",
-          "count": 2,
-          "percent": 12.5
-        }
-      ]
-    },
-    "BASKETBALL": {
-      "class_id": 2,
-      "total_samples": 16,
-      "correct": 13,
-      "accuracy": 81.25,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "TALL",
-          "count": 2,
-          "percent": 12.5
-        },
-        {
-          "gloss": "COW",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "FINE": {
-      "class_id": 17,
-      "total_samples": 16,
-      "correct": 13,
-      "accuracy": 81.25,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "PAPER",
-          "count": 2,
-          "percent": 12.5
-        },
-        {
-          "gloss": "WATER",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "THANKSGIVING": {
-      "class_id": 35,
-      "total_samples": 16,
-      "correct": 13,
-      "accuracy": 81.25,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "MAN",
-          "count": 1,
-          "percent": 6.2
-        },
-        {
-          "gloss": "NO",
-          "count": 1,
-          "percent": 6.2
-        },
-        {
-          "gloss": "BIRTHDAY",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "COMPUTER": {
-      "class_id": 9,
-      "total_samples": 16,
-      "correct": 12,
-      "accuracy": 75.0,
-      "top3_correct": 14,
-      "top3_accuracy": 87.5,
-      "top_confusions": [
-        {
-          "gloss": "TABLE",
-          "count": 3,
-          "percent": 18.8
-        },
-        {
-          "gloss": "SON",
-          "count": 1,
-          "percent": 6.2
-        }
-      ]
-    },
-    "TELL": {
-      "class_id": 34,
-      "total_samples": 16,
-      "correct": 12,
-      "accuracy": 75.0,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "ORANGE",
-          "count": 4,
-          "percent": 25.0
-        }
-      ]
-    },
-    "DANCE": {
-      "class_id": 11,
-      "total_samples": 16,
-      "correct": 11,
-      "accuracy": 68.75,
-      "top3_correct": 16,
-      "top3_accuracy": 100.0,
-      "top_confusions": [
-        {
-          "gloss": "STUDY",
-          "count": 5,
-          "percent": 31.2
-        }
-      ]
-    },
-    "FULL": {
-      "class_id": 18,
-      "total_samples": 16,
-      "correct": 11,
-      "accuracy": 68.75,
-      "top3_correct": 14,
-      "top3_accuracy": 87.5,
       "top_confusions": [
         {
           "gloss": "DOCTOR",
-          "count": 3,
-          "percent": 18.8
-        },
-        {
-          "gloss": "PAPER",
           "count": 1,
-          "percent": 6.2
-        },
-        {
-          "gloss": "TABLE",
-          "count": 1,
-          "percent": 6.2
+          "percent": 1.6
         }
       ]
     },
-    "NO": {
-      "class_id": 26,
-      "total_samples": 16,
-      "correct": 11,
-      "accuracy": 68.75,
-      "top3_correct": 15,
-      "top3_accuracy": 93.75,
-      "top_confusions": [
-        {
-          "gloss": "APPLE",
-          "count": 5,
-          "percent": 31.2
-        }
-      ]
-    },
-    "WALK": {
-      "class_id": 38,
-      "total_samples": 16,
-      "correct": 11,
-      "accuracy": 68.75,
-      "top3_correct": 16,
+    "KNOW": {
+      "class_id": 24,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
       "top3_accuracy": 100.0,
       "top_confusions": [
         {
-          "gloss": "TIME",
-          "count": 5,
-          "percent": 31.2
-        }
-      ]
-    },
-    "LATER": {
-      "class_id": 23,
-      "total_samples": 16,
-      "correct": 1,
-      "accuracy": 6.25,
-      "top3_correct": 2,
-      "top3_accuracy": 12.5,
-      "top_confusions": [
-        {
-          "gloss": "DRINK",
-          "count": 15,
-          "percent": 93.8
-        }
-      ]
-    },
-    "BIRTHDAY": {
-      "class_id": 4,
-      "total_samples": 16,
-      "correct": 0,
-      "accuracy": 0.0,
-      "top3_correct": 0,
-      "top3_accuracy": 0.0,
-      "top_confusions": [
-        {
-          "gloss": "SON",
-          "count": 16,
-          "percent": 100.0
-        }
-      ]
-    },
-    "COW": {
-      "class_id": 10,
-      "total_samples": 16,
-      "correct": 0,
-      "accuracy": 0.0,
-      "top3_correct": 0,
-      "top3_accuracy": 0.0,
-      "top_confusions": [
-        {
-          "gloss": "MAN",
-          "count": 12,
-          "percent": 75.0
-        },
-        {
-          "gloss": "BOWLING",
-          "count": 3,
-          "percent": 18.8
-        },
-        {
-          "gloss": "COMPUTER",
+          "gloss": "UNDERSTAND",
           "count": 1,
-          "percent": 6.2
+          "percent": 1.6
         }
       ]
     },
-    "NEED": {
-      "class_id": 25,
-      "total_samples": 16,
-      "correct": 0,
-      "accuracy": 0.0,
-      "top3_correct": 6,
-      "top3_accuracy": 37.5,
+    "MORNING": {
+      "class_id": 27,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
       "top_confusions": [
         {
-          "gloss": "BOWLING",
-          "count": 16,
-          "percent": 100.0
+          "gloss": "HOW",
+          "count": 1,
+          "percent": 1.6
         }
       ]
     },
-    "WHAT": {
+    "SIT": {
       "class_id": 40,
-      "total_samples": 16,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "ANSWER",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "SURGERY": {
+      "class_id": 46,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "MORE",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "WHERE": {
+      "class_id": 54,
+      "total_samples": 61,
+      "correct": 60,
+      "accuracy": 98.36,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "EMERGENCY",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "STAND": {
+      "class_id": 42,
+      "total_samples": 67,
+      "correct": 65,
+      "accuracy": 97.01,
+      "top3_correct": 67,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "APPOINTMENT",
+          "count": 1,
+          "percent": 1.5
+        },
+        {
+          "gloss": "STOP",
+          "count": 1,
+          "percent": 1.5
+        }
+      ]
+    },
+    "HEAR": {
+      "class_id": 17,
+      "total_samples": 61,
+      "correct": 59,
+      "accuracy": 96.72,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "SLEEP",
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "gloss": "MOTHER",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "THANK YOU": {
+      "class_id": 48,
+      "total_samples": 61,
+      "correct": 59,
+      "accuracy": 96.72,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "RIGHT",
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "gloss": "EAT",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "BETTER": {
+      "class_id": 6,
+      "total_samples": 68,
+      "correct": 65,
+      "accuracy": 95.59,
+      "top3_correct": 67,
+      "top3_accuracy": 98.53,
+      "top_confusions": [
+        {
+          "gloss": "YES",
+          "count": 2,
+          "percent": 2.9
+        },
+        {
+          "gloss": "HEAR",
+          "count": 1,
+          "percent": 1.5
+        }
+      ]
+    },
+    "ALLERGY": {
+      "class_id": 2,
+      "total_samples": 61,
+      "correct": 58,
+      "accuracy": 95.08,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "WHEN",
+          "count": 3,
+          "percent": 4.9
+        }
+      ]
+    },
+    "ANSWER": {
+      "class_id": 3,
+      "total_samples": 61,
+      "correct": 58,
+      "accuracy": 95.08,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "TEMPERATURE",
+          "count": 2,
+          "percent": 3.3
+        },
+        {
+          "gloss": "SIT",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "BREATHE": {
+      "class_id": 8,
+      "total_samples": 61,
+      "correct": 58,
+      "accuracy": 95.08,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "HEART",
+          "count": 3,
+          "percent": 4.9
+        }
+      ]
+    },
+    "STRESS": {
+      "class_id": 45,
+      "total_samples": 61,
+      "correct": 57,
+      "accuracy": 93.44,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "NAME",
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "gloss": "SIT",
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "gloss": "HOW",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "TEMPERATURE": {
+      "class_id": 47,
+      "total_samples": 61,
+      "correct": 55,
+      "accuracy": 90.16,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "WHEN",
+          "count": 3,
+          "percent": 4.9
+        },
+        {
+          "gloss": "ANSWER",
+          "count": 3,
+          "percent": 4.9
+        }
+      ]
+    },
+    "NIGHT": {
+      "class_id": 30,
+      "total_samples": 67,
+      "correct": 59,
+      "accuracy": 88.06,
+      "top3_correct": 64,
+      "top3_accuracy": 95.52,
+      "top_confusions": [
+        {
+          "gloss": "HOW",
+          "count": 4,
+          "percent": 6.0
+        },
+        {
+          "gloss": "STOP",
+          "count": 2,
+          "percent": 3.0
+        },
+        {
+          "gloss": "SURGERY",
+          "count": 2,
+          "percent": 3.0
+        }
+      ]
+    },
+    "FEEL": {
+      "class_id": 15,
+      "total_samples": 61,
+      "correct": 53,
+      "accuracy": 86.89,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "HEART",
+          "count": 6,
+          "percent": 9.8
+        },
+        {
+          "gloss": "WAIT",
+          "count": 1,
+          "percent": 1.6
+        },
+        {
+          "gloss": "THANK YOU",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "WANT": {
+      "class_id": 52,
+      "total_samples": 61,
+      "correct": 52,
+      "accuracy": 85.25,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "TODAY",
+          "count": 6,
+          "percent": 9.8
+        },
+        {
+          "gloss": "WAIT",
+          "count": 3,
+          "percent": 4.9
+        }
+      ]
+    },
+    "WORSE": {
+      "class_id": 55,
+      "total_samples": 61,
+      "correct": 50,
+      "accuracy": 81.97,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "NAME",
+          "count": 8,
+          "percent": 13.1
+        },
+        {
+          "gloss": "TODAY",
+          "count": 2,
+          "percent": 3.3
+        },
+        {
+          "gloss": "WHEN",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "EAT": {
+      "class_id": 13,
+      "total_samples": 61,
+      "correct": 49,
+      "accuracy": 80.33,
+      "top3_correct": 60,
+      "top3_accuracy": 98.36,
+      "top_confusions": [
+        {
+          "gloss": "MOTHER",
+          "count": 12,
+          "percent": 19.7
+        }
+      ]
+    },
+    "RIGHT": {
+      "class_id": 37,
+      "total_samples": 61,
+      "correct": 49,
+      "accuracy": 80.33,
+      "top3_correct": 57,
+      "top3_accuracy": 93.44,
+      "top_confusions": [
+        {
+          "gloss": "TEMPERATURE",
+          "count": 11,
+          "percent": 18.0
+        },
+        {
+          "gloss": "NAME",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "INSURANCE": {
+      "class_id": 23,
+      "total_samples": 61,
+      "correct": 48,
+      "accuracy": 78.69,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "INFECTION",
+          "count": 12,
+          "percent": 19.7
+        },
+        {
+          "gloss": "BATHROOM",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "PATIENT": {
+      "class_id": 33,
+      "total_samples": 61,
+      "correct": 47,
+      "accuracy": 77.05,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "YES",
+          "count": 13,
+          "percent": 21.3
+        },
+        {
+          "gloss": "MOTHER",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "BATHROOM": {
+      "class_id": 5,
+      "total_samples": 61,
+      "correct": 45,
+      "accuracy": 73.77,
+      "top3_correct": 58,
+      "top3_accuracy": 95.08,
+      "top_confusions": [
+        {
+          "gloss": "WHERE",
+          "count": 13,
+          "percent": 21.3
+        },
+        {
+          "gloss": "EMERGENCY",
+          "count": 2,
+          "percent": 3.3
+        },
+        {
+          "gloss": "YES",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "AGE": {
+      "class_id": 1,
+      "total_samples": 61,
+      "correct": 42,
+      "accuracy": 68.85,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "PATIENT",
+          "count": 18,
+          "percent": 29.5
+        },
+        {
+          "gloss": "EAT",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "WHEN": {
+      "class_id": 53,
+      "total_samples": 61,
+      "correct": 38,
+      "accuracy": 62.3,
+      "top3_correct": 61,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "PAIN",
+          "count": 22,
+          "percent": 36.1
+        },
+        {
+          "gloss": "ALLERGY",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "QUESTION": {
+      "class_id": 36,
+      "total_samples": 67,
+      "correct": 25,
+      "accuracy": 37.31,
+      "top3_correct": 66,
+      "top3_accuracy": 98.51,
+      "top_confusions": [
+        {
+          "gloss": "YES",
+          "count": 41,
+          "percent": 61.2
+        },
+        {
+          "gloss": "FEEL",
+          "count": 1,
+          "percent": 1.5
+        }
+      ]
+    },
+    "PAIN": {
+      "class_id": 32,
+      "total_samples": 63,
+      "correct": 20,
+      "accuracy": 31.75,
+      "top3_correct": 63,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "WHEN",
+          "count": 43,
+          "percent": 68.3
+        }
+      ]
+    },
+    "SEE": {
+      "class_id": 38,
+      "total_samples": 63,
+      "correct": 3,
+      "accuracy": 4.76,
+      "top3_correct": 63,
+      "top3_accuracy": 100.0,
+      "top_confusions": [
+        {
+          "gloss": "HEAR",
+          "count": 60,
+          "percent": 95.2
+        }
+      ]
+    },
+    "DIZZY": {
+      "class_id": 11,
+      "total_samples": 100,
+      "correct": 2,
+      "accuracy": 2.0,
+      "top3_correct": 5,
+      "top3_accuracy": 5.0,
+      "top_confusions": [
+        {
+          "gloss": "MOTHER",
+          "count": 69,
+          "percent": 69.0
+        },
+        {
+          "gloss": "KNOW",
+          "count": 27,
+          "percent": 27.0
+        },
+        {
+          "gloss": "EAT",
+          "count": 2,
+          "percent": 2.0
+        }
+      ]
+    },
+    "HOSPITAL": {
+      "class_id": 20,
+      "total_samples": 61,
+      "correct": 1,
+      "accuracy": 1.64,
+      "top3_correct": 1,
+      "top3_accuracy": 1.64,
+      "top_confusions": [
+        {
+          "gloss": "BREATHE",
+          "count": 35,
+          "percent": 57.4
+        },
+        {
+          "gloss": "TODAY",
+          "count": 13,
+          "percent": 21.3
+        },
+        {
+          "gloss": "STAND",
+          "count": 6,
+          "percent": 9.8
+        }
+      ]
+    },
+    "PHONE": {
+      "class_id": 34,
+      "total_samples": 66,
+      "correct": 1,
+      "accuracy": 1.52,
+      "top3_correct": 1,
+      "top3_accuracy": 1.52,
+      "top_confusions": [
+        {
+          "gloss": "MOTHER",
+          "count": 45,
+          "percent": 68.2
+        },
+        {
+          "gloss": "KNOW",
+          "count": 20,
+          "percent": 30.3
+        }
+      ]
+    },
+    "PREGNANT": {
+      "class_id": 35,
+      "total_samples": 68,
+      "correct": 1,
+      "accuracy": 1.47,
+      "top3_correct": 65,
+      "top3_accuracy": 95.59,
+      "top_confusions": [
+        {
+          "gloss": "STOMACH",
+          "count": 67,
+          "percent": 98.5
+        }
+      ]
+    },
+    "EMERGENCY": {
+      "class_id": 14,
+      "total_samples": 100,
       "correct": 0,
       "accuracy": 0.0,
       "top3_correct": 0,
       "top3_accuracy": 0.0,
       "top_confusions": [
         {
-          "gloss": "FINE",
-          "count": 15,
-          "percent": 93.8
+          "gloss": "INSURANCE",
+          "count": 89,
+          "percent": 89.0
         },
         {
-          "gloss": "CHANGE",
+          "gloss": "YES",
+          "count": 8,
+          "percent": 8.0
+        },
+        {
+          "gloss": "PHONE",
+          "count": 2,
+          "percent": 2.0
+        }
+      ]
+    },
+    "HEART": {
+      "class_id": 18,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 0,
+      "top3_accuracy": 0.0,
+      "top_confusions": [
+        {
+          "gloss": "FEEL",
+          "count": 60,
+          "percent": 98.4
+        },
+        {
+          "gloss": "COUGH",
           "count": 1,
-          "percent": 6.2
+          "percent": 1.6
+        }
+      ]
+    },
+    "INFECTION": {
+      "class_id": 22,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 59,
+      "top3_accuracy": 96.72,
+      "top_confusions": [
+        {
+          "gloss": "INSURANCE",
+          "count": 61,
+          "percent": 100.0
+        }
+      ]
+    },
+    "MOTHER": {
+      "class_id": 28,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 1,
+      "top3_accuracy": 1.64,
+      "top_confusions": [
+        {
+          "gloss": "INFECTION",
+          "count": 52,
+          "percent": 85.2
+        },
+        {
+          "gloss": "HEAR",
+          "count": 9,
+          "percent": 14.8
+        }
+      ]
+    },
+    "NURSE": {
+      "class_id": 31,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 1,
+      "top3_accuracy": 1.64,
+      "top_confusions": [
+        {
+          "gloss": "STAND",
+          "count": 60,
+          "percent": 98.4
+        },
+        {
+          "gloss": "MEDICINE",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "SLEEP": {
+      "class_id": 41,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 2,
+      "top3_accuracy": 3.28,
+      "top_confusions": [
+        {
+          "gloss": "EAT",
+          "count": 48,
+          "percent": 78.7
+        },
+        {
+          "gloss": "AGE",
+          "count": 12,
+          "percent": 19.7
+        },
+        {
+          "gloss": "MOTHER",
+          "count": 1,
+          "percent": 1.6
+        }
+      ]
+    },
+    "UNDERSTAND": {
+      "class_id": 50,
+      "total_samples": 61,
+      "correct": 0,
+      "accuracy": 0.0,
+      "top3_correct": 4,
+      "top3_accuracy": 6.56,
+      "top_confusions": [
+        {
+          "gloss": "HEAR",
+          "count": 60,
+          "percent": 98.4
+        },
+        {
+          "gloss": "RIGHT",
+          "count": 1,
+          "percent": 1.6
         }
       ]
     }
@@ -652,333 +1048,632 @@
   "classes_by_accuracy": {
     "high_accuracy": [
       {
-        "gloss": "BEFORE",
+        "gloss": "CAN",
         "accuracy": 100.0,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "BOWLING",
+        "gloss": "HEADACHE",
         "accuracy": 100.0,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "BUT",
+        "gloss": "MEDICINE",
         "accuracy": 100.0,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "CHAIR",
+        "gloss": "MORE",
         "accuracy": 100.0,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "DEAF",
+        "gloss": "NAME",
         "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "SICK",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "STOMACH",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "STOP",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "TODAY",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "WAIT",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "YES",
+        "accuracy": 100.0,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "ADDRESS",
+        "accuracy": 98.36,
+        "top3_accuracy": 100.0
+      },
+      {
+        "gloss": "BLOOD",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
         "gloss": "DOCTOR",
-        "accuracy": 100.0,
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "DRINK",
-        "accuracy": 100.0,
+        "gloss": "HERE",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "ENJOY",
-        "accuracy": 100.0,
+        "gloss": "HOW",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "FAMILY",
-        "accuracy": 100.0,
+        "gloss": "KNOW",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "GIVE",
-        "accuracy": 100.0,
+        "gloss": "MORNING",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "HOT",
-        "accuracy": 100.0,
+        "gloss": "SIT",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "MAN",
-        "accuracy": 100.0,
+        "gloss": "SURGERY",
+        "accuracy": 98.36,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "ORANGE",
-        "accuracy": 100.0,
+        "gloss": "STAND",
+        "accuracy": 97.01,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "PAPER",
-        "accuracy": 100.0,
+        "gloss": "ALLERGY",
+        "accuracy": 95.08,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "SON",
-        "accuracy": 100.0,
+        "gloss": "ANSWER",
+        "accuracy": 95.08,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "TALL",
-        "accuracy": 100.0,
+        "gloss": "BREATHE",
+        "accuracy": 95.08,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "TIME",
-        "accuracy": 100.0,
+        "gloss": "TEMPERATURE",
+        "accuracy": 90.16,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "WATER",
-        "accuracy": 100.0,
+        "gloss": "FEEL",
+        "accuracy": 86.89,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "HELP",
-        "accuracy": 93.75,
+        "gloss": "WANT",
+        "accuracy": 85.25,
         "top3_accuracy": 100.0
       },
       {
-        "gloss": "PLAY",
-        "accuracy": 93.75,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "STUDY",
-        "accuracy": 93.75,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "AFRICA",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "APPLE",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "CHANGE",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "JACKET",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "THURSDAY",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "WRONG",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "YEAR",
-        "accuracy": 87.5,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "BASKETBALL",
-        "accuracy": 81.25,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "FINE",
-        "accuracy": 81.25,
-        "top3_accuracy": 100.0
-      },
-      {
-        "gloss": "THANKSGIVING",
-        "accuracy": 81.25,
+        "gloss": "WORSE",
+        "accuracy": 81.97,
         "top3_accuracy": 100.0
       }
     ],
     "low_accuracy": [
       {
-        "gloss": "TABLE",
-        "accuracy": 87.5,
-        "top3_accuracy": 87.5,
+        "gloss": "APPOINTMENT",
+        "accuracy": 98.36,
+        "top3_accuracy": 98.36,
         "top_confusions": [
           {
-            "gloss": "LATER",
+            "gloss": "SURGERY",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "COUGH",
+        "accuracy": 98.36,
+        "top3_accuracy": 98.36,
+        "top_confusions": [
+          {
+            "gloss": "HEART",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "WHERE",
+        "accuracy": 98.36,
+        "top3_accuracy": 98.36,
+        "top_confusions": [
+          {
+            "gloss": "EMERGENCY",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "HEAR",
+        "accuracy": 96.72,
+        "top3_accuracy": 98.36,
+        "top_confusions": [
+          {
+            "gloss": "SLEEP",
+            "count": 1,
+            "percent": 1.6
+          },
+          {
+            "gloss": "MOTHER",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "THANK YOU",
+        "accuracy": 96.72,
+        "top3_accuracy": 98.36,
+        "top_confusions": [
+          {
+            "gloss": "RIGHT",
+            "count": 1,
+            "percent": 1.6
+          },
+          {
+            "gloss": "EAT",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "BETTER",
+        "accuracy": 95.59,
+        "top3_accuracy": 98.53,
+        "top_confusions": [
+          {
+            "gloss": "YES",
             "count": 2,
-            "percent": 12.5
-          }
-        ]
-      },
-      {
-        "gloss": "COMPUTER",
-        "accuracy": 75.0,
-        "top3_accuracy": 87.5,
-        "top_confusions": [
-          {
-            "gloss": "TABLE",
-            "count": 3,
-            "percent": 18.8
+            "percent": 2.9
           },
           {
-            "gloss": "SON",
+            "gloss": "HEAR",
             "count": 1,
-            "percent": 6.2
+            "percent": 1.5
           }
         ]
       },
       {
-        "gloss": "TELL",
-        "accuracy": 75.0,
-        "top3_accuracy": 100.0,
+        "gloss": "STRESS",
+        "accuracy": 93.44,
+        "top3_accuracy": 98.36,
         "top_confusions": [
           {
-            "gloss": "ORANGE",
+            "gloss": "NAME",
+            "count": 1,
+            "percent": 1.6
+          },
+          {
+            "gloss": "SIT",
+            "count": 1,
+            "percent": 1.6
+          },
+          {
+            "gloss": "HOW",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "NIGHT",
+        "accuracy": 88.06,
+        "top3_accuracy": 95.52,
+        "top_confusions": [
+          {
+            "gloss": "HOW",
             "count": 4,
-            "percent": 25.0
-          }
-        ]
-      },
-      {
-        "gloss": "DANCE",
-        "accuracy": 68.75,
-        "top3_accuracy": 100.0,
-        "top_confusions": [
-          {
-            "gloss": "STUDY",
-            "count": 5,
-            "percent": 31.2
-          }
-        ]
-      },
-      {
-        "gloss": "FULL",
-        "accuracy": 68.75,
-        "top3_accuracy": 87.5,
-        "top_confusions": [
-          {
-            "gloss": "DOCTOR",
-            "count": 3,
-            "percent": 18.8
+            "percent": 6.0
           },
           {
-            "gloss": "PAPER",
-            "count": 1,
-            "percent": 6.2
+            "gloss": "STOP",
+            "count": 2,
+            "percent": 3.0
           },
           {
-            "gloss": "TABLE",
-            "count": 1,
-            "percent": 6.2
+            "gloss": "SURGERY",
+            "count": 2,
+            "percent": 3.0
           }
         ]
       },
       {
-        "gloss": "NO",
-        "accuracy": 68.75,
-        "top3_accuracy": 93.75,
+        "gloss": "EAT",
+        "accuracy": 80.33,
+        "top3_accuracy": 98.36,
         "top_confusions": [
           {
-            "gloss": "APPLE",
-            "count": 5,
-            "percent": 31.2
-          }
-        ]
-      },
-      {
-        "gloss": "WALK",
-        "accuracy": 68.75,
-        "top3_accuracy": 100.0,
-        "top_confusions": [
-          {
-            "gloss": "TIME",
-            "count": 5,
-            "percent": 31.2
-          }
-        ]
-      },
-      {
-        "gloss": "LATER",
-        "accuracy": 6.25,
-        "top3_accuracy": 12.5,
-        "top_confusions": [
-          {
-            "gloss": "DRINK",
-            "count": 15,
-            "percent": 93.8
-          }
-        ]
-      },
-      {
-        "gloss": "BIRTHDAY",
-        "accuracy": 0.0,
-        "top3_accuracy": 0.0,
-        "top_confusions": [
-          {
-            "gloss": "SON",
-            "count": 16,
-            "percent": 100.0
-          }
-        ]
-      },
-      {
-        "gloss": "COW",
-        "accuracy": 0.0,
-        "top3_accuracy": 0.0,
-        "top_confusions": [
-          {
-            "gloss": "MAN",
+            "gloss": "MOTHER",
             "count": 12,
-            "percent": 75.0
-          },
-          {
-            "gloss": "BOWLING",
-            "count": 3,
-            "percent": 18.8
-          },
-          {
-            "gloss": "COMPUTER",
-            "count": 1,
-            "percent": 6.2
+            "percent": 19.7
           }
         ]
       },
       {
-        "gloss": "NEED",
-        "accuracy": 0.0,
-        "top3_accuracy": 37.5,
+        "gloss": "RIGHT",
+        "accuracy": 80.33,
+        "top3_accuracy": 93.44,
         "top_confusions": [
           {
-            "gloss": "BOWLING",
-            "count": 16,
+            "gloss": "TEMPERATURE",
+            "count": 11,
+            "percent": 18.0
+          },
+          {
+            "gloss": "NAME",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "INSURANCE",
+        "accuracy": 78.69,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "INFECTION",
+            "count": 12,
+            "percent": 19.7
+          },
+          {
+            "gloss": "BATHROOM",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "PATIENT",
+        "accuracy": 77.05,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "YES",
+            "count": 13,
+            "percent": 21.3
+          },
+          {
+            "gloss": "MOTHER",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "BATHROOM",
+        "accuracy": 73.77,
+        "top3_accuracy": 95.08,
+        "top_confusions": [
+          {
+            "gloss": "WHERE",
+            "count": 13,
+            "percent": 21.3
+          },
+          {
+            "gloss": "EMERGENCY",
+            "count": 2,
+            "percent": 3.3
+          },
+          {
+            "gloss": "YES",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "AGE",
+        "accuracy": 68.85,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "PATIENT",
+            "count": 18,
+            "percent": 29.5
+          },
+          {
+            "gloss": "EAT",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "WHEN",
+        "accuracy": 62.3,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "PAIN",
+            "count": 22,
+            "percent": 36.1
+          },
+          {
+            "gloss": "ALLERGY",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "QUESTION",
+        "accuracy": 37.31,
+        "top3_accuracy": 98.51,
+        "top_confusions": [
+          {
+            "gloss": "YES",
+            "count": 41,
+            "percent": 61.2
+          },
+          {
+            "gloss": "FEEL",
+            "count": 1,
+            "percent": 1.5
+          }
+        ]
+      },
+      {
+        "gloss": "PAIN",
+        "accuracy": 31.75,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "WHEN",
+            "count": 43,
+            "percent": 68.3
+          }
+        ]
+      },
+      {
+        "gloss": "SEE",
+        "accuracy": 4.76,
+        "top3_accuracy": 100.0,
+        "top_confusions": [
+          {
+            "gloss": "HEAR",
+            "count": 60,
+            "percent": 95.2
+          }
+        ]
+      },
+      {
+        "gloss": "DIZZY",
+        "accuracy": 2.0,
+        "top3_accuracy": 5.0,
+        "top_confusions": [
+          {
+            "gloss": "MOTHER",
+            "count": 69,
+            "percent": 69.0
+          },
+          {
+            "gloss": "KNOW",
+            "count": 27,
+            "percent": 27.0
+          },
+          {
+            "gloss": "EAT",
+            "count": 2,
+            "percent": 2.0
+          }
+        ]
+      },
+      {
+        "gloss": "HOSPITAL",
+        "accuracy": 1.64,
+        "top3_accuracy": 1.64,
+        "top_confusions": [
+          {
+            "gloss": "BREATHE",
+            "count": 35,
+            "percent": 57.4
+          },
+          {
+            "gloss": "TODAY",
+            "count": 13,
+            "percent": 21.3
+          },
+          {
+            "gloss": "STAND",
+            "count": 6,
+            "percent": 9.8
+          }
+        ]
+      },
+      {
+        "gloss": "PHONE",
+        "accuracy": 1.52,
+        "top3_accuracy": 1.52,
+        "top_confusions": [
+          {
+            "gloss": "MOTHER",
+            "count": 45,
+            "percent": 68.2
+          },
+          {
+            "gloss": "KNOW",
+            "count": 20,
+            "percent": 30.3
+          }
+        ]
+      },
+      {
+        "gloss": "PREGNANT",
+        "accuracy": 1.47,
+        "top3_accuracy": 95.59,
+        "top_confusions": [
+          {
+            "gloss": "STOMACH",
+            "count": 67,
+            "percent": 98.5
+          }
+        ]
+      },
+      {
+        "gloss": "EMERGENCY",
+        "accuracy": 0.0,
+        "top3_accuracy": 0.0,
+        "top_confusions": [
+          {
+            "gloss": "INSURANCE",
+            "count": 89,
+            "percent": 89.0
+          },
+          {
+            "gloss": "YES",
+            "count": 8,
+            "percent": 8.0
+          },
+          {
+            "gloss": "PHONE",
+            "count": 2,
+            "percent": 2.0
+          }
+        ]
+      },
+      {
+        "gloss": "HEART",
+        "accuracy": 0.0,
+        "top3_accuracy": 0.0,
+        "top_confusions": [
+          {
+            "gloss": "FEEL",
+            "count": 60,
+            "percent": 98.4
+          },
+          {
+            "gloss": "COUGH",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "INFECTION",
+        "accuracy": 0.0,
+        "top3_accuracy": 96.72,
+        "top_confusions": [
+          {
+            "gloss": "INSURANCE",
+            "count": 61,
             "percent": 100.0
           }
         ]
       },
       {
-        "gloss": "WHAT",
+        "gloss": "MOTHER",
         "accuracy": 0.0,
-        "top3_accuracy": 0.0,
+        "top3_accuracy": 1.64,
         "top_confusions": [
           {
-            "gloss": "FINE",
-            "count": 15,
-            "percent": 93.8
+            "gloss": "INFECTION",
+            "count": 52,
+            "percent": 85.2
           },
           {
-            "gloss": "CHANGE",
+            "gloss": "HEAR",
+            "count": 9,
+            "percent": 14.8
+          }
+        ]
+      },
+      {
+        "gloss": "NURSE",
+        "accuracy": 0.0,
+        "top3_accuracy": 1.64,
+        "top_confusions": [
+          {
+            "gloss": "STAND",
+            "count": 60,
+            "percent": 98.4
+          },
+          {
+            "gloss": "MEDICINE",
             "count": 1,
-            "percent": 6.2
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "SLEEP",
+        "accuracy": 0.0,
+        "top3_accuracy": 3.28,
+        "top_confusions": [
+          {
+            "gloss": "EAT",
+            "count": 48,
+            "percent": 78.7
+          },
+          {
+            "gloss": "AGE",
+            "count": 12,
+            "percent": 19.7
+          },
+          {
+            "gloss": "MOTHER",
+            "count": 1,
+            "percent": 1.6
+          }
+        ]
+      },
+      {
+        "gloss": "UNDERSTAND",
+        "accuracy": 0.0,
+        "top3_accuracy": 6.56,
+        "top_confusions": [
+          {
+            "gloss": "HEAR",
+            "count": 60,
+            "percent": 98.4
+          },
+          {
+            "gloss": "RIGHT",
+            "count": 1,
+            "percent": 1.6
           }
         ]
       }

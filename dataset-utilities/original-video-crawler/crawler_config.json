@@ -1,0 +1,52 @@
+{
+  "target_words": [
+    "doctor",
+    "hospital",
+    "pain",
+    "medicine",
+    "emergency"
+  ],
+  "search_templates": [
+    "{word} ASL sign language",
+    "{word} sign language tutorial",
+    "ASL {word} how to sign"
+  ],
+  "sources": {
+    "youtube": {
+      "enabled": true,
+      "max_results_per_word": 10,
+      "min_duration_sec": 3,
+      "max_duration_sec": 120,
+      "preferred_channels": [
+        "ASL Meredith",
+        "Bill Vicars",
+        "Start ASL",
+        "HandSpeak",
+        "Signing Savvy"
+      ]
+    },
+    "custom_urls": {
+      "enabled": true,
+      "urls": []
+    }
+  },
+  "output": {
+    "raw_videos_dir": "downloads/raw",
+    "clipped_videos_dir": "downloads/clipped",
+    "metadata_dir": "downloads/metadata",
+    "video_format": "mp4",
+    "max_clip_duration_sec": 5,
+    "target_fps": 30,
+    "target_resolution": [
+      256,
+      256
+    ]
+  },
+  "clip_annotations": {
+    "doctor": [],
+    "hospital": [],
+    "pain": [],
+    "medicine": [],
+    "emergency": []
+  }
+}

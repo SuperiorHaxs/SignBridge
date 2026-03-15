@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignBridge - System Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #ffffff;
+    color: #222;
+  }
+  .canvas {
+    position: relative;
+    width: 1440px;
+    height: 980px;
+    margin: 20px auto;
+  }
+  .title {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    text-align: center;
+  }
+  .title h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .title p { font-size: 12px; color: #777; margin-top: 2px; }
+
+  /* SVG layer */
+  .connectors {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Nodes */
+  .node {
+    position: absolute;
+    border-radius: 10px;
+    padding: 10px 14px;
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    line-height: 1.35;
+  }
+  .node h3 { font-size: 12.5px; font-weight: 700; margin-bottom: 3px; }
+  .node p, .node ul { font-size: 10.5px; opacity: 0.92; }
+  .node ul { padding-left: 15px; }
+  .node .mono {
+    font-family: 'Consolas', monospace;
+    font-size: 10px;
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin-top: 5px;
+    display: block;
+  }
+
+  /* Colors */
+  .n-blue   { background: #4472C4; color: #fff; border: 2px solid #3561ab; }
+  .n-green  { background: #70AD47; color: #fff; border: 2px solid #5d9438; }
+  .n-orange { background: #ED7D31; color: #fff; border: 2px solid #d4671c; }
+  .n-purple { background: #7B2D8E; color: #fff; border: 2px solid #621f73; }
+  .n-teal   { background: #0097d4; color: #fff; border: 2px solid #007bb0; }
+  .n-red    { background: #e74c5e; color: #fff; border: 2px solid #cf3a4c; }
+  .n-white  { background: #fff; color: #333; border: 2px solid #ddd; }
+
+  /* Zones */
+  .zone {
+    position: absolute;
+    border-radius: 14px;
+    border: 2px dashed;
+    z-index: 0;
+    opacity: 0.10;
+  }
+  .zone-label {
+    position: absolute;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    z-index: 0;
+    opacity: 0.45;
+  }
+
+  /* Edge labels */
+  .edge-label {
+    position: absolute;
+    font-size: 9px;
+    color: #555;
+    background: #fff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    z-index: 2;
+    white-space: nowrap;
+    font-weight: 600;
+    border: 1px solid #eee;
+  }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 18px;
+    z-index: 3;
+    background: #f8f8f8;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10.5px; color: #555; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+  /* Transformer internal layers */
+  .tl {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  .tl.em {
+    background: rgba(255,255,255,0.35);
+    border: 1px solid rgba(255,255,255,0.4);
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 4px 6px;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <div class="title">
+    <h1>SignBridge &mdash; System Architecture</h1>
+    <p>Real-Time American Sign Language Recognition with LLM-Enhanced Sentence Construction</p>
+  </div>
+
+  <!-- ===== ZONES ===== -->
+  <div class="zone" style="top:48px;left:8px;width:200px;height:270px;border-color:#4472C4;background:#4472C4;"></div>
+  <div class="zone-label" style="top:52px;left:18px;color:#4472C4;">Data Layer</div>
+
+  <div class="zone" style="top:48px;left:228px;width:310px;height:530px;border-color:#70AD47;background:#70AD47;"></div>
+  <div class="zone-label" style="top:52px;left:238px;color:#70AD47;">Preprocessing</div>
+
+  <div class="zone" style="top:48px;left:558px;width:250px;height:530px;border-color:#ED7D31;background:#ED7D31;"></div>
+  <div class="zone-label" style="top:52px;left:568px;color:#ED7D31;">Model Engine</div>
+
+  <div class="zone" style="top:48px;left:828px;width:240px;height:440px;border-color:#7B2D8E;background:#7B2D8E;"></div>
+  <div class="zone-label" style="top:52px;left:838px;color:#7B2D8E;">LLM Sentence Builder</div>
+
+  <div class="zone" style="top:48px;left:1088px;width:220px;height:310px;border-color:#0097d4;background:#0097d4;"></div>
+  <div class="zone-label" style="top:52px;left:1098px;color:#0097d4;">Application</div>
+
+  <div class="zone" style="top:510px;left:828px;width:480px;height:410px;border-color:#e74c5e;background:#e74c5e;"></div>
+  <div class="zone-label" style="top:514px;left:838px;color:#e74c5e;">CTQI Evaluation Pipeline</div>
+
+  <!-- ===== SVG CONNECTORS ===== -->
+  <svg class="connectors" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#666"/></marker>
+      <marker id="ag" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#5d9438"/></marker>
+      <marker id="ao" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#d4671c"/></marker>
+      <marker id="ap" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#621f73"/></marker>
+      <marker id="ar" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#cf3a4c"/></marker>
+      <marker id="at" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#007bb0"/></marker>
+    </defs>
+
+    <!-- ══════ DATA → PREPROCESSING ══════ -->
+    <!-- WLASL + Videos → MediaPipe (both feed video frames) -->
+    <path d="M 200 105 L 240 105" stroke="#666" stroke-width="2" fill="none" marker-end="url(#a)"/>
+    <path d="M 200 190 L 218 190 Q 228 190 228 170 L 228 115 Q 228 105 240 105" stroke="#666" stroke-width="2" fill="none" marker-end="url(#a)"/>
+
+    <!-- Gloss Vocab → dashed to Training Config (provides label mapping) -->
+    <path d="M 200 275 L 560 275 Q 570 275 570 290 L 570 420" stroke="#666" stroke-width="1.5" fill="none" stroke-dasharray="6,4" marker-end="url(#a)"/>
+
+    <!-- ══════ WITHIN PREPROCESSING ══════ -->
+    <!-- MediaPipe → fan out to 3 keypoint groups -->
+    <path d="M 382 140 L 300 165" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+    <path d="M 382 140 L 382 165" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+    <path d="M 382 140 L 465 165" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+
+    <!-- 3 keypoint groups → merge into Feature Vector -->
+    <path d="M 300 230 L 300 250 Q 300 265 320 265 L 358 275" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+    <path d="M 382 230 L 382 275" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+    <path d="M 465 230 L 465 250 Q 465 265 445 265 L 408 275" stroke="#5d9438" stroke-width="1.8" fill="none" marker-end="url(#ag)"/>
+
+    <!-- Feature Vector → Augmentation -->
+    <path d="M 382 345 L 382 375" stroke="#5d9438" stroke-width="2" fill="none" marker-end="url(#ag)"/>
+
+    <!-- ══════ PREPROCESSING → MODEL ══════ -->
+    <!-- Augmentation → Transformer (main training data flow) -->
+    <path d="M 520 430 L 570 430 L 570 200 L 590 200" stroke="#666" stroke-width="2.5" fill="none" marker-end="url(#a)"/>
+
+    <!-- ══════ WITHIN MODEL ══════ -->
+    <!-- Transformer → Top-K Classification Output -->
+    <path d="M 685 340 L 685 378" stroke="#d4671c" stroke-width="2" fill="none" marker-end="url(#ao)"/>
+
+    <!-- ══════ MODEL → LLM ══════ -->
+    <!-- Top-K → Sequence Accumulator -->
+    <path d="M 790 420 Q 810 420 810 380 L 810 140 Q 810 120 840 120" stroke="#666" stroke-width="2.5" fill="none" marker-end="url(#a)"/>
+
+    <!-- ══════ WITHIN LLM ══════ -->
+    <!-- Accumulator → Gemini -->
+    <path d="M 948 165 L 948 210" stroke="#621f73" stroke-width="2" fill="none" marker-end="url(#ap)"/>
+
+    <!-- Gemini → Sentence Assembly -->
+    <path d="M 948 310 L 948 345" stroke="#621f73" stroke-width="2" fill="none" marker-end="url(#ap)"/>
+
+    <!-- ══════ LLM → APP ══════ -->
+    <!-- Sentence Assembly → Streamlit App -->
+    <path d="M 1055 390 L 1100 390 L 1100 220 L 1100 220" stroke="#666" stroke-width="2.5" fill="none" marker-end="url(#a)"/>
+
+    <!-- ══════ APP → PREPROCESSING (inference loop) ══════ -->
+    <!-- User Input → MediaPipe (live inference path) -->
+    <path d="M 1198 135 L 1198 68 Q 1198 58 1188 58 L 400 58 Q 382 58 382 70" stroke="#007bb0" stroke-width="1.8" fill="none" stroke-dasharray="8,4" marker-end="url(#at)"/>
+
+    <!-- ══════ APP → CTQI EVALUATION ══════ -->
+    <!-- Streamlit App triggers evaluation -->
+    <path d="M 1198 260 L 1198 400 Q 1198 420 1198 440 L 1198 540 Q 1198 555 1180 555 L 1070 555" stroke="#cf3a4c" stroke-width="2.5" fill="none" marker-end="url(#ar)"/>
+
+    <!-- ══════ WITHIN CTQI ══════ -->
+    <!-- Evaluate endpoint → fans to 3 metric calculators -->
+    <path d="M 948 580 L 890 615" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+    <path d="M 948 580 L 948 615" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+    <path d="M 1020 580 L 1080 615" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+
+    <!-- 3 metrics → merge into CTQI v3 formula -->
+    <path d="M 890 700 L 890 720 Q 890 735 910 735 L 958 745" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+    <path d="M 980 700 L 980 745" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+    <path d="M 1080 700 L 1080 720 Q 1080 735 1060 735 L 1008 745" stroke="#cf3a4c" stroke-width="1.8" fill="none" marker-end="url(#ar)"/>
+
+    <!-- CTQI Score → back to App display -->
+    <path d="M 1060 785 L 1260 785 Q 1280 785 1280 770 L 1280 400 Q 1280 380 1280 360 L 1280 268" stroke="#cf3a4c" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#ar)"/>
+
+    <!-- Plausibility → Gemini (uses Gemini for scoring) -->
+    <path d="M 1150 640 L 1200 640 Q 1220 640 1220 600 L 1220 340 Q 1220 320 1200 310 L 1055 265" stroke="#621f73" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#ap)"/>
+
+  </svg>
+
+  <!-- ===== DATA LAYER NODES ===== -->
+  <div class="node n-blue" style="top:78px;left:18px;width:178px;">
+    <h3>WLASL-100 Dataset</h3>
+    <p>2,038 videos &middot; 100 ASL glosses</p>
+  </div>
+
+  <div class="node n-blue" style="top:162px;left:18px;width:178px;">
+    <h3>Raw Video Files</h3>
+    <p>MP4/AVI clips from online ASL dictionaries</p>
+  </div>
+
+  <div class="node n-blue" style="top:245px;left:18px;width:178px;">
+    <h3>Gloss Vocabulary</h3>
+    <p>100-class label mapping</p>
+    <span class="mono">gloss_list_100_class.json</span>
+  </div>
+
+  <!-- ===== PREPROCESSING NODES ===== -->
+  <div class="node n-green" style="top:78px;left:288px;width:190px;">
+    <h3>MediaPipe Holistic</h3>
+    <p>Pose estimation &mdash; extracts 83 keypoints per video frame</p>
+  </div>
+
+  <div class="node n-green" style="top:170px;left:243px;width:100px;padding:6px 10px;">
+    <h3>Body + Face</h3>
+    <p>27 + 8 pts</p>
+  </div>
+  <div class="node n-green" style="top:170px;left:350px;width:100px;padding:6px 10px;">
+    <h3>Hands (L)</h3>
+    <p>21 landmarks</p>
+  </div>
+  <div class="node n-green" style="top:170px;left:458px;width:100px;padding:6px 10px;">
+    <h3>Hands (R)</h3>
+    <p>21 landmarks</p>
+  </div>
+
+  <div class="node n-green" style="top:278px;left:288px;width:190px;">
+    <h3>Feature Vector Builder</h3>
+    <p>279-dimensional features</p>
+    <ul>
+      <li>249 coordinate (x, y, z)</li>
+      <li>30 finger dist/angle</li>
+      <li>Position-invariant norm.</li>
+    </ul>
+  </div>
+
+  <div class="node n-green" style="top:380px;left:268px;width:248px;">
+    <h3>Data Augmentation Engine</h3>
+    <p>6 augmentation strategies:</p>
+    <ul>
+      <li>Temporal scaling (&plusmn;20%)</li>
+      <li>Spatial scaling (&plusmn;15%) &middot; Rotation (&plusmn;15&deg;)</li>
+      <li>Translation &middot; Noise &middot; Mirror</li>
+    </ul>
+  </div>
+
+  <!-- ===== MODEL NODES ===== -->
+  <div class="node n-orange" style="top:78px;left:575px;width:220px;">
+    <h3>OpenHands-HD Transformer</h3>
+    <p style="margin-bottom:5px;">BERT-style sign classifier</p>
+    <div class="tl">Input: 279-dim sequence</div>
+    <div class="tl">Linear &rarr; 256 hidden dims</div>
+    <div class="tl">Positional Encoding</div>
+    <div class="tl em">6&times; Transformer Encoder<br>16 heads &middot; GELU</div>
+    <div class="tl">[CLS] Token Pooling</div>
+    <div class="tl">Classifier &rarr; 100 classes</div>
+  </div>
+
+  <div class="node n-orange" style="top:380px;left:595px;width:195px;">
+    <h3>Top-K Classification Output</h3>
+    <p>Ranked candidates with confidence scores (probabilities)</p>
+    <span class="mono">["hello" .72, "hi" .15, ...]</span>
+  </div>
+
+  <div class="node n-white" style="top:448px;left:575px;width:220px;top:540px;left:575px;">
+    <h3>Training Config</h3>
+    <ul>
+      <li>AdamW &middot; Cosine LR schedule</li>
+      <li>Batch: 32 &middot; LR: 1e-4</li>
+      <li>Dropout: 0.3 &middot; Label smooth: 0.1</li>
+    </ul>
+  </div>
+
+  <!-- ===== LLM NODES ===== -->
+  <div class="node n-purple" style="top:78px;left:845px;width:210px;">
+    <h3>Sign Sequence Accumulator</h3>
+    <p>Buffers Top-K lists across full sentence</p>
+    <span class="mono">S1:[hello,hi] S2:[how,now]<br>S3:[you,yes]</span>
+  </div>
+
+  <div class="node n-purple" style="top:215px;left:845px;width:210px;">
+    <h3>Google Gemini 2.0 Flash</h3>
+    <p>Semantic coherence selection</p>
+    <ul>
+      <li>Evaluates Top-K combos</li>
+      <li>Context-aware word pick</li>
+      <li>Grammar correction</li>
+    </ul>
+  </div>
+
+  <div class="node n-purple" style="top:350px;left:845px;width:210px;">
+    <h3>Sentence Assembly</h3>
+    <p>Grammatically correct English</p>
+    <span class="mono">[HELLO][HOW][YOU]<br>&rarr; "Hello, how are you?"</span>
+  </div>
+
+  <!-- ===== APPLICATION NODES ===== -->
+  <div class="node n-teal" style="top:78px;left:1105px;width:195px;">
+    <h3>User Input</h3>
+    <p>Live webcam capture or video file upload</p>
+  </div>
+
+  <div class="node n-teal" style="top:178px;left:1105px;width:195px;">
+    <h3>Streamlit Web App</h3>
+    <p>Show-and-Tell demo<br>5-phase interactive flow</p>
+  </div>
+
+  <div class="node n-teal" style="top:275px;left:1105px;width:195px;">
+    <h3>Translation Display</h3>
+    <ul>
+      <li>Per-sign confidence</li>
+      <li>Full sentence output</li>
+      <li>Video + text side-by-side</li>
+    </ul>
+  </div>
+
+  <!-- ===== CTQI EVALUATION NODES ===== -->
+  <div class="node n-red" style="top:535px;left:900px;width:168px;">
+    <h3>/api/evaluate</h3>
+    <p>App sends raw_sentence, llm_sentence, reference, and selected glosses</p>
+  </div>
+
+  <div class="node n-red" style="top:620px;left:840px;width:125px;">
+    <h3>Gloss Accuracy</h3>
+    <p>Model GA vs Effective GA (LLM-selected)</p>
+  </div>
+
+  <div class="node n-red" style="top:620px;left:975px;width:125px;">
+    <h3>Coverage F1</h3>
+    <p>Lemmatized content word overlap</p>
+  </div>
+
+  <div class="node n-red" style="top:620px;left:1110px;width:135px;">
+    <h3>Plausibility</h3>
+    <p>Gemini-scored grammar + semantics + naturalness</p>
+  </div>
+
+  <div class="node n-red" style="top:750px;left:885px;width:210px;text-align:center;padding:12px;">
+    <h3>CTQI v3 Composite Score</h3>
+    <p style="margin-top:4px;font-size:10px;font-family:Consolas,monospace;opacity:0.9;">
+      (GA/100)&times;(CF1/100)&times;(0.5+0.5&times;P/100&times;GA/100)&times;100
+    </p>
+    <p style="margin-top:6px;font-size:10px;">Multiplicative prerequisite chain &mdash; all components must succeed</p>
+  </div>
+
+  <!-- ===== EDGE LABELS ===== -->
+  <div class="edge-label" style="top:88px;left:210px;">Video frames</div>
+  <div class="edge-label" style="top:148px;left:330px;">83 keypoints</div>
+  <div class="edge-label" style="top:246px;left:370px;">Merge</div>
+  <div class="edge-label" style="top:358px;left:355px;">279-dim vectors</div>
+  <div class="edge-label" style="top:280px;left:540px;">Augmented training data</div>
+  <div class="edge-label" style="top:352px;left:690px;">Predictions</div>
+  <div class="edge-label" style="top:350px;left:800px;">Top-K per sign</div>
+  <div class="edge-label" style="top:180px;left:955px;">All candidates</div>
+  <div class="edge-label" style="top:330px;left:955px;">Selected words</div>
+  <div class="edge-label" style="top:350px;left:1070px;">English sentence</div>
+  <div class="edge-label" style="top:50px;left:650px;color:#007bb0;">Inference path: live video feeds back through preprocessing</div>
+  <div class="edge-label" style="top:262px;left:460px;color:#888;font-style:italic;">Label map (gloss&harr;ID)</div>
+  <div class="edge-label" style="top:440px;left:1130px;color:#cf3a4c;">User clicks "Evaluate"</div>
+  <div class="edge-label" style="top:600px;left:968px;color:#cf3a4c;">3 component metrics</div>
+  <div class="edge-label" style="top:730px;left:930px;color:#cf3a4c;">Merge into composite</div>
+  <div class="edge-label" style="top:550px;left:1190px;color:#621f73;font-style:italic;">Gemini also scores plausibility</div>
+  <div class="edge-label" style="top:815px;left:1130px;color:#cf3a4c;">Score displayed in app</div>
+
+  <!-- ===== LEGEND ===== -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#4472C4;"></div> Data Sources</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#70AD47;"></div> Preprocessing</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#ED7D31;"></div> Model Engine</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#7B2D8E;"></div> LLM Sentence Builder</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0097d4;"></div> Application</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e74c5e;"></div> CTQI Evaluation</div>
+    <div class="legend-item"><svg width="30" height="12"><line x1="0" y1="6" x2="30" y2="6" stroke="#666" stroke-width="2"/></svg> Data flow</div>
+    <div class="legend-item"><svg width="30" height="12"><line x1="0" y1="6" x2="30" y2="6" stroke="#666" stroke-width="1.5" stroke-dasharray="6,3"/></svg> Async / feedback</div>
+  </div>
+
+</div>
+</body>
+</html>

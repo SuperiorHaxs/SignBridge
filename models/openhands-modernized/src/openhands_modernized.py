@@ -764,7 +764,8 @@ class WLASLOpenHandsDataset(Dataset):
     """WLASL Dataset for OpenHands architecture with finger features."""
 
     def __init__(self, pose_files: List[str], labels: List[str], gloss_to_id: Dict[str, int],
-                 max_seq_length: int = 256, augment: bool = False, use_finger_features: bool = True):
+                 max_seq_length: int = 256, augment: bool = False, use_finger_features: bool = True,
+                 cache_in_memory: bool = True, cache_dir: str = None):
         self.pose_files = pose_files
         self.labels = labels
         self.gloss_to_id = gloss_to_id
@@ -772,13 +773,112 @@ class WLASLOpenHandsDataset(Dataset):
         self.augment = augment
         self.use_finger_features = use_finger_features and FINGER_FEATURES_AVAILABLE
         self.processor = WLASLPoseProcessor()
+        self.cache_in_memory = cache_in_memory
+        self.cache_dir = cache_dir
+        self._cache = {}  # idx -> raw pose numpy array (filled on first access)
+        self._result_cache = {}  # idx -> full result dict (only for non-augmented datasets)
+
+        # Pre-compute and cache all results for non-augmented datasets
+        if cache_in_memory and not augment:
+            self._precompute_cache()
+
+    def _get_file_cache_key(self, filepath):
+        """Get a cache key for a single file based on its path and processing settings."""
+        import hashlib
+        # Use filename + settings as key (filename is unique across the pool)
+        basename = os.path.basename(filepath)
+        key = hashlib.md5(
+            f"{basename}|{self.max_seq_length}|{self.use_finger_features}".encode()
+        ).hexdigest()[:12]
+        return f"{basename}_{key}"
+
+    def _precompute_cache(self):
+        """Pre-compute all results at init time so every epoch is instant.
+        Uses per-file disk caching so results are reusable across different class subsets."""
+        import time as _time
+        import os
+
+        disk_cache = {}  # file_cache_key -> result (loaded from disk)
+        cache_hits = 0
+        cache_misses = 0
+
+        # Load existing per-file cache from disk
+        if self.cache_dir:
+            os.makedirs(self.cache_dir, exist_ok=True)
+            cache_index_path = os.path.join(self.cache_dir, "cache_index.pt")
+            if os.path.exists(cache_index_path):
+                try:
+                    print(f"  PRE-CACHE: Loading per-file disk cache...", end="", flush=True)
+                    t0 = _time.perf_counter()
+                    disk_cache = torch.load(cache_index_path, weights_only=False)
+                    elapsed = _time.perf_counter() - t0
+                    print(f" loaded {len(disk_cache)} cached files in {elapsed:.1f}s")
+                except Exception as e:
+                    print(f" failed ({e}), will recompute all")
+                    disk_cache = {}
+
+        # Build result cache, using disk cache where available
+        # Save incrementally every 5000 new computations to survive crashes
+        SAVE_INTERVAL = 5000
+        t0 = _time.perf_counter()
+        new_since_save = 0
+        for idx in range(len(self.pose_files)):
+            file_key = self._get_file_cache_key(self.pose_files[idx])
+            if file_key in disk_cache:
+                self._result_cache[idx] = disk_cache[file_key]
+                cache_hits += 1
+            else:
+                self._result_cache[idx] = self._compute_item(idx)
+                if self.cache_dir:
+                    disk_cache[file_key] = self._result_cache[idx]
+                    new_since_save += 1
+                cache_misses += 1
+
+            # Progress update + incremental save every SAVE_INTERVAL new computations
+            if self.cache_dir and new_since_save >= SAVE_INTERVAL:
+                elapsed = _time.perf_counter() - t0
+                print(f"  PRE-CACHE: {idx+1}/{len(self.pose_files)} "
+                      f"({cache_hits} cached, {cache_misses} computed, {elapsed:.0f}s) — saving checkpoint...",
+                      end="", flush=True)
+                try:
+                    torch.save(disk_cache, cache_index_path)
+                    print(f" saved {len(disk_cache)} files", flush=True)
+                except Exception as e:
+                    print(f" save failed: {e}", flush=True)
+                new_since_save = 0
+            elif (idx + 1) % 5000 == 0:
+                elapsed = _time.perf_counter() - t0
+                print(f"  PRE-CACHE: {idx+1}/{len(self.pose_files)} "
+                      f"({cache_hits} cached, {cache_misses} computed, {elapsed:.0f}s)", flush=True)
+
+        elapsed = _time.perf_counter() - t0
+        print(f"  PRE-CACHE: {len(self.pose_files)} samples ready in {elapsed:.1f}s "
+              f"({cache_hits} from cache, {cache_misses} computed)")
+
+        # Final save
+        if self.cache_dir and new_since_save > 0:
+            try:
+                t0 = _time.perf_counter()
+                torch.save(disk_cache, cache_index_path)
+                save_elapsed = _time.perf_counter() - t0
+                size_mb = os.path.getsize(cache_index_path) / (1024 * 1024)
+                print(f"  PRE-CACHE: Saved {len(disk_cache)} files to disk ({size_mb:.0f} MB) in {save_elapsed:.1f}s")
+            except Exception as e:
+                print(f"  PRE-CACHE: Warning - failed to save disk cache: {e}")
 
     def __len__(self):
         return len(self.pose_files)
 
-    def __getitem__(self, idx):
-        # Load and preprocess pose data
-        pose_sequence = self.processor.load_pickle_pose(self.pose_files[idx])
+    def _compute_item(self, idx):
+        """Compute a single sample result (load, preprocess, finger features, tensorize)."""
+        # Load pose data (from cache if available, otherwise from disk)
+        if self.cache_in_memory and idx in self._cache:
+            pose_sequence = self._cache[idx].copy()
+        else:
+            pose_sequence = self.processor.load_pickle_pose(self.pose_files[idx])
+            if self.cache_in_memory:
+                self._cache[idx] = pose_sequence.copy()
+
         pose_sequence = self.processor.preprocess_pose_sequence(pose_sequence, augment=self.augment)
 
         # Extract finger features BEFORE padding (on actual data only)
@@ -813,6 +913,20 @@ class WLASLOpenHandsDataset(Dataset):
 
         if self.use_finger_features:
             result['finger_features'] = torch.tensor(finger_features, dtype=torch.float32)  # (T, 30)
+
+        return result
+
+    def __getitem__(self, idx):
+        # For pre-cached datasets, return directly
+        if idx in self._result_cache:
+            return self._result_cache[idx]
+
+        # Compute on the fly (augmented datasets or cache disabled)
+        result = self._compute_item(idx)
+
+        # Cache for non-augmented datasets
+        if self.cache_in_memory and not self.augment:
+            self._result_cache[idx] = result
 
         return result
 

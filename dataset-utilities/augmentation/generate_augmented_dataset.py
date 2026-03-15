@@ -221,6 +221,152 @@ def apply_hand_dropout(keypoints: np.ndarray, drop_left: bool = True) -> np.ndar
     return dropped
 
 
+def apply_temporal_warp(keypoints: np.ndarray, warp_strength: float = 0.3) -> np.ndarray:
+    """
+    Apply non-uniform temporal warping (variable speed within a single sign).
+    Real signers accelerate/decelerate through different phases of a sign.
+
+    Args:
+        keypoints: Array of shape (frames, points, coords)
+        warp_strength: How much to warp (0=none, 1=extreme)
+
+    Returns:
+        Temporally warped keypoints
+    """
+    frames, points, coords = keypoints.shape
+    if frames < 4:
+        return keypoints
+
+    # Generate a smooth monotonic warp path using cumulative random weights
+    # This creates non-uniform time mapping while keeping frame order
+    raw_weights = np.random.uniform(1 - warp_strength, 1 + warp_strength, frames)
+    cumulative = np.cumsum(raw_weights)
+    # Normalize to map [0, frames-1] -> [0, frames-1]
+    warp_map = (cumulative - cumulative[0]) / (cumulative[-1] - cumulative[0]) * (frames - 1)
+
+    # Interpolate all keypoints using the warp map
+    resampled = np.zeros_like(keypoints)
+    old_indices = np.arange(frames)
+    for p in range(points):
+        for c in range(coords):
+            resampled[:, p, c] = np.interp(warp_map, old_indices, keypoints[:, p, c])
+
+    return resampled.astype(np.float32)
+
+
+def apply_signer_proportion(
+    keypoints: np.ndarray,
+    arm_scale: float = 1.0,
+    hand_scale: float = 1.0,
+    torso_scale: float = 1.0,
+) -> np.ndarray:
+    """
+    Simulate different body proportions by scaling body regions independently.
+    Different signers have different arm lengths, hand sizes, and torso proportions.
+
+    Assumes 83pt layout:
+    - Pose: 0-32 (33 points) — torso/arms
+    - Left hand: 33-53 (21 points)
+    - Right hand: 54-74 (21 points)
+    - Face: 75-82 (8 points)
+
+    Arms are scaled relative to shoulder center, hands relative to wrist,
+    torso relative to its own center.
+
+    Args:
+        keypoints: Array of shape (frames, 83, coords)
+        arm_scale: Scale factor for arm length
+        hand_scale: Scale factor for hand size
+        torso_scale: Scale factor for torso height
+
+    Returns:
+        Proportion-varied keypoints
+    """
+    result = keypoints.copy()
+    frames, points, coords = result.shape
+
+    # Scale hands relative to wrist (first point in each hand group)
+    for frame in range(frames):
+        # Left hand (33-53) — wrist is point 33
+        lh = result[frame, 33:54, :]
+        wrist_l = lh[0:1, :]  # Keep dims for broadcasting
+        result[frame, 33:54, :] = (lh - wrist_l) * hand_scale + wrist_l
+
+        # Right hand (54-74) — wrist is point 54
+        rh = result[frame, 54:75, :]
+        wrist_r = rh[0:1, :]
+        result[frame, 54:75, :] = (rh - wrist_r) * hand_scale + wrist_r
+
+        # Torso/arms (0-32) — scale around center of pose keypoints
+        pose = result[frame, 0:33, :]
+        pose_center = np.mean(pose, axis=0, keepdims=True)
+        result[frame, 0:33, :] = (pose - pose_center) * torso_scale + pose_center
+
+    return result.astype(np.float32)
+
+
+def apply_viewpoint_rotation_3d(
+    keypoints: np.ndarray,
+    angle_x: float = 0.0,
+    angle_y: float = 0.0,
+) -> np.ndarray:
+    """
+    Apply pseudo-3D viewpoint rotation using x,y,z coordinates.
+    Simulates the camera being at a slightly different angle.
+
+    Rotates around the centroid of all keypoints per frame.
+
+    Args:
+        keypoints: Array of shape (frames, points, coords) where coords >= 3
+        angle_x: Rotation angle around X axis (radians) — tilting up/down
+        angle_y: Rotation angle around Y axis (radians) — turning left/right
+
+    Returns:
+        Rotated keypoints (same shape, z-coords updated)
+    """
+    result = keypoints.copy()
+    frames, points, coords = result.shape
+
+    if coords < 3:
+        # Only 2D data — fall back to simple 2D rotation around center
+        cos_a, sin_a = np.cos(angle_y), np.sin(angle_y)
+        for frame in range(frames):
+            center = np.mean(result[frame], axis=0)
+            centered = result[frame] - center
+            rotated = centered.copy()
+            rotated[:, 0] = centered[:, 0] * cos_a - centered[:, 1] * sin_a
+            rotated[:, 1] = centered[:, 0] * sin_a + centered[:, 1] * cos_a
+            result[frame] = rotated + center
+        return result.astype(np.float32)
+
+    # 3D rotation matrices
+    cos_x, sin_x = np.cos(angle_x), np.sin(angle_x)
+    cos_y, sin_y = np.cos(angle_y), np.sin(angle_y)
+
+    # Rotation around X axis (tilt)
+    rx = np.array([
+        [1, 0, 0],
+        [0, cos_x, -sin_x],
+        [0, sin_x, cos_x],
+    ])
+
+    # Rotation around Y axis (turn)
+    ry = np.array([
+        [cos_y, 0, sin_y],
+        [0, 1, 0],
+        [-sin_y, 0, cos_y],
+    ])
+
+    rotation = ry @ rx
+
+    for frame in range(frames):
+        center = np.mean(result[frame, :, :3], axis=0)
+        centered = result[frame, :, :3] - center
+        result[frame, :, :3] = (centered @ rotation.T) + center
+
+    return result.astype(np.float32)
+
+
 def apply_augmentation(
     keypoints: np.ndarray,
     technique: str,
@@ -281,6 +427,29 @@ def apply_augmentation(
     elif technique == 'hand_dropout':
         drop_left = (variation_index % 2) == 0
         return apply_hand_dropout(keypoints, drop_left=drop_left)
+
+    elif technique == 'temporal_warp':
+        strengths = params.get('warp_strengths', [0.2, 0.3, 0.5])
+        strength_idx = variation_index % len(strengths)
+        return apply_temporal_warp(keypoints, warp_strength=strengths[strength_idx])
+
+    elif technique == 'signer_proportion':
+        # Random body proportion variations
+        arm_range = params.get('arm_scale_range', (0.85, 1.15))
+        hand_range = params.get('hand_scale_range', (0.80, 1.20))
+        torso_range = params.get('torso_scale_range', (0.90, 1.10))
+        return apply_signer_proportion(
+            keypoints,
+            arm_scale=np.random.uniform(*arm_range),
+            hand_scale=np.random.uniform(*hand_range),
+            torso_scale=np.random.uniform(*torso_range),
+        )
+
+    elif technique == 'viewpoint_3d':
+        angle_range = params.get('angle_range', 0.15)  # ~8.5 degrees
+        angle_x = np.random.uniform(-angle_range, angle_range)
+        angle_y = np.random.uniform(-angle_range, angle_range)
+        return apply_viewpoint_rotation_3d(keypoints, angle_x=angle_x, angle_y=angle_y)
 
     elif technique == 'combinations':
         # Apply multiple transforms

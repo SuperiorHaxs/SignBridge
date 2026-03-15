@@ -65,6 +65,9 @@ def get_dataset_paths(num_classes):
         paths['test_manifest'] = str(splits['test_manifest'])
         paths['pickle_pool'] = str(splits['pickle_pool'])
         paths['use_manifests'] = True
+        # Also include train_original if available (for --dataset original mode)
+        if 'train_original' in splits:
+            paths['train_original'] = str(splits['train_original'])
     else:
         # Legacy structure with directory paths
         paths['train_original'] = str(splits['train_original'])
@@ -112,7 +115,7 @@ def load_from_manifest(manifest_path, pickle_pool_path):
 # ============================================================================
 
 # Architecture selection
-def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1):
+def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1, use_finger_features=True):
     """Create model based on architecture choice and size."""
     if architecture == "openhands" or architecture == "transformer":
         # Configure model size
@@ -145,7 +148,9 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
             num_hidden_layers=final_layers,
             num_attention_heads=final_heads,
             intermediate_size=final_hidden * 4,  # Scale intermediate size
-            dropout_prob=dropout  # Configurable dropout
+            dropout_prob=dropout,  # Configurable dropout
+            use_finger_features=use_finger_features,
+            pose_features=279 if use_finger_features else 249
         )
         model = OpenHandsModel(config)
         print(f"MODEL: OpenHands Architecture ({model_size.upper()}) for {num_classes} classes")
@@ -321,7 +326,8 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
 
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
-                           label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None):
+                           label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None,
+                           manifest_path=None, use_finger_features=True, manifest_dir=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -356,176 +362,204 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     val_pose_files = []
     val_labels = []
 
-    dataset_paths = get_dataset_paths(num_classes)
-
-    # Check if using manifest-based loading (new structure)
-    if dataset_paths.get('use_manifests'):
-        print(f"LOADING: Using manifest-based loading (new scalable structure)")
-        pickle_pool = dataset_paths['pickle_pool']
-
-        # Load train data from train manifest
-        train_manifest_path = dataset_paths['train_manifest']
+    # When manifest_dir is provided, bypass get_dataset_paths (supports arbitrary class counts)
+    if manifest_dir and dataset_type == 'augmented':
+        print(f"LOADING: Using manifest-dir based loading (bypasses settings.json)")
+        train_manifest_path = manifest_path if manifest_path else str(Path(manifest_dir) / "train_manifest.json")
+        with open(train_manifest_path, 'r') as f:
+            train_manifest = json.load(f)
+        pickle_pool = augmented_path if augmented_path else train_manifest.get('pickle_pool', '')
         print(f"LOADING: Reading train manifest from {train_manifest_path}")
+        print(f"PICKLE-POOL: {pickle_pool}")
         all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool)
         print(f"FOUND: {len(all_pose_files)} train files")
 
-        # Load val data from val manifest
-        val_manifest_path = dataset_paths['val_manifest']
+        val_manifest_path = str(Path(manifest_dir) / "val_manifest.json")
         print(f"LOADING: Reading val manifest from {val_manifest_path}")
         val_pose_files, val_labels = load_from_manifest(val_manifest_path, pickle_pool)
         print(f"FOUND: {len(val_pose_files)} val files")
 
-        # Get target glosses from train manifest
-        with open(train_manifest_path, 'r') as f:
-            train_manifest = json.load(f)
         target_glosses = set(g.upper() for g in train_manifest['classes'].keys())
         print(f"TARGET: {len(target_glosses)} target classes from manifest")
-
-    elif dataset_type == 'augmented':
-        print(f"LOADING: Loading from BOTH original train AND augmented datasets (legacy)")
-
-        # OPTIMIZED: Load class mapping to determine target classes
-        class_mapping_path = dataset_paths.get('class_mapping')
-        if class_mapping_path and Path(class_mapping_path).exists():
-            print(f"LOADING: Reading class mapping from {class_mapping_path}")
-            with open(class_mapping_path, 'r') as f:
-                class_mapping = json.load(f)
-            target_glosses = set(g.upper() for g in class_mapping['classes'])
-            print(f"TARGET: {len(target_glosses)} target classes from mapping file")
-        else:
-            # Fallback: scan original train directory
-            print(f"LOADING: Class mapping not found, scanning original train directory...")
-            original_train_path = dataset_paths['train_original']
-            target_glosses = set()
-            for class_name in os.listdir(original_train_path):
-                class_dir_path = os.path.join(original_train_path, class_name)
-                if os.path.isdir(class_dir_path):
-                    target_glosses.add(class_name.upper())
-            print(f"TARGET: {len(target_glosses)} target classes from original train")
-
-        print(f"CLASSES: {sorted(list(target_glosses))}")
-
-        # 1. Load from ORIGINAL train directory
-        original_train_path = dataset_paths['train_original']
-        print(f"LOADING: Collecting original train files from {original_train_path}")
-
-        original_count = 0
-        # Use os.listdir to avoid Windows file handle issues
-        for class_name in os.listdir(original_train_path):
-            class_dir_path = os.path.join(original_train_path, class_name)
-            # Skip non-directories
-            if not os.path.isdir(class_dir_path):
-                continue
-
-            class_name_upper = class_name.upper()
-            # FILTER: Only load if this class is in target_glosses
-            if class_name_upper not in target_glosses:
-                continue
-
-            # OPTIMIZED: Just collect file paths, gloss = directory name
-            for filename in os.listdir(class_dir_path):
-                if filename.endswith('.pkl'):
-                    pkl_file = os.path.join(class_dir_path, filename)
-                    all_pose_files.append(pkl_file)
-                    all_labels.append(class_name_upper)
-                    original_count += 1
-
-        print(f"FOUND: {original_count} original train files from {len(target_glosses)} classes")
-
-        # Extract original video IDs from train split to prevent data leakage
-        original_video_ids = set()
-        for file_path in all_pose_files[-original_count:]:  # Last N files are the original train files
-            # Extract video ID from filename (e.g., "00623.pkl" -> "00623")
-            filename = os.path.basename(file_path)
-            video_id = filename.replace('.pkl', '')
-            original_video_ids.add(video_id)
-
-        print(f"FILTER: {len(original_video_ids)} unique original video IDs from train split")
-        print(f"FILTER: Augmented files will only include augmentations of these train videos")
-
-        # 2. Load from AUGMENTED pool using index
-        print(f"LOADING: Loading augmented files from pool using index...")
-
-        # Load index file for fast access
-        index_path = config.augmented_pool_index
-        if index_path.exists():
-            print(f"LOADING: Reading augmented pool index from {index_path}")
-            with open(index_path, 'r') as f:
-                augmented_index = json.load(f)
-            print(f"INDEX: Loaded index with {len(augmented_index)} classes")
-        else:
-            print(f"WARNING: Index file not found at {index_path}, falling back to directory scan")
-            augmented_index = None
-
-        augmented_count = 0
-        augmented_pool_path = Path(augmented_path)
-
-        if augmented_index:
-            # Fast path: use index (trust index, don't check exists to avoid Windows file handle limits)
-            for gloss_name in target_glosses:
-                # Try both lowercase and uppercase keys (index may have either)
-                gloss_key = gloss_name.lower()
-                if gloss_key not in augmented_index:
-                    gloss_key = gloss_name.upper()
-                if gloss_key in augmented_index:
-                    gloss_dir = augmented_pool_path / gloss_key
-                    for pkl_filename in augmented_index[gloss_key]:
-                        # FILTER: Only include if original video ID is in train split (prevent data leakage)
-                        # Augmented filename format: "aug_XX_VIDEOID.pkl"
-                        # Extract original video ID
-                        if pkl_filename.startswith('aug_'):
-                            parts = pkl_filename.replace('.pkl', '').split('_')
-                            if len(parts) >= 3:
-                                original_video_id = parts[2]
-                                if original_video_id in original_video_ids:
-                                    pkl_file = gloss_dir / pkl_filename
-                                    all_pose_files.append(str(pkl_file))
-                                    all_labels.append(gloss_name)
-                                    augmented_count += 1
-        else:
-            # Slow path: directory scan (fallback)
-            for gloss_name in target_glosses:
-                gloss_dir_path = os.path.join(augmented_path, gloss_name.lower())
-                if os.path.isdir(gloss_dir_path):
-                    for filename in os.listdir(gloss_dir_path):
-                        if filename.endswith('.pkl'):
-                            # FILTER: Only include if original video ID is in train split (prevent data leakage)
-                            # Augmented filename format: "aug_XX_VIDEOID.pkl"
-                            if filename.startswith('aug_'):
-                                parts = filename.replace('.pkl', '').split('_')
-                                if len(parts) >= 3:
-                                    original_video_id = parts[2]
-                                    if original_video_id in original_video_ids:
-                                        pkl_file = os.path.join(gloss_dir_path, filename)
-                                        all_pose_files.append(pkl_file)
-                                        all_labels.append(gloss_name)
-                                        augmented_count += 1
-
-        print(f"FOUND: {augmented_count} augmented files")
-        print(f"TOTAL: {len(all_pose_files)} files ({original_count} original + {augmented_count} augmented) for {len(target_glosses)} classes")
+        dataset_paths = {}  # empty — not needed for manifest-dir path
 
     else:
-        # Original dataset loading - load from specific train directory
         dataset_paths = get_dataset_paths(num_classes)
-        original_train_path = dataset_paths['train_original']
-        print(f"LOADING: Loading from original train dataset at {original_train_path}")
 
-        # OPTIMIZED: Just collect file paths, gloss = directory name, use os.listdir to avoid Windows issues
-        for class_name in os.listdir(original_train_path):
-            class_dir_path = os.path.join(original_train_path, class_name)
-            if os.path.isdir(class_dir_path):
+        # Check if using manifest-based loading (new structure)
+        # Only use manifests for augmented datasets; original dataset bypasses manifests
+        if dataset_paths.get('use_manifests') and dataset_type == 'augmented':
+            print(f"LOADING: Using manifest-based loading (new scalable structure)")
+            pickle_pool = dataset_paths['pickle_pool']
+
+            # Use custom manifest if provided via --manifest flag
+            train_manifest_path = manifest_path if manifest_path else dataset_paths['train_manifest']
+            if manifest_path:
+                print(f"MANIFEST: Using custom manifest (--manifest flag): {manifest_path}")
+            print(f"LOADING: Reading train manifest from {train_manifest_path}")
+            all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool)
+            print(f"FOUND: {len(all_pose_files)} train files")
+
+            # Load val data from val manifest
+            if manifest_dir:
+                val_manifest_path = str(Path(manifest_dir) / "val_manifest.json")
+            else:
+                val_manifest_path = dataset_paths['val_manifest']
+            print(f"LOADING: Reading val manifest from {val_manifest_path}")
+            val_pose_files, val_labels = load_from_manifest(val_manifest_path, pickle_pool)
+            print(f"FOUND: {len(val_pose_files)} val files")
+
+            # Get target glosses from train manifest
+            with open(train_manifest_path, 'r') as f:
+                train_manifest = json.load(f)
+            target_glosses = set(g.upper() for g in train_manifest['classes'].keys())
+            print(f"TARGET: {len(target_glosses)} target classes from manifest")
+
+        elif dataset_type == 'augmented':
+            print(f"LOADING: Loading from BOTH original train AND augmented datasets (legacy)")
+
+            # OPTIMIZED: Load class mapping to determine target classes
+            class_mapping_path = dataset_paths.get('class_mapping')
+            if class_mapping_path and Path(class_mapping_path).exists():
+                print(f"LOADING: Reading class mapping from {class_mapping_path}")
+                with open(class_mapping_path, 'r') as f:
+                    class_mapping = json.load(f)
+                target_glosses = set(g.upper() for g in class_mapping['classes'])
+                print(f"TARGET: {len(target_glosses)} target classes from mapping file")
+            else:
+                # Fallback: scan original train directory
+                print(f"LOADING: Class mapping not found, scanning original train directory...")
+                original_train_path = dataset_paths['train_original']
+                target_glosses = set()
+                for class_name in os.listdir(original_train_path):
+                    class_dir_path = os.path.join(original_train_path, class_name)
+                    if os.path.isdir(class_dir_path):
+                        target_glosses.add(class_name.upper())
+                print(f"TARGET: {len(target_glosses)} target classes from original train")
+
+            print(f"CLASSES: {sorted(list(target_glosses))}")
+
+            # 1. Load from ORIGINAL train directory
+            original_train_path = dataset_paths['train_original']
+            print(f"LOADING: Collecting original train files from {original_train_path}")
+
+            original_count = 0
+            # Use os.listdir to avoid Windows file handle issues
+            for class_name in os.listdir(original_train_path):
+                class_dir_path = os.path.join(original_train_path, class_name)
+                # Skip non-directories
+                if not os.path.isdir(class_dir_path):
+                    continue
+
                 class_name_upper = class_name.upper()
+                # FILTER: Only load if this class is in target_glosses
+                if class_name_upper not in target_glosses:
+                    continue
+
+                # OPTIMIZED: Just collect file paths, gloss = directory name
                 for filename in os.listdir(class_dir_path):
                     if filename.endswith('.pkl'):
                         pkl_file = os.path.join(class_dir_path, filename)
                         all_pose_files.append(pkl_file)
                         all_labels.append(class_name_upper)
+                        original_count += 1
 
-        print(f"FOUND: Total files found: {len(all_pose_files)}")
+            print(f"FOUND: {original_count} original train files from {len(target_glosses)} classes")
 
-        # Create target glosses from the data we actually loaded
-        target_glosses = set(all_labels)
-        print(f"TARGET: {len(target_glosses)} classes: {sorted(list(target_glosses))}")
+            # Extract original video IDs from train split to prevent data leakage
+            original_video_ids = set()
+            for file_path in all_pose_files[-original_count:]:  # Last N files are the original train files
+                # Extract video ID from filename (e.g., "00623.pkl" -> "00623")
+                filename = os.path.basename(file_path)
+                video_id = filename.replace('.pkl', '')
+                original_video_ids.add(video_id)
+
+            print(f"FILTER: {len(original_video_ids)} unique original video IDs from train split")
+            print(f"FILTER: Augmented files will only include augmentations of these train videos")
+
+            # 2. Load from AUGMENTED pool using index
+            print(f"LOADING: Loading augmented files from pool using index...")
+
+            # Load index file for fast access
+            index_path = config.augmented_pool_index
+            if index_path.exists():
+                print(f"LOADING: Reading augmented pool index from {index_path}")
+                with open(index_path, 'r') as f:
+                    augmented_index = json.load(f)
+                print(f"INDEX: Loaded index with {len(augmented_index)} classes")
+            else:
+                print(f"WARNING: Index file not found at {index_path}, falling back to directory scan")
+                augmented_index = None
+
+            augmented_count = 0
+            augmented_pool_path = Path(augmented_path)
+
+            if augmented_index:
+                # Fast path: use index (trust index, don't check exists to avoid Windows file handle limits)
+                for gloss_name in target_glosses:
+                    # Try both lowercase and uppercase keys (index may have either)
+                    gloss_key = gloss_name.lower()
+                    if gloss_key not in augmented_index:
+                        gloss_key = gloss_name.upper()
+                    if gloss_key in augmented_index:
+                        gloss_dir = augmented_pool_path / gloss_key
+                        for pkl_filename in augmented_index[gloss_key]:
+                            # FILTER: Only include if original video ID is in train split (prevent data leakage)
+                            # Augmented filename format: "aug_XX_VIDEOID.pkl"
+                            # Extract original video ID
+                            if pkl_filename.startswith('aug_'):
+                                parts = pkl_filename.replace('.pkl', '').split('_')
+                                if len(parts) >= 3:
+                                    original_video_id = parts[2]
+                                    if original_video_id in original_video_ids:
+                                        pkl_file = gloss_dir / pkl_filename
+                                        all_pose_files.append(str(pkl_file))
+                                        all_labels.append(gloss_name)
+                                        augmented_count += 1
+            else:
+                # Slow path: directory scan (fallback)
+                for gloss_name in target_glosses:
+                    gloss_dir_path = os.path.join(augmented_path, gloss_name.lower())
+                    if os.path.isdir(gloss_dir_path):
+                        for filename in os.listdir(gloss_dir_path):
+                            if filename.endswith('.pkl'):
+                                # FILTER: Only include if original video ID is in train split (prevent data leakage)
+                                # Augmented filename format: "aug_XX_VIDEOID.pkl"
+                                if filename.startswith('aug_'):
+                                    parts = filename.replace('.pkl', '').split('_')
+                                    if len(parts) >= 3:
+                                        original_video_id = parts[2]
+                                        if original_video_id in original_video_ids:
+                                            pkl_file = os.path.join(gloss_dir_path, filename)
+                                            all_pose_files.append(pkl_file)
+                                            all_labels.append(gloss_name)
+                                            augmented_count += 1
+
+            print(f"FOUND: {augmented_count} augmented files")
+            print(f"TOTAL: {len(all_pose_files)} files ({original_count} original + {augmented_count} augmented) for {len(target_glosses)} classes")
+
+        else:
+            # Original dataset loading - load from specific train directory
+            dataset_paths = get_dataset_paths(num_classes)
+            original_train_path = dataset_paths['train_original']
+            print(f"LOADING: Loading from original train dataset at {original_train_path}")
+
+            # OPTIMIZED: Just collect file paths, gloss = directory name, use os.listdir to avoid Windows issues
+            for class_name in os.listdir(original_train_path):
+                class_dir_path = os.path.join(original_train_path, class_name)
+                if os.path.isdir(class_dir_path):
+                    class_name_upper = class_name.upper()
+                    for filename in os.listdir(class_dir_path):
+                        if filename.endswith('.pkl'):
+                            pkl_file = os.path.join(class_dir_path, filename)
+                            all_pose_files.append(pkl_file)
+                            all_labels.append(class_name_upper)
+
+            print(f"FOUND: Total files found: {len(all_pose_files)}")
+
+            # Create target glosses from the data we actually loaded
+            target_glosses = set(all_labels)
+            print(f"TARGET: {len(target_glosses)} classes: {sorted(list(target_glosses))}")
 
     # Filter to only include target glosses
     filtered_files = []
@@ -559,7 +593,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     dataset_loader.id_to_gloss = id_to_gloss
 
     # Create model with selected architecture
-    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout)
+    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout, use_finger_features)
     model.to(device)
 
     # Use pre-split data if available, otherwise use the loaded training data
@@ -604,16 +638,19 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
 
     # Create datasets - NO runtime augmentation (all augmentation is pre-done)
     # Finger features are enabled by default for better hand shape recognition
+    cache_dir = getattr(args, 'cache_dir', None) if args else None
     train_dataset = WLASLOpenHandsDataset(
         train_files, train_labels, gloss_to_id,
-        MAX_SEQ_LENGTH, augment=False, use_finger_features=True
+        MAX_SEQ_LENGTH, augment=False, use_finger_features=use_finger_features,
+        cache_dir=cache_dir
     )
     print(f"AUGMENTATION: No runtime augmentation (using pre-generated augmented data)")
-    print(f"FINGER FEATURES: Enabled (30 derived hand shape features)")
+    print(f"FINGER FEATURES: {'Enabled (30 derived hand shape features)' if use_finger_features else 'Disabled (faster training)'}")
 
     val_dataset = WLASLOpenHandsDataset(
         val_files, val_labels, gloss_to_id,
-        MAX_SEQ_LENGTH, augment=False, use_finger_features=True
+        MAX_SEQ_LENGTH, augment=False, use_finger_features=use_finger_features,
+        cache_dir=cache_dir
     )
 
     # CLASS BALANCING: Using shuffle for now (WeightedRandomSampler causes hang)
@@ -1025,13 +1062,46 @@ if __name__ == "__main__":
                        help='Number of warmup epochs (default: 10%% of total epochs). Set to 0 to disable warmup')
     parser.add_argument('--grad-clip', type=float, default=1.0,
                        help='Gradient clipping max norm (default: 1.0). Prevents gradient explosions')
+    parser.add_argument('--no-finger-features', action='store_true',
+                       help='Disable finger feature extraction (faster training, may reduce accuracy)')
     parser.add_argument('--force-fresh', action='store_true',
                        help='Ignore any existing checkpoint and start fresh training')
+    parser.add_argument('--manifest', type=str, default=None,
+                       help='Path to custom train manifest (overrides settings.json). Use for targeted augmentation experiments.')
+    parser.add_argument('--manifest-dir', type=str, default=None,
+                       help='Path to directory containing train/val/test manifests. '
+                            'Overrides settings.json lookup entirely. Auto-detects class count.')
+    parser.add_argument('--cache-dir', type=str, default=None,
+                       help='Directory to save/load precomputed dataset cache (.pt files). '
+                            'Persists across runs to skip the 30min precomputation step.')
 
     args = parser.parse_args()
 
-    # Auto-generate augmented path from config if not provided
-    if args.dataset == 'augmented' and not args.augmented_path:
+    # If --manifest-dir is provided, override manifest and dataset settings
+    if args.manifest_dir:
+        from pathlib import Path
+        manifest_dir = Path(args.manifest_dir)
+        train_manifest = manifest_dir / "train_manifest.json"
+        if not train_manifest.exists():
+            print(f"ERROR: train_manifest.json not found in {manifest_dir}")
+            sys.exit(1)
+        # Auto-detect class count and pickle pool from manifest
+        import json as _json
+        with open(train_manifest, 'r') as f:
+            manifest_data = _json.load(f)
+        detected_classes = len(manifest_data.get('classes', {}))
+        print(f"MANIFEST-DIR: {manifest_dir}")
+        print(f"AUTO-DETECTED: {detected_classes} classes from manifest")
+        args.classes = detected_classes
+        args.manifest = str(train_manifest)
+        args.dataset = 'augmented'
+        # Extract pickle_pool from manifest if present
+        if 'pickle_pool' in manifest_data:
+            args.augmented_path = manifest_data['pickle_pool']
+            print(f"PICKLE-POOL: {args.augmented_path} (from manifest)")
+
+    # Auto-generate augmented path from config if not provided (skip if manifest-dir already set it)
+    if args.dataset == 'augmented' and not args.augmented_path and not args.manifest_dir:
         dataset_paths = get_dataset_paths(args.classes)
         # Use pickle_pool for manifest-based structure, fall back to train_augmented for legacy
         if dataset_paths.get('use_manifests'):
@@ -1096,7 +1166,10 @@ if __name__ == "__main__":
                 warmup_epochs=args.warmup_epochs,
                 grad_clip=args.grad_clip,
                 force_fresh=args.force_fresh,
-                weight_decay=args.weight_decay
+                weight_decay=args.weight_decay,
+                manifest_path=args.manifest,
+                use_finger_features=not args.no_finger_features,
+                manifest_dir=args.manifest_dir
             )
 
             print()

@@ -21,7 +21,7 @@ from collections import defaultdict
 # The two-phase approach ensures exactly this many samples in train:
 #   Phase 1: Generate base augmentations for pool (enough for val/test)
 #   Phase 2: After splitting, augment train families to reach this target
-TARGET_TRAIN_SAMPLES_PER_CLASS = 50
+TARGET_TRAIN_SAMPLES_PER_CLASS = 200
 
 # Legacy setting (kept for backward compatibility)
 TARGET_SAMPLES_PER_CLASS = TARGET_TRAIN_SAMPLES_PER_CLASS
@@ -32,13 +32,13 @@ TARGET_SAMPLES_PER_CLASS = TARGET_TRAIN_SAMPLES_PER_CLASS
 # Generate enough augmentations so val/test have reasonable data
 # Val+Test get ~30% of families, each family needs some samples
 # Base augmentations: moderate amount, not trying to hit train target yet
-BASE_AUGMENTATIONS_PER_VIDEO = 15  # Creates families of size 16 (1 orig + 15 aug)
+BASE_AUGMENTATIONS_PER_VIDEO = 60  # Creates families of size 61 (1 orig + 60 aug)
 
 # Minimum base augmentations (ensures some variety even for large classes)
 MIN_BASE_AUGMENTATIONS = 5
 
 # Maximum base augmentations in phase 1 (will add more in phase 2 for train)
-MAX_BASE_AUGMENTATIONS = 30
+MAX_BASE_AUGMENTATIONS = 120
 
 # -----------------------------------------------------------------------------
 # Phase 2: Train Balancing
@@ -142,7 +142,36 @@ AUGMENTATION_TECHNIQUES = {
         }
     },
 
-    # Phase 7: Combinations (multiple transforms at once)
+    # Phase 7: Temporal warping (non-uniform speed within a sign)
+    'temporal_warp': {
+        'enabled': True,
+        'weight': 2,
+        'params': {
+            'warp_strengths': [0.2, 0.3, 0.5],  # Mild, moderate, strong
+        }
+    },
+
+    # Phase 8: Signer proportion variation (different body types)
+    'signer_proportion': {
+        'enabled': True,
+        'weight': 2,
+        'params': {
+            'arm_scale_range': (0.85, 1.15),    # ±15% arm length
+            'hand_scale_range': (0.80, 1.20),   # ±20% hand size
+            'torso_scale_range': (0.90, 1.10),  # ±10% torso
+        }
+    },
+
+    # Phase 9: Pseudo-3D viewpoint rotation (camera angle variation)
+    'viewpoint_3d': {
+        'enabled': True,
+        'weight': 2,
+        'params': {
+            'angle_range': 0.15,  # ~8.5 degrees max rotation
+        }
+    },
+
+    # Phase 10: Combinations (multiple transforms at once)
     'combinations': {
         'enabled': True,
         'weight': 2,

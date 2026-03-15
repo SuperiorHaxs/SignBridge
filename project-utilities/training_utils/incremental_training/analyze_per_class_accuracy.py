@@ -407,6 +407,50 @@ def print_summary(report):
     print(f"\nDrop {len(drop)} classes: {', '.join(drop)}")
 
 
+def load_validation_from_manifest(manifest_dir: Path, model_id_to_gloss: dict, max_seq_length: int = 256):
+    """
+    Load validation dataset directly from a manifest directory.
+    Bypasses config.dataset_splits — works for any class count.
+    """
+    val_manifest_path = manifest_dir / "val_manifest.json"
+    if not val_manifest_path.exists():
+        raise FileNotFoundError(f"val_manifest.json not found in {manifest_dir}")
+
+    with open(val_manifest_path, 'r') as f:
+        manifest = json.load(f)
+
+    pickle_pool = Path(manifest['pickle_pool'])
+
+    # Build class mappings from model
+    gloss_to_id = {gloss.upper(): int(id_) for id_, gloss in model_id_to_gloss.items()}
+    id_to_gloss = {int(id_): gloss.upper() for id_, gloss in model_id_to_gloss.items()}
+
+    file_paths = []
+    labels = []
+
+    for gloss, families in manifest['classes'].items():
+        gloss_upper = gloss.upper()
+        if gloss_upper not in gloss_to_id:
+            print(f"  Warning: Skipping class '{gloss}' — not in model")
+            continue
+        gloss_dir = pickle_pool / gloss.lower()
+        for family in families:
+            for filename in family['files']:
+                file_path = gloss_dir / filename
+                if file_path.exists():
+                    file_paths.append(str(file_path))
+                    labels.append(gloss_upper)
+
+    print(f"Loaded {len(file_paths)} validation samples from manifest-dir")
+
+    val_dataset = WLASLOpenHandsDataset(
+        file_paths, labels, gloss_to_id,
+        max_seq_length, augment=False, use_finger_features=True
+    )
+
+    return val_dataset, gloss_to_id, id_to_gloss
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Analyze per-class accuracy of a trained model",
@@ -415,8 +459,10 @@ def main():
 
     parser.add_argument("--model-dir", "-m", type=Path, required=True,
                         help="Path to model directory (contains config.json, pytorch_model.bin)")
-    parser.add_argument("--num-classes", "-n", type=int, required=True,
-                        help="Number of classes the model was trained on")
+    parser.add_argument("--num-classes", "-n", type=int, default=None,
+                        help="Number of classes the model was trained on (auto-detected with --manifest-dir)")
+    parser.add_argument("--manifest-dir", type=Path, default=None,
+                        help="Path to directory with val_manifest.json (bypasses settings.json, supports any class count)")
     parser.add_argument("--threshold", "-t", type=float, default=80.0,
                         help="Top-1 accuracy threshold for keeping classes (default: 80%%)")
     parser.add_argument("--top3-threshold", type=float, default=100.0,
@@ -435,7 +481,6 @@ def main():
         args.output = Path(__file__).parent / "accuracy_report.json"
 
     print(f"Analyzing model: {args.model_dir}")
-    print(f"Number of classes: {args.num_classes}")
     print(f"Selection criteria: top1 >= {args.threshold}% AND top3 >= {args.top3_threshold}%")
 
     # Setup device
@@ -446,10 +491,20 @@ def main():
     model, id_to_gloss_from_model, model_config = load_model_from_dir(args.model_dir)
     model = model.to(device)
 
-    # Load validation dataset using model's class mapping
-    val_dataset, gloss_to_id, id_to_gloss = load_validation_dataset(
-        args.num_classes, id_to_gloss_from_model, args.max_seq_length
-    )
+    # Load validation dataset
+    if args.manifest_dir:
+        print(f"Using manifest-dir: {args.manifest_dir}")
+        val_dataset, gloss_to_id, id_to_gloss = load_validation_from_manifest(
+            args.manifest_dir, id_to_gloss_from_model, args.max_seq_length
+        )
+    else:
+        if args.num_classes is None:
+            print("ERROR: --num-classes required when not using --manifest-dir")
+            return 1
+        print(f"Number of classes: {args.num_classes}")
+        val_dataset, gloss_to_id, id_to_gloss = load_validation_dataset(
+            args.num_classes, id_to_gloss_from_model, args.max_seq_length
+        )
 
     val_loader = DataLoader(
         val_dataset, batch_size=args.batch_size,

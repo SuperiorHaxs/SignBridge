@@ -146,5 +146,8 @@ models/openhands-modernized/production-models/*/class_index_mapping.json
 # Incremental training artifacts
 project-utilities/training_utils/incremental_training/*.json
 
+# Kaggle staging directory
+kaggle-staging/
+
 # Junk files
 nul

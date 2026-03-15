@@ -13,7 +13,7 @@ fig, ax = plt.subplots(figsize=(8, 5.5))
 
 # Data
 categories = ['Top-1 Accuracy']
-baseline_27 = [71.57]
+baseline_27 = [41.23]
 openhands_hd = [80.97]
 
 x = [0]
@@ -36,7 +36,7 @@ for bar in bars2:
 bracket_y = 85
 ax.plot([-width/2, -width/2, width/2, width/2], [83, bracket_y, bracket_y, 83],
         color='#333333', linewidth=1.5)
-ax.text(0, bracket_y + 0.5, '+9.4 pp\n(z = 4.14, p < 0.0001 ***)',
+ax.text(0, bracket_y + 0.5, '+39.74 pp\n(z = 18.23, p < 0.0001 ***)',
         ha='center', fontsize=12, fontweight='bold', color='#333333')
 
 ax.set_ylabel('Accuracy (%)', fontsize=15, fontweight='bold')

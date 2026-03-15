@@ -1,0 +1,169 @@
+TASK: Generate a meaningful English sentence from ASL video sign predictions using a generate-then-verify approach.
+
+You will SELECT words from the predictions, BUILD a sentence, SCORE it for plausibility, and REVISE if needed — all in one step.
+
+═══════════════════════════════════════
+STEP 1: SELECT WORDS & BUILD SENTENCE
+═══════════════════════════════════════
+
+HOW TO SELECT WORDS:
+
+1. MEANING FIRST: The sentence must make logical, real-world sense — not just be grammatical.
+   - "I give bowling an orange" is grammatically correct but meaningless
+   - "Give the apple and orange" makes real-world sense
+   - Ask: Would a person actually say this?
+
+2. TRUST CONFIDENCE WITH SEMANTIC CHECK: High-confidence words are usually correct, BUT:
+   - If the top prediction creates a nonsensical meaning, check alternatives
+   - VERB-OBJECT COMPATIBILITY: Transfer verbs (give/take) need objects (apple, book), not activities (bowling, swimming)
+   - TEMPORAL PAIRING: When 'before'/'after'/'later' appears, scan ALL positions for time nouns (year, day, week) — use them even at low confidence
+   - POSITION 1: Prefer NOUNS over VERBS at sentence start (most sentences aren't commands)
+   - PROPER NOUNS: Prefer specific nouns (africa, thursday) over generic ones (man) when they add meaning
+
+3. USE ALTERNATIVES FOR MEANING: Pick lower-confidence options when the high-confidence word makes the sentence meaningless.
+
+4. SKIP ONLY AS LAST RESORT: Only skip a position if ALL options are clearly wrong.
+
+5. POSITION FLEXIBILITY: Arrange selected words in any grammatical order.
+
+6. RELATIONAL NOUNS: Add "my" or "the" for family words ("mother help" → "My mother helps...").
+
+7. VERB COMPLEMENTATION: Use correct verb patterns (enjoy + gerund, want + infinitive).
+
+RULES:
+- Select ONE word per position, use ALL positions when possible
+- NO DUPLICATE WORDS across positions (keep at highest-confidence position, use alternatives elsewhere)
+- Only add grammatical filler (articles, prepositions) — NO negations or meaning-altering modals
+- MEANING OVER CONFIDENCE: A sensible sentence beats a high-confidence nonsensical one
+
+═══════════════════════════════════════
+STEP 2: SELF-SCORE FOR PLAUSIBILITY
+═══════════════════════════════════════
+
+After building your sentence, score it on three axes (0-100 each):
+
+1. GRAMMATICAL: Is it grammatically correct? Proper subject-verb agreement, tense, articles?
+2. SEMANTIC: Does it describe something that could plausibly happen in the real world?
+3. NATURALNESS: Does it sound like something a fluent English speaker would say?
+
+Scoring guide:
+- 90-100: Perfect or near-perfect English
+- 70-89: Minor issues but clearly understandable
+- 50-69: Noticeable errors but meaning is recoverable
+- 30-49: Significant problems, meaning is unclear
+- 0-29: Largely incomprehensible or nonsensical
+
+═══════════════════════════════════════
+STEP 3: REVISE IF SCORE IS LOW
+═══════════════════════════════════════
+
+If ANY sub-score falls below 60, you MUST revise:
+- Identify which axis failed and why
+- Re-examine your word selections — could different alternatives fix the issue?
+- Rebuild the sentence with revised selections
+- Re-score the revised version
+
+If revision isn't possible (all alternatives are worse), keep the original and note it.
+
+{context_section}
+
+Word Predictions:
+{gloss_details}
+
+═══════════════════════════════════════
+EXAMPLES
+═══════════════════════════════════════
+
+Example 1 - High plausibility (no revision needed):
+Position 1: 'mother' (84%), 'blue' (6%), 'go' (2%)
+Position 2: 'help' (99%), 'doctor' (1%), 'book' (0%)
+Position 3: 'child' (70%), 'candy' (16%), 'deaf' (11%)
+
+{{
+  "selections": ["mother", "help", "child"],
+  "sentence": "My mother helps the child.",
+  "plausibility": {{"grammatical": 95, "semantic": 92, "naturalness": 94}},
+  "revised": false
+}}
+
+Example 2 - Self-critique catches semantic issue → revise:
+Position 1: 'give' (85%), 'want' (8%), 'take' (4%)
+Position 2: 'swimming' (40%), 'book' (32%), 'apple' (22%)
+Position 3: 'friend' (70%), 'man' (20%), 'son' (8%)
+
+First attempt: "Give swimming to my friend."
+Self-score: grammatical=80, semantic=25, naturalness=30
+→ Semantic failure: can't give an activity. REVISE.
+
+{{
+  "selections": ["give", "book", "friend"],
+  "sentence": "Give the book to my friend.",
+  "plausibility": {{"grammatical": 95, "semantic": 90, "naturalness": 92}},
+  "revised": true,
+  "revision_reason": "Semantic: 'swimming' is not a giveable object. Replaced with 'book' (32%)."
+}}
+
+Example 3 - Self-critique catches unnatural phrasing → revise:
+Position 1: 'help' (53%), 'year' (27%), 'play' (12%)
+Position 2: 'before' (90%), 'after' (5%), 'during' (3%)
+Position 3: 'change' (75%), 'different' (15%), 'new' (8%)
+
+First attempt: "Help before the change."
+Self-score: grammatical=75, semantic=60, naturalness=40
+→ Naturalness failure: sounds like an incomplete command. REVISE.
+
+{{
+  "selections": ["year", "before", "change"],
+  "sentence": "A year before the change.",
+  "plausibility": {{"grammatical": 88, "semantic": 85, "naturalness": 82}},
+  "revised": true,
+  "revision_reason": "Naturalness: 'Help before the change' sounds like a command fragment. 'year' pairs naturally with 'before'."
+}}
+
+Example 4 - Handle duplicates:
+Position 1: 'tall' (70%), 'son' (20%), 'man' (8%)
+Position 2: 'change' (55%), 'grow' (25%), 'big' (15%)
+Position 3: 'tall' (80%), 'different' (12%), 'new' (5%)
+
+{{
+  "selections": ["son", "grow", "tall"],
+  "sentence": "My son is growing tall.",
+  "plausibility": {{"grammatical": 95, "semantic": 95, "naturalness": 96}},
+  "revised": false
+}}
+
+Example 5 - All alternatives are bad (keep best effort, flag it):
+Position 1: 'bowling' (30%), 'swimming' (28%), 'basketball' (25%)
+Position 2: 'give' (80%), 'take' (12%), 'want' (5%)
+Position 3: 'purple' (35%), 'color' (30%), 'blue' (20%)
+
+{{
+  "selections": ["basketball", "give", "color"],
+  "sentence": "Give the basketball its color.",
+  "plausibility": {{"grammatical": 85, "semantic": 55, "naturalness": 50}},
+  "revised": true,
+  "revision_reason": "All position 1 options are activities with transfer verb 'give'. Best effort: 'basketball' as a physical object you can hand someone.",
+  "low_confidence": true
+}}
+
+═══════════════════════════════════════
+OUTPUT FORMAT (JSON only)
+═══════════════════════════════════════
+
+{{
+  "selections": ["word1", "word2", "word3"],
+  "sentence": "Your meaningful sentence here.",
+  "plausibility": {{"grammatical": <int>, "semantic": <int>, "naturalness": <int>}},
+  "revised": <true|false>,
+  "revision_reason": "<why you revised, or omit if not revised>",
+  "low_confidence": <true|false>
+}}
+
+Requirements:
+- "selections" = one word from each position (use all positions when possible)
+- "sentence" = meaningful sentence using ALL selected words
+- "plausibility" = your honest self-assessment on 3 axes (0-100 each)
+- "revised" = true if you changed your initial word choices after self-scoring
+- "revision_reason" = explanation of what failed and how you fixed it (only if revised)
+- "low_confidence" = true only if you had to skip positions or all options were poor
+- Output ONLY the JSON object
