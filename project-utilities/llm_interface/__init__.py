@@ -32,7 +32,10 @@ from .llm_interface import (
     LLMInvalidResponseError
 )
 
-from .providers import HuggingFaceProvider
+try:
+    from .providers import HuggingFaceProvider
+except (ImportError, Exception):
+    HuggingFaceProvider = None  # openai not installed
 from .llm_factory import create_llm_provider, get_current_model_info
 
 __all__ = [

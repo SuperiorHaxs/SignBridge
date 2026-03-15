@@ -1,0 +1,1211 @@
+{% extends "base.html" %}
+
+{% block title %}SignBridge — Doctor Demo{% endblock %}
+
+{% block head %}
+<style>
+    /* ── Phase container ── */
+    .demo-phase { display: none; }
+    .demo-phase.active { display: flex; }
+
+    /* ══════════════════════════════════════════
+       PHASE 1: LIVE CONVERSATION
+       ══════════════════════════════════════════ */
+    .conversation-container {
+        gap: 20px;
+        height: calc(100vh - 140px);
+        padding: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* ── Camera feed ── */
+    .camera-area {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .camera-panel {
+        flex: 1;
+        background: #1a1a2e;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .camera-label {
+        padding: 8px 16px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        background: #2e1e5f;
+        color: #b07cf0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .recording-badge {
+        display: none;
+        background: #ff4444;
+        color: #fff;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        animation: pulse 1s infinite;
+    }
+
+    .recording-badge.active { display: inline-block; }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    .camera-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        background: #0d0d1a;
+        min-height: 300px;
+    }
+
+    .camera-content video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scaleX(-1);
+    }
+
+    .camera-placeholder {
+        color: #555;
+        font-size: 0.95rem;
+        text-align: center;
+        padding: 20px;
+    }
+
+    /* Recording overlay */
+    .recording-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        border: 3px solid #ff4444;
+        border-radius: 0;
+        pointer-events: none;
+        z-index: 5;
+    }
+    .recording-overlay.active { display: block; }
+
+    /* Caption / status bar */
+    .status-bar {
+        padding: 12px 16px;
+        min-height: 50px;
+        font-size: 0.95rem;
+        background: #111122;
+        color: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .status-bar .gloss-text {
+        color: #6c8cff;
+        font-family: monospace;
+        font-weight: 600;
+        letter-spacing: 1px;
+    }
+
+    .status-bar .sentence-text {
+        color: #4caf80;
+        font-weight: 500;
+    }
+
+    .status-bar .prompt-text {
+        color: #888;
+        font-style: italic;
+    }
+
+    .status-bar .processing-text {
+        color: #f0a050;
+        animation: pulse 1s infinite;
+    }
+
+    /* ── Transcript panel ── */
+    .transcript-panel {
+        flex: 1;
+        background: #13132a;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        min-width: 300px;
+        max-width: 380px;
+        border: 1px solid #1e1e3a;
+    }
+
+    .transcript-header {
+        padding: 14px 18px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border-bottom: 1px solid #1e1e3a;
+        color: #aaa;
+    }
+
+    .transcript-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .chat-msg {
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        max-width: 90%;
+        animation: fadeInUp 0.4s ease;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .chat-msg.doctor {
+        background: #1e3a5f;
+        color: #c0d8f0;
+        align-self: flex-start;
+        border-bottom-left-radius: 3px;
+    }
+
+    .chat-msg.patient {
+        background: #2e1e5f;
+        color: #d0c0f0;
+        align-self: flex-end;
+        border-bottom-right-radius: 3px;
+    }
+
+    .chat-msg .msg-speaker {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+        opacity: 0.7;
+    }
+
+    .chat-msg.doctor .msg-speaker { color: #7cb3f0; }
+    .chat-msg.patient .msg-speaker { color: #b07cf0; }
+
+    /* ── Controls bar ── */
+    .controls-bar {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 20px;
+        background: #0d0d1a;
+        border-top: 1px solid #1e1e3a;
+    }
+
+    .ctrl-btn {
+        padding: 10px 28px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .ctrl-btn.primary {
+        background: #4a6cf7;
+        color: #fff;
+    }
+    .ctrl-btn.primary:hover { background: #3a5ce5; }
+    .ctrl-btn.primary:disabled { background: #333; opacity: 0.5; cursor: not-allowed; }
+
+    .ctrl-btn.secondary {
+        background: #2a2a50;
+        color: #aaa;
+    }
+    .ctrl-btn.secondary:hover { background: #3a3a60; color: #fff; }
+
+    .progress-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 20px 8px;
+        font-size: 0.8rem;
+        color: #666;
+    }
+
+    .progress-bar {
+        flex: 1;
+        height: 4px;
+        background: #1e1e3a;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .progress-bar .fill {
+        height: 100%;
+        background: #4a6cf7;
+        transition: width 0.5s ease;
+        border-radius: 2px;
+    }
+
+    /* ══════════════════════════════════════════
+       PHASE 2: BREAKDOWN
+       ══════════════════════════════════════════ */
+    .breakdown-container {
+        flex-direction: column;
+        padding: 20px;
+        max-width: 1100px;
+        margin: 0 auto;
+        gap: 24px;
+    }
+
+    .breakdown-header {
+        text-align: center;
+        padding: 20px 0;
+    }
+
+    .breakdown-header h2 {
+        color: #e0e0e0;
+        font-size: 1.4rem;
+        margin-bottom: 8px;
+    }
+
+    .breakdown-header p {
+        color: #888;
+        font-size: 0.95rem;
+    }
+
+    /* Sentence selector tabs */
+    .sentence-tabs {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        padding: 10px 0;
+    }
+
+    .sentence-tab {
+        padding: 10px 24px;
+        background: #1a1a2e;
+        border: 1px solid #2a2a50;
+        border-radius: 8px;
+        color: #aaa;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .sentence-tab.active {
+        background: #2e1e5f;
+        border-color: #6c63ff;
+        color: #d0c0f0;
+    }
+
+    .sentence-tab:hover { border-color: #4a6cf7; }
+
+    /* Pipeline steps */
+    .pipeline-section {
+        display: none;
+    }
+    .pipeline-section.active { display: block; }
+
+    .pipeline-step {
+        background: #13132a;
+        border-radius: 12px;
+        border: 1px solid #1e1e3a;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .step-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        background: #1a1a2e;
+        border-bottom: 1px solid #1e1e3a;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #4a6cf7;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+    }
+
+    .step-title {
+        font-weight: 600;
+        color: #d0d0d0;
+        font-size: 0.95rem;
+    }
+
+    .step-content {
+        padding: 18px;
+    }
+
+    /* Segment cards in breakdown */
+    .segment-grid {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .segment-card {
+        background: #1a1a2e;
+        border-radius: 10px;
+        border: 1px solid #2a2a50;
+        overflow: hidden;
+        width: 180px;
+        text-align: center;
+    }
+
+    .segment-card video {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        background: #0d0d1a;
+    }
+
+    .segment-card .seg-label {
+        padding: 8px;
+        font-size: 0.8rem;
+        color: #888;
+    }
+
+    .segment-card .seg-gloss {
+        padding: 4px 8px 10px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #6c8cff;
+        font-family: monospace;
+        text-transform: uppercase;
+    }
+
+    /* Prediction cards */
+    .prediction-card {
+        background: #1a1a2e;
+        border-radius: 10px;
+        border: 1px solid #2a2a50;
+        overflow: hidden;
+        width: 200px;
+    }
+
+    .prediction-card video {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        background: #0d0d1a;
+    }
+
+    .prediction-card .pred-info {
+        padding: 10px 12px;
+    }
+
+    .prediction-card .pred-top1 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #4caf80;
+        margin-bottom: 6px;
+    }
+
+    .confidence-bar {
+        height: 6px;
+        background: #1e1e3a;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .confidence-bar .conf-fill {
+        height: 100%;
+        background: #4caf80;
+        border-radius: 3px;
+        transition: width 0.5s ease;
+    }
+
+    .top-k-list {
+        font-size: 0.75rem;
+        color: #777;
+    }
+
+    .top-k-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 0;
+    }
+
+    /* Construction display */
+    .construction-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+
+    .construct-box {
+        background: #1a1a2e;
+        border-radius: 10px;
+        border: 1px solid #2a2a50;
+        padding: 20px 28px;
+        text-align: center;
+        min-width: 200px;
+    }
+
+    .construct-box .box-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+
+    .construct-box .box-content {
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .construct-box.raw .box-content {
+        color: #6c8cff;
+        font-family: monospace;
+    }
+
+    .construct-box.llm .box-content {
+        color: #4caf80;
+    }
+
+    .construct-arrow {
+        font-size: 1.5rem;
+        color: #4a6cf7;
+    }
+
+    /* Back button */
+    .breakdown-nav {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        padding: 20px 0;
+    }
+
+    /* Step-through controls for breakdown */
+    .step-controls {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 0;
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+        .conversation-container {
+            flex-direction: column;
+            height: auto;
+            padding: 10px;
+            gap: 12px;
+        }
+
+        .camera-area { flex: none; }
+
+        .camera-panel { min-height: 250px; }
+        .camera-content { min-height: 200px; }
+
+        .camera-label {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+
+        .status-bar {
+            padding: 8px 12px;
+            min-height: 36px;
+            font-size: 0.85rem;
+        }
+
+        .transcript-panel {
+            flex: none;
+            min-width: unset;
+            max-width: 100%;
+            max-height: 250px;
+        }
+
+        .transcript-messages {
+            padding: 10px;
+            gap: 8px;
+        }
+
+        .chat-msg {
+            font-size: 0.85rem;
+            padding: 8px 10px;
+        }
+
+        .controls-bar {
+            padding: 8px 10px;
+            gap: 8px;
+        }
+
+        .ctrl-btn {
+            padding: 8px 20px;
+            font-size: 0.85rem;
+        }
+
+        .breakdown-container { padding: 10px; }
+
+        .segment-grid { gap: 10px; }
+        .segment-card { width: 140px; }
+        .segment-card video { height: 90px; }
+
+        .prediction-card { width: 160px; }
+        .prediction-card video { height: 90px; }
+
+        .construction-display { gap: 12px; }
+        .construct-box { padding: 14px 18px; min-width: 160px; }
+
+        .sentence-tabs { flex-wrap: wrap; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════
+     PHASE 1: LIVE CONVERSATION
+     ══════════════════════════════════════════ -->
+<div class="demo-phase conversation-container active" id="phaseConversation">
+    <!-- Camera feed -->
+    <div class="camera-area">
+        <div class="camera-panel">
+            <div class="camera-label">
+                <span>Patient Camera</span>
+                <span class="recording-badge" id="recordingBadge">REC</span>
+            </div>
+            <div class="camera-content">
+                <div class="camera-placeholder" id="cameraPlaceholder">Camera will appear when demo starts</div>
+                <video id="cameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
+                <div class="recording-overlay" id="recordingOverlay"></div>
+            </div>
+            <div class="status-bar" id="statusBar">
+                <span class="prompt-text">You are the doctor. Press "Start Conversation" to begin.</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-bar">
+            <button class="ctrl-btn primary" id="btnStart">Start Conversation</button>
+            <button class="ctrl-btn secondary" id="btnRestart" style="display:none">Restart</button>
+        </div>
+        <div class="progress-row">
+            <span id="progressLabel">Ready</span>
+            <div class="progress-bar"><div class="fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+    </div>
+
+    <!-- Transcript -->
+    <div class="transcript-panel">
+        <div class="transcript-header">Live Transcript</div>
+        <div class="transcript-messages" id="transcriptMessages"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     PHASE 2: BREAKDOWN
+     ══════════════════════════════════════════ -->
+<div class="demo-phase breakdown-container" id="phaseBreakdown">
+    <div class="breakdown-header">
+        <h2>How Does SignBridge Work?</h2>
+        <p>Let's break down how SignBridge translated the patient's signs into English sentences.</p>
+    </div>
+
+    <!-- Sentence selector -->
+    <div class="sentence-tabs" id="sentenceTabs"></div>
+
+    <!-- Pipeline sections (one per sentence) -->
+    <div id="pipelineSections"></div>
+
+    <div class="breakdown-nav">
+        <button class="ctrl-btn secondary" id="btnBackToConvo">Back to Conversation</button>
+        <button class="ctrl-btn secondary" id="btnRestartAll">Restart Demo</button>
+    </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════════
+let conversation = null;
+let currentTurn = 0;
+let isPlaying = false;
+let conversationHistory = [];
+let cameraStream = null;
+
+// Preset demo samples that correspond to doctor demo sentences
+const BREAKDOWN_SAMPLES = [
+    { sampleId: 'time-son-go-bed-k', label: 'Time Son Go Bed' },
+    { sampleId: 'work-full-time-doctor-k', label: 'Work Full-Time Doctor' }
+];
+let breakdownData = []; // loaded from API
+
+// DOM refs
+const phaseConversation = document.getElementById('phaseConversation');
+const phaseBreakdown = document.getElementById('phaseBreakdown');
+const btnStart = document.getElementById('btnStart');
+const btnRestart = document.getElementById('btnRestart');
+const transcriptMessages = document.getElementById('transcriptMessages');
+const cameraFeed = document.getElementById('cameraFeed');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+const statusBar = document.getElementById('statusBar');
+const recordingBadge = document.getElementById('recordingBadge');
+const recordingOverlay = document.getElementById('recordingOverlay');
+const progressFill = document.getElementById('progressFill');
+const progressLabel = document.getElementById('progressLabel');
+
+// ══════════════════════════════════════════════════════════════
+// CAMERA
+// ══════════════════════════════════════════════════════════════
+async function startCamera() {
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+        });
+        cameraFeed.srcObject = cameraStream;
+        cameraFeed.style.display = 'block';
+        cameraPlaceholder.style.display = 'none';
+    } catch (e) {
+        console.log('Camera not available:', e);
+        cameraPlaceholder.textContent = 'Camera not available — demo will continue without video';
+    }
+}
+
+function stopCamera() {
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+// TEXT-TO-SPEECH
+// ══════════════════════════════════════════════════════════════
+function speak(text) {
+    return new Promise(resolve => {
+        if (!('speechSynthesis' in window)) {
+            resolve();
+            return;
+        }
+
+        // Cancel any ongoing speech first
+        speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        utterance.onend = () => { clearTimeout(safetyTimeout); resolve(); };
+        utterance.onerror = () => { clearTimeout(safetyTimeout); resolve(); };
+
+        // Safety timeout — if TTS never fires onend, resolve after estimated duration
+        const estimatedMs = Math.max(text.split(' ').length * 400, 2000);
+        const safetyTimeout = setTimeout(() => {
+            console.log('TTS safety timeout');
+            speechSynthesis.cancel();
+            resolve();
+        }, estimatedMs + 3000);
+
+        speechSynthesis.speak(utterance);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// LOAD CONVERSATION
+// ══════════════════════════════════════════════════════════════
+async function loadConversation() {
+    const resp = await fetch('/api/doctor-demo/conversation');
+    conversation = await resp.json();
+
+    progressLabel.textContent = `${conversation.turns.length} turns ready`;
+
+    // Pre-load breakdown sample metadata
+    for (const sample of BREAKDOWN_SAMPLES) {
+        try {
+            const resp = await fetch(`/api/samples/${sample.sampleId}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                breakdownData.push({ ...sample, metadata: data });
+            }
+        } catch (e) {
+            console.log('Failed to load breakdown sample:', sample.sampleId, e);
+        }
+    }
+}
+loadConversation();
+
+// ══════════════════════════════════════════════════════════════
+// SIGN VIDEO PLAYBACK (plays sign bank videos in camera area)
+// ══════════════════════════════════════════════════════════════
+// We overlay a hidden video element on the camera to play sign videos
+const signVideo = document.createElement('video');
+signVideo.muted = true;
+signVideo.playsInline = true;
+signVideo.setAttribute('webkit-playsinline', '');
+signVideo.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:4;background:#0d0d1a;display:none;';
+document.querySelector('.camera-content').appendChild(signVideo);
+
+function playSignVideo(videoUrl) {
+    return new Promise((resolve) => {
+        let resolved = false;
+        function done(result) {
+            if (resolved) return;
+            resolved = true;
+            signVideo.onended = null;
+            signVideo.onerror = null;
+            signVideo.onloadeddata = null;
+            signVideo.oncanplay = null;
+            clearTimeout(timeout);
+            resolve(result);
+        }
+
+        signVideo.onended = null;
+        signVideo.onerror = null;
+        signVideo.onloadeddata = null;
+        signVideo.oncanplay = null;
+        signVideo.pause();
+
+        const timeout = setTimeout(() => { done(false); }, 5000);
+
+        signVideo.onerror = () => { done(false); };
+
+        function tryPlay() {
+            signVideo.onended = () => done(true);
+            signVideo.play().catch(() => done(false));
+        }
+
+        signVideo.onloadeddata = () => { signVideo.onloadeddata = null; tryPlay(); };
+        signVideo.oncanplay = () => { signVideo.oncanplay = null; tryPlay(); };
+
+        signVideo.style.display = 'block';
+        signVideo.src = videoUrl;
+        signVideo.load();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONVERSATION FLOW
+// ══════════════════════════════════════════════════════════════
+btnStart.addEventListener('click', async () => {
+    if (!conversation) return;
+    btnStart.disabled = true;
+    btnRestart.style.display = 'inline-block';
+    currentTurn = 0;
+    isPlaying = true;
+    conversationHistory = [];
+
+    await startCamera();
+    playNextTurn();
+});
+
+btnRestart.addEventListener('click', () => {
+    currentTurn = 0;
+    conversationHistory = [];
+    transcriptMessages.innerHTML = '';
+    progressFill.style.width = '0%';
+    progressLabel.textContent = 'Ready';
+    btnStart.disabled = false;
+    btnRestart.style.display = 'none';
+    isPlaying = false;
+    recordingBadge.classList.remove('active');
+    recordingOverlay.classList.remove('active');
+    signVideo.style.display = 'none';
+    statusBar.innerHTML = '<span class="prompt-text">You are the doctor. Press "Start Conversation" to begin.</span>';
+    stopCamera();
+    cameraFeed.style.display = 'none';
+    cameraPlaceholder.style.display = '';
+    cameraPlaceholder.textContent = 'Camera will appear when demo starts';
+
+    // Show conversation phase
+    phaseConversation.classList.add('active');
+    phaseBreakdown.classList.remove('active');
+});
+
+async function playNextTurn() {
+    if (currentTurn >= conversation.turns.length || !isPlaying) {
+        // Conversation complete — transition to breakdown
+        progressLabel.textContent = 'Conversation complete';
+        statusBar.innerHTML = '<span class="sentence-text">Conversation complete! Loading breakdown...</span>';
+        await sleep(2000);
+        stopCamera();
+        showBreakdown();
+        return;
+    }
+
+    const turn = conversation.turns[currentTurn];
+    const progress = ((currentTurn + 1) / conversation.turns.length) * 100;
+    progressFill.style.width = progress + '%';
+    progressLabel.textContent = `Turn ${currentTurn + 1} of ${conversation.turns.length}`;
+
+    if (turn.speaker === 'doctor') {
+        await playDoctorTurn(turn);
+    } else {
+        await playPatientTurn(turn);
+    }
+
+    currentTurn++;
+    await sleep(800);
+    playNextTurn();
+}
+
+// ── Doctor turn ──
+// First turn: viewer reads the line aloud (interactive)
+// Remaining turns: auto-play with timed pause
+async function playDoctorTurn(turn) {
+    signVideo.style.display = 'none'; // hide sign video, show camera
+
+    if (currentTurn === 0) {
+        // ── FIRST TURN: Interactive ──
+        // Show the line as a script for the viewer to read aloud
+        statusBar.innerHTML = `
+            <div style="text-align:center;">
+                <div style="color:#7cb3f0; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Read this line aloud as the doctor:</div>
+                <div style="color:#fff; font-size:1.15rem; font-weight:600; margin-bottom:10px;">"${turn.text}"</div>
+                <div style="color:#666; font-size:0.8rem;">(Tap here or press SPACE when done)</div>
+            </div>`;
+
+        // Wait for user to confirm they've read it
+        await waitForContinue();
+
+        // Add to transcript
+        addChatMessage('doctor', 'Doctor', turn.text);
+        conversationHistory.push({speaker: 'doctor', text: turn.text});
+    } else {
+        // ── REMAINING TURNS: Auto-play ──
+        statusBar.innerHTML = '<span class="prompt-text">Doctor speaking...</span>';
+        addChatMessage('doctor', 'Doctor', turn.text);
+        conversationHistory.push({speaker: 'doctor', text: turn.text});
+        await sleep(turn.duration * 1000);
+    }
+}
+
+// Wait for space/tap to continue
+function waitForContinue() {
+    return new Promise(resolve => {
+        let resolved = false;
+        function done() {
+            if (resolved) return;
+            resolved = true;
+            document.removeEventListener('keydown', onKey);
+            statusBar.removeEventListener('click', onClick);
+            resolve();
+        }
+        function onKey(e) {
+            if (e.code === 'Space') { e.preventDefault(); done(); }
+        }
+        function onClick() { done(); }
+        document.addEventListener('keydown', onKey);
+        statusBar.addEventListener('click', onClick);
+    });
+}
+
+// ── Patient turn: auto-play sign videos → glosses → LLM → TTS ──
+async function playPatientTurn(turn) {
+    const glosses = turn.glosses;
+    const signVideos = turn.sign_videos || glosses;
+
+    // Show recording indicator
+    recordingBadge.classList.add('active');
+    recordingOverlay.classList.add('active');
+    statusBar.innerHTML = '<span class="processing-text">Patient signing...</span>';
+
+    // Play each sign video sequentially, showing progressive glosses
+    let accumulatedGlosses = [];
+    for (let i = 0; i < signVideos.length; i++) {
+        const signName = signVideos[i];
+        accumulatedGlosses.push(signName.toUpperCase());
+
+        // Update status with progressive glosses
+        statusBar.innerHTML = '<span class="gloss-text">Detected: ' +
+            accumulatedGlosses.join(' ') + '</span>';
+
+        // Play the sign video over the camera feed
+        const videoUrl = `/sign-bank/${signName}.mp4`;
+        const played = await playSignVideo(videoUrl);
+
+        if (!played) {
+            await sleep(1500); // fallback pause if video missing
+        }
+
+        await sleep(300); // gap between signs
+    }
+
+    // Done signing
+    recordingBadge.classList.remove('active');
+    recordingOverlay.classList.remove('active');
+    signVideo.style.display = 'none'; // show camera again
+
+    await sleep(500);
+
+    // Send to LLM for sentence construction
+    statusBar.innerHTML = '<span class="processing-text">SignBridge constructing sentence...</span>';
+
+    let sentence = turn.asl_sentence; // fallback
+    try {
+        const resp = await fetch('/api/doctor-demo/construct-sentence', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                glosses: glosses,
+                conversation_history: conversationHistory
+            })
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) {
+            sentence = result.sentence;
+        }
+    } catch (e) {
+        console.log('LLM fallback:', e);
+    }
+
+    // Show the sentence
+    statusBar.innerHTML = '<span class="sentence-text">' + sentence + '</span>';
+
+    // Add to transcript
+    addChatMessage('patient', 'Patient (ASL)', sentence);
+    conversationHistory.push({speaker: 'patient', text: sentence});
+
+    // Read aloud for the doctor
+    await speak(sentence);
+
+    await sleep(1000);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRANSCRIPT
+// ══════════════════════════════════════════════════════════════
+function addChatMessage(speaker, label, text) {
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg ' + speaker;
+    msg.innerHTML = `
+        <div class="msg-speaker">${label}</div>
+        <div class="msg-text">${text}</div>
+    `;
+    transcriptMessages.appendChild(msg);
+    transcriptMessages.scrollTop = transcriptMessages.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════
+// PHASE 2: BREAKDOWN
+// ══════════════════════════════════════════════════════════════
+function showBreakdown() {
+    phaseConversation.classList.remove('active');
+    phaseBreakdown.classList.add('active');
+
+    const tabsContainer = document.getElementById('sentenceTabs');
+    const sectionsContainer = document.getElementById('pipelineSections');
+    tabsContainer.innerHTML = '';
+    sectionsContainer.innerHTML = '';
+
+    if (breakdownData.length === 0) {
+        sectionsContainer.innerHTML = '<p style="color:#888;text-align:center;padding:40px;">No breakdown samples available.</p>';
+        return;
+    }
+
+    breakdownData.forEach((sample, idx) => {
+        const meta = sample.metadata;
+        const precomputed = meta.precomputed || {};
+        const segments = precomputed.segments || [];
+        const rawGlosses = segments.map(s => s.top_1).join(' ').toUpperCase();
+
+        // Create tab
+        const tab = document.createElement('button');
+        tab.className = 'sentence-tab' + (idx === 0 ? ' active' : '');
+        tab.textContent = `"${rawGlosses}"`;
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.sentence-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pipeline-section').forEach(s => s.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`pipeline-${idx}`).classList.add('active');
+        });
+        tabsContainer.appendChild(tab);
+
+        // Create pipeline section
+        const section = document.createElement('div');
+        section.className = 'pipeline-section' + (idx === 0 ? ' active' : '');
+        section.id = `pipeline-${idx}`;
+        section.innerHTML = buildPipelineHTML(sample);
+        sectionsContainer.appendChild(section);
+    });
+}
+
+function buildPipelineHTML(sample) {
+    const meta = sample.metadata;
+    const sampleId = sample.sampleId;
+    const precomputed = meta.precomputed || {};
+    const segments = precomputed.segments || [];
+    const referenceSentence = meta.reference_sentence || '';
+    const llmSentence = precomputed.llm_sentence || referenceSentence;
+    const rawSentence = precomputed.raw_sentence || segments.map(s => s.top_1).join(' ');
+
+    let html = '';
+
+    // Step 1: Pose Estimation Video
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">1</div>
+            <div class="step-title">Pose Estimation — Extracting body keypoints</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888; margin-bottom:12px;">MediaPipe Holistic extracts 75 keypoints (hands, face, body) from the video, creating a skeletal representation of the signer.</p>
+            <div style="text-align:center;">
+                <video src="/demo-data/samples/${sampleId}/pose_video.mp4"
+                       controls muted playsinline webkit-playsinline
+                       style="max-width:100%; max-height:300px; border-radius:8px; background:#0d0d1a;"></video>
+            </div>
+        </div>
+    </div>`;
+
+    // Step 2: Segmentation
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">2</div>
+            <div class="step-title">Segmentation — Splitting into ${segments.length} individual signs</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888; margin-bottom:12px;">SignBridge detects motion boundaries in the pose data to separate the continuous signing into individual sign segments.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        html += `
+                <div class="segment-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="seg-label">Segment ${i + 1}</div>
+                </div>`;
+    });
+
+    html += `
+            </div>
+        </div>
+    </div>`;
+
+    // Step 3: Sign Recognition with real predictions
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">3</div>
+            <div class="step-title">Sign Recognition — Identifying each sign</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888; margin-bottom:12px;">Each segment is fed through a Spatio-Temporal Graph Convolutional Network (ST-GCN) trained on the WLASL dataset. The model outputs confidence scores for each possible sign.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        const top1 = seg.top_1 || 'unknown';
+        const confidence = seg.confidence || 0;
+        const topK = seg.top_k || [{gloss: top1, confidence: confidence}];
+        const confPct = Math.round(confidence * 100);
+        const confColor = confPct >= 80 ? '#4caf80' : confPct >= 50 ? '#f0a050' : '#ff5555';
+
+        html += `
+                <div class="prediction-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="pred-info">
+                        <div class="pred-top1" style="color:${confColor}">${top1.toUpperCase()} — ${confPct}%</div>
+                        <div class="confidence-bar">
+                            <div class="conf-fill" style="width:${confPct}%; background:${confColor}"></div>
+                        </div>
+                        <div class="top-k-list">`;
+
+        topK.forEach(k => {
+            html += `<div class="top-k-item"><span>${k.gloss}</span><span>${Math.round(k.confidence * 100)}%</span></div>`;
+        });
+
+        html += `
+                        </div>
+                    </div>
+                </div>`;
+    });
+
+    html += `
+            </div>
+        </div>
+    </div>`;
+
+    // Step 4: LLM Sentence Construction
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">4</div>
+            <div class="step-title">LLM Sentence Construction — Building natural English</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888; margin-bottom:16px;">The recognized glosses are sent to an LLM (Gemini) along with context. The LLM transforms the raw ASL glosses into a grammatically correct English sentence.</p>
+            <div class="construction-display">
+                <div class="construct-box raw">
+                    <div class="box-label">Raw Glosses (Model Output)</div>
+                    <div class="box-content">${rawSentence.toUpperCase()}</div>
+                </div>
+                <div class="construct-arrow">&#8594;</div>
+                <div class="construct-box llm">
+                    <div class="box-label">SignBridge Output (LLM)</div>
+                    <div class="box-content">"${llmSentence}"</div>
+                </div>
+            </div>
+            <p style="color:#666; margin-top:16px; font-size:0.85rem; text-align:center;">
+                Reference: "${referenceSentence}"
+            </p>
+        </div>
+    </div>`;
+
+    return html;
+}
+
+// ══════════════════════════════════════════════════════════════
+// BREAKDOWN NAV
+// ══════════════════════════════════════════════════════════════
+document.getElementById('btnBackToConvo').addEventListener('click', () => {
+    phaseBreakdown.classList.remove('active');
+    phaseConversation.classList.add('active');
+});
+
+document.getElementById('btnRestartAll').addEventListener('click', () => {
+    phaseBreakdown.classList.remove('active');
+    phaseConversation.classList.add('active');
+    btnRestart.click();
+});
+
+// ══════════════════════════════════════════════════════════════
+// UTILITY
+// ══════════════════════════════════════════════════════════════
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+</script>
+{% endblock %}

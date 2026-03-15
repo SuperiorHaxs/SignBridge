@@ -3180,6 +3180,106 @@ def serve_segment_file(session_id, filename):
 
 
 # ============================================================================
+# ============================================================================
+# DOCTOR DEMO - Simulated doctor-patient conversation
+# ============================================================================
+
+DOCTOR_DEMO_DIR = Path(__file__).parent / "demo-data" / "doctor-demo"
+
+
+@app.route('/doctor-demo')
+def doctor_demo_page():
+    """Doctor Demo page."""
+    return render_template('doctor_demo.html')
+
+
+@app.route('/api/doctor-demo/conversation')
+def doctor_demo_conversation():
+    """Get the doctor demo conversation data."""
+    conv_path = DOCTOR_DEMO_DIR / "conversation.json"
+    if not conv_path.exists():
+        return jsonify({"error": "Conversation data not found"}), 404
+    with open(conv_path) as f:
+        data = json.load(f)
+    return jsonify(data)
+
+
+@app.route('/api/doctor-demo/construct-sentence', methods=['POST'])
+def doctor_demo_construct_sentence():
+    """Use LLM to construct a sentence from glosses with conversation context."""
+    glosses = []
+    try:
+        data = request.get_json()
+        glosses = data.get('glosses', [])
+        conversation_history = data.get('conversation_history', [])
+
+        if not glosses:
+            return jsonify({"success": False, "error": "No glosses provided"}), 400
+
+        raw_glosses = " ".join(glosses)
+
+        # Build conversation context
+        context_lines = []
+        for msg in conversation_history:
+            speaker = msg.get('speaker', 'unknown').capitalize()
+            text = msg.get('text', '')
+            context_lines.append(f"{speaker}: {text}")
+        context_str = "\n".join(context_lines) if context_lines else "No prior conversation."
+
+        prompt = f"""You are translating ASL glosses into natural English for a Deaf patient communicating with a doctor during a medical visit.
+
+Conversation so far:
+{context_str}
+
+The patient just signed these ASL glosses: {raw_glosses}
+
+Convert these glosses into a natural, grammatically correct English sentence that makes sense in the context of this doctor visit conversation.
+
+Rules:
+- Use all the glosses provided, in order
+- Add appropriate filler words (the, a, is, are, etc.) for natural English
+- The sentence should fit naturally as the patient's response to the doctor's last statement
+- Keep it simple and conversational
+- Output ONLY the English sentence, nothing else
+
+English sentence:"""
+
+        llm = create_llm_provider(
+            provider="googleaistudio",
+            model_name="gemini-2.0-flash",
+            max_tokens=100,
+            timeout=15
+        )
+        response = llm.generate(prompt)
+
+        generated = response.strip()
+        if generated.startswith('"') and generated.endswith('"'):
+            generated = generated[1:-1]
+
+        print(f"[DoctorDemo LLM] Glosses: {glosses} -> {generated}")
+
+        return jsonify({
+            "success": True,
+            "glosses": glosses,
+            "sentence": generated
+        })
+
+    except Exception as e:
+        print(f"[DoctorDemo LLM] Error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "fallback": " ".join(glosses)
+        }), 500
+
+
+@app.route('/sign-bank/<path:filename>')
+def serve_sign_bank(filename):
+    """Serve sign-bank video files directly (used by doctor demo)."""
+    sign_bank_path = Path(__file__).parent / "sign-bank"
+    return send_from_directory(sign_bank_path, filename)
+
+
 # SIGN BANK - Record and manage individual sign videos
 # ============================================================================
 

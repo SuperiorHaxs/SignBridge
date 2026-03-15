@@ -1,0 +1,299 @@
+{
+  "title": "Doctor Visit — ASL Communication Demo",
+  "description": "A simulated doctor's office visit where a hearing doctor speaks English and a Deaf patient responds in ASL. The patient's signs are translated in real-time by SignBridge.",
+  "turns": [
+    {
+      "speaker": "doctor",
+      "text": "Hello! I'm Dr. Williams. What brings you in today?",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["meet", "doctor"],
+      "asl_sentence": "I'm here to meet the doctor.",
+      "sign_videos": ["meet", "doctor"],
+      "precomputed": [
+        {
+          "gloss": "meet",
+          "confidence": 0.89,
+          "top_k": [
+            {"gloss": "meet", "confidence": 0.89},
+            {"gloss": "enjoy", "confidence": 0.04},
+            {"gloss": "finish", "confidence": 0.02}
+          ]
+        },
+        {
+          "gloss": "doctor",
+          "confidence": 0.93,
+          "top_k": [
+            {"gloss": "doctor", "confidence": 0.93},
+            {"gloss": "cook", "confidence": 0.03},
+            {"gloss": "work", "confidence": 0.01}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "Of course. Can you tell me what's going on?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["son", "bed", "time"],
+      "asl_sentence": "My son's bedtime has been a problem.",
+      "sign_videos": ["son", "bed", "time"],
+      "precomputed": [
+        {
+          "gloss": "son",
+          "confidence": 0.96,
+          "top_k": [
+            {"gloss": "son", "confidence": 0.96},
+            {"gloss": "tall", "confidence": 0.02},
+            {"gloss": "meet", "confidence": 0.01}
+          ]
+        },
+        {
+          "gloss": "bed",
+          "confidence": 0.85,
+          "top_k": [
+            {"gloss": "bed", "confidence": 0.85},
+            {"gloss": "chair", "confidence": 0.06},
+            {"gloss": "black", "confidence": 0.03}
+          ]
+        },
+        {
+          "gloss": "time",
+          "confidence": 0.88,
+          "top_k": [
+            {"gloss": "time", "confidence": 0.88},
+            {"gloss": "finish", "confidence": 0.05},
+            {"gloss": "work", "confidence": 0.03}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "I see. How tall is your son? Is he growing well?",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["son", "tall"],
+      "asl_sentence": "My son is tall.",
+      "sign_videos": ["son", "tall"],
+      "precomputed": [
+        {
+          "gloss": "son",
+          "confidence": 0.94,
+          "top_k": [
+            {"gloss": "son", "confidence": 0.94},
+            {"gloss": "tall", "confidence": 0.03},
+            {"gloss": "meet", "confidence": 0.01}
+          ]
+        },
+        {
+          "gloss": "tall",
+          "confidence": 0.91,
+          "top_k": [
+            {"gloss": "tall", "confidence": 0.91},
+            {"gloss": "son", "confidence": 0.04},
+            {"gloss": "chair", "confidence": 0.02}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "Good, that's healthy. Does he sit in a chair at school all day or does he get to move around?",
+      "duration": 5.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["chair", "work", "full", "time"],
+      "asl_sentence": "He sits in a chair and works full time at school.",
+      "sign_videos": ["chair", "work", "full", "time"],
+      "precomputed": [
+        {
+          "gloss": "chair",
+          "confidence": 0.87,
+          "top_k": [
+            {"gloss": "chair", "confidence": 0.87},
+            {"gloss": "bed", "confidence": 0.05},
+            {"gloss": "black", "confidence": 0.03}
+          ]
+        },
+        {
+          "gloss": "work",
+          "confidence": 0.90,
+          "top_k": [
+            {"gloss": "work", "confidence": 0.90},
+            {"gloss": "cook", "confidence": 0.04},
+            {"gloss": "finish", "confidence": 0.02}
+          ]
+        },
+        {
+          "gloss": "full",
+          "confidence": 0.82,
+          "top_k": [
+            {"gloss": "full", "confidence": 0.82},
+            {"gloss": "finish", "confidence": 0.07},
+            {"gloss": "time", "confidence": 0.04}
+          ]
+        },
+        {
+          "gloss": "time",
+          "confidence": 0.86,
+          "top_k": [
+            {"gloss": "time", "confidence": 0.86},
+            {"gloss": "work", "confidence": 0.05},
+            {"gloss": "finish", "confidence": 0.03}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "He needs to go outside and play more. Does he go for walks?",
+      "duration": 4.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["go", "finish"],
+      "asl_sentence": "We finished going for walks.",
+      "sign_videos": ["go", "finish"],
+      "precomputed": [
+        {
+          "gloss": "go",
+          "confidence": 0.92,
+          "top_k": [
+            {"gloss": "go", "confidence": 0.92},
+            {"gloss": "meet", "confidence": 0.03},
+            {"gloss": "work", "confidence": 0.02}
+          ]
+        },
+        {
+          "gloss": "finish",
+          "confidence": 0.88,
+          "top_k": [
+            {"gloss": "finish", "confidence": 0.88},
+            {"gloss": "full", "confidence": 0.05},
+            {"gloss": "time", "confidence": 0.03}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "I'd recommend getting him active again. What does he enjoy doing?",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["enjoy", "cook"],
+      "asl_sentence": "He enjoys cooking.",
+      "sign_videos": ["enjoy", "cook"],
+      "precomputed": [
+        {
+          "gloss": "enjoy",
+          "confidence": 0.84,
+          "top_k": [
+            {"gloss": "enjoy", "confidence": 0.84},
+            {"gloss": "meet", "confidence": 0.06},
+            {"gloss": "finish", "confidence": 0.04}
+          ]
+        },
+        {
+          "gloss": "cook",
+          "confidence": 0.90,
+          "top_k": [
+            {"gloss": "cook", "confidence": 0.90},
+            {"gloss": "work", "confidence": 0.04},
+            {"gloss": "doctor", "confidence": 0.02}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "Cooking is great! Make sure he goes to bed on time and stays active. Anything else?",
+      "duration": 5.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["what", "time", "go"],
+      "asl_sentence": "What time should we go?",
+      "sign_videos": ["what", "time", "go"],
+      "precomputed": [
+        {
+          "gloss": "what",
+          "confidence": 0.93,
+          "top_k": [
+            {"gloss": "what", "confidence": 0.93},
+            {"gloss": "doctor", "confidence": 0.03},
+            {"gloss": "meet", "confidence": 0.01}
+          ]
+        },
+        {
+          "gloss": "time",
+          "confidence": 0.87,
+          "top_k": [
+            {"gloss": "time", "confidence": 0.87},
+            {"gloss": "finish", "confidence": 0.05},
+            {"gloss": "work", "confidence": 0.03}
+          ]
+        },
+        {
+          "gloss": "go",
+          "confidence": 0.91,
+          "top_k": [
+            {"gloss": "go", "confidence": 0.91},
+            {"gloss": "meet", "confidence": 0.04},
+            {"gloss": "finish", "confidence": 0.02}
+          ]
+        }
+      ]
+    },
+    {
+      "speaker": "doctor",
+      "text": "Come back next week for a follow-up. Take care!",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["enjoy", "meet", "doctor"],
+      "asl_sentence": "I enjoyed meeting you, doctor. Thank you!",
+      "sign_videos": ["enjoy", "meet", "doctor"],
+      "precomputed": [
+        {
+          "gloss": "enjoy",
+          "confidence": 0.86,
+          "top_k": [
+            {"gloss": "enjoy", "confidence": 0.86},
+            {"gloss": "meet", "confidence": 0.05},
+            {"gloss": "finish", "confidence": 0.03}
+          ]
+        },
+        {
+          "gloss": "meet",
+          "confidence": 0.91,
+          "top_k": [
+            {"gloss": "meet", "confidence": 0.91},
+            {"gloss": "enjoy", "confidence": 0.04},
+            {"gloss": "work", "confidence": 0.02}
+          ]
+        },
+        {
+          "gloss": "doctor",
+          "confidence": 0.95,
+          "top_k": [
+            {"gloss": "doctor", "confidence": 0.95},
+            {"gloss": "cook", "confidence": 0.02},
+            {"gloss": "work", "confidence": 0.01}
+          ]
+        }
+      ]
+    }
+  ]
+}

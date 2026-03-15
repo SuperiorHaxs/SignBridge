@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignBridge — ASL Video Captioning</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            width: 100%;
+            padding: 24px 0 16px;
+            text-align: center;
+            border-bottom: 1px solid #1e1e3a;
+            background: #13132a;
+        }
+
+        header h1 { font-size: 1.8rem; font-weight: 600; color: #fff; }
+        header h1 span { color: #6c8cff; }
+        header p { margin-top: 6px; font-size: 0.95rem; color: #888; }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+            padding: 32px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* ── Tabs ── */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2a2a50;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            background: #16162e;
+            color: #888;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: #bbb; }
+        .tab.active { background: #4a6cf7; color: #fff; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: flex; flex-direction: column; gap: 20px; }
+
+        /* ── Upload area ── */
+        .upload-area {
+            border: 2px dashed #2a2a50;
+            border-radius: 16px;
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #16162e;
+        }
+
+        .upload-area:hover, .upload-area.dragover { border-color: #6c8cff; background: #1a1a3a; }
+        .upload-area.has-file { border-color: #4caf80; background: #162e1e; }
+        .upload-icon { font-size: 2.8rem; margin-bottom: 12px; }
+        .upload-area p { font-size: 1rem; color: #aaa; }
+        .upload-area .filename { color: #6c8cff; font-weight: 500; margin-top: 8px; }
+        .upload-area input[type="file"] { display: none; }
+
+        /* ── Demo sample grid ── */
+        .sample-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .sample-card {
+            background: #16162e;
+            border: 2px solid #2a2a50;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sample-card:hover { border-color: #6c8cff; background: #1a1a3a; }
+        .sample-card.selected { border-color: #4caf80; background: #162e1e; }
+
+        .sample-card .sample-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #fff;
+            margin-bottom: 6px;
+            text-transform: capitalize;
+        }
+
+        .sample-card .sample-glosses {
+            font-size: 0.8rem;
+            color: #6c8cff;
+            font-family: monospace;
+            margin-bottom: 6px;
+        }
+
+        .sample-card .sample-ref {
+            font-size: 0.8rem;
+            color: #888;
+            font-style: italic;
+        }
+
+        .sample-loading {
+            text-align: center;
+            padding: 32px;
+            color: #666;
+        }
+
+        /* ── Button ── */
+        .btn {
+            display: inline-block;
+            padding: 14px 36px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #fff;
+            background: #4a6cf7;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            width: 100%;
+        }
+
+        .btn:hover { background: #3a5ce5; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { background: #333; cursor: not-allowed; opacity: 0.5; }
+
+        /* ── Status panel ── */
+        .status-panel {
+            display: none;
+            background: #16162e;
+            border-radius: 14px;
+            padding: 28px;
+            text-align: center;
+        }
+
+        .status-panel.visible { display: block; }
+
+        .status-message { font-size: 1.1rem; margin-bottom: 16px; }
+
+        .spinner {
+            display: inline-block;
+            width: 36px; height: 36px;
+            border: 3px solid #2a2a50;
+            border-top-color: #6c8cff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .pipeline-steps {
+            text-align: left;
+            margin: 16px 0;
+            font-size: 0.9rem;
+            color: #888;
+            line-height: 1.8;
+        }
+
+        .pipeline-steps .done { color: #4caf80; }
+        .pipeline-steps .active { color: #6c8cff; font-weight: 500; }
+
+        /* ── Result panel ── */
+        .result-panel {
+            display: none;
+            background: #16162e;
+            border-radius: 14px;
+            padding: 28px;
+        }
+
+        .result-panel.visible { display: block; }
+        .result-panel h3 { font-size: 1.1rem; margin-bottom: 16px; color: #4caf80; }
+
+        .result-panel video {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            background: #000;
+        }
+
+        .btn-download { background: #2e7d52; }
+        .btn-download:hover { background: #256b44; }
+
+        .btn-new {
+            margin-top: 10px;
+            background: transparent;
+            border: 1px solid #444;
+            color: #aaa;
+        }
+        .btn-new:hover { background: #1e1e3a; color: #fff; }
+
+        .error-msg {
+            color: #ef5350;
+            background: #2e1616;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            display: none;
+        }
+        .error-msg.visible { display: block; }
+
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 0.8rem;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sign<span>Bridge</span> Captioning</h1>
+        <p>Upload an ASL signing video or pick a demo &rarr; get English captions burned in</p>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="demo">Demo Samples</button>
+            <button class="tab" data-tab="upload">Upload Video</button>
+        </div>
+
+        <!-- Demo tab -->
+        <div class="tab-content active" id="tab-demo">
+            <div class="sample-loading" id="sampleLoading">Loading demo samples...</div>
+            <div class="sample-grid" id="sampleGrid"></div>
+            <button class="btn" id="demoCaptionBtn" disabled>Caption Selected Demo</button>
+        </div>
+
+        <!-- Upload tab -->
+        <div class="tab-content" id="tab-upload">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">&#128249;</div>
+                <p>Drag &amp; drop your signing video here, or <strong>click to browse</strong></p>
+                <p class="filename" id="fileName"></p>
+                <input type="file" id="fileInput" accept="video/*">
+            </div>
+            <button class="btn" id="uploadCaptionBtn" disabled>Caption This Video</button>
+        </div>
+
+        <!-- Error -->
+        <div class="error-msg" id="errorMsg"></div>
+
+        <!-- Processing -->
+        <div class="status-panel" id="statusPanel">
+            <div class="spinner" id="spinner"></div>
+            <div class="status-message" id="statusMessage">Starting...</div>
+            <div class="pipeline-steps" id="pipelineSteps">
+                <div id="step1">1. Detecting segment boundaries...</div>
+                <div id="step2">2. Loading precomputed predictions...</div>
+                <div id="step3">3. Building captions &amp; burning onto video...</div>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-panel" id="resultPanel">
+            <h3>Captioning Complete</h3>
+            <video id="previewVideo" controls></video>
+            <button class="btn btn-download" id="downloadBtn">Download Captioned Video</button>
+            <button class="btn btn-new" id="newBtn">Caption Another Video</button>
+        </div>
+    </div>
+
+    <footer>SignBridge ASL Captioning &mdash; OpenHands + Gemini</footer>
+
+    <script>
+        // ── Elements ──
+        const tabs = document.querySelectorAll('.tab');
+        const sampleGrid = document.getElementById('sampleGrid');
+        const sampleLoading = document.getElementById('sampleLoading');
+        const demoCaptionBtn = document.getElementById('demoCaptionBtn');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const uploadCaptionBtn = document.getElementById('uploadCaptionBtn');
+        const statusPanel = document.getElementById('statusPanel');
+        const statusMessage = document.getElementById('statusMessage');
+        const pipelineSteps = document.getElementById('pipelineSteps');
+        const resultPanel = document.getElementById('resultPanel');
+        const errorMsg = document.getElementById('errorMsg');
+        const previewVideo = document.getElementById('previewVideo');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const newBtn = document.getElementById('newBtn');
+
+        let selectedFile = null;
+        let selectedSample = null;
+        let currentJobId = null;
+        let pollTimer = null;
+        let currentMode = 'demo'; // 'demo' or 'upload'
+
+        // ── Tabs ──
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                currentMode = tab.dataset.tab;
+            });
+        });
+
+        // ── Load demo samples ──
+        async function loadDemoSamples() {
+            try {
+                const resp = await fetch('/api/demo-samples');
+                const data = await resp.json();
+                sampleLoading.style.display = 'none';
+
+                if (!data.samples || data.samples.length === 0) {
+                    sampleGrid.innerHTML = '<p style="color:#888;grid-column:span 2;text-align:center">No demo samples found</p>';
+                    return;
+                }
+
+                data.samples.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'sample-card';
+                    card.dataset.path = s.path;
+                    card.innerHTML = `
+                        <div class="sample-name">${s.name}</div>
+                        <div class="sample-glosses">${s.glosses.join(' → ')}</div>
+                        <div class="sample-ref">"${s.reference}"</div>
+                    `;
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.sample-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedSample = s;
+                        demoCaptionBtn.disabled = false;
+                    });
+                    sampleGrid.appendChild(card);
+                });
+            } catch (e) {
+                sampleLoading.textContent = 'Failed to load demos';
+            }
+        }
+        loadDemoSamples();
+
+        // ── Demo caption button ──
+        demoCaptionBtn.addEventListener('click', async () => {
+            if (!selectedSample) return;
+            demoCaptionBtn.disabled = true;
+            hideAll();
+            showProcessing('demo');
+
+            try {
+                const resp = await fetch('/caption-demo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sample_path: selectedSample.path })
+                });
+                const data = await resp.json();
+                if (data.error) { showError(data.error); return; }
+                currentJobId = data.job_id;
+                startPolling();
+            } catch (e) {
+                showError('Request failed: ' + e.message);
+            }
+        });
+
+        // ── Upload interactions ──
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) selectFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) selectFile(fileInput.files[0]);
+        });
+
+        function selectFile(file) {
+            selectedFile = file;
+            fileName.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(1) + ' MB)';
+            uploadArea.classList.add('has-file');
+            uploadCaptionBtn.disabled = false;
+        }
+
+        uploadCaptionBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            uploadCaptionBtn.disabled = true;
+            hideAll();
+            showProcessing('upload');
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            try {
+                const resp = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await resp.json();
+                if (data.error) { showError(data.error); return; }
+                currentJobId = data.job_id;
+                startPolling();
+            } catch (e) {
+                showError('Upload failed: ' + e.message);
+            }
+        });
+
+        // ── Processing ──
+        function showProcessing(mode) {
+            statusPanel.classList.add('visible');
+            statusMessage.textContent = 'Starting...';
+
+            if (mode === 'demo') {
+                pipelineSteps.innerHTML = `
+                    <div id="step1">1. Detecting segment boundaries...</div>
+                    <div id="step2">2. Loading precomputed predictions...</div>
+                    <div id="step3">3. Building captions &amp; burning onto video...</div>
+                `;
+            } else {
+                pipelineSteps.innerHTML = `
+                    <div id="step1">1. Converting video to pose data...</div>
+                    <div id="step2">2. Segmenting into individual signs...</div>
+                    <div id="step3">3. Running sign recognition model...</div>
+                    <div id="step4">4. Translating with LLM...</div>
+                    <div id="step5">5. Burning captions onto video...</div>
+                `;
+            }
+        }
+
+        function startPolling() {
+            pollTimer = setInterval(async () => {
+                try {
+                    const resp = await fetch('/status/' + currentJobId);
+                    const data = await resp.json();
+                    statusMessage.textContent = data.message;
+
+                    if (data.status === 'done') {
+                        clearInterval(pollTimer);
+                        showResult();
+                    } else if (data.status === 'error') {
+                        clearInterval(pollTimer);
+                        showError(data.error || 'Pipeline failed');
+                    }
+                } catch (e) { /* keep polling */ }
+            }, 1500);
+        }
+
+        // ── Result ──
+        function showResult() {
+            statusPanel.classList.remove('visible');
+            resultPanel.classList.add('visible');
+            previewVideo.src = '/preview/' + currentJobId;
+            previewVideo.load();
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/download/' + currentJobId;
+        });
+
+        newBtn.addEventListener('click', () => {
+            hideAll();
+            // Reset selections
+            document.querySelectorAll('.sample-card').forEach(c => c.classList.remove('selected'));
+            selectedSample = null;
+            demoCaptionBtn.disabled = true;
+            uploadArea.classList.remove('has-file');
+            fileName.textContent = '';
+            selectedFile = null;
+            uploadCaptionBtn.disabled = true;
+            fileInput.value = '';
+        });
+
+        // ── Helpers ──
+        function hideAll() {
+            errorMsg.classList.remove('visible');
+            resultPanel.classList.remove('visible');
+            statusPanel.classList.remove('visible');
+        }
+
+        function showError(msg) {
+            statusPanel.classList.remove('visible');
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+            demoCaptionBtn.disabled = !selectedSample;
+            uploadCaptionBtn.disabled = !selectedFile;
+        }
+    </script>
+</body>
+</html>

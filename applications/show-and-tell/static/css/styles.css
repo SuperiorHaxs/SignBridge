@@ -1556,6 +1556,60 @@ body {
     .app-header {
         flex-direction: column;
         text-align: center;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .header-row {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .header-left {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    .app-title {
+        font-size: 1.1rem;
+    }
+
+    .app-subtitle {
+        font-size: 0.65rem;
+    }
+
+    .mode-toggle {
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .mode-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .mode-buttons .mode-btn {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+
+    .phase-breadcrumb {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: var(--spacing-xs);
+    }
+
+    .phase-breadcrumb .phase {
+        min-width: auto;
+        padding: var(--spacing-xs) var(--spacing-sm);
+    }
+
+    .phase-label {
+        font-size: 0.65rem;
+    }
+
+    .phase-number {
+        width: 20px;
+        height: 20px;
+        font-size: 0.7rem;
     }
 
     .step-indicator {

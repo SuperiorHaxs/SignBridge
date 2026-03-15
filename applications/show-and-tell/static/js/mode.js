@@ -7,7 +7,8 @@ const AppMode = {
     DEMO: 'demo',
     LIVE: 'live',
     LIVE_DETAILED: 'live_detailed',
-    CLOSED_CAPTIONS: 'closed_captions'
+    CLOSED_CAPTIONS: 'closed_captions',
+    DOCTOR_DEMO: 'doctor_demo'
 };
 
 // Mode display names
@@ -15,7 +16,8 @@ const ModeNames = {
     [AppMode.DEMO]: 'Preset Demo',
     [AppMode.LIVE]: 'Live',
     [AppMode.LIVE_DETAILED]: 'Upload',
-    [AppMode.CLOSED_CAPTIONS]: 'Captions'
+    [AppMode.CLOSED_CAPTIONS]: 'Captions',
+    [AppMode.DOCTOR_DEMO]: 'Doctor Demo'
 };
 
 // Get current mode from sessionStorage
@@ -58,6 +60,8 @@ function setMode(mode) {
             window.location.href = '/live-setup';
         } else if (mode === AppMode.CLOSED_CAPTIONS) {
             window.location.href = '/closed-captions';
+        } else if (mode === AppMode.DOCTOR_DEMO) {
+            window.location.href = '/doctor-demo';
         } else {
             window.location.href = '/';
         }
@@ -73,7 +77,7 @@ function updateToggleUI(mode) {
     });
 
     // Update body class for CSS styling
-    document.body.classList.remove('mode-live', 'mode-demo', 'mode-live_detailed', 'mode-closed_captions');
+    document.body.classList.remove('mode-live', 'mode-demo', 'mode-live_detailed', 'mode-closed_captions', 'mode-doctor_demo');
     document.body.classList.add(`mode-${mode}`);
 
     // Update breadcrumb visibility based on mode
@@ -85,8 +89,8 @@ function updateToggleUI(mode) {
             // Live mode - show 4-step breadcrumb (Setup → Learn → Record → Results)
             detailedBreadcrumb.style.display = 'none';
             liveBreadcrumb.style.display = 'flex';
-        } else if (mode === AppMode.CLOSED_CAPTIONS) {
-            // Closed Captions mode - hide all breadcrumbs (single page)
+        } else if (mode === AppMode.CLOSED_CAPTIONS || mode === AppMode.DOCTOR_DEMO) {
+            // Single-page modes - hide all breadcrumbs
             detailedBreadcrumb.style.display = 'none';
             liveBreadcrumb.style.display = 'none';
         } else {
@@ -111,12 +115,13 @@ function initializeMode() {
     // Handle mode-specific redirects from main page
     if (window.location.pathname === '/') {
         if (mode === AppMode.LIVE) {
-            // Live mode uses 4-step workflow starting at /live-setup
             window.location.href = '/live-setup';
             return;
         } else if (mode === AppMode.CLOSED_CAPTIONS) {
-            // Closed Captions mode is a single page
             window.location.href = '/closed-captions';
+            return;
+        } else if (mode === AppMode.DOCTOR_DEMO) {
+            window.location.href = '/doctor-demo';
             return;
         }
     }
