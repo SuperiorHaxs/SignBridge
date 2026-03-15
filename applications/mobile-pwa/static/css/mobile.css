@@ -1,0 +1,287 @@
+/* ═══════════════════════════════════════════════
+   SignBridge Mobile PWA — Clean iPad UI
+   ═══════════════════════════════════════════════ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+    --bg: #0a0a1a;
+    --surface: #12122a;
+    --surface-2: #1a1a3a;
+    --border: #252550;
+    --text: #e8e8f0;
+    --text-dim: #8888aa;
+    --accent: #4a6cf7;
+    --accent-glow: rgba(74, 108, 247, 0.25);
+    --green: #34d399;
+    --purple: #a78bfa;
+    --orange: #fb923c;
+    --radius: 20px;
+    --radius-sm: 12px;
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Landing Page Layout ─── */
+
+.landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* ─── Header ─── */
+
+.landing-header {
+    text-align: center;
+    padding: 48px 24px 16px;
+}
+
+.app-logo {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+.app-logo svg {
+    width: 40px;
+    height: 40px;
+    fill: white;
+}
+
+.landing-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #fff, #c0c8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.landing-header p {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* ─── Mode Cards Grid ─── */
+
+.mode-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 24px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+    align-content: start;
+}
+
+/* iPad landscape: 2 columns */
+@media (min-width: 700px) {
+    .mode-grid {
+        grid-template-columns: 1fr 1fr;
+        max-width: 800px;
+        gap: 20px;
+        padding: 32px;
+    }
+
+    /* Make the first card span full width if odd count */
+    .mode-card:first-child:nth-last-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Large iPad Pro landscape */
+@media (min-width: 1024px) {
+    .mode-grid {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 1000px;
+    }
+
+    .mode-card:first-child:nth-last-child(odd) {
+        grid-column: auto;
+    }
+}
+
+.mode-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.mode-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.mode-card:hover,
+.mode-card:active {
+    transform: translateY(-2px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--accent-glow);
+}
+
+.mode-card:hover::before,
+.mode-card:active::before {
+    opacity: 1;
+}
+
+.mode-card:active {
+    transform: translateY(0);
+}
+
+/* Card accent colors */
+.mode-card[data-mode="demo"]::before { background: var(--accent); }
+.mode-card[data-mode="doctor"]::before { background: var(--green); }
+.mode-card[data-mode="live"]::before { background: var(--purple); }
+
+.card-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.mode-card[data-mode="demo"] .card-icon {
+    background: rgba(74, 108, 247, 0.15);
+    color: var(--accent);
+}
+
+.mode-card[data-mode="doctor"] .card-icon {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--green);
+}
+
+.mode-card[data-mode="live"] .card-icon {
+    background: rgba(167, 139, 250, 0.15);
+    color: var(--purple);
+}
+
+.card-content h2 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
+}
+
+.card-content p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+}
+
+.card-arrow {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    transition: transform 0.3s, color 0.3s;
+}
+
+.mode-card:hover .card-arrow,
+.mode-card:active .card-arrow {
+    transform: translateY(-50%) translateX(4px);
+    color: var(--accent);
+}
+
+/* ─── Footer ─── */
+
+.landing-footer {
+    text-align: center;
+    padding: 20px 24px 32px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+
+.landing-footer .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.landing-footer .status-dot.online { background: var(--green); box-shadow: 0 0 8px rgba(52, 211, 153, 0.5); }
+.landing-footer .status-dot.offline { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+/* ─── Splash / Loading ─── */
+
+.splash-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 0;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ─── Safe area for notch devices ─── */
+@supports (padding: env(safe-area-inset-top)) {
+    .landing-header {
+        padding-top: calc(48px + env(safe-area-inset-top));
+    }
+    .landing-footer {
+        padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    }
+}

@@ -1,0 +1,51 @@
+{
+  "title": "Doctor Visit — ASL Communication Demo",
+  "description": "A doctor's office visit where a hearing doctor speaks English and a Deaf patient responds in ASL, translated by SignBridge.",
+  "turns": [
+    {
+      "speaker": "doctor",
+      "text": "Hello! I'm Dr. Williams. What brings you in today?",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["meet", "doctor"],
+      "asl_sentence": "I'm here to meet the doctor.",
+      "sign_videos": ["meet", "doctor"]
+    },
+    {
+      "speaker": "doctor",
+      "text": "Of course. Tell me what's been going on.",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["time", "son", "go", "bed"],
+      "asl_sentence": "It is time for my son to go to bed.",
+      "sign_videos": ["time", "son", "go", "bed"]
+    },
+    {
+      "speaker": "doctor",
+      "text": "I see. Does he stay active during the day?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["work", "full", "time"],
+      "asl_sentence": "He works full time at school.",
+      "sign_videos": ["work", "full", "time"]
+    },
+    {
+      "speaker": "doctor",
+      "text": "That's good. Make sure he gets outside and stays active. Take care!",
+      "duration": 4.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["enjoy", "meet", "doctor"],
+      "asl_sentence": "I enjoyed meeting you, doctor. Thank you!",
+      "sign_videos": ["enjoy", "meet", "doctor"]
+    }
+  ],
+  "breakdown_samples": ["time-son-go-bed-k", "work-full-time-doctor-k"]
+}

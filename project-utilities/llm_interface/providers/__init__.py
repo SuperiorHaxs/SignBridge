@@ -1,6 +1,13 @@
 """LLM Provider Implementations"""
 
-from .huggingface_provider import HuggingFaceProvider
-from .groq_provider import GroqProvider
+try:
+    from .huggingface_provider import HuggingFaceProvider
+except (ImportError, Exception):
+    HuggingFaceProvider = None  # openai not installed
+
+try:
+    from .groq_provider import GroqProvider
+except (ImportError, Exception):
+    GroqProvider = None  # openai not installed
 
 __all__ = ['HuggingFaceProvider', 'GroqProvider']

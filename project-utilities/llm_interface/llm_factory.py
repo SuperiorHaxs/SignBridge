@@ -27,8 +27,14 @@ try:
 except ImportError:
     pass  # dotenv not available, will use system environment
 
-from providers.huggingface_provider import HuggingFaceProvider
-from providers.groq_provider import GroqProvider
+try:
+    from providers.huggingface_provider import HuggingFaceProvider
+except (ImportError, Exception):
+    HuggingFaceProvider = None  # openai not installed
+try:
+    from providers.groq_provider import GroqProvider
+except (ImportError, Exception):
+    GroqProvider = None  # openai not installed
 from providers.googleaistudio_provider import GoogleAIStudioProvider
 from llm_interface import LLMError, LLMAPIError
 

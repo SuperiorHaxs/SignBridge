@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SignBridge">
+    <meta name="theme-color" content="#0a0a1a">
+    <title>SignBridge</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="stylesheet" href="/static/css/mobile.css">
+</head>
+<body>
+    <div class="landing">
+        <!-- Header -->
+        <header class="landing-header">
+            <div class="app-logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2C8.5 2 5.5 4 4 7c-1 2-.5 4.5 1 6l1 1c.5.5 1 1.5 1 2.5V20a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-3.5c0-1 .5-2 1-2.5l1-1c1.5-1.5 2-4 1-6-1.5-3-4.5-5-8-5z"/>
+                    <path d="M10 17h4M10 14h4" stroke="#0a0a1a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                </svg>
+            </div>
+            <h1>SignBridge</h1>
+            <p>Real-Time ASL Translation with LLM-Augmented Contextual Selection</p>
+        </header>
+
+        <!-- Mode Selection Cards -->
+        <div class="mode-grid">
+            <!-- Preset Demo -->
+            <a href="/preset-launch" class="mode-card" data-mode="demo">
+                <div class="card-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Preset Demo</h2>
+                    <p>Watch SignBridge translate pre-recorded ASL videos through the full 5-step pipeline with visualizations</p>
+                </div>
+                <span class="card-arrow">&rsaquo;</span>
+            </a>
+
+            <!-- Doctor Demo -->
+            <a href="/doctor-launch" class="mode-card" data-mode="doctor">
+                <div class="card-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Doctor Demo</h2>
+                    <p>Simulated doctor visit where a hearing doctor and Deaf patient communicate through real-time ASL translation</p>
+                </div>
+                <span class="card-arrow">&rsaquo;</span>
+            </a>
+
+            <!-- Live Mode -->
+            <a href="/live-launch" class="mode-card" data-mode="live">
+                <div class="card-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 7l-7 5 7 5V7z"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                    </svg>
+                </div>
+                <div class="card-content">
+                    <h2>Live Translation</h2>
+                    <p>Use your camera to sign in real-time and see instant ASL-to-English translation</p>
+                </div>
+                <span class="card-arrow">&rsaquo;</span>
+            </a>
+        </div>
+
+        <!-- Footer with server status -->
+        <footer class="landing-footer">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Checking server...</span>
+        </footer>
+    </div>
+
+    <script>
+        // ─── Check server connectivity ───
+        async function checkServer() {
+            const dot = document.getElementById('statusDot');
+            const text = document.getElementById('statusText');
+            try {
+                const resp = await fetch('/api/samples', { signal: AbortSignal.timeout(3000) });
+                if (resp.ok) {
+                    dot.className = 'status-dot online';
+                    text.textContent = 'Server connected';
+                } else {
+                    throw new Error();
+                }
+            } catch {
+                dot.className = 'status-dot offline';
+                text.textContent = 'Server offline — start the show-and-tell app';
+            }
+        }
+        checkServer();
+
+        // ─── Mode launchers ───
+        // These set the correct sessionStorage mode then redirect to the
+        // show-and-tell page so mode.js picks it up correctly.
+
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                const mode = card.dataset.mode;
+
+                // Clear previous state
+                sessionStorage.clear();
+
+                // Set cookie so the PWA server knows to proxy '/' to the backend
+                document.cookie = 'signbridge_mode=' + mode + '; path=/; SameSite=Lax';
+
+                if (mode === 'demo') {
+                    sessionStorage.setItem('appMode', 'demo');
+                    window.location.href = '/';
+                } else if (mode === 'doctor') {
+                    sessionStorage.setItem('appMode', 'doctor_demo');
+                    window.location.href = '/doctor-demo';
+                } else if (mode === 'live') {
+                    sessionStorage.setItem('appMode', 'live');
+                    window.location.href = '/live-setup';
+                }
+            });
+        });
+
+        // ─── Register service worker ───
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>

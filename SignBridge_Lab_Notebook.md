@@ -170,9 +170,9 @@ Existing technology either:
 | I3D Baseline (WLASL) | Video-based approach: 65.89% Top-1. Slow inference, not real-time viable | Aug 2025 |
 | Multi-stream CNN (SOTA) | Video-based SOTA: 81.38% Top-1. Slow, requires heavy compute | Aug 2025 |
 | Google Gemini (gemini-2.0-flash) | LLM with fast inference, suitable for real-time contextual sign selection | Sep 2025 |
-| Zhang et al. (2020), BERTScore | Semantic similarity metric using BERT embeddings — captures meaning preservation | Sep 2025 |
-| Papineni et al. (2002), BLEU | Lexical similarity metric for machine translation evaluation | Sep 2025 |
+| Zhang et al. (2020), BERTScore | Semantic similarity metric using BERT embeddings — captures meaning preservation | Sep 2025 |or machine translation evaluation | Sep 2025 |
 
+| Papineni et al. (2002), BLEU | Lexical similarity metric f
 ---
 
 <!-- LN Page 5 — Background Research (Linguistic / Cultural + Key Insight) -->

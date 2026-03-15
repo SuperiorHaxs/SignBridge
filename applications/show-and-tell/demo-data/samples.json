@@ -1,54 +1,34 @@
 {
   "samples": [
     {
-      "id": "give-jacket-son",
-      "name": "Give Jacket Son",
-      "thumbnail": "original_video.mp4"
-    },
-    {
-      "id": "walk-before-dance",
-      "name": "Walk Before Dance",
-      "thumbnail": "original_video.mp4"
+      "id": "man-drink-water-kk",
+      "name": "Man Drink Water",
+      "thumbnail": "pose_video.mp4"
     },
     {
       "id": "son-enjoy-work-vid",
       "name": "Son Enjoy Work",
-      "thumbnail": "original_video.mp4"
+      "thumbnail": "pose_video.mp4"
     },
     {
       "id": "what-time-finish-basketball-k",
-      "name": "what time finish basketball",
-      "thumbnail": "original_video.mp4"
+      "name": "What Time Finish Basketball",
+      "thumbnail": "pose_video.mp4"
     },
     {
       "id": "chair-black-tall-k",
-      "name": "chair black tall",
-      "thumbnail": "original_video.mp4"
+      "name": "Chair Black Tall",
+      "thumbnail": "pose_video.mp4"
     },
     {
       "id": "time-son-go-bed-k",
-      "name": "time son go bed",
-      "thumbnail": "original_video.mp4"
+      "name": "Time Son Go Bed",
+      "thumbnail": "pose_video.mp4"
     },
     {
       "id": "work-full-time-doctor-k",
-      "name": "work full time doctor",
-      "thumbnail": "original_video.mp4"
-    },
-    {
-      "id": "man-drink-water-kk",
-      "name": "Man Drink Water",
-      "thumbnail": "original_video.mp4"
-    },
-    {
-      "id": "doctor_need_water",
-      "name": "Doctor Needs Water",
-      "thumbnail": "original_video.mp4"
-    },
-    {
-      "id": "what-help-doctor-give",
-      "name": "What Help Doctor Give",
-      "thumbnail": "original_video.mp4"
+      "name": "Work Full Time Doctor",
+      "thumbnail": "pose_video.mp4"
     }
   ]
 }
