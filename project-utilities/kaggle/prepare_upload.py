@@ -54,31 +54,56 @@ def stage_data(classes=None):
     if data_dir.exists():
         shutil.rmtree(data_dir)
 
-    # ── Augmented pool pickles (shared across all class counts) ──
-    src_pickle = PROJECT_ROOT / "datasets" / "augmented_pool" / "pickle"
-    dst_pickle = data_dir / "datasets" / "augmented_pool" / "pickle"
+    use_2000 = classes and "2000" in classes
 
-    if src_pickle.exists():
-        print(f"Copying augmented pickle pool ({sum(1 for _ in src_pickle.rglob('*.pkl'))} files)...")
-        shutil.copytree(src_pickle, dst_pickle, ignore=shutil.ignore_patterns('__pycache__'))
+    if use_2000:
+        # ── WLASL2000 originals-only mode ──
+        # Copy all original pickle files (flat directory, ~6.6 GB)
+        src_pickle = PROJECT_ROOT / "datasets" / "wlasl_poses_complete" / "pickle_files"
+        dst_pickle = data_dir / "datasets" / "wlasl_poses_complete" / "pickle_files"
+
+        if src_pickle.exists():
+            pkl_count = sum(1 for f in src_pickle.iterdir() if f.suffix == '.pkl')
+            print(f"Copying original pickle files ({pkl_count} files)...")
+            shutil.copytree(src_pickle, dst_pickle, ignore=shutil.ignore_patterns('__pycache__'))
+        else:
+            print(f"WARNING: {src_pickle} not found, skipping")
+
+        # Copy 2000-class splits/manifests
+        src_splits = PROJECT_ROOT / "datasets" / "wlasl_poses_complete" / "splits" / "2000_classes"
+        dst_splits = data_dir / "datasets" / "wlasl_poses_complete" / "splits" / "2000_classes"
+        if src_splits.exists():
+            print(f"Copying 2000-class manifests...")
+            shutil.copytree(src_splits, dst_splits)
+        else:
+            print(f"WARNING: {src_splits} not found — run create_wlasl2000_split.py first")
+
     else:
-        print(f"WARNING: {src_pickle} not found, skipping")
+        # ── Standard augmented pool mode (existing behavior) ──
+        src_pickle = PROJECT_ROOT / "datasets" / "augmented_pool" / "pickle"
+        dst_pickle = data_dir / "datasets" / "augmented_pool" / "pickle"
 
-    # ── Augmented pool splits (per class count) ──
-    src_splits = PROJECT_ROOT / "datasets" / "augmented_pool" / "splits"
-    available_splits = [d.name for d in src_splits.iterdir() if d.is_dir()] if src_splits.exists() else []
+        if src_pickle.exists():
+            print(f"Copying augmented pickle pool ({sum(1 for _ in src_pickle.rglob('*.pkl'))} files)...")
+            shutil.copytree(src_pickle, dst_pickle, ignore=shutil.ignore_patterns('__pycache__'))
+        else:
+            print(f"WARNING: {src_pickle} not found, skipping")
 
-    for split_name in available_splits:
-        class_count = split_name.replace("_classes", "")
-        if classes and class_count not in classes:
-            print(f"  Skipping split {split_name} (not in --classes)")
-            continue
-        src = src_splits / split_name
-        dst = data_dir / "datasets" / "augmented_pool" / "splits" / split_name
-        print(f"Copying augmented splits: {split_name}")
-        shutil.copytree(src, dst)
+        # ── Augmented pool splits (per class count) ──
+        src_splits = PROJECT_ROOT / "datasets" / "augmented_pool" / "splits"
+        available_splits = [d.name for d in src_splits.iterdir() if d.is_dir()] if src_splits.exists() else []
 
-    # ── Original dataset splits (per class count) ──
+        for split_name in available_splits:
+            class_count = split_name.replace("_classes", "")
+            if classes and class_count not in classes:
+                print(f"  Skipping split {split_name} (not in --classes)")
+                continue
+            src = src_splits / split_name
+            dst = data_dir / "datasets" / "augmented_pool" / "splits" / split_name
+            print(f"Copying augmented splits: {split_name}")
+            shutil.copytree(src, dst)
+
+    # ── Original dataset splits (per class count, non-2000) ──
     src_original = PROJECT_ROOT / "datasets" / "wlasl_poses_complete" / "dataset_splits"
     if src_original.exists():
         available_originals = [d.name for d in src_original.iterdir() if d.is_dir()]
@@ -138,6 +163,13 @@ def stage_code():
                 "test_manifest": "../augmented_pool/splits/100_classes/test_manifest.json",
                 "class_mapping": "dataset_splits/100_classes/class_mapping.json"
             },
+            "2000": {
+                "pickle_pool": "pickle_files",
+                "train_manifest": "splits/2000_classes/train_manifest.json",
+                "val_manifest": "splits/2000_classes/val_manifest.json",
+                "test_manifest": "splits/2000_classes/test_manifest.json",
+                "class_mapping": "splits/2000_classes/class_mapping.json"
+            },
             "125": {
                 "train_original": "dataset_splits/125_classes/original/pickle_split_125_class/train",
                 "pickle_pool": "../augmented_pool/pickle",
@@ -177,6 +209,24 @@ def stage_code():
 
     # ── Requirements ──
     copy_file("requirements.txt")
+
+    # ── Manifests (so --manifest-dir can point to asl-code/manifests/<split>) ──
+    manifests_src = PROJECT_ROOT / "datasets" / "wlasl_poses_complete" / "splits"
+    if manifests_src.exists():
+        for split_dir in manifests_src.iterdir():
+            if split_dir.is_dir():
+                dst = code_dir / "manifests" / split_dir.name
+                shutil.copytree(split_dir, dst)
+                print(f"  Copied manifests: {split_dir.name}")
+    # Also copy augmented pool manifests
+    aug_splits_src = PROJECT_ROOT / "datasets" / "augmented_pool" / "splits"
+    if aug_splits_src.exists():
+        for split_dir in aug_splits_src.iterdir():
+            if split_dir.is_dir():
+                dst = code_dir / "manifests" / split_dir.name
+                if not dst.exists():
+                    shutil.copytree(split_dir, dst)
+                    print(f"  Copied manifests: {split_dir.name}")
 
     # ── Kaggle launcher script ──
     create_launcher(code_dir)
@@ -284,34 +334,17 @@ def setup_environment():
 def main():
     setup_environment()
 
-    # Build train_asl.py command from our args
+    # Pass all args straight through to train_asl.py
     train_script = str(WORKING / "models" / "training-scripts" / "train_asl.py")
 
-    # Pass all args through to train_asl.py, adding --architecture openhands default
-    import argparse
-    parser = argparse.ArgumentParser(description="Kaggle ASL Training Launcher")
-    parser.add_argument("--classes", type=int, required=True, help="Number of classes (43, 100, 125)")
-    parser.add_argument("--dataset", type=str, default="augmented", choices=["original", "augmented"])
-    parser.add_argument("--model-size", type=str, default="small", choices=["tiny", "small", "large"])
-    parser.add_argument("--dropout", type=float, default=0.3)
-    parser.add_argument("--early-stopping", type=int, default=15)
-    parser.add_argument("--manifest", type=str, default=None, help="Custom manifest path")
-    parser.add_argument("--force-fresh", action="store_true")
-    args = parser.parse_args()
+    # Forward all CLI args to train_asl.py (add --architecture openhands as default)
+    user_args = sys.argv[1:]
+    has_architecture = any(a.startswith("--architecture") for a in user_args)
 
-    cmd = [
-        sys.executable, train_script,
-        "--architecture", "openhands",
-        "--classes", str(args.classes),
-        "--dataset", args.dataset,
-        "--model-size", args.model_size,
-        "--dropout", str(args.dropout),
-        "--early-stopping", str(args.early_stopping),
-    ]
-    if args.manifest:
-        cmd.extend(["--manifest", args.manifest])
-    if args.force_fresh:
-        cmd.append("--force-fresh")
+    cmd = [sys.executable, train_script]
+    if not has_architecture:
+        cmd.extend(["--architecture", "openhands"])
+    cmd.extend(user_args)
 
     # Set PYTHONPATH for imports
     env = os.environ.copy()

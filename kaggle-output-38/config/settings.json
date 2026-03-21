@@ -1,0 +1,30 @@
+{
+  "data_root": "/kaggle/input/datasets/nivakramuk/asl-data/wlasl_poses_complete",
+  "project_root": "/kaggle/working",
+  "dataset_splits": {
+    "43": {
+      "train_original": "dataset_splits/43_classes/original/pickle_split_43_class/train",
+      "pickle_pool": "../augmented_pool/pickle",
+      "train_manifest": "../augmented_pool/splits/43_classes/train_manifest.json",
+      "val_manifest": "../augmented_pool/splits/43_classes/val_manifest.json",
+      "test_manifest": "../augmented_pool/splits/43_classes/test_manifest.json",
+      "class_mapping": "dataset_splits/43_classes/class_mapping.json"
+    },
+    "100": {
+      "train_original": "dataset_splits/100_classes/original/pickle_split_100_class/train",
+      "pickle_pool": "../augmented_pool/pickle",
+      "train_manifest": "../augmented_pool/splits/100_classes/train_manifest.json",
+      "val_manifest": "../augmented_pool/splits/100_classes/val_manifest.json",
+      "test_manifest": "../augmented_pool/splits/100_classes/test_manifest.json",
+      "class_mapping": "dataset_splits/100_classes/class_mapping.json"
+    },
+    "125": {
+      "train_original": "dataset_splits/125_classes/original/pickle_split_125_class/train",
+      "pickle_pool": "../augmented_pool/pickle",
+      "train_manifest": "../augmented_pool/splits/125_classes/train_manifest.json",
+      "val_manifest": "../augmented_pool/splits/125_classes/val_manifest.json",
+      "test_manifest": "../augmented_pool/splits/125_classes/test_manifest.json",
+      "class_mapping": "dataset_splits/125_classes/class_mapping.json"
+    }
+  }
+}

@@ -91,7 +91,7 @@ def load_from_manifest(manifest_path, pickle_pool_path):
 
     Args:
         manifest_path: Path to manifest JSON file
-        pickle_pool_path: Path to augmented_pool/pickle/ directory
+        pickle_pool_path: Path to augmented_pool/pickle/ directory (or flat pickle dir)
 
     Returns:
         Tuple of (file_paths, labels)
@@ -100,11 +100,22 @@ def load_from_manifest(manifest_path, pickle_pool_path):
         manifest = json.load(f)
 
     pickle_pool = Path(pickle_pool_path)
+    # If pickle_pool doesn't exist, try resolving relative to manifest location
+    if not pickle_pool.exists() and manifest_path:
+        manifest_dir_path = Path(manifest_path).parent
+        resolved = manifest_dir_path / pickle_pool_path
+        if resolved.exists():
+            pickle_pool = resolved
+        else:
+            print(f"WARNING: pickle_pool not found at {pickle_pool_path} or {resolved}")
+    # Flat layout: all pickles in one directory (originals-only mode)
+    # Nested layout: pickles in gloss subdirectories (augmented pool)
+    flat_layout = manifest.get('pool_type') == 'originals_flat'
     file_paths = []
     labels = []
 
     for gloss, families in manifest['classes'].items():
-        gloss_dir = pickle_pool / gloss.lower()
+        gloss_dir = pickle_pool if flat_layout else pickle_pool / gloss.lower()
         for family in families:
             for filename in family['files']:
                 file_path = gloss_dir / filename
@@ -327,7 +338,7 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
                            label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None,
-                           manifest_path=None, use_finger_features=True, manifest_dir=None):
+                           manifest_path=None, use_finger_features=True, manifest_dir=None, lr_override=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -681,6 +692,11 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"HYPERPARAMS: Configured for small original dataset")
         print(f"  Batch size: {batch_size} (small)")
         print(f"  Learning rate: {lr} (higher)")
+
+    # Override LR if explicitly provided
+    if lr_override is not None:
+        lr = lr_override
+        print(f"  Learning rate: {lr} (custom override)")
 
     # Use command-line weight_decay if provided, otherwise use default
     final_weight_decay = weight_decay if weight_decay is not None else default_weight_decay
@@ -1052,6 +1068,8 @@ if __name__ == "__main__":
                        help='Custom hidden size (overrides model-size)')
     parser.add_argument('--num-layers', type=int, default=None,
                        help='Custom number of layers (overrides model-size)')
+    parser.add_argument('--lr', type=float, default=None,
+                       help='Learning rate (default: 1e-4). Lower values (5e-5) help larger models converge')
     parser.add_argument('--dropout', type=float, default=0.1,
                        help='Dropout probability (default: 0.1). Increase to 0.2-0.3 to reduce overfitting')
     parser.add_argument('--label-smoothing', type=float, default=0.1,
@@ -1169,7 +1187,8 @@ if __name__ == "__main__":
                 weight_decay=args.weight_decay,
                 manifest_path=args.manifest,
                 use_finger_features=not args.no_finger_features,
-                manifest_dir=args.manifest_dir
+                manifest_dir=args.manifest_dir,
+                lr_override=args.lr,
             )
 
             print()

@@ -40,19 +40,36 @@ class ModelRegistry:
         self._cache = {}  # domain -> (model, id_to_gloss, masked_class_ids)
         self._lock = threading.Lock()
 
+        # Log registry on startup for debugging
+        print(f"[ModelRegistry] Models dir: {self._models_dir}")
+        print(f"[ModelRegistry] Domain registry:")
+        for domain, model_dir in self._registry.items():
+            model_path = self._models_dir / model_dir
+            exists = model_path.exists()
+            # Read class count if available
+            class_file = model_path / "class_index_mapping.json"
+            num_classes = "?"
+            if class_file.exists():
+                with open(class_file, 'r') as f:
+                    num_classes = len(json.load(f))
+            print(f"  {domain:>12s} -> {model_dir} ({num_classes} classes, exists={exists})")
+
     def _load_registry(self) -> dict:
         """Load domain registry from JSON file or use defaults."""
         registry_path = os.environ.get("DOMAIN_REGISTRY_PATH")
         if registry_path and Path(registry_path).exists():
+            print(f"[ModelRegistry] Registry source: env DOMAIN_REGISTRY_PATH={registry_path}")
             with open(registry_path, 'r') as f:
                 return json.load(f)
 
         # Check for registry.json in models dir
         local_registry = self._models_dir / "registry.json"
         if local_registry.exists():
+            print(f"[ModelRegistry] Registry source: {local_registry}")
             with open(local_registry, 'r') as f:
                 return json.load(f)
 
+        print(f"[ModelRegistry] Registry source: DEFAULT_REGISTRY (no registry.json found)")
         return DEFAULT_REGISTRY.copy()
 
     def register_domain(self, domain: str, model_dir_name: str):

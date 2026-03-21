@@ -1,0 +1,663 @@
+{
+  "ADDRESS": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 93.4,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 73.0,
+    "std_top1_confidence": 9.4,
+    "avg_correct_in_top3_confidence": 70.3,
+    "std_correct_in_top3_confidence": 15.3,
+    "avg_correct_in_top5_confidence": 70.3,
+    "std_correct_in_top5_confidence": 15.3,
+    "difficulty": "EASY",
+    "confusions": {
+      "CAN": 4
+    }
+  },
+  "ALLERGY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.4,
+    "std_top1_confidence": 0.1,
+    "avg_correct_in_top3_confidence": 97.4,
+    "std_correct_in_top3_confidence": 0.1,
+    "avg_correct_in_top5_confidence": 97.4,
+    "std_correct_in_top5_confidence": 0.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "ANSWER": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 4.9,
+    "top3_hit_rate": 88.5,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 50.7,
+    "std_top1_confidence": 19.4,
+    "avg_correct_in_top3_confidence": 18.8,
+    "std_correct_in_top3_confidence": 9.5,
+    "avg_correct_in_top5_confidence": 17.0,
+    "std_correct_in_top5_confidence": 10.5,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "CAN": 35,
+      "ALLERGY": 18,
+      "HERE": 5
+    }
+  },
+  "APPOINTMENT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 95.5,
+    "std_top1_confidence": 7.1,
+    "avg_correct_in_top3_confidence": 95.4,
+    "std_correct_in_top3_confidence": 7.7,
+    "avg_correct_in_top5_confidence": 95.4,
+    "std_correct_in_top5_confidence": 7.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "STRESS": 1,
+      "NIGHT": 1
+    }
+  },
+  "BETTER": {
+    "n_pickles": 63,
+    "n_originals": 1,
+    "top1_accuracy": 96.8,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.0,
+    "std_top1_confidence": 5.7,
+    "avg_correct_in_top3_confidence": 95.4,
+    "std_correct_in_top3_confidence": 11.8,
+    "avg_correct_in_top5_confidence": 93.9,
+    "std_correct_in_top5_confidence": 16.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "KNOW": 1,
+      "YES": 1
+    }
+  },
+  "BLOOD": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.9,
+    "std_top1_confidence": 2.3,
+    "avg_correct_in_top3_confidence": 96.9,
+    "std_correct_in_top3_confidence": 2.3,
+    "avg_correct_in_top5_confidence": 96.9,
+    "std_correct_in_top5_confidence": 2.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "BREATHE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 72.1,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 66.8,
+    "std_top1_confidence": 15.4,
+    "avg_correct_in_top3_confidence": 57.1,
+    "std_correct_in_top3_confidence": 25.9,
+    "avg_correct_in_top5_confidence": 56.2,
+    "std_correct_in_top5_confidence": 26.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "NIGHT": 16,
+      "FEEL": 1
+    }
+  },
+  "CAN": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 95.8,
+    "std_top1_confidence": 5.0,
+    "avg_correct_in_top3_confidence": 95.8,
+    "std_correct_in_top3_confidence": 5.0,
+    "avg_correct_in_top5_confidence": 95.8,
+    "std_correct_in_top5_confidence": 5.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "COUGH": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 91.8,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 74.0,
+    "std_top1_confidence": 12.3,
+    "avg_correct_in_top3_confidence": 71.6,
+    "std_correct_in_top3_confidence": 16.7,
+    "avg_correct_in_top5_confidence": 71.6,
+    "std_correct_in_top5_confidence": 16.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "FEEL": 5
+    }
+  },
+  "DOCTOR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 91.8,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 88.3,
+    "std_top1_confidence": 6.1,
+    "avg_correct_in_top3_confidence": 80.7,
+    "std_correct_in_top3_confidence": 24.6,
+    "avg_correct_in_top5_confidence": 80.7,
+    "std_correct_in_top5_confidence": 24.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "APPOINTMENT": 5
+    }
+  },
+  "EAT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.0,
+    "std_top1_confidence": 4.8,
+    "avg_correct_in_top3_confidence": 97.0,
+    "std_correct_in_top3_confidence": 4.8,
+    "avg_correct_in_top5_confidence": 97.0,
+    "std_correct_in_top5_confidence": 4.8,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "FEEL": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 83.6,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 68.3,
+    "std_top1_confidence": 17.6,
+    "avg_correct_in_top3_confidence": 62.9,
+    "std_correct_in_top3_confidence": 22.0,
+    "avg_correct_in_top5_confidence": 61.9,
+    "std_correct_in_top5_confidence": 23.2,
+    "difficulty": "EASY",
+    "confusions": {
+      "COUGH": 10
+    }
+  },
+  "HEADACHE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.6,
+    "std_top1_confidence": 0.1,
+    "avg_correct_in_top3_confidence": 97.6,
+    "std_correct_in_top3_confidence": 0.1,
+    "avg_correct_in_top5_confidence": 97.6,
+    "std_correct_in_top5_confidence": 0.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "HEAR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 0.0,
+    "avg_top1_confidence": 94.1,
+    "std_top1_confidence": 12.6,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0,
+    "std_correct_in_top5_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "RIGHT": 58,
+      "TODAY": 1,
+      "SIT": 1,
+      "MEDICINE": 1
+    }
+  },
+  "HERE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 77.0,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 77.1,
+    "std_top1_confidence": 13.8,
+    "avg_correct_in_top3_confidence": 66.0,
+    "std_correct_in_top3_confidence": 27.3,
+    "avg_correct_in_top5_confidence": 66.0,
+    "std_correct_in_top5_confidence": 27.3,
+    "difficulty": "EASY",
+    "confusions": {
+      "WANT": 14
+    }
+  },
+  "HOW": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 13.1,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 53.2,
+    "std_top1_confidence": 13.6,
+    "avg_correct_in_top3_confidence": 22.2,
+    "std_correct_in_top3_confidence": 12.2,
+    "avg_correct_in_top5_confidence": 21.8,
+    "std_correct_in_top5_confidence": 12.4,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "APPOINTMENT": 47,
+      "ADDRESS": 5,
+      "SURGERY": 1
+    }
+  },
+  "KNOW": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 82.0,
+    "top3_hit_rate": 93.4,
+    "top5_hit_rate": 96.7,
+    "avg_top1_confidence": 85.8,
+    "std_top1_confidence": 13.6,
+    "avg_correct_in_top3_confidence": 81.3,
+    "std_correct_in_top3_confidence": 24.2,
+    "avg_correct_in_top5_confidence": 78.6,
+    "std_correct_in_top5_confidence": 27.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "BETTER": 8,
+      "YES": 2,
+      "EAT": 1
+    }
+  },
+  "MEDICINE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 4.9,
+    "avg_correct_in_top3_confidence": 96.5,
+    "std_correct_in_top3_confidence": 4.9,
+    "avg_correct_in_top5_confidence": 96.5,
+    "std_correct_in_top5_confidence": 4.9,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "MORE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.3,
+    "std_top1_confidence": 2.0,
+    "avg_correct_in_top3_confidence": 97.3,
+    "std_correct_in_top3_confidence": 2.0,
+    "avg_correct_in_top5_confidence": 97.3,
+    "std_correct_in_top5_confidence": 2.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "MORNING": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 88.5,
+    "std_top1_confidence": 11.2,
+    "avg_correct_in_top3_confidence": 86.7,
+    "std_correct_in_top3_confidence": 17.1,
+    "avg_correct_in_top5_confidence": 86.7,
+    "std_correct_in_top5_confidence": 17.1,
+    "difficulty": "EASY",
+    "confusions": {
+      "SICK": 2
+    }
+  },
+  "NAME": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 6.9,
+    "avg_correct_in_top3_confidence": 96.5,
+    "std_correct_in_top3_confidence": 6.9,
+    "avg_correct_in_top5_confidence": 96.5,
+    "std_correct_in_top5_confidence": 6.9,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "NIGHT": {
+    "n_pickles": 63,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 94.7,
+    "std_top1_confidence": 6.5,
+    "avg_correct_in_top3_confidence": 94.7,
+    "std_correct_in_top3_confidence": 6.5,
+    "avg_correct_in_top5_confidence": 94.7,
+    "std_correct_in_top5_confidence": 6.5,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "RIGHT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 94.3,
+    "std_top1_confidence": 6.7,
+    "avg_correct_in_top3_confidence": 94.3,
+    "std_correct_in_top3_confidence": 6.7,
+    "avg_correct_in_top5_confidence": 94.3,
+    "std_correct_in_top5_confidence": 6.7,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "SICK": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 5.7,
+    "avg_correct_in_top3_confidence": 96.5,
+    "std_correct_in_top3_confidence": 5.7,
+    "avg_correct_in_top5_confidence": 96.5,
+    "std_correct_in_top5_confidence": 5.7,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "SIT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 96.7,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 93.5,
+    "std_top1_confidence": 6.0,
+    "avg_correct_in_top3_confidence": 94.1,
+    "std_correct_in_top3_confidence": 4.0,
+    "avg_correct_in_top5_confidence": 92.5,
+    "std_correct_in_top5_confidence": 12.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "NAME": 1,
+      "APPOINTMENT": 1
+    }
+  },
+  "STAND": {
+    "n_pickles": 67,
+    "n_originals": 1,
+    "top1_accuracy": 83.6,
+    "top3_hit_rate": 95.5,
+    "top5_hit_rate": 98.5,
+    "avg_top1_confidence": 84.7,
+    "std_top1_confidence": 10.3,
+    "avg_correct_in_top3_confidence": 77.5,
+    "std_correct_in_top3_confidence": 25.8,
+    "avg_correct_in_top5_confidence": 75.2,
+    "std_correct_in_top5_confidence": 28.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "TODAY": 7,
+      "HEADACHE": 1,
+      "SICK": 1,
+      "NIGHT": 1,
+      "SURGERY": 1
+    }
+  },
+  "STOMACH": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 6.6,
+    "top3_hit_rate": 19.7,
+    "top5_hit_rate": 88.5,
+    "avg_top1_confidence": 49.9,
+    "std_top1_confidence": 20.1,
+    "avg_correct_in_top3_confidence": 27.9,
+    "std_correct_in_top3_confidence": 31.0,
+    "avg_correct_in_top5_confidence": 9.8,
+    "std_correct_in_top5_confidence": 17.7,
+    "difficulty": "HARD",
+    "confusions": {
+      "RIGHT": 34,
+      "MEDICINE": 11,
+      "WANT": 9,
+      "HOW": 1,
+      "THANK YOU": 1,
+      "SIT": 1
+    }
+  },
+  "STOP": {
+    "n_pickles": 66,
+    "n_originals": 1,
+    "top1_accuracy": 13.6,
+    "top3_hit_rate": 45.5,
+    "top5_hit_rate": 84.8,
+    "avg_top1_confidence": 76.4,
+    "std_top1_confidence": 16.2,
+    "avg_correct_in_top3_confidence": 22.4,
+    "std_correct_in_top3_confidence": 30.1,
+    "avg_correct_in_top5_confidence": 13.1,
+    "std_correct_in_top5_confidence": 24.2,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "NIGHT": 49,
+      "DOCTOR": 8
+    }
+  },
+  "STRESS": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 91.8,
+    "top3_hit_rate": 95.1,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 88.1,
+    "std_top1_confidence": 9.5,
+    "avg_correct_in_top3_confidence": 86.9,
+    "std_correct_in_top3_confidence": 16.2,
+    "avg_correct_in_top5_confidence": 84.0,
+    "std_correct_in_top5_confidence": 22.2,
+    "difficulty": "EASY",
+    "confusions": {
+      "APPOINTMENT": 3,
+      "DOCTOR": 1,
+      "SIT": 1
+    }
+  },
+  "SURGERY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 96.7,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 90.8,
+    "std_top1_confidence": 11.7,
+    "avg_correct_in_top3_confidence": 91.9,
+    "std_correct_in_top3_confidence": 9.2,
+    "avg_correct_in_top5_confidence": 90.4,
+    "std_correct_in_top5_confidence": 14.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "BLOOD": 1,
+      "APPOINTMENT": 1
+    }
+  },
+  "TEMPERATURE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 91.0,
+    "std_top1_confidence": 5.6,
+    "avg_correct_in_top3_confidence": 90.2,
+    "std_correct_in_top3_confidence": 9.9,
+    "avg_correct_in_top5_confidence": 90.2,
+    "std_correct_in_top5_confidence": 9.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "HEADACHE": 2
+    }
+  },
+  "THANK YOU": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 1.6,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 86.9,
+    "std_top1_confidence": 12.5,
+    "avg_correct_in_top3_confidence": 8.4,
+    "std_correct_in_top3_confidence": 10.7,
+    "avg_correct_in_top5_confidence": 8.4,
+    "std_correct_in_top5_confidence": 10.7,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "EAT": 59,
+      "YES": 1
+    }
+  },
+  "TODAY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 83.6,
+    "top3_hit_rate": 96.7,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 72.3,
+    "std_top1_confidence": 20.4,
+    "avg_correct_in_top3_confidence": 68.0,
+    "std_correct_in_top3_confidence": 27.2,
+    "avg_correct_in_top5_confidence": 66.9,
+    "std_correct_in_top5_confidence": 28.1,
+    "difficulty": "EASY",
+    "confusions": {
+      "CAN": 6,
+      "WORSE": 2,
+      "HERE": 1,
+      "ADDRESS": 1
+    }
+  },
+  "WAIT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 11.5,
+    "top3_hit_rate": 96.7,
+    "top5_hit_rate": 96.7,
+    "avg_top1_confidence": 91.9,
+    "std_top1_confidence": 11.0,
+    "avg_correct_in_top3_confidence": 8.8,
+    "std_correct_in_top3_confidence": 20.2,
+    "avg_correct_in_top5_confidence": 8.8,
+    "std_correct_in_top5_confidence": 20.2,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "WANT": 53,
+      "HERE": 1
+    }
+  },
+  "WANT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 1.6,
+    "avg_top1_confidence": 95.2,
+    "std_top1_confidence": 3.8,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0.1,
+    "std_correct_in_top5_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "HERE": 61
+    }
+  },
+  "WHERE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 93.4,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 87.6,
+    "std_top1_confidence": 12.7,
+    "avg_correct_in_top3_confidence": 85.7,
+    "std_correct_in_top3_confidence": 17.9,
+    "avg_correct_in_top5_confidence": 85.7,
+    "std_correct_in_top5_confidence": 17.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "HEAR": 3,
+      "BETTER": 1
+    }
+  },
+  "WORSE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 3.3,
+    "avg_top1_confidence": 76.4,
+    "std_top1_confidence": 18.6,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 1.4,
+    "std_correct_in_top5_confidence": 0.3,
+    "difficulty": "HARD",
+    "confusions": {
+      "DOCTOR": 47,
+      "BREATHE": 9,
+      "MORNING": 3,
+      "STOMACH": 1,
+      "NIGHT": 1
+    }
+  },
+  "YES": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 90.2,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 93.6,
+    "std_top1_confidence": 6.4,
+    "avg_correct_in_top3_confidence": 3.0,
+    "std_correct_in_top3_confidence": 5.0,
+    "avg_correct_in_top5_confidence": 2.8,
+    "std_correct_in_top5_confidence": 4.9,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "BETTER": 60,
+      "KNOW": 1
+    }
+  }
+}

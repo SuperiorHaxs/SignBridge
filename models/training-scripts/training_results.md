@@ -262,15 +262,49 @@
 - Trained on: Kaggle GPU
 - Date: 2026-03-14
 
-**Results (in progress — epoch 250):**
-- Best Validation Accuracy (Top-1): **68.39%**
-- Best Validation Accuracy (Top-3): **89.41%**
-- Train Accuracy: 97.31%
-- Train Loss: 1.0476
-- LR: 0.000099
+**Final Results:**
+- Best Validation Accuracy (Top-1): **65.28%**
+- Final Val Accuracy (Top-1): at epoch 438
+- Train Accuracy: ~98%
+- Patience counter: 17 (stopped manually)
+- Dropout: 0.3
 
 **Key Observations:**
-- 68.39% Top-1 on 77 classes = 52.6x random baseline (1.3%)
-- Top-3 at 89.4% — strong broad coverage
-- Train/val gap ~29pp — similar to 57-class model
-- Still training (epoch 250/1500, early stopping at 100 epochs no improvement)
+- 65.28% Top-1 on 77 classes = 50.2x random baseline (1.3%)
+- Best was at epoch ~288 (438 - 150 patience), declined after
+- Earlier checkpoint at epoch 250 showed 68.39% — best may have been around there
+- Train/val gap ~30pp — overfitting pattern consistent with other models
+
+---
+
+## 38-Class Model - Healthcare High-Confidence Subset (Kaggle GPU)
+
+**Configuration:**
+- Architecture: OpenHands (small) - 64 hidden, 3 layers
+- Dataset: 38-class healthcare subset (only classes with top1>=80% AND top3>=90% from 57-class model)
+- Train: 7,592 samples (200/class cap)
+- Val: 2,333 samples
+- Dropout: 0.5
+- Weight decay: 0.001
+- Label smoothing: 0.1
+- Learning rate: 0.0001 with warmup + cosine annealing
+- Early stopping: 150 epochs patience
+- Finger features: Enabled (279 features)
+- Trained on: Kaggle GPU
+- Date: 2026-03-14
+
+**Final Results:**
+- Best Validation Accuracy (Top-1): **70.47%**
+- Final Val Accuracy (Top-1): 63.18% (at epoch 679)
+- Final Val Accuracy (Top-3): 86.93% (at epoch 679)
+- Best epoch: ~529 (679 - 150 patience)
+- Train Accuracy: 99.54%
+- Train Loss: 0.7839
+- LR at stop: 0.000067
+
+**Key Observations:**
+- 70.47% Top-1 on 38 classes = 26.8x random baseline (2.6%)
+- "High confidence" selection was based on old 57-class model performance, not inherent data quality
+- Train/val gap ~30pp — same overfitting pattern as all other models
+- Source video diversity remains the fundamental bottleneck
+- Fewer classes (38 vs 57) only marginally improved accuracy (70.47% vs 69.76%)

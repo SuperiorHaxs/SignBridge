@@ -11,7 +11,8 @@
       "speaker": "patient",
       "glosses": ["meet", "doctor"],
       "asl_sentence": "I'm here to meet the doctor.",
-      "sign_videos": ["meet", "doctor"]
+      "sign_videos": ["meet", "doctor"],
+      "sentence_sample": null
     },
     {
       "speaker": "doctor",
@@ -22,7 +23,8 @@
       "speaker": "patient",
       "glosses": ["time", "son", "go", "bed"],
       "asl_sentence": "It is time for my son to go to bed.",
-      "sign_videos": ["time", "son", "go", "bed"]
+      "sign_videos": ["time", "son", "go", "bed"],
+      "sentence_sample": "time-son-go-bed-k"
     },
     {
       "speaker": "doctor",
@@ -32,8 +34,9 @@
     {
       "speaker": "patient",
       "glosses": ["work", "full", "time"],
-      "asl_sentence": "He works full time at school.",
-      "sign_videos": ["work", "full", "time"]
+      "asl_sentence": "He works full time as a doctor.",
+      "sign_videos": ["work", "full", "time"],
+      "sentence_sample": "work-full-time-doctor-k"
     },
     {
       "speaker": "doctor",
@@ -44,7 +47,8 @@
       "speaker": "patient",
       "glosses": ["enjoy", "meet", "doctor"],
       "asl_sentence": "I enjoyed meeting you, doctor. Thank you!",
-      "sign_videos": ["enjoy", "meet", "doctor"]
+      "sign_videos": ["enjoy", "meet", "doctor"],
+      "sentence_sample": null
     }
   ],
   "breakdown_samples": ["time-son-go-bed-k", "work-full-time-doctor-k"]

@@ -1,0 +1,568 @@
+{
+  "AFRICA": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 87.5,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 73.5,
+    "std_top1_confidence": 17.4,
+    "avg_correct_in_top3_confidence": 64.0,
+    "std_correct_in_top3_confidence": 26.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "MAN": 2
+    }
+  },
+  "APPLE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 72.4,
+    "std_top1_confidence": 13.2,
+    "avg_correct_in_top3_confidence": 53.9,
+    "std_correct_in_top3_confidence": 28.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "ORANGE": 5
+    }
+  },
+  "BASKETBALL": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 62.0,
+    "std_top1_confidence": 22.4,
+    "avg_correct_in_top3_confidence": 61.3,
+    "std_correct_in_top3_confidence": 23.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "TALL": 5
+    }
+  },
+  "BEFORE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 94.9,
+    "std_top1_confidence": 1.8,
+    "avg_correct_in_top3_confidence": 94.9,
+    "std_correct_in_top3_confidence": 1.8,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "BIRTHDAY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "avg_top1_confidence": 91.6,
+    "std_top1_confidence": 2.8,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "SON": 16
+    }
+  },
+  "BOWLING": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 95.3,
+    "std_top1_confidence": 1.3,
+    "avg_correct_in_top3_confidence": 95.3,
+    "std_correct_in_top3_confidence": 1.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "BUT": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 90.1,
+    "std_top1_confidence": 3.7,
+    "avg_correct_in_top3_confidence": 90.1,
+    "std_correct_in_top3_confidence": 3.7,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "CHAIR": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 94.9,
+    "std_top1_confidence": 1.1,
+    "avg_correct_in_top3_confidence": 94.9,
+    "std_correct_in_top3_confidence": 1.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "CHANGE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 93.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 67.3,
+    "std_top1_confidence": 7.2,
+    "avg_correct_in_top3_confidence": 66.5,
+    "std_correct_in_top3_confidence": 9.8,
+    "difficulty": "EASY",
+    "confusions": {
+      "BUT": 1
+    }
+  },
+  "COMPUTER": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 62.5,
+    "top3_hit_rate": 68.8,
+    "avg_top1_confidence": 61.6,
+    "std_top1_confidence": 13.9,
+    "avg_correct_in_top3_confidence": 65.4,
+    "std_correct_in_top3_confidence": 16.7,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "SON": 6
+    }
+  },
+  "COW": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "avg_top1_confidence": 55.3,
+    "std_top1_confidence": 6.7,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "BOWLING": 3,
+      "MAN": 13
+    }
+  },
+  "DANCE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "avg_top1_confidence": 87.5,
+    "std_top1_confidence": 8.7,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "STUDY": 16
+    }
+  },
+  "DEAF": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 90.4,
+    "std_top1_confidence": 3.6,
+    "avg_correct_in_top3_confidence": 90.4,
+    "std_correct_in_top3_confidence": 3.6,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "DOCTOR": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 97.4,
+    "std_top1_confidence": 0.9,
+    "avg_correct_in_top3_confidence": 97.4,
+    "std_correct_in_top3_confidence": 0.9,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "DRINK": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 86.1,
+    "std_top1_confidence": 16.1,
+    "avg_correct_in_top3_confidence": 86.1,
+    "std_correct_in_top3_confidence": 16.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "ENJOY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 92.1,
+    "std_top1_confidence": 5.3,
+    "avg_correct_in_top3_confidence": 92.1,
+    "std_correct_in_top3_confidence": 5.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "FAMILY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 96.6,
+    "std_top1_confidence": 1.3,
+    "avg_correct_in_top3_confidence": 96.6,
+    "std_correct_in_top3_confidence": 1.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "FINE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 46.9,
+    "std_top1_confidence": 7.3,
+    "avg_correct_in_top3_confidence": 40.6,
+    "std_correct_in_top3_confidence": 15.0,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "WATER": 1,
+      "PAPER": 4
+    }
+  },
+  "FULL": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "avg_top1_confidence": 47.7,
+    "std_top1_confidence": 14.1,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "DOCTOR": 16
+    }
+  },
+  "GIVE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 96.3,
+    "std_top1_confidence": 1.3,
+    "avg_correct_in_top3_confidence": 96.3,
+    "std_correct_in_top3_confidence": 1.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "HELP": {
+    "n_pickles": 32,
+    "n_originals": 2,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 91.7,
+    "std_top1_confidence": 7.0,
+    "avg_correct_in_top3_confidence": 91.7,
+    "std_correct_in_top3_confidence": 7.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "HOT": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 93.0,
+    "std_top1_confidence": 4.7,
+    "avg_correct_in_top3_confidence": 93.0,
+    "std_correct_in_top3_confidence": 4.7,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "JACKET": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 94.7,
+    "std_top1_confidence": 1.5,
+    "avg_correct_in_top3_confidence": 66.7,
+    "std_correct_in_top3_confidence": 43.0,
+    "difficulty": "EASY",
+    "confusions": {
+      "PLAY": 5
+    }
+  },
+  "LATER": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 6.2,
+    "top3_hit_rate": 12.5,
+    "avg_top1_confidence": 50.0,
+    "std_top1_confidence": 10.3,
+    "avg_correct_in_top3_confidence": 24.2,
+    "std_correct_in_top3_confidence": 4.4,
+    "difficulty": "HARD",
+    "confusions": {
+      "DRINK": 15
+    }
+  },
+  "MAN": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 92.5,
+    "std_top1_confidence": 3.6,
+    "avg_correct_in_top3_confidence": 92.5,
+    "std_correct_in_top3_confidence": 3.6,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "NEED": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 68.8,
+    "avg_top1_confidence": 89.9,
+    "std_top1_confidence": 2.4,
+    "avg_correct_in_top3_confidence": 1.0,
+    "std_correct_in_top3_confidence": 0.6,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "BOWLING": 16
+    }
+  },
+  "NO": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 62.5,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 52.4,
+    "std_top1_confidence": 15.8,
+    "avg_correct_in_top3_confidence": 48.2,
+    "std_correct_in_top3_confidence": 21.3,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "APPLE": 6
+    }
+  },
+  "ORANGE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 92.2,
+    "std_top1_confidence": 4.0,
+    "avg_correct_in_top3_confidence": 92.2,
+    "std_correct_in_top3_confidence": 4.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "PAPER": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 87.3,
+    "std_top1_confidence": 8.3,
+    "avg_correct_in_top3_confidence": 87.3,
+    "std_correct_in_top3_confidence": 8.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "PLAY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 85.9,
+    "std_top1_confidence": 9.3,
+    "avg_correct_in_top3_confidence": 85.9,
+    "std_correct_in_top3_confidence": 9.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "SON": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 94.6,
+    "std_top1_confidence": 0.1,
+    "avg_correct_in_top3_confidence": 94.6,
+    "std_correct_in_top3_confidence": 0.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "STUDY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 80.2,
+    "std_top1_confidence": 5.5,
+    "avg_correct_in_top3_confidence": 80.2,
+    "std_correct_in_top3_confidence": 5.5,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "TABLE": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "avg_top1_confidence": 24.8,
+    "std_top1_confidence": 16.3,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "SON": 9,
+      "TIME": 1,
+      "COMPUTER": 1,
+      "LATER": 5
+    }
+  },
+  "TALL": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 89.9,
+    "std_top1_confidence": 10.0,
+    "avg_correct_in_top3_confidence": 89.9,
+    "std_correct_in_top3_confidence": 10.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "TELL": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 81.2,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 43.0,
+    "std_top1_confidence": 11.6,
+    "avg_correct_in_top3_confidence": 36.6,
+    "std_correct_in_top3_confidence": 14.1,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "ORANGE": 3
+    }
+  },
+  "THANKSGIVING": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 87.5,
+    "top3_hit_rate": 93.8,
+    "avg_top1_confidence": 30.0,
+    "std_top1_confidence": 6.1,
+    "avg_correct_in_top3_confidence": 29.6,
+    "std_correct_in_top3_confidence": 6.1,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "MAN": 1,
+      "THURSDAY": 1
+    }
+  },
+  "THURSDAY": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 75.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 78.4,
+    "std_top1_confidence": 10.4,
+    "avg_correct_in_top3_confidence": 66.8,
+    "std_correct_in_top3_confidence": 29.1,
+    "difficulty": "EASY",
+    "confusions": {
+      "THANKSGIVING": 4
+    }
+  },
+  "TIME": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 1.1,
+    "avg_correct_in_top3_confidence": 96.5,
+    "std_correct_in_top3_confidence": 1.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "WALK": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 63.5,
+    "std_top1_confidence": 13.2,
+    "avg_correct_in_top3_confidence": 47.6,
+    "std_correct_in_top3_confidence": 25.8,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "TIME": 5
+    }
+  },
+  "WATER": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 95.9,
+    "std_top1_confidence": 1.9,
+    "avg_correct_in_top3_confidence": 95.9,
+    "std_correct_in_top3_confidence": 1.9,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "WHAT": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 6.2,
+    "avg_top1_confidence": 85.2,
+    "std_top1_confidence": 7.1,
+    "avg_correct_in_top3_confidence": 17.8,
+    "std_correct_in_top3_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "FINE": 16
+    }
+  },
+  "WRONG": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 93.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 83.6,
+    "std_top1_confidence": 11.7,
+    "avg_correct_in_top3_confidence": 83.4,
+    "std_correct_in_top3_confidence": 12.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "DRINK": 1
+    }
+  },
+  "YEAR": {
+    "n_pickles": 16,
+    "n_originals": 1,
+    "top1_accuracy": 68.8,
+    "top3_hit_rate": 100.0,
+    "avg_top1_confidence": 79.2,
+    "std_top1_confidence": 4.8,
+    "avg_correct_in_top3_confidence": 58.5,
+    "std_correct_in_top3_confidence": 33.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "TIME": 5
+    }
+  }
+}

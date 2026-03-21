@@ -278,12 +278,13 @@ class CameraProcessor:
             traceback.print_exc()
             return None
 
-    def predict(self, pickle_path: str) -> Optional[Dict[str, Any]]:
+    def predict(self, pickle_path: str, domain: str = 'healthcare') -> Optional[Dict[str, Any]]:
         """
         Run model prediction on a pickle file.
 
         Args:
             pickle_path: Path to pickle file
+            domain: Model domain for prediction (e.g. 'healthcare', 'generic')
 
         Returns:
             Dict with 'gloss', 'confidence', 'top_k_predictions', or None on failure
@@ -291,7 +292,7 @@ class CameraProcessor:
         try:
             # Use external prediction function if available (routes through inference API)
             if self._external_predict_fn:
-                return self._external_predict_fn(str(pickle_path))
+                return self._external_predict_fn(str(pickle_path), domain=domain)
 
             if self.model is None or self.tokenizer is None:
                 print("[CameraProcessor] Model not loaded")
@@ -309,7 +310,7 @@ class CameraProcessor:
             traceback.print_exc()
             return None
 
-    def process_video_bytes(self, video_bytes: bytes, video_format: str = 'webm') -> Optional[Dict[str, Any]]:
+    def process_video_bytes(self, video_bytes: bytes, video_format: str = 'webm', domain: str = 'healthcare') -> Optional[Dict[str, Any]]:
         """
         Full pipeline: video bytes -> pose -> pickle -> prediction.
 
@@ -318,6 +319,7 @@ class CameraProcessor:
         Args:
             video_bytes: Raw video bytes
             video_format: Video format extension
+            domain: Model domain for prediction (e.g. 'healthcare', 'generic')
 
         Returns:
             Prediction dict or None on failure
@@ -334,7 +336,7 @@ class CameraProcessor:
             return None
 
         # Step 3: Predict
-        result = self.predict(str(pickle_path))
+        result = self.predict(str(pickle_path), domain=domain)
 
         # Cleanup temp files
         self._cleanup_file(pose_path)
@@ -342,12 +344,13 @@ class CameraProcessor:
 
         return result
 
-    def process_video_file(self, video_path: str) -> Optional[Dict[str, Any]]:
+    def process_video_file(self, video_path: str, domain: str = 'healthcare') -> Optional[Dict[str, Any]]:
         """
         Full pipeline: video file -> pose -> pickle -> prediction.
 
         Args:
             video_path: Path to video file
+            domain: Model domain for prediction (e.g. 'healthcare', 'generic')
 
         Returns:
             Prediction dict or None on failure
@@ -364,7 +367,7 @@ class CameraProcessor:
             return None
 
         # Step 3: Predict
-        result = self.predict(str(pickle_path))
+        result = self.predict(str(pickle_path), domain=domain)
 
         # Cleanup temp files
         self._cleanup_file(pose_path)

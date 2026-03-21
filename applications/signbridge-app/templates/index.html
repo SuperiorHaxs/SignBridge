@@ -37,6 +37,42 @@
 
         .app-logo span { color: #4caf80; }
 
+        /* ── Header toggles ── */
+        .header-toggle {
+            display: inline-flex;
+            background: #111122;
+            border: 1px solid #1e1e3a;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .htog-btn {
+            background: transparent;
+            border: none;
+            color: #555;
+            padding: 4px 10px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .htog-btn.active {
+            background: #1a1a3a;
+            color: var(--active-color, #e0e0e0);
+        }
+        .htog-btn:hover:not(.active) {
+            color: #999;
+            background: #151530;
+        }
+        .htog-btn.locked {
+            cursor: default;
+            opacity: 0.7;
+        }
+        .htog-btn.locked:hover:not(.active) {
+            color: #555;
+            background: transparent;
+        }
 
         /* ══════════════════════════════════════════
            LAYOUT
@@ -62,6 +98,7 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
+            min-height: 0;
         }
 
         .camera-box {
@@ -116,7 +153,9 @@
             min-height: 280px;
         }
 
-        .camera-view video {
+        .camera-view > video {
+            position: absolute;
+            inset: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -139,6 +178,41 @@
             z-index: 5;
         }
         .rec-border.on { display: block; }
+
+        /* Self-view PIP overlay (live mode video call layout) */
+        .pip-self {
+            display: none;
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            width: 160px;
+            height: 120px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(108, 99, 255, 0.8);
+            z-index: 10;
+            background: #0a0a14;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .pip-self video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+        .pip-self .pip-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            font-size: 0.65rem;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            padding: 3px 8px;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
 
         /* Status bar under camera */
         .status-bar {
@@ -225,6 +299,41 @@
             min-width: 280px;
             max-width: 360px;
             border: 1px solid #1e1e3a;
+            min-height: 0;
+        }
+
+        .transcript-side.collapsed {
+            display: none !important;
+        }
+
+        .transcript-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #1a1a3a;
+            border: 1px solid #2a2a4a;
+            color: #888;
+            width: 28px;
+            height: 56px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .transcript-toggle:hover {
+            border-color: #6c63ff;
+            color: #e0e0e0;
+        }
+        .transcript-toggle.show-btn {
+            position: fixed;
+            right: 12px;
+            top: 50%;
+            border-radius: 8px 0 0 8px;
         }
 
         .transcript-title {
@@ -235,6 +344,27 @@
             border-bottom: 1px solid #1e1e3a;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transcript-collapse-btn {
+            background: none;
+            border: 1px solid #2a2a4a;
+            color: #888;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .transcript-collapse-btn:hover {
+            border-color: #6c63ff;
+            color: #e0e0e0;
         }
 
         .transcript-msgs {
@@ -271,17 +401,67 @@
         .msg.doctor .speaker { color: #7cb3f0; }
         .msg.patient .speaker { color: #b07cf0; }
 
+        /* ── Vocabulary Panel ── */
+        .vocab-panel {
+            margin-top: 6px;
+        }
+        .vocab-toggle-btn {
+            background: #111122;
+            border: 1px solid #1e1e3a;
+            color: #888;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .vocab-toggle-btn:hover { background: #1a1a2e; color: #aaa; }
+        .vocab-toggle-btn .vocab-arrow { transition: transform 0.2s; display: inline-block; font-size: 0.6rem; }
+        .vocab-toggle-btn.open .vocab-arrow { transform: rotate(180deg); }
+        .vocab-chip-container {
+            display: none;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 8px 0;
+            max-height: 140px;
+            overflow-y: auto;
+        }
+        .vocab-chip-container.open { display: flex; }
+        .vocab-chip {
+            background: #151528;
+            border: 1px solid #252545;
+            color: #b0b0c8;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 0.68rem;
+            font-weight: 500;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+        }
+        .vocab-chip.cat-medical { border-color: #2a4a3a; color: #4caf80; }
+        .vocab-chip.cat-action { border-color: #2a2a4a; color: #7c8cf0; }
+        .vocab-chip.cat-question { border-color: #4a3a2a; color: #f0a050; }
+        .vocab-chip.cat-descriptor { border-color: #3a2a4a; color: #b07cf0; }
+        .vocab-chip.cat-time { border-color: #2a3a4a; color: #50b8f0; }
+        .vocab-chip.cat-general { border-color: #252545; color: #b0b0c8; }
+        .vocab-chip-container::-webkit-scrollbar { width: 4px; }
+        .vocab-chip-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .vocab-chip-container::-webkit-scrollbar-track { background: transparent; }
+
         /* ══════════════════════════════════════════
            MOBILE
            ══════════════════════════════════════════ */
         @media (max-width: 768px) {
             .conversation-layout {
                 flex-direction: column;
-                height: auto;
+                height: calc(100vh - 56px);
                 padding: 10px;
                 gap: 10px;
             }
-            .camera-side { flex: none; }
+            .camera-side { flex: 1; min-height: 0; }
             .camera-view { min-height: 200px; }
             .transcript-side {
                 flex: none;
@@ -289,25 +469,312 @@
                 max-width: 100%;
                 max-height: 220px;
             }
+            .transcript-side.collapsed {
+                display: none !important;
+            }
             .transcript-msgs { padding: 10px; gap: 6px; }
             .msg { font-size: 0.82rem; padding: 8px 10px; }
             .controls-row { padding: 6px 10px; }
             .btn { padding: 8px 18px; font-size: 0.82rem; }
 
         }
+
+        /* ══════════════════════════════════════════
+           HOME / SCENARIO SELECTION
+           ══════════════════════════════════════════ */
+        .home-screen {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px;
+        }
+        .home-title {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        .home-title h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #e0e0e0;
+        }
+        .home-title h1 em { color: #6c63ff; font-style: normal; }
+        .home-title h1 em span { color: #4caf80; }
+        .home-subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 28px;
+        }
+        .home-section-label {
+            color: #888;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-left: 4px;
+        }
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .scenario-card {
+            background: #111122;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+        .scenario-card:hover {
+            border-color: #4a6cf7;
+            background: #14142e;
+            transform: translateY(-2px);
+        }
+        .scenario-card.featured {
+            border-color: #4caf80;
+        }
+        .scenario-card.featured:hover {
+            border-color: #5dc990;
+            background: #0f1f18;
+        }
+        .scenario-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            width: 36px;
+            text-align: center;
+        }
+        .scenario-info h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }
+        .scenario-info p {
+            font-size: 0.75rem;
+            color: #777;
+            line-height: 1.4;
+        }
+        .scenario-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 6px;
+        }
+        .badge-healthcare { background: #1a3a2a; color: #4caf80; }
+        .badge-generic { background: #1a2040; color: #6c8cff; }
+
+        /* ── Mode Toggle ── */
+        .mode-toggle-row {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .mode-toggle {
+            display: inline-flex;
+            background: #111122;
+            border: 1px solid #1e1e3a;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+        .mode-btn {
+            background: transparent;
+            border: none;
+            color: #777;
+            padding: 10px 24px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mode-btn.active {
+            background: #1a1a3a;
+            color: #e0e0e0;
+            box-shadow: inset 0 0 0 1px #4a6cf7;
+        }
+        .mode-btn:hover:not(.active) {
+            color: #bbb;
+            background: #151530;
+        }
+        .mode-icon { font-size: 1rem; }
+        .mode-description {
+            color: #555;
+            font-size: 0.75rem;
+        }
+
+        /* ── Back Button ── */
+        .back-btn {
+            background: none;
+            border: 1px solid #2a2a4a;
+            color: #888;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .back-btn:hover {
+            border-color: #6c63ff;
+            color: #e0e0e0;
+        }
+
+        @media (max-width: 768px) {
+            .home-screen { padding: 20px 12px; }
+            .scenario-grid { grid-template-columns: 1fr; }
+            .home-title h1 { font-size: 1.3rem; }
+            .mode-btn { padding: 8px 16px; font-size: 0.8rem; }
+        }
     </style>
 </head>
 <body>
 
 <header class="app-header">
-    <div class="app-logo">Sign<span>Bridge</span></div>
+    <div class="app-logo" style="cursor:pointer" onclick="showHomeScreen()">Sign<span>Bridge</span></div>
+    <div style="display:flex;gap:8px;align-items:center">
+        <div class="header-toggle" id="headerModeToggle">
+            <button class="htog-btn {{ 'active' if mode == 'demo' }}" id="htogDemo" onclick="setAppMode('demo')" style="--active-color:#f0a050">Demo</button>
+            <button class="htog-btn {{ 'active' if mode == 'live' }}" id="htogLive" onclick="setAppMode('live')" style="--active-color:#4caf80">Live</button>
+        </div>
+        <div class="header-toggle" id="headerMethodToggle">
+            <button class="htog-btn {{ 'active' if method == 'sign' }}" id="htogSign" onclick="setMethod('sign')" style="--active-color:#b07cf0">I Sign</button>
+            <button class="htog-btn {{ 'active' if method == 'speak' }}" id="htogSpeak" onclick="setMethod('speak')" style="--active-color:#7cb3f0">I Speak</button>
+        </div>
+    </div>
 </header>
 
 <!-- ══════════════════════════════════════════
-     PHASE 1: CONVERSATION
+     HOME SCREEN — Scenario Selection
      ══════════════════════════════════════════ -->
-<div class="conversation-layout" id="phaseConvo">
+<div class="home-screen" id="homeScreen">
+    <div class="home-title">
+        <h1>Welcome to <em>Sign<span>Bridge</span></em></h1>
+    </div>
+    <div class="home-subtitle">Choose a scenario to begin communicating</div>
+
+    <!-- Mode toggle: In-Person vs Video Call -->
+    <div class="mode-toggle-row">
+        <div class="mode-toggle" id="modeToggle">
+            <button class="mode-btn active" id="btnInPerson" onclick="setInteractionMode('in-person')">
+                <span class="mode-icon">&#x1F91D;</span> In-Person
+            </button>
+            <button class="mode-btn" id="btnVideoCall" onclick="setInteractionMode('video-call')">
+                <span class="mode-icon">&#x1F4F9;</span> Video Call
+            </button>
+        </div>
+        <div class="mode-description" id="modeDescription">Speaker is physically present — full camera view for signing</div>
+    </div>
+
+    <div class="home-section-label">Specialized</div>
+    <div class="scenario-grid">
+        <div class="scenario-card featured" onclick="selectScenario('doctor_visit', 'Doctor Visit')">
+            <div class="scenario-icon">&#x1F3E5;</div>
+            <div class="scenario-info">
+                <h3>Doctor Visit</h3>
+                <p>Medical appointments, describing symptoms, understanding treatment</p>
+                <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="home-section-label">General Scenarios</div>
+    <div class="scenario-grid">
+        <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
+            <div class="scenario-icon">&#x1F37D;</div>
+            <div class="scenario-info">
+                <h3>Restaurant</h3>
+                <p>Ordering food, asking about the menu, dietary needs</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
+            <div class="scenario-icon">&#x1F6D2;</div>
+            <div class="scenario-info">
+                <h3>Shopping</h3>
+                <p>Retail stores, finding items, asking about prices</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Job Interview')">
+            <div class="scenario-icon">&#x1F4BC;</div>
+            <div class="scenario-info">
+                <h3>Job Interview</h3>
+                <p>Professional conversations, interviews, workplace meetings</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Banking')">
+            <div class="scenario-icon">&#x1F3E6;</div>
+            <div class="scenario-info">
+                <h3>Banking</h3>
+                <p>Bank visits, account inquiries, financial services</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Emergency')">
+            <div class="scenario-icon">&#x1F6A8;</div>
+            <div class="scenario-info">
+                <h3>Emergency</h3>
+                <p>Urgent situations, communicating with first responders</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Education')">
+            <div class="scenario-icon">&#x1F393;</div>
+            <div class="scenario-info">
+                <h3>Education</h3>
+                <p>Classroom, parent-teacher conferences, campus interactions</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Travel')">
+            <div class="scenario-icon">&#x2708;</div>
+            <div class="scenario-info">
+                <h3>Travel</h3>
+                <p>Airport, hotel check-in, directions, transportation</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+        <div class="scenario-card" onclick="selectScenario('generic', 'Government Services')">
+            <div class="scenario-icon">&#x1F3DB;</div>
+            <div class="scenario-info">
+                <h3>Government Services</h3>
+                <p>DMV, post office, social services, public offices</p>
+                <span class="scenario-badge badge-generic">General model</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     CONVERSATION SCREEN
+     ══════════════════════════════════════════ -->
+<div class="conversation-layout" id="phaseConvo" style="display:none">
     <div class="camera-side">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <button class="back-btn" onclick="showHomeScreen()">&#x2190; Back</button>
+            <span id="scenarioLabel" style="color:#666;font-size:0.75rem;font-weight:600;letter-spacing:0.5px"></span>
+        </div>
+        <div class="vocab-panel" id="vocabPanel" style="display:none">
+            <button class="vocab-toggle-btn" id="vocabToggleBtn" onclick="toggleVocabPanel()">
+                <span class="vocab-arrow">&#x25BC;</span>
+                Available Signs (<span id="vocabCount">0</span>)
+            </button>
+            <div class="vocab-chip-container" id="vocabChips"></div>
+        </div>
         <div class="camera-box">
             <div class="camera-topbar">
                 <span class="camera-title">Live Camera</span>
@@ -316,6 +783,10 @@
             <div class="camera-view" id="cameraView">
                 <div class="camera-placeholder" id="cameraPlaceholder" style="color:#222">Camera will start when you begin</div>
                 <video id="cameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
+                <div class="pip-self" id="pipSelf">
+                    <video id="pipFeed" autoplay muted playsinline webkit-playsinline></video>
+                    <div class="pip-label" id="pipLabel">You</div>
+                </div>
                 <div class="rec-border" id="recBorder"></div>
             </div>
             <div class="status-bar" id="statusBar">
@@ -326,24 +797,224 @@
         <div class="controls-row">
             <button class="btn btn-primary" id="btnStart">Start Conversation</button>
             <button class="btn btn-secondary" id="btnRestart" style="display:none">Restart</button>
+            <button class="btn btn-primary" id="btnRecordSign" style="display:none;background:#b07cf0">Record Sign</button>
+            <button class="btn btn-primary" id="btnSendMessage" style="display:none;background:#4caf80">Send Message</button>
         </div>
     </div>
 
-    <div class="transcript-side">
-        <div class="transcript-title">Live Transcript</div>
+    <div class="transcript-side" id="transcriptSide">
+        <div class="transcript-title">
+            <span>Live Transcript</span>
+            <button class="transcript-collapse-btn" onclick="toggleTranscript()" title="Minimize transcript">&#x2796;</button>
+        </div>
         <div class="transcript-msgs" id="transcriptMsgs"></div>
     </div>
+
 </div>
+<button class="transcript-toggle show-btn" id="btnShowTranscript" onclick="toggleTranscript()" style="display:none" title="Show transcript">&#x1F4AC;</button>
 
 <script>
 // ══════════════════════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════════════════════
+let MODE = '{{ mode }}';      // "demo" or "live" — toggled in header
+let METHOD = '{{ method }}'; // "sign" or "speak" — toggled in header
+
+// Role labels — demo uses Doctor/Patient, live uses Speaker/Signer
+const SPEAKER_LABEL = MODE === 'demo' ? 'Doctor' : 'Speaker';
+const SIGNER_LABEL = MODE === 'demo' ? 'Patient (ASL → English)' : 'Signer (ASL → English)';
+
 let conversation = null;
 let currentTurn = 0;
 let isPlaying = false;
 let history = []; // conversation history for LLM context
 let cameraStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let selectedDomain = 'doctor_visit'; // default domain for inference API
+let selectedScenario = 'Doctor Visit';
+let interactionMode = 'in-person'; // 'in-person' or 'video-call'
+
+// ══════════════════════════════════════════════════════════════
+// INTERACTION MODE (In-Person vs Video Call)
+// ══════════════════════════════════════════════════════════════
+function setInteractionMode(mode) {
+    interactionMode = mode;
+    const btnInPerson = document.getElementById('btnInPerson');
+    const btnVideoCall = document.getElementById('btnVideoCall');
+    const desc = document.getElementById('modeDescription');
+
+    btnInPerson.classList.toggle('active', mode === 'in-person');
+    btnVideoCall.classList.toggle('active', mode === 'video-call');
+
+    desc.textContent = mode === 'in-person'
+        ? 'Speaker is physically present \u2014 full camera view for signing'
+        : 'Remote speaker via video call \u2014 split screen with PIP self-view';
+}
+
+let headerTogglesLocked = false;
+let transcriptCollapsed = false;
+
+function toggleTranscript() {
+    const panel = document.getElementById('transcriptSide');
+    const showBtn = document.getElementById('btnShowTranscript');
+    const layout = document.getElementById('phaseConvo');
+    transcriptCollapsed = !transcriptCollapsed;
+
+    if (transcriptCollapsed) {
+        panel.classList.add('collapsed');
+        showBtn.style.display = 'flex';
+    } else {
+        panel.classList.remove('collapsed');
+        showBtn.style.display = 'none';
+    }
+}
+
+function setMethod(method) {
+    if (headerTogglesLocked) return;
+    METHOD = method;
+    document.getElementById('htogSign').classList.toggle('active', method === 'sign');
+    document.getElementById('htogSpeak').classList.toggle('active', method === 'speak');
+}
+
+function setAppMode(mode) {
+    if (headerTogglesLocked) return;
+    MODE = mode;
+    document.getElementById('htogDemo').classList.toggle('active', mode === 'demo');
+    document.getElementById('htogLive').classList.toggle('active', mode === 'live');
+}
+
+function lockHeaderToggles() {
+    headerTogglesLocked = true;
+    document.querySelectorAll('.htog-btn').forEach(b => b.classList.add('locked'));
+}
+
+function unlockHeaderToggles() {
+    headerTogglesLocked = false;
+    document.querySelectorAll('.htog-btn').forEach(b => b.classList.remove('locked'));
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCENARIO SELECTION
+// ══════════════════════════════════════════════════════════════
+function selectScenario(domain, scenarioName) {
+    selectedDomain = domain;
+    selectedScenario = scenarioName;
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('phaseConvo').style.display = 'flex';
+
+    const modeLabel = interactionMode === 'in-person' ? 'In-Person' : 'Video Call';
+    document.getElementById('scenarioLabel').textContent = scenarioName + ' \u2022 ' + modeLabel;
+
+    // Lock header toggles — read-only in scenario screen
+    lockHeaderToggles();
+
+    console.log('[Scenario] Selected:', scenarioName, '| Domain:', domain, '| Mode:', interactionMode, '| Method:', METHOD, '| AppMode:', MODE);
+
+    // Load vocabulary for this domain
+    loadVocabulary(domain);
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOCABULARY PANEL
+// ══════════════════════════════════════════════════════════════
+const WORD_CATEGORIES = {
+    medical: ['allergy','blood','breathe','cough','doctor','headache','medicine','sick','stomach','surgery','temperature'],
+    question: ['how','what','where','name','answer'],
+    action: ['can','eat','drink','feel','give','hear','help','know','play','sit','stand','stop','tell','wait','walk','want','dance','study','change','enjoy','breathe'],
+    time: ['before','morning','night','today','time','year','thursday','birthday','thanksgiving','later','appointment'],
+    descriptor: ['better','fine','full','hot','more','right','tall','wrong','worse','deaf','stress'],
+    general: [] // catch-all
+};
+
+function categorizeWord(word) {
+    for (const [cat, words] of Object.entries(WORD_CATEGORIES)) {
+        if (cat === 'general') continue;
+        if (words.includes(word)) return cat;
+    }
+    return 'general';
+}
+
+let vocabCache = {};
+
+async function loadVocabulary(domain) {
+    const panel = document.getElementById('vocabPanel');
+    const chipsEl = document.getElementById('vocabChips');
+    const countEl = document.getElementById('vocabCount');
+    const toggleBtn = document.getElementById('vocabToggleBtn');
+
+    // Reset state
+    chipsEl.innerHTML = '';
+    chipsEl.classList.remove('open');
+    toggleBtn.classList.remove('open');
+    panel.style.display = 'none';
+
+    // Check cache first
+    if (vocabCache[domain]) {
+        renderVocabulary(vocabCache[domain]);
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/vocabulary/' + domain);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        vocabCache[domain] = data.glosses;
+        renderVocabulary(data.glosses);
+    } catch (e) {
+        console.warn('[Vocab] Failed to load:', e);
+    }
+}
+
+function renderVocabulary(glosses) {
+    const panel = document.getElementById('vocabPanel');
+    const chipsEl = document.getElementById('vocabChips');
+    const countEl = document.getElementById('vocabCount');
+
+    countEl.textContent = glosses.length;
+    chipsEl.innerHTML = '';
+
+    // Group by category for display order
+    const grouped = { medical: [], question: [], action: [], time: [], descriptor: [], general: [] };
+    for (const word of glosses) {
+        const cat = categorizeWord(word);
+        grouped[cat].push(word);
+    }
+
+    // Render in category order
+    for (const [cat, words] of Object.entries(grouped)) {
+        for (const word of words) {
+            const chip = document.createElement('span');
+            chip.className = 'vocab-chip cat-' + cat;
+            chip.textContent = word;
+            chipsEl.appendChild(chip);
+        }
+    }
+
+    panel.style.display = 'block';
+}
+
+function toggleVocabPanel() {
+    const chipsEl = document.getElementById('vocabChips');
+    const toggleBtn = document.getElementById('vocabToggleBtn');
+    const isOpen = chipsEl.classList.contains('open');
+    chipsEl.classList.toggle('open', !isOpen);
+    toggleBtn.classList.toggle('open', !isOpen);
+}
+
+function showHomeScreen() {
+    // Reset and go back to home
+    document.getElementById('homeScreen').style.display = 'block';
+    document.getElementById('phaseConvo').style.display = 'none';
+    unlockHeaderToggles();
+    // Hide vocab panel
+    document.getElementById('vocabPanel').style.display = 'none';
+    document.getElementById('vocabChips').classList.remove('open');
+    document.getElementById('vocabToggleBtn').classList.remove('open');
+    // Restore transcript if collapsed
+    if (transcriptCollapsed) toggleTranscript();
+    btnRestart.click(); // reset conversation state
+}
 
 // DOM
 const btnStart = document.getElementById('btnStart');
@@ -425,15 +1096,48 @@ function isLLMSentenceValid(llmSentence, glosses, hardcoded) {
 // ══════════════════════════════════════════════════════════════
 async function startCamera() {
     try {
+        // Live+sign needs audio to capture the speaker's voice
+        const needsAudio = (MODE === 'live' && METHOD === 'sign');
         cameraStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-            audio: false
+            audio: needsAudio
         });
-        cameraFeed.srcObject = cameraStream;
-        cameraFeed.style.display = 'block';
-        cameraPlaceholder.style.display = 'none';
+
+        const pipSelf = document.getElementById('pipSelf');
+        const pipFeed = document.getElementById('pipFeed');
+        const pipLabel = document.getElementById('pipLabel');
+        const cameraTitle = document.querySelector('.camera-title');
+
+        if (interactionMode === 'in-person') {
+            // In-person: show webcam full-screen in main view (speaker is in the room)
+            cameraFeed.srcObject = cameraStream;
+            cameraFeed.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            pipSelf.style.display = 'none'; // no PIP needed
+            cameraTitle.textContent = 'Your Camera';
+        } else {
+            // Video-call: main view reserved for sign videos / remote feed, PIP shows self
+            cameraFeed.srcObject = cameraStream;
+            cameraPlaceholder.textContent = MODE === 'demo' ? 'Waiting for signer...' : 'Waiting for remote feed...';
+            cameraPlaceholder.style.color = '#555';
+            cameraPlaceholder.style.display = 'block';
+
+            // Set up PIP self-view
+            pipSelf.style.display = 'block';
+            pipLabel.textContent = METHOD === 'speak' ? 'You (Speaker)' : 'You (Signer)';
+            pipFeed.srcObject = cameraStream;
+            pipFeed.onloadedmetadata = () => {
+                pipFeed.play().catch(() => {});
+                console.log('[PIP] Video playing');
+            };
+            console.log('[PIP] Self-view enabled, stream assigned');
+            cameraTitle.textContent = METHOD === 'speak' ? 'Signer View' : 'Speaker View';
+        }
     } catch (e) {
-        cameraPlaceholder.style.display = 'none';
+        console.error('[Camera] Failed:', e.name, e.message);
+        cameraPlaceholder.style.display = 'block';
+        cameraPlaceholder.style.color = '#ff6666';
+        cameraPlaceholder.textContent = 'Camera blocked — check browser permissions (click lock icon in address bar)';
     }
 }
 
@@ -442,6 +1146,8 @@ function stopCamera() {
         cameraStream.getTracks().forEach(t => t.stop());
         cameraStream = null;
     }
+    const pipSelf = document.getElementById('pipSelf');
+    if (pipSelf) pipSelf.style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -449,16 +1155,29 @@ function stopCamera() {
 // ══════════════════════════════════════════════════════════════
 function speak(text) {
     return new Promise(resolve => {
-        if (!('speechSynthesis' in window)) { resolve(); return; }
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text);
-        u.rate = 0.9;
-        u.pitch = 1.0;
-        const timeout = setTimeout(() => { speechSynthesis.cancel(); resolve(); },
-            Math.max(text.split(' ').length * 500, 2500) + 3000);
-        u.onend = () => { clearTimeout(timeout); resolve(); };
-        u.onerror = () => { clearTimeout(timeout); resolve(); };
-        speechSynthesis.speak(u);
+        if (!('speechSynthesis' in window)) { console.log('[TTS] Not supported'); resolve(); return; }
+
+        function doSpeak() {
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 0.9;
+            u.pitch = 1.0;
+            const timeout = setTimeout(() => { console.log('[TTS] Timeout'); speechSynthesis.cancel(); resolve(); },
+                Math.max(text.split(' ').length * 500, 2500) + 3000);
+            u.onend = () => { clearTimeout(timeout); resolve(); };
+            u.onerror = (e) => { console.log('[TTS] Error:', e); clearTimeout(timeout); resolve(); };
+            speechSynthesis.speak(u);
+            console.log('[TTS] Speaking:', text.substring(0, 40) + '...');
+        }
+
+        // Edge/Chrome sometimes need voices to load first
+        if (speechSynthesis.getVoices().length > 0) {
+            doSpeak();
+        } else {
+            speechSynthesis.onvoiceschanged = () => { doSpeak(); };
+            // Fallback if onvoiceschanged never fires
+            setTimeout(() => { doSpeak(); }, 500);
+        }
     });
 }
 
@@ -561,6 +1280,15 @@ function playSignVideo(url) {
         const to = setTimeout(() => finish(false), 5000);
 
         signVid.onerror = () => finish(false);
+        signVid.onloadedmetadata = () => {
+            // Extend timeout based on actual video duration (+ 3s buffer)
+            clearTimeout(to);
+            const dynamicTimeout = Math.max((signVid.duration || 5) * 1000 + 3000, 5000);
+            const to2 = setTimeout(() => finish(false), dynamicTimeout);
+            // Re-bind finish to clear the new timeout
+            const origFinish = finish;
+            finish = (r) => { clearTimeout(to2); origFinish(r); };
+        };
         signVid.onloadeddata = () => {
             signVid.onloadeddata = null;
             signVid.onended = () => finish(true);
@@ -574,32 +1302,40 @@ function playSignVideo(url) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// LOAD DATA
+// LOAD DATA (demo mode only)
 // ══════════════════════════════════════════════════════════════
-async function loadConversation() {
-    const resp = await fetch('/api/conversation');
-    conversation = await resp.json();
-    btnStart.disabled = false;
+if (MODE === 'demo') {
+    (async function loadConversation() {
+        const resp = await fetch('/api/conversation');
+        conversation = await resp.json();
+        btnStart.disabled = false;
+    })();
 }
-loadConversation();
 
 // ══════════════════════════════════════════════════════════════
-// CONVERSATION FLOW
+// CONVERSATION FLOW — DEMO MODE
 // ══════════════════════════════════════════════════════════════
 btnStart.addEventListener('click', async () => {
-    if (!conversation) return;
     btnStart.disabled = true;
     btnRestart.style.display = 'inline-block';
-    currentTurn = 0;
-    isPlaying = true;
     history = [];
 
-    // Warm up TTS on user gesture so mobile browsers allow it later
+    // Warm up TTS on user gesture (required by browsers before programmatic speech)
     if ('speechSynthesis' in window) {
         const warmup = new SpeechSynthesisUtterance('');
         warmup.volume = 0;
         speechSynthesis.speak(warmup);
     }
+
+    if (MODE === 'live') {
+        await startLiveMode();
+        return;
+    }
+
+    // Demo mode
+    if (!conversation) return;
+    currentTurn = 0;
+    isPlaying = true;
 
     await startCamera();
     playNextTurn();
@@ -616,10 +1352,17 @@ btnRestart.addEventListener('click', () => {
     recBorder.classList.remove('on');
     signVid.style.display = 'none';
     statusBar.innerHTML = '<span class="prompt">Press "Start" to begin the conversation</span>';
+    stopLiveMode();
     stopCamera();
     cameraFeed.style.display = 'none';
     cameraPlaceholder.style.display = '';
     cameraPlaceholder.textContent = 'Camera will start when you begin';
+
+    // Hide live mode buttons
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+    if (btnRecordSign) btnRecordSign.style.display = 'none';
+    if (btnSendMessage) btnSendMessage.style.display = 'none';
 });
 
 async function playNextTurn() {
@@ -631,9 +1374,9 @@ async function playNextTurn() {
 
     const turn = conversation.turns[currentTurn];
     if (turn.speaker === 'doctor') {
-        await playDoctorTurn(turn);
+        await playDoctorTurnDemo(turn);
     } else {
-        await playPatientTurn(turn);
+        await playPatientTurnDemo(turn);
     }
 
     currentTurn++;
@@ -641,11 +1384,24 @@ async function playNextTurn() {
     playNextTurn();
 }
 
-// ── Doctor turn: show script, listen for speech, add to transcript ──
-async function playDoctorTurn(turn) {
+// ── Demo: Speaker turn ──
+async function playDoctorTurnDemo(turn) {
     signVid.style.display = 'none';
 
-    // Show the scripted line as a teleprompter
+    // If user is the signer (method=sign), display the speaker's line as text (no TTS)
+    if (METHOD === 'sign') {
+        statusBar.innerHTML = `
+            <div class="doctor-script">
+                <div class="script-label">Speaker says:</div>
+                <div class="script-line">"${turn.text}"</div>
+            </div>`;
+        addMsg('doctor', SPEAKER_LABEL, turn.text);
+        history.push({ speaker: 'doctor', text: turn.text });
+        await sleep(Math.max(turn.text.split(' ').length * 400, 2000));
+        return;
+    }
+
+    // User is the speaker — show teleprompter and listen for speech
     const hasSpeechRec = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
     const hintText = hasSpeechRec
         ? '<span class="listening-indicator"></span>Listening...'
@@ -658,34 +1414,389 @@ async function playDoctorTurn(turn) {
             <div class="script-hint">${hintText}</div>
         </div>`;
 
-    // Start speech recognition
     const recognized = await listenForSpeech(turn.text);
-
-    // Add recognized (or scripted) text to transcript
     const displayText = recognized.trim() || turn.text;
-    addMsg('doctor', 'Doctor', displayText);
-    // Always use scripted text for LLM context consistency
+    addMsg('doctor', SPEAKER_LABEL, displayText);
     history.push({ speaker: 'doctor', text: turn.text });
 }
 
-// ── Patient turn: play sign videos → LLM → TTS ──
-async function playPatientTurn(turn) {
+// ══════════════════════════════════════════════════════════════
+// LIVE MODE — Free-form conversation
+// ══════════════════════════════════════════════════════════════
+let liveRecognition = null;
+let liveActive = false;
+let liveCollectedGlosses = [];
+let isRecordingSign = false;
+
+async function startLiveMode() {
+    liveActive = true;
+    await startCamera();
+
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+
+    if (METHOD === 'sign') {
+        // Signer mode: mic captures doctor's speech, camera captures signs
+        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
+        startContinuousListening();
+
+        // Show sign recording buttons
+        if (btnRecordSign) {
+            btnRecordSign.style.display = 'inline-block';
+            btnRecordSign.onclick = () => toggleSignRecording();
+        }
+        if (btnSendMessage) {
+            btnSendMessage.onclick = () => sendSignMessage();
+        }
+    } else {
+        // Speaker mode: user speaks, waits for signer's signs
+        statusBar.innerHTML = '<span class="prompt">Live mode ready — speak naturally</span>';
+        // TODO: Speaker-side live mode (future)
+    }
+}
+
+function stopLiveMode() {
+    liveActive = false;
+    continuousRecording = false;
+    liveCollectedGlosses = [];
+    isRecordingSign = false;
+    if (liveRecognition) {
+        try { liveRecognition.stop(); } catch(e) {}
+        liveRecognition = null;
+    }
+}
+
+// ── Continuous speech recognition: captures ambient speech from the speaker ──
+function startContinuousListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.log('[Live] Speech recognition not available');
+        statusBar.innerHTML = '<span class="prompt">Speech recognition not available — speaker text won\'t be captured</span>';
+        return;
+    }
+
+    liveRecognition = new SpeechRecognition();
+    liveRecognition.lang = 'en-US';
+    liveRecognition.interimResults = true;
+    liveRecognition.continuous = true;
+    liveRecognition.maxAlternatives = 1;
+
+    let currentUtterance = '';
+
+    liveRecognition.onresult = (event) => {
+        let interim = '';
+        let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalText += transcript;
+            } else {
+                interim = transcript;
+            }
+        }
+
+        // Show interim results in status bar (only when not recording a sign)
+        if (!isRecordingSign) {
+            if (interim) {
+                statusBar.innerHTML = `<span class="processing"><span class="listening-indicator"></span>${interim}</span>`;
+            }
+        }
+
+        // When we get a final result, add it to transcript
+        if (finalText.trim()) {
+            const text = finalText.trim();
+            addMsg('doctor', SPEAKER_LABEL, text);
+            history.push({ speaker: 'doctor', text: text });
+            console.log('[Live] Speaker said:', text);
+
+            // Show the text prominently for the signer to read
+            if (!isRecordingSign) {
+                statusBar.innerHTML = `
+                    <div class="doctor-script">
+                        <div class="script-label">Speaker said:</div>
+                        <div class="script-line">"${text}"</div>
+                    </div>`;
+                // After a few seconds, go back to listening state
+                setTimeout(() => {
+                    if (liveActive && !isRecordingSign) {
+                        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
+                    }
+                }, 4000);
+            }
+        }
+    };
+
+    liveRecognition.onend = () => {
+        // Auto-restart if still in live mode
+        if (liveActive) {
+            console.log('[Live] Recognition ended, restarting...');
+            setTimeout(() => {
+                if (liveActive) {
+                    try { liveRecognition.start(); } catch(e) { console.log('[Live] Restart failed:', e); }
+                }
+            }, 300);
+        }
+    };
+
+    liveRecognition.onerror = (e) => {
+        console.log('[Live] Recognition error:', e.error);
+        // "no-speech" is normal — just means silence, it auto-restarts via onend
+        if (e.error === 'aborted') return;
+    };
+
+    try {
+        liveRecognition.start();
+        console.log('[Live] Continuous listening started');
+    } catch(e) {
+        console.error('[Live] Could not start recognition:', e);
+    }
+}
+
+// ── Continuous sign recording: loops record→analyze until user clicks Send ──
+let continuousRecording = false;
+let pendingSend = false; // flag: send glosses after loop exits
+
+async function toggleSignRecording() {
+    const btnRecordSign = document.getElementById('btnRecordSign');
+
+    if (continuousRecording) {
+        // User clicked "Send Message" — signal the loop to stop and send
+        pendingSend = true;
+        continuousRecording = false;
+        btnRecordSign.disabled = true;
+        btnRecordSign.textContent = 'Sending...';
+        return;
+    }
+
+    // Start continuous recording loop
+    continuousRecording = true;
+    pendingSend = false;
+    isRecordingSign = true;
+    btnRecordSign.textContent = 'Send Message ➤';
+    btnRecordSign.style.background = '#4caf80';
+
+    while (continuousRecording && liveActive) {
+        recBadge.classList.add('on');
+        recBorder.classList.add('on');
+
+        const detected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+        statusBar.innerHTML = '<span class="processing">Recording sign...' +
+            (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
+            '</span>';
+
+        // Record 2.5 seconds
+        const videoBlob = await recordFromCamera(2500);
+
+        if (!continuousRecording) break; // user stopped during recording
+
+        if (!videoBlob) {
+            statusBar.innerHTML = '<span class="processing">No video captured, retrying...</span>';
+            await sleep(500);
+            continue;
+        }
+
+        recBadge.classList.remove('on');
+        recBorder.classList.remove('on');
+        statusBar.innerHTML = '<span class="processing">Analyzing sign...</span>';
+
+        // Send to inference API
+        const formData = new FormData();
+        formData.append('video', videoBlob, 'sign.webm');
+        formData.append('domain', selectedDomain);
+        console.log('[Live] Sending sign with domain:', selectedDomain);
+
+        try {
+            const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
+            const result = await resp.json();
+
+            if (!continuousRecording) break; // user stopped during analysis
+
+            if (result.success) {
+                liveCollectedGlosses.push({
+                    gloss: result.gloss,
+                    confidence: result.confidence,
+                    top_k: result.top_k || []
+                });
+
+                const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+                statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
+                console.log('[Live] Detected:', result.gloss, '| Domain:', result.domain || selectedDomain);
+            } else {
+                console.log('[Live] Detection failed, continuing...');
+            }
+        } catch (e) {
+            console.error('[Live] Inference error:', e);
+        }
+
+        // Brief pause before next recording cycle
+        if (continuousRecording) await sleep(300);
+    }
+
+    // Loop has exited — cleanup
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    isRecordingSign = false;
+
+    // If user clicked "Send Message", send the glosses now
+    if (pendingSend && liveCollectedGlosses.length > 0) {
+        pendingSend = false;
+        await sendSignMessage();
+    } else {
+        // Just stopped without sending
+        btnRecordSign.textContent = 'Record Sign';
+        btnRecordSign.style.background = '#b07cf0';
+        btnRecordSign.disabled = false;
+        if (liveCollectedGlosses.length > 0) {
+            const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+            statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
+        }
+    }
+}
+
+// ── Send collected glosses → LLM → display sentence ──
+async function sendSignMessage() {
+    if (liveCollectedGlosses.length === 0) return;
+
+    // Stop continuous recording if still active
+    continuousRecording = false;
+    isRecordingSign = false;
+
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+    btnRecordSign.disabled = true;
+    if (btnSendMessage) btnSendMessage.disabled = true;
+
+    const rawGlosses = liveCollectedGlosses.map(p => p.gloss).join(' ');
+    statusBar.innerHTML = '<span class="processing">Constructing sentence from: ' + rawGlosses + '...</span>';
+    console.log('[Live] Sending glosses to LLM:', JSON.stringify(liveCollectedGlosses));
+
+    let sentence = rawGlosses; // raw fallback
+    try {
+        const resp = await fetch('/api/construct-sentence-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gloss_predictions: liveCollectedGlosses,
+                conversation_history: history
+            })
+        });
+        const result = await resp.json();
+        console.log('[Live] LLM response:', JSON.stringify(result));
+        if (result.success && result.sentence) {
+            sentence = result.sentence.trim();
+        } else if (result.fallback) {
+            sentence = result.fallback;
+            console.warn('[Live] LLM failed, using fallback:', result.error);
+        } else {
+            console.warn('[Live] LLM returned unexpected response:', JSON.stringify(result));
+        }
+    } catch (e) {
+        console.error('[Live] LLM fetch error, using raw glosses:', e);
+        statusBar.innerHTML = '<span class="processing">LLM unavailable, using raw glosses...</span>';
+        await sleep(500);
+    }
+
+    // Display sentence
+    statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
+    addMsg('patient', SIGNER_LABEL, sentence);
+    history.push({ speaker: 'patient', text: sentence });
+    console.log('[Live] Sent message:', sentence);
+
+    // TTS: in-person always (speaker can hear), video-call only if "I Speak" (speaker has the device)
+    if (interactionMode === 'in-person' || METHOD === 'speak') {
+        await speak(sentence);
+    }
+
+    // Reset for next message
+    liveCollectedGlosses = [];
+    btnRecordSign.disabled = false;
+    btnRecordSign.textContent = 'Record Sign';
+    btnRecordSign.style.background = '#b07cf0';
+    if (btnSendMessage) {
+        btnSendMessage.disabled = false;
+        btnSendMessage.style.display = 'none';
+    }
+
+    // Return to listening state after a pause
+    await sleep(1000);
+    if (liveActive && !isRecordingSign) {
+        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
+    }
+}
+
+// Record video from camera for specified duration
+function recordFromCamera(durationMs) {
+    return new Promise(resolve => {
+        if (!cameraStream) { resolve(null); return; }
+
+        recordedChunks = [];
+        try {
+            mediaRecorder = new MediaRecorder(cameraStream, { mimeType: 'video/webm' });
+        } catch (e) {
+            // Fallback mime type
+            try {
+                mediaRecorder = new MediaRecorder(cameraStream);
+            } catch (e2) {
+                console.error('MediaRecorder not supported:', e2);
+                resolve(null);
+                return;
+            }
+        }
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            resolve(blob.size > 0 ? blob : null);
+        };
+
+        mediaRecorder.start();
+        setTimeout(() => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        }, durationMs);
+    });
+}
+
+// ── Demo mode: play sign videos → LLM → TTS (original behavior) ──
+async function playPatientTurnDemo(turn) {
     const glosses = turn.glosses;
     const signs = turn.sign_videos || glosses;
+    const sampleId = turn.sentence_sample;
 
     recBadge.classList.add('on');
     recBorder.classList.add('on');
     statusBar.innerHTML = '<span class="processing">Patient signing...</span>';
 
-    // Play each sign video
-    let accumulated = [];
-    for (let i = 0; i < signs.length; i++) {
-        accumulated.push(signs[i].toUpperCase());
-        statusBar.innerHTML = '<span class="gloss">Detected: ' + accumulated.join(' ') + '</span>';
+    let usedSentenceVideo = false;
 
-        const played = await playSignVideo(`/sign-bank/${signs[i]}.mp4`);
-        if (!played) await sleep(1200);
-        await sleep(250);
+    // Try full-sentence video from samples first
+    if (sampleId) {
+        const sampleUrl = `/samples/${sampleId}/original_video.mp4`;
+        console.log('[Demo] Trying sample video:', sampleUrl);
+        const played = await playSignVideo(sampleUrl);
+        if (played) {
+            usedSentenceVideo = true;
+            // Show all glosses after the full video finishes
+            statusBar.innerHTML = '<span class="gloss">Detected: ' + glosses.map(g => g.toUpperCase()).join(' ') + '</span>';
+        }
+    }
+
+    // Fallback: play individual sign-bank videos
+    if (!usedSentenceVideo) {
+        let accumulated = [];
+        for (let i = 0; i < signs.length; i++) {
+            // Play video first, then show the detected gloss after it finishes
+            const played = await playSignVideo(`/sign-bank/${signs[i]}.mp4`);
+            if (!played) await sleep(1200);
+
+            accumulated.push(signs[i].toUpperCase());
+            statusBar.innerHTML = '<span class="gloss">Detected: ' + accumulated.join(' ') + '</span>';
+            await sleep(250);
+        }
     }
 
     recBadge.classList.remove('on');
@@ -693,37 +1804,21 @@ async function playPatientTurn(turn) {
     signVid.style.display = 'none';
     await sleep(400);
 
-    // LLM sentence construction
+    // Use the pre-written sentence from conversation JSON (no LLM needed in demo)
     statusBar.innerHTML = '<span class="processing">SignBridge constructing sentence...</span>';
+    await sleep(600); // brief pause for visual effect
 
-    let sentence = turn.asl_sentence; // hardcoded fallback
-    try {
-        const resp = await fetch('/api/construct-sentence', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ glosses, conversation_history: history })
-        });
-        const result = await resp.json();
-        if (result.success && result.sentence) {
-            const llmSentence = result.sentence.trim();
-            // Validate LLM output before using it
-            if (isLLMSentenceValid(llmSentence, glosses, turn.asl_sentence)) {
-                sentence = llmSentence;
-            } else {
-                console.log('LLM rejected, using hardcoded:', llmSentence);
-            }
-        }
-    } catch (e) {
-        console.log('LLM fallback:', e);
-    }
+    const sentence = turn.asl_sentence;
 
     // Show sentence
     statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
-    addMsg('patient', 'Patient (ASL → English)', sentence);
+    addMsg('patient', SIGNER_LABEL, sentence);
     history.push({ speaker: 'patient', text: sentence });
 
-    // Read aloud
-    await speak(sentence);
+    // TTS: in-person always (speaker can hear), video-call only if "I Speak" (speaker has the device)
+    if (interactionMode === 'in-person' || METHOD === 'speak') {
+        await speak(sentence);
+    }
     await sleep(800);
 }
 

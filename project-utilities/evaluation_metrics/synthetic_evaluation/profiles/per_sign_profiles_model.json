@@ -1,0 +1,807 @@
+{
+  "ARM": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 93.4,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 86.9,
+    "std_top1_confidence": 17.5,
+    "avg_correct_in_top3_confidence": 85.4,
+    "std_correct_in_top3_confidence": 21.6,
+    "avg_correct_in_top5_confidence": 85.4,
+    "std_correct_in_top5_confidence": 21.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "SNEEZE": 2,
+      "HOSPITAL": 2
+    }
+  },
+  "BAD": {
+    "n_pickles": 122,
+    "n_originals": 2,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 99.2,
+    "top5_hit_rate": 99.2,
+    "avg_top1_confidence": 95.9,
+    "std_top1_confidence": 6.1,
+    "avg_correct_in_top3_confidence": 94.7,
+    "std_correct_in_top3_confidence": 13.7,
+    "avg_correct_in_top5_confidence": 94.7,
+    "std_correct_in_top5_confidence": 13.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "YOUR": 2,
+      "NECK": 1,
+      "WHY": 1
+    }
+  },
+  "BUT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 88.5,
+    "top5_hit_rate": 96.7,
+    "avg_top1_confidence": 97.1,
+    "std_top1_confidence": 2.9,
+    "avg_correct_in_top3_confidence": 0.2,
+    "std_correct_in_top3_confidence": 0.0,
+    "avg_correct_in_top5_confidence": 0.2,
+    "std_correct_in_top5_confidence": 0.0,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "HOUR": 61
+    }
+  },
+  "DAY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 1.5,
+    "avg_correct_in_top3_confidence": 96.5,
+    "std_correct_in_top3_confidence": 1.5,
+    "avg_correct_in_top5_confidence": 96.5,
+    "std_correct_in_top5_confidence": 1.5,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "EVENING": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 21.3,
+    "top5_hit_rate": 80.3,
+    "avg_top1_confidence": 82.1,
+    "std_top1_confidence": 17.7,
+    "avg_correct_in_top3_confidence": 3.1,
+    "std_correct_in_top3_confidence": 3.0,
+    "avg_correct_in_top5_confidence": 1.6,
+    "std_correct_in_top5_confidence": 1.9,
+    "difficulty": "HARD",
+    "confusions": {
+      "DAY": 58,
+      "NIGHT": 2,
+      "THERMOMETER": 1
+    }
+  },
+  "EYE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 27.9,
+    "top3_hit_rate": 95.1,
+    "top5_hit_rate": 96.7,
+    "avg_top1_confidence": 64.4,
+    "std_top1_confidence": 17.4,
+    "avg_correct_in_top3_confidence": 35.6,
+    "std_correct_in_top3_confidence": 22.8,
+    "avg_correct_in_top5_confidence": 35.0,
+    "std_correct_in_top5_confidence": 23.1,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "WHO": 40,
+      "YESTERDAY": 1,
+      "NECK": 1,
+      "WHY": 1,
+      "GOODBYE": 1
+    }
+  },
+  "GOODBYE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 4.9,
+    "top3_hit_rate": 29.5,
+    "top5_hit_rate": 57.4,
+    "avg_top1_confidence": 66.0,
+    "std_top1_confidence": 18.6,
+    "avg_correct_in_top3_confidence": 14.4,
+    "std_correct_in_top3_confidence": 22.5,
+    "avg_correct_in_top5_confidence": 8.3,
+    "std_correct_in_top5_confidence": 17.3,
+    "difficulty": "HARD",
+    "confusions": {
+      "SIX": 53,
+      "HIS": 2,
+      "WHY": 1,
+      "SUNDAY": 1,
+      "HELLO": 1
+    }
+  },
+  "HEADACHE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.6,
+    "std_top1_confidence": 0.1,
+    "avg_correct_in_top3_confidence": 97.6,
+    "std_correct_in_top3_confidence": 0.1,
+    "avg_correct_in_top5_confidence": 97.6,
+    "std_correct_in_top5_confidence": 0.1,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "HEARING AID": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 54.1,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 67.2,
+    "std_top1_confidence": 14.2,
+    "avg_correct_in_top3_confidence": 41.6,
+    "std_correct_in_top3_confidence": 25.0,
+    "avg_correct_in_top5_confidence": 41.6,
+    "std_correct_in_top5_confidence": 25.0,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "EYE": 27,
+      "YESTERDAY": 1
+    }
+  },
+  "HEART": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 1.6,
+    "top3_hit_rate": 4.9,
+    "top5_hit_rate": 86.9,
+    "avg_top1_confidence": 44.5,
+    "std_top1_confidence": 17.2,
+    "avg_correct_in_top3_confidence": 27.0,
+    "std_correct_in_top3_confidence": 27.2,
+    "avg_correct_in_top5_confidence": 5.6,
+    "std_correct_in_top5_confidence": 8.5,
+    "difficulty": "HARD",
+    "confusions": {
+      "HOUR": 27,
+      "SUNDAY": 14,
+      "WHAT": 13,
+      "STRESS": 6
+    }
+  },
+  "HELLO": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 3.3,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 60.2,
+    "std_top1_confidence": 16.4,
+    "avg_correct_in_top3_confidence": 6.0,
+    "std_correct_in_top3_confidence": 11.7,
+    "avg_correct_in_top5_confidence": 6.0,
+    "std_correct_in_top5_confidence": 11.7,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "WHY": 37,
+      "SICK": 20,
+      "YESTERDAY": 2
+    }
+  },
+  "HIS": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 0.0,
+    "avg_top1_confidence": 50.4,
+    "std_top1_confidence": 2.3,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0,
+    "std_correct_in_top5_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "THEIR": 47,
+      "YOUR": 13,
+      "HEART": 1
+    }
+  },
+  "HOSPITAL": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 95.1,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 95.4,
+    "std_top1_confidence": 6.1,
+    "avg_correct_in_top3_confidence": 92.4,
+    "std_correct_in_top3_confidence": 17.8,
+    "avg_correct_in_top5_confidence": 92.4,
+    "std_correct_in_top5_confidence": 17.8,
+    "difficulty": "EASY",
+    "confusions": {
+      "ARM": 3
+    }
+  },
+  "HOUR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 98.4,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 91.3,
+    "std_top1_confidence": 10.8,
+    "avg_correct_in_top3_confidence": 89.7,
+    "std_correct_in_top3_confidence": 15.7,
+    "avg_correct_in_top5_confidence": 89.7,
+    "std_correct_in_top5_confidence": 15.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "THERMOMETER": 1
+    }
+  },
+  "HOW": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 1.6,
+    "top5_hit_rate": 9.8,
+    "avg_top1_confidence": 97.3,
+    "std_top1_confidence": 4.5,
+    "avg_correct_in_top3_confidence": 5.1,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0.9,
+    "std_correct_in_top5_confidence": 1.9,
+    "difficulty": "HARD",
+    "confusions": {
+      "HEART": 61
+    }
+  },
+  "MY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 0.0,
+    "avg_top1_confidence": 89.2,
+    "std_top1_confidence": 15.0,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0,
+    "std_correct_in_top5_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "PLEASE": 56,
+      "ARM": 2,
+      "STOMACH": 1,
+      "DAY": 1,
+      "PREGNANT": 1
+    }
+  },
+  "NECK": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 3.3,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 4.9,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0.2,
+    "std_correct_in_top5_confidence": 0.1,
+    "difficulty": "HARD",
+    "confusions": {
+      "WHERE": 61
+    }
+  },
+  "NEED": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 11.5,
+    "top3_hit_rate": 24.6,
+    "top5_hit_rate": 37.7,
+    "avg_top1_confidence": 46.7,
+    "std_top1_confidence": 19.2,
+    "avg_correct_in_top3_confidence": 33.0,
+    "std_correct_in_top3_confidence": 27.8,
+    "avg_correct_in_top5_confidence": 23.1,
+    "std_correct_in_top5_confidence": 26.2,
+    "difficulty": "HARD",
+    "confusions": {
+      "WHERE": 35,
+      "NECK": 7,
+      "WHO": 6,
+      "BUT": 5,
+      "THEIR": 1
+    }
+  },
+  "NIGHT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 95.9,
+    "std_top1_confidence": 1.0,
+    "avg_correct_in_top3_confidence": 95.9,
+    "std_correct_in_top3_confidence": 1.0,
+    "avg_correct_in_top5_confidence": 95.9,
+    "std_correct_in_top5_confidence": 1.0,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "NOW": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.3,
+    "std_top1_confidence": 0.3,
+    "avg_correct_in_top3_confidence": 97.3,
+    "std_correct_in_top3_confidence": 0.3,
+    "avg_correct_in_top5_confidence": 97.3,
+    "std_correct_in_top5_confidence": 0.3,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "PAIN": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 27.9,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 52.7,
+    "std_top1_confidence": 17.2,
+    "avg_correct_in_top3_confidence": 26.3,
+    "std_correct_in_top3_confidence": 19.1,
+    "avg_correct_in_top5_confidence": 26.3,
+    "std_correct_in_top5_confidence": 19.1,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "WHEN": 29,
+      "WHAT": 14,
+      "WHICH": 1
+    }
+  },
+  "PLEASE": {
+    "n_pickles": 31,
+    "n_originals": 1,
+    "top1_accuracy": 74.2,
+    "top3_hit_rate": 87.1,
+    "top5_hit_rate": 90.3,
+    "avg_top1_confidence": 72.2,
+    "std_top1_confidence": 16.6,
+    "avg_correct_in_top3_confidence": 70.8,
+    "std_correct_in_top3_confidence": 22.7,
+    "avg_correct_in_top5_confidence": 68.3,
+    "std_correct_in_top5_confidence": 25.8,
+    "difficulty": "EASY",
+    "confusions": {
+      "HEART": 5,
+      "MY": 3
+    }
+  },
+  "PREGNANT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 0.0,
+    "top5_hit_rate": 0.0,
+    "avg_top1_confidence": 68.4,
+    "std_top1_confidence": 17.8,
+    "avg_correct_in_top3_confidence": 0,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 0,
+    "std_correct_in_top5_confidence": 0,
+    "difficulty": "HARD",
+    "confusions": {
+      "STOMACH": 30,
+      "STRESS": 29,
+      "ARM": 2
+    }
+  },
+  "RECOVER": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 98.4,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 87.0,
+    "std_top1_confidence": 10.4,
+    "avg_correct_in_top3_confidence": 86.0,
+    "std_correct_in_top3_confidence": 14.4,
+    "avg_correct_in_top5_confidence": 86.0,
+    "std_correct_in_top5_confidence": 14.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "WHEN": 1
+    }
+  },
+  "RIGHT": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 94.4,
+    "std_top1_confidence": 7.2,
+    "avg_correct_in_top3_confidence": 94.4,
+    "std_correct_in_top3_confidence": 7.2,
+    "avg_correct_in_top5_confidence": 94.4,
+    "std_correct_in_top5_confidence": 7.2,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "SHOULDER": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 14.8,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 68.4,
+    "std_top1_confidence": 13.1,
+    "avg_correct_in_top3_confidence": 16.0,
+    "std_correct_in_top3_confidence": 19.9,
+    "avg_correct_in_top5_confidence": 16.0,
+    "std_correct_in_top5_confidence": 19.9,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "RIGHT": 51,
+      "GOODBYE": 1
+    }
+  },
+  "SICK": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.8,
+    "std_top1_confidence": 0.7,
+    "avg_correct_in_top3_confidence": 96.8,
+    "std_correct_in_top3_confidence": 0.7,
+    "avg_correct_in_top5_confidence": 96.8,
+    "std_correct_in_top5_confidence": 0.7,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "SIX": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 98.4,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.2,
+    "std_top1_confidence": 8.4,
+    "avg_correct_in_top3_confidence": 96.0,
+    "std_correct_in_top3_confidence": 10.6,
+    "avg_correct_in_top5_confidence": 96.0,
+    "std_correct_in_top5_confidence": 10.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "HEARING AID": 1
+    }
+  },
+  "SNEEZE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 57.4,
+    "top5_hit_rate": 78.7,
+    "avg_top1_confidence": 96.5,
+    "std_top1_confidence": 5.2,
+    "avg_correct_in_top3_confidence": 0.1,
+    "std_correct_in_top3_confidence": 0.0,
+    "avg_correct_in_top5_confidence": 0.1,
+    "std_correct_in_top5_confidence": 0.2,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "EYE": 60,
+      "WHO": 1
+    }
+  },
+  "STOMACH": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 16.4,
+    "top5_hit_rate": 21.3,
+    "avg_top1_confidence": 97.1,
+    "std_top1_confidence": 3.6,
+    "avg_correct_in_top3_confidence": 0.2,
+    "std_correct_in_top3_confidence": 0.1,
+    "avg_correct_in_top5_confidence": 0.3,
+    "std_correct_in_top5_confidence": 0.4,
+    "difficulty": "HARD",
+    "confusions": {
+      "PREGNANT": 61
+    }
+  },
+  "STRESS": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 98.4,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 96.4,
+    "std_top1_confidence": 6.9,
+    "avg_correct_in_top3_confidence": 95.5,
+    "std_correct_in_top3_confidence": 12.4,
+    "avg_correct_in_top5_confidence": 95.5,
+    "std_correct_in_top5_confidence": 12.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "HOW": 1
+    }
+  },
+  "SUNDAY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 100.0,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 97.3,
+    "std_top1_confidence": 0.6,
+    "avg_correct_in_top3_confidence": 97.3,
+    "std_correct_in_top3_confidence": 0.6,
+    "avg_correct_in_top5_confidence": 97.3,
+    "std_correct_in_top5_confidence": 0.6,
+    "difficulty": "EASY",
+    "confusions": {}
+  },
+  "THEIR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 95.1,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 70.4,
+    "std_top1_confidence": 17.8,
+    "avg_correct_in_top3_confidence": 4.0,
+    "std_correct_in_top3_confidence": 3.7,
+    "avg_correct_in_top5_confidence": 3.9,
+    "std_correct_in_top5_confidence": 3.7,
+    "difficulty": "MEDIUM-EASY",
+    "confusions": {
+      "YOUR": 38,
+      "PLEASE": 22,
+      "HOSPITAL": 1
+    }
+  },
+  "THERMOMETER": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 1.6,
+    "top5_hit_rate": 57.4,
+    "avg_top1_confidence": 52.9,
+    "std_top1_confidence": 14.1,
+    "avg_correct_in_top3_confidence": 1.3,
+    "std_correct_in_top3_confidence": 0,
+    "avg_correct_in_top5_confidence": 1.9,
+    "std_correct_in_top5_confidence": 0.4,
+    "difficulty": "HARD",
+    "confusions": {
+      "DAY": 53,
+      "SICK": 7,
+      "HEADACHE": 1
+    }
+  },
+  "THEY": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 49.2,
+    "top5_hit_rate": 91.8,
+    "avg_top1_confidence": 86.7,
+    "std_top1_confidence": 10.4,
+    "avg_correct_in_top3_confidence": 0.3,
+    "std_correct_in_top3_confidence": 0.1,
+    "avg_correct_in_top5_confidence": 0.2,
+    "std_correct_in_top5_confidence": 0.1,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "WHO": 61
+    }
+  },
+  "TOMORROW": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 88.5,
+    "top3_hit_rate": 96.7,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 85.9,
+    "std_top1_confidence": 15.0,
+    "avg_correct_in_top3_confidence": 83.3,
+    "std_correct_in_top3_confidence": 20.5,
+    "avg_correct_in_top5_confidence": 81.9,
+    "std_correct_in_top5_confidence": 22.9,
+    "difficulty": "EASY",
+    "confusions": {
+      "WHO": 3,
+      "NECK": 2,
+      "YESTERDAY": 1,
+      "HOSPITAL": 1
+    }
+  },
+  "WHAT": {
+    "n_pickles": 62,
+    "n_originals": 2,
+    "top1_accuracy": 82.3,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 86.9,
+    "std_top1_confidence": 15.9,
+    "avg_correct_in_top3_confidence": 81.6,
+    "std_correct_in_top3_confidence": 25.9,
+    "avg_correct_in_top5_confidence": 80.3,
+    "std_correct_in_top5_confidence": 27.7,
+    "difficulty": "EASY",
+    "confusions": {
+      "STRESS": 5,
+      "RIGHT": 4,
+      "NOW": 1,
+      "EVENING": 1
+    }
+  },
+  "WHEELCHAIR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 60.7,
+    "top5_hit_rate": 72.1,
+    "avg_top1_confidence": 93.3,
+    "std_top1_confidence": 9.0,
+    "avg_correct_in_top3_confidence": 0.2,
+    "std_correct_in_top3_confidence": 0.2,
+    "avg_correct_in_top5_confidence": 0.2,
+    "std_correct_in_top5_confidence": 0.2,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "WHAT": 60,
+      "STRESS": 1
+    }
+  },
+  "WHEN": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 65.6,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 78.5,
+    "std_top1_confidence": 16.4,
+    "avg_correct_in_top3_confidence": 58.9,
+    "std_correct_in_top3_confidence": 35.0,
+    "avg_correct_in_top5_confidence": 58.0,
+    "std_correct_in_top5_confidence": 35.4,
+    "difficulty": "EASY",
+    "confusions": {
+      "THERMOMETER": 21
+    }
+  },
+  "WHERE": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 96.7,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 95.4,
+    "std_top1_confidence": 7.5,
+    "avg_correct_in_top3_confidence": 95.3,
+    "std_correct_in_top3_confidence": 10.2,
+    "avg_correct_in_top5_confidence": 95.3,
+    "std_correct_in_top5_confidence": 10.2,
+    "difficulty": "EASY",
+    "confusions": {
+      "TOMORROW": 1,
+      "WHO": 1
+    }
+  },
+  "WHICH": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 1.6,
+    "top3_hit_rate": 70.5,
+    "top5_hit_rate": 98.4,
+    "avg_top1_confidence": 96.9,
+    "std_top1_confidence": 2.3,
+    "avg_correct_in_top3_confidence": 2.0,
+    "std_correct_in_top3_confidence": 12.1,
+    "avg_correct_in_top5_confidence": 1.4,
+    "std_correct_in_top5_confidence": 10.3,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "HOW": 60
+    }
+  },
+  "WHO": {
+    "n_pickles": 122,
+    "n_originals": 2,
+    "top1_accuracy": 45.1,
+    "top3_hit_rate": 56.6,
+    "top5_hit_rate": 79.5,
+    "avg_top1_confidence": 93.1,
+    "std_top1_confidence": 9.8,
+    "avg_correct_in_top3_confidence": 75.1,
+    "std_correct_in_top3_confidence": 36.1,
+    "avg_correct_in_top5_confidence": 53.5,
+    "std_correct_in_top5_confidence": 45.6,
+    "difficulty": "MEDIUM",
+    "confusions": {
+      "SNEEZE": 61,
+      "EYE": 4,
+      "THEY": 1,
+      "WHY": 1
+    }
+  },
+  "WHY": {
+    "n_pickles": 122,
+    "n_originals": 2,
+    "top1_accuracy": 95.1,
+    "top3_hit_rate": 100.0,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 90.1,
+    "std_top1_confidence": 9.3,
+    "avg_correct_in_top3_confidence": 87.2,
+    "std_correct_in_top3_confidence": 18.6,
+    "avg_correct_in_top5_confidence": 87.2,
+    "std_correct_in_top5_confidence": 18.6,
+    "difficulty": "EASY",
+    "confusions": {
+      "YESTERDAY": 4,
+      "HELLO": 2
+    }
+  },
+  "YESTERDAY": {
+    "n_pickles": 122,
+    "n_originals": 2,
+    "top1_accuracy": 87.7,
+    "top3_hit_rate": 98.4,
+    "top5_hit_rate": 100.0,
+    "avg_top1_confidence": 76.3,
+    "std_top1_confidence": 15.7,
+    "avg_correct_in_top3_confidence": 72.8,
+    "std_correct_in_top3_confidence": 22.3,
+    "avg_correct_in_top5_confidence": 71.7,
+    "std_correct_in_top5_confidence": 23.8,
+    "difficulty": "EASY",
+    "confusions": {
+      "TOMORROW": 6,
+      "WHY": 5,
+      "HEARING AID": 4
+    }
+  },
+  "YOUR": {
+    "n_pickles": 61,
+    "n_originals": 1,
+    "top1_accuracy": 0.0,
+    "top3_hit_rate": 29.5,
+    "top5_hit_rate": 78.7,
+    "avg_top1_confidence": 95.0,
+    "std_top1_confidence": 8.7,
+    "avg_correct_in_top3_confidence": 0.4,
+    "std_correct_in_top3_confidence": 0.2,
+    "avg_correct_in_top5_confidence": 0.3,
+    "std_correct_in_top5_confidence": 0.2,
+    "difficulty": "HARD",
+    "confusions": {
+      "THEIR": 61
+    }
+  }
+}

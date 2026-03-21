@@ -1,0 +1,1990 @@
+[
+  {
+    "glosses": [
+      "TABLE",
+      "COW",
+      "DANCE",
+      "BIRTHDAY",
+      "WHAT"
+    ],
+    "sentence": "What did the cow do at the birthday dance on the table?",
+    "id": 1000,
+    "note": "Threshold exp - 0-33% (5H+0M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 1.2
+  },
+  {
+    "glosses": [
+      "FINE",
+      "LATER",
+      "TABLE",
+      "FULL",
+      "BIRTHDAY"
+    ],
+    "sentence": "The birthday table was fine, but we ate later when it was full.",
+    "id": 1001,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 22.5
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "BIRTHDAY",
+      "TABLE",
+      "LATER",
+      "FULL"
+    ],
+    "sentence": "What birthday party had a full table later?",
+    "id": 1002,
+    "note": "Threshold exp - 0-33% (5H+0M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 3.7
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "DANCE",
+      "COW",
+      "FULL",
+      "TABLE"
+    ],
+    "sentence": "The birthday dance had a full table and a cow.",
+    "id": 1003,
+    "note": "Threshold exp - 0-33% (5H+0M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 0.0
+  },
+  {
+    "glosses": [
+      "LATER",
+      "DANCE",
+      "WHAT"
+    ],
+    "sentence": "What dance are we doing later?",
+    "id": 1004,
+    "note": "Threshold exp - 0-33% (3H+0M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 6.2
+  },
+  {
+    "glosses": [
+      "TELL",
+      "LATER",
+      "WHAT",
+      "DANCE",
+      "TABLE"
+    ],
+    "sentence": "Tell me what dance is at the table later.",
+    "id": 1005,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 23.7
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "COMPUTER",
+      "BIRTHDAY",
+      "COW",
+      "WALK"
+    ],
+    "sentence": "The cow walked to the computer for the birthday dance.",
+    "id": 1006,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 33.8
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "WHAT",
+      "FINE"
+    ],
+    "sentence": "What dance is fine?",
+    "id": 1007,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 35.4
+  },
+  {
+    "glosses": [
+      "COW",
+      "LATER",
+      "FULL",
+      "WHAT",
+      "TABLE"
+    ],
+    "sentence": "The cow was later at the full table, but what happened?",
+    "id": 1008,
+    "note": "Threshold exp - 0-33% (5H+0M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 3.7
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "WHAT",
+      "BIRTHDAY",
+      "WALK",
+      "COW"
+    ],
+    "sentence": "What computer did the cow walk to for the birthday?",
+    "id": 1009,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 35.0
+  },
+  {
+    "glosses": [
+      "NEED",
+      "TABLE",
+      "LATER"
+    ],
+    "sentence": "I need the table later.",
+    "id": 1010,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 27.1
+  },
+  {
+    "glosses": [
+      "COW",
+      "DANCE",
+      "TABLE",
+      "FULL"
+    ],
+    "sentence": "The cow danced on the full table.",
+    "id": 1011,
+    "note": "Threshold exp - 0-33% (4H+0M+0E, len=4)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 0.0
+  },
+  {
+    "glosses": [
+      "LATER",
+      "NO",
+      "COW"
+    ],
+    "sentence": "No, the cow comes later.",
+    "id": 1012,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "TABLE",
+      "COW",
+      "BIRTHDAY",
+      "WALK"
+    ],
+    "sentence": "The cow walked to the Thanksgiving birthday table.",
+    "id": 1013,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 38.8
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "LATER",
+      "BIRTHDAY",
+      "DANCE",
+      "FULL"
+    ],
+    "sentence": "The full Thanksgiving birthday dance came later.",
+    "id": 1014,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 21.3
+  },
+  {
+    "glosses": [
+      "COW",
+      "DANCE",
+      "FULL"
+    ],
+    "sentence": "The cow was full after the dance.",
+    "id": 1015,
+    "note": "Threshold exp - 0-33% (3H+0M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 0.0
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "WHAT",
+      "COW",
+      "LATER",
+      "TABLE"
+    ],
+    "sentence": "What dance did the cow do later on the table?",
+    "id": 1016,
+    "note": "Threshold exp - 0-33% (5H+0M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 3.7
+  },
+  {
+    "glosses": [
+      "COW",
+      "DANCE",
+      "TELL"
+    ],
+    "sentence": "The cow danced and I will tell you.",
+    "id": 1017,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 33.3
+  },
+  {
+    "glosses": [
+      "LATER",
+      "NEED",
+      "DANCE",
+      "FULL",
+      "BIRTHDAY"
+    ],
+    "sentence": "I need to dance later for the full birthday.",
+    "id": 1018,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 16.3
+  },
+  {
+    "glosses": [
+      "FULL",
+      "TABLE",
+      "BIRTHDAY",
+      "WHAT",
+      "WALK"
+    ],
+    "sentence": "What full birthday table will we walk to?",
+    "id": 1019,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 21.2
+  },
+  {
+    "glosses": [
+      "COW",
+      "FULL",
+      "LATER",
+      "DANCE",
+      "FINE"
+    ],
+    "sentence": "The fine cow was full later after the dance.",
+    "id": 1020,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 22.5
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "DANCE",
+      "TABLE",
+      "FULL"
+    ],
+    "sentence": "What full dance is on the table?",
+    "id": 1021,
+    "note": "Threshold exp - 0-33% (4H+0M+0E, len=4)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 1.6
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "BIRTHDAY",
+      "COMPUTER"
+    ],
+    "sentence": "The birthday dance was on the computer.",
+    "id": 1022,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 22.9
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "LATER",
+      "BIRTHDAY",
+      "FINE",
+      "COW"
+    ],
+    "sentence": "The fine table had a cow and a birthday cake later.",
+    "id": 1023,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 22.5
+  },
+  {
+    "glosses": [
+      "FULL",
+      "TELL",
+      "COW",
+      "WHAT",
+      "DANCE"
+    ],
+    "sentence": "Tell me what the full cow did at the dance.",
+    "id": 1024,
+    "note": "Threshold exp - 0-33% (4H+1M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 21.2
+  },
+  {
+    "glosses": [
+      "FULL",
+      "THANKSGIVING",
+      "COW",
+      "BIRTHDAY",
+      "COMPUTER"
+    ],
+    "sentence": "The full Thanksgiving birthday had a cow and a computer.",
+    "id": 1025,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 32.5
+  },
+  {
+    "glosses": [
+      "LATER",
+      "BIRTHDAY",
+      "TABLE",
+      "WHAT"
+    ],
+    "sentence": "What birthday is at the table later?",
+    "id": 1026,
+    "note": "Threshold exp - 0-33% (4H+0M+0E, len=4)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 4.7
+  },
+  {
+    "glosses": [
+      "COW",
+      "BIRTHDAY",
+      "WHAT",
+      "FINE",
+      "WALK"
+    ],
+    "sentence": "What fine cow walked to the birthday?",
+    "id": 1027,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 41.2
+  },
+  {
+    "glosses": [
+      "FINE",
+      "FULL",
+      "DANCE"
+    ],
+    "sentence": "The fine full dance was amazing.",
+    "id": 1028,
+    "note": "Threshold exp - 0-33% (2H+1M+0E, len=3)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 33.3
+  },
+  {
+    "glosses": [
+      "LATER",
+      "BIRTHDAY",
+      "COMPUTER",
+      "WHAT",
+      "THANKSGIVING"
+    ],
+    "sentence": "What computer did we use later for the Thanksgiving birthday?",
+    "id": 1029,
+    "note": "Threshold exp - 0-33% (3H+2M+0E, len=5)",
+    "target_band": "0-33%",
+    "expected_top3_acc": 36.3
+  },
+  {
+    "glosses": [
+      "NO",
+      "WHAT",
+      "FULL"
+    ],
+    "sentence": "No, what is full?",
+    "id": 1030,
+    "note": "Threshold exp - 33-50% (2H+1M+0E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 35.4
+  },
+  {
+    "glosses": [
+      "COW",
+      "AFRICA",
+      "FULL"
+    ],
+    "sentence": "The cow from Africa is full.",
+    "id": 1031,
+    "note": "Threshold exp - 33-50% (2H+0M+1E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 33.3
+  },
+  {
+    "glosses": [
+      "FULL",
+      "NEED",
+      "WHAT",
+      "NO",
+      "STUDY"
+    ],
+    "sentence": "I need to study what is full, no?",
+    "id": 1032,
+    "note": "Threshold exp - 33-50% (2H+2M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 55.0
+  },
+  {
+    "glosses": [
+      "TALL",
+      "BIRTHDAY",
+      "TELL",
+      "COW"
+    ],
+    "sentence": "Tell the tall man about the birthday cow.",
+    "id": 1033,
+    "note": "Threshold exp - 33-50% (2H+1M+1E, len=4)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "LATER",
+      "BIRTHDAY",
+      "HOT"
+    ],
+    "sentence": "The birthday party is hot later.",
+    "id": 1034,
+    "note": "Threshold exp - 33-50% (2H+0M+1E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "WRONG",
+      "LATER"
+    ],
+    "sentence": "The birthday was wrong, but it happened later.",
+    "id": 1035,
+    "note": "Threshold exp - 33-50% (2H+0M+1E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "FAMILY",
+      "BIRTHDAY",
+      "COW",
+      "TABLE",
+      "BEFORE"
+    ],
+    "sentence": "My family had a birthday before the cow was on the table.",
+    "id": 1036,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 40.0
+  },
+  {
+    "glosses": [
+      "ORANGE",
+      "FULL",
+      "BIRTHDAY",
+      "JACKET",
+      "LATER"
+    ],
+    "sentence": "The orange jacket was full of birthday gifts later.",
+    "id": 1037,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 42.5
+  },
+  {
+    "glosses": [
+      "FULL",
+      "NEED",
+      "DANCE",
+      "THURSDAY",
+      "TABLE"
+    ],
+    "sentence": "I need to dance on Thursday at the full table.",
+    "id": 1038,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 33.8
+  },
+  {
+    "glosses": [
+      "JACKET",
+      "LATER",
+      "COW"
+    ],
+    "sentence": "I will get the jacket later from the cow.",
+    "id": 1039,
+    "note": "Threshold exp - 33-50% (2H+0M+1E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "NEED",
+      "DOCTOR",
+      "COW"
+    ],
+    "sentence": "The birthday doctor needs to see the cow.",
+    "id": 1040,
+    "note": "Threshold exp - 33-50% (2H+1M+1E, len=4)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 42.2
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "WHAT",
+      "AFRICA",
+      "LATER",
+      "SON"
+    ],
+    "sentence": "What table in Africa did my son see later?",
+    "id": 1041,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 43.7
+  },
+  {
+    "glosses": [
+      "NEED",
+      "PAPER",
+      "LATER",
+      "DANCE",
+      "COW"
+    ],
+    "sentence": "I need paper for the dance later, not the cow.",
+    "id": 1042,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 36.3
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "PLAY",
+      "FULL",
+      "BIRTHDAY",
+      "BASKETBALL"
+    ],
+    "sentence": "The full birthday dance was to play basketball.",
+    "id": 1043,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 40.0
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "DEAF",
+      "THANKSGIVING",
+      "COW"
+    ],
+    "sentence": "What deaf Thanksgiving cow is that?",
+    "id": 1044,
+    "note": "Threshold exp - 33-50% (2H+1M+1E, len=4)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "AFRICA",
+      "BEFORE",
+      "LATER",
+      "FULL",
+      "TABLE"
+    ],
+    "sentence": "Africa had a full table before, but later it was empty.",
+    "id": 1045,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 42.5
+  },
+  {
+    "glosses": [
+      "FINE",
+      "TELL",
+      "GIVE",
+      "DANCE",
+      "LATER"
+    ],
+    "sentence": "Tell me what is fine, then give me the dance later.",
+    "id": 1046,
+    "note": "Threshold exp - 33-50% (2H+2M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 62.5
+  },
+  {
+    "glosses": [
+      "FINE",
+      "NEED",
+      "SON",
+      "WHAT",
+      "BIRTHDAY"
+    ],
+    "sentence": "My fine son needs to know what the birthday is about.",
+    "id": 1047,
+    "note": "Threshold exp - 33-50% (2H+2M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 55.0
+  },
+  {
+    "glosses": [
+      "BUT",
+      "WHAT",
+      "TABLE",
+      "WRONG",
+      "COW"
+    ],
+    "sentence": "But what is wrong with the table and the cow?",
+    "id": 1048,
+    "note": "Threshold exp - 33-50% (3H+0M+2E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 41.2
+  },
+  {
+    "glosses": [
+      "COW",
+      "FULL",
+      "BUT",
+      "NEED",
+      "DANCE"
+    ],
+    "sentence": "The cow was full, but I need to dance.",
+    "id": 1049,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 33.8
+  },
+  {
+    "glosses": [
+      "NEED",
+      "COW",
+      "FULL"
+    ],
+    "sentence": "I need the cow, it is full.",
+    "id": 1050,
+    "note": "Threshold exp - 33-50% (2H+1M+0E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 22.9
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "FINE",
+      "TABLE"
+    ],
+    "sentence": "The birthday table is fine.",
+    "id": 1051,
+    "note": "Threshold exp - 33-50% (2H+1M+0E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 33.3
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "BIRTHDAY",
+      "DEAF",
+      "WALK"
+    ],
+    "sentence": "What birthday did the deaf person walk to?",
+    "id": 1052,
+    "note": "Threshold exp - 33-50% (2H+1M+1E, len=4)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 51.6
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "COMPUTER",
+      "BEFORE",
+      "LATER",
+      "DANCE"
+    ],
+    "sentence": "What computer did we use before the later dance?",
+    "id": 1053,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "GIVE",
+      "LATER"
+    ],
+    "sentence": "Give me the birthday present later.",
+    "id": 1054,
+    "note": "Threshold exp - 33-50% (2H+0M+1E, len=3)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 37.5
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "LATER",
+      "FAMILY",
+      "WHAT"
+    ],
+    "sentence": "My family asked what the birthday was about later.",
+    "id": 1055,
+    "note": "Threshold exp - 33-50% (3H+0M+1E, len=4)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 29.7
+  },
+  {
+    "glosses": [
+      "WALK",
+      "FULL",
+      "MAN",
+      "LATER",
+      "BIRTHDAY"
+    ],
+    "sentence": "The man walked to the full birthday later.",
+    "id": 1056,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 42.5
+  },
+  {
+    "glosses": [
+      "WRONG",
+      "LATER",
+      "THANKSGIVING",
+      "WHAT",
+      "DANCE"
+    ],
+    "sentence": "It was wrong to dance later on Thanksgiving, but what happened?",
+    "id": 1057,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 42.5
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "THANKSGIVING",
+      "FULL",
+      "DANCE",
+      "DOCTOR"
+    ],
+    "sentence": "What Thanksgiving doctor was full after the dance?",
+    "id": 1058,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 40.0
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "FULL",
+      "ORANGE",
+      "TELL",
+      "COW"
+    ],
+    "sentence": "Tell the cow about the full orange on the table.",
+    "id": 1059,
+    "note": "Threshold exp - 33-50% (3H+1M+1E, len=5)",
+    "target_band": "33-50%",
+    "expected_top3_acc": 40.0
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "TIME",
+      "FINE",
+      "GIVE"
+    ],
+    "sentence": "The hot dance was fine, so give me time.",
+    "id": 1060,
+    "note": "Threshold exp - 50-67% (1H+1M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "HOT",
+      "TABLE",
+      "JACKET",
+      "COW"
+    ],
+    "sentence": "The hot jacket is on the table next to the cow.",
+    "id": 1061,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "PAPER",
+      "LATER",
+      "PLAY"
+    ],
+    "sentence": "I will play the Thanksgiving paper game later.",
+    "id": 1062,
+    "note": "Threshold exp - 50-67% (1H+1M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 76.6
+  },
+  {
+    "glosses": [
+      "WALK",
+      "AFRICA",
+      "BOWLING",
+      "FINE",
+      "DANCE"
+    ],
+    "sentence": "The fine bowling walk in Africa was a real dance.",
+    "id": 1063,
+    "note": "Threshold exp - 50-67% (1H+2M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "FULL",
+      "ORANGE",
+      "TABLE",
+      "CHAIR"
+    ],
+    "sentence": "The full orange is on the table by the chair.",
+    "id": 1064,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "STUDY",
+      "COW"
+    ],
+    "sentence": "We give thanks for studying the cow on Thanksgiving.",
+    "id": 1065,
+    "note": "Threshold exp - 50-67% (1H+1M+1E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 64.6
+  },
+  {
+    "glosses": [
+      "COW",
+      "FINE",
+      "FULL",
+      "TIME",
+      "STUDY"
+    ],
+    "sentence": "The cow is fine and full this time after studying.",
+    "id": 1066,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 60.0
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "TIME",
+      "FULL",
+      "FINE",
+      "HELP"
+    ],
+    "sentence": "The birthday time was full of fine help.",
+    "id": 1067,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 60.0
+  },
+  {
+    "glosses": [
+      "FINE",
+      "LATER",
+      "FULL",
+      "WRONG",
+      "TALL"
+    ],
+    "sentence": "It was fine, but later it got full and the wrong tall one came.",
+    "id": 1068,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 62.5
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "WALK",
+      "JACKET",
+      "DANCE",
+      "THURSDAY"
+    ],
+    "sentence": "The table walk on Thursday was in a jacket for the dance.",
+    "id": 1069,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 60.0
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "CHANGE",
+      "DOCTOR"
+    ],
+    "sentence": "The table change was made by the doctor.",
+    "id": 1070,
+    "note": "Threshold exp - 50-67% (1H+0M+2E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 66.7
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "LATER",
+      "BOWLING",
+      "CHANGE"
+    ],
+    "sentence": "The computer change came later with bowling.",
+    "id": 1071,
+    "note": "Threshold exp - 50-67% (1H+1M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 70.3
+  },
+  {
+    "glosses": [
+      "NO",
+      "COW",
+      "COMPUTER",
+      "GIVE",
+      "DRINK"
+    ],
+    "sentence": "No, give the cow a computer drink.",
+    "id": 1072,
+    "note": "Threshold exp - 50-67% (1H+2M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 73.8
+  },
+  {
+    "glosses": [
+      "NO",
+      "WHAT",
+      "FAMILY"
+    ],
+    "sentence": "No, what family is that?",
+    "id": 1073,
+    "note": "Threshold exp - 50-67% (1H+1M+1E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 68.7
+  },
+  {
+    "glosses": [
+      "WHAT",
+      "HOT",
+      "LATER",
+      "AFRICA",
+      "NO"
+    ],
+    "sentence": "What hot place in Africa? No, it came later.",
+    "id": 1074,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 63.7
+  },
+  {
+    "glosses": [
+      "MAN",
+      "PAPER",
+      "TABLE",
+      "TIME",
+      "WHAT"
+    ],
+    "sentence": "The man read the paper about what time the table was ready.",
+    "id": 1075,
+    "note": "Threshold exp - 50-67% (2H+0M+3E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 61.2
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "FULL",
+      "FAMILY",
+      "DRINK"
+    ],
+    "sentence": "The birthday was full of family drinks.",
+    "id": 1076,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "TELL",
+      "COW",
+      "AFRICA",
+      "FULL",
+      "MAN"
+    ],
+    "sentence": "Tell the man about the cow from Africa, it is full.",
+    "id": 1077,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 60.0
+  },
+  {
+    "glosses": [
+      "BUT",
+      "NO",
+      "WHAT"
+    ],
+    "sentence": "But no, what is going on?",
+    "id": 1078,
+    "note": "Threshold exp - 50-67% (1H+1M+1E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 68.7
+  },
+  {
+    "glosses": [
+      "DANCE",
+      "DRINK",
+      "COW",
+      "HELP"
+    ],
+    "sentence": "The cow danced to help with drinks.",
+    "id": 1079,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "FULL",
+      "BASKETBALL",
+      "NEED",
+      "WHAT",
+      "WATER"
+    ],
+    "sentence": "The full basketball needs water, so what happened?",
+    "id": 1080,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 55.0
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "BASKETBALL",
+      "THURSDAY",
+      "COW"
+    ],
+    "sentence": "The Thanksgiving basketball game was on Thursday with the cow.",
+    "id": 1081,
+    "note": "Threshold exp - 50-67% (1H+1M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 73.4
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "PAPER",
+      "WHAT"
+    ],
+    "sentence": "The computer paper is about what?",
+    "id": 1082,
+    "note": "Threshold exp - 50-67% (1H+1M+1E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 58.3
+  },
+  {
+    "glosses": [
+      "THANKSGIVING",
+      "FULL",
+      "BEFORE"
+    ],
+    "sentence": "Thanksgiving was full before.",
+    "id": 1083,
+    "note": "Threshold exp - 50-67% (1H+1M+1E, len=3)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 64.6
+  },
+  {
+    "glosses": [
+      "ENJOY",
+      "TABLE",
+      "THURSDAY",
+      "DANCE"
+    ],
+    "sentence": "I enjoy the Thursday dance on the table.",
+    "id": 1084,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "ORANGE",
+      "COW",
+      "BEFORE",
+      "NEED",
+      "WHAT"
+    ],
+    "sentence": "The orange cow needs to know what happened before.",
+    "id": 1085,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 55.0
+  },
+  {
+    "glosses": [
+      "BASKETBALL",
+      "ORANGE",
+      "TABLE",
+      "COW"
+    ],
+    "sentence": "The basketball and orange are on the table with the cow.",
+    "id": 1086,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "BEFORE",
+      "WALK",
+      "LATER",
+      "TABLE",
+      "TIME"
+    ],
+    "sentence": "Walk to the table before the time comes later.",
+    "id": 1087,
+    "note": "Threshold exp - 50-67% (2H+1M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 62.5
+  },
+  {
+    "glosses": [
+      "TELL",
+      "DRINK",
+      "COMPUTER",
+      "PLAY",
+      "DANCE"
+    ],
+    "sentence": "Tell the drink computer to play the dance.",
+    "id": 1088,
+    "note": "Threshold exp - 50-67% (1H+2M+2E, len=5)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 73.8
+  },
+  {
+    "glosses": [
+      "TABLE",
+      "DANCE",
+      "YEAR",
+      "WATER"
+    ],
+    "sentence": "The table dance was a year of water.",
+    "id": 1089,
+    "note": "Threshold exp - 50-67% (2H+0M+2E, len=4)",
+    "target_band": "50-67%",
+    "expected_top3_acc": 50.0
+  },
+  {
+    "glosses": [
+      "FINE",
+      "TALL",
+      "PLAY",
+      "JACKET"
+    ],
+    "sentence": "The fine tall jacket is for play.",
+    "id": 1090,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "ORANGE",
+      "NO",
+      "WATER",
+      "TALL"
+    ],
+    "sentence": "No, the orange water is not tall.",
+    "id": 1091,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "YEAR",
+      "BIRTHDAY",
+      "NEED",
+      "CHANGE",
+      "HELP"
+    ],
+    "sentence": "My son needs to change the birthday year with help.",
+    "id": 1092,
+    "note": "Threshold exp - 67-83% (1H+1M+3E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 73.8
+  },
+  {
+    "glosses": [
+      "WALK",
+      "BUT",
+      "HOT",
+      "DRINK"
+    ],
+    "sentence": "I walk, but the hot drink is ready.",
+    "id": 1093,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "YEAR",
+      "DANCE",
+      "STUDY",
+      "PAPER"
+    ],
+    "sentence": "The year of dance was in the study paper.",
+    "id": 1094,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "COW",
+      "GIVE",
+      "CHANGE",
+      "BASKETBALL",
+      "TALL"
+    ],
+    "sentence": "Give the cow a change to play tall basketball.",
+    "id": 1095,
+    "note": "Threshold exp - 67-83% (1H+0M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "TIME",
+      "HOT",
+      "AFRICA",
+      "HELP",
+      "THANKSGIVING"
+    ],
+    "sentence": "The hot time in Africa was helped by Thanksgiving.",
+    "id": 1096,
+    "note": "Threshold exp - 67-83% (0H+1M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 98.8
+  },
+  {
+    "glosses": [
+      "FINE",
+      "ENJOY",
+      "DOCTOR",
+      "SON",
+      "ORANGE"
+    ],
+    "sentence": "My fine son enjoys the doctor and orange.",
+    "id": 1097,
+    "note": "Threshold exp - 67-83% (0H+1M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "HELP",
+      "DOCTOR",
+      "TABLE",
+      "DEAF"
+    ],
+    "sentence": "The deaf doctor helped at the table.",
+    "id": 1098,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "BEFORE",
+      "TALL",
+      "FINE",
+      "MAN",
+      "DRINK"
+    ],
+    "sentence": "The tall man was fine before the drink.",
+    "id": 1099,
+    "note": "Threshold exp - 67-83% (0H+1M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "ORANGE",
+      "JACKET",
+      "TABLE",
+      "THURSDAY"
+    ],
+    "sentence": "The orange jacket is on the table on Thursday.",
+    "id": 1100,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "ENJOY",
+      "DOCTOR",
+      "BUT",
+      "COW"
+    ],
+    "sentence": "I enjoy the doctor, but the cow does not.",
+    "id": 1101,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "DOCTOR",
+      "MAN",
+      "APPLE"
+    ],
+    "sentence": "The birthday doctor is my man with an apple.",
+    "id": 1102,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "WALK",
+      "ORANGE",
+      "AFRICA"
+    ],
+    "sentence": "I walk to the orange in Africa.",
+    "id": 1103,
+    "note": "Threshold exp - 67-83% (0H+1M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "APPLE",
+      "NO",
+      "DRINK",
+      "BUT"
+    ],
+    "sentence": "No, the apple drink is fine, but I want it.",
+    "id": 1104,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "HOT",
+      "BASKETBALL",
+      "ORANGE",
+      "NO",
+      "BIRTHDAY"
+    ],
+    "sentence": "The hot basketball and orange? No, it is for the birthday.",
+    "id": 1105,
+    "note": "Threshold exp - 67-83% (1H+1M+3E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "MAN",
+      "FINE",
+      "BEFORE"
+    ],
+    "sentence": "The man is fine before.",
+    "id": 1106,
+    "note": "Threshold exp - 67-83% (0H+1M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "HELP",
+      "LATER",
+      "NO",
+      "DOCTOR",
+      "WRONG"
+    ],
+    "sentence": "Help the doctor, but no wrong moves later.",
+    "id": 1107,
+    "note": "Threshold exp - 67-83% (1H+1M+3E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 82.5
+  },
+  {
+    "glosses": [
+      "PLAY",
+      "TABLE",
+      "CHAIR",
+      "THURSDAY",
+      "BEFORE"
+    ],
+    "sentence": "I play at the table with a chair on Thursday before.",
+    "id": 1108,
+    "note": "Threshold exp - 67-83% (1H+0M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "BUT",
+      "MAN",
+      "COW"
+    ],
+    "sentence": "But the man has a cow.",
+    "id": 1109,
+    "note": "Threshold exp - 67-83% (1H+0M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 66.7
+  },
+  {
+    "glosses": [
+      "NO",
+      "HELP",
+      "STUDY"
+    ],
+    "sentence": "No, I need help to study.",
+    "id": 1110,
+    "note": "Threshold exp - 67-83% (0H+1M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "BIRTHDAY",
+      "CHANGE",
+      "STUDY",
+      "DOCTOR"
+    ],
+    "sentence": "The birthday change was to study with the doctor.",
+    "id": 1111,
+    "note": "Threshold exp - 67-83% (1H+0M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 75.0
+  },
+  {
+    "glosses": [
+      "CHANGE",
+      "THANKSGIVING",
+      "DEAF"
+    ],
+    "sentence": "The change for the deaf on Thanksgiving.",
+    "id": 1112,
+    "note": "Threshold exp - 67-83% (0H+1M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 97.9
+  },
+  {
+    "glosses": [
+      "CHANGE",
+      "COMPUTER",
+      "PLAY",
+      "MAN"
+    ],
+    "sentence": "The man changed the computer to play.",
+    "id": 1113,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 92.2
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "TIME",
+      "BUT"
+    ],
+    "sentence": "The computer time is fine, but it is not ready.",
+    "id": 1114,
+    "note": "Threshold exp - 67-83% (0H+1M+2E, len=3)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 89.6
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "STUDY",
+      "HELP",
+      "DOCTOR"
+    ],
+    "sentence": "The computer study helps the doctor.",
+    "id": 1115,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 92.2
+  },
+  {
+    "glosses": [
+      "COMPUTER",
+      "PAPER",
+      "APPLE",
+      "YEAR"
+    ],
+    "sentence": "The computer paper has an apple this year.",
+    "id": 1116,
+    "note": "Threshold exp - 67-83% (0H+1M+3E, len=4)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 92.2
+  },
+  {
+    "glosses": [
+      "CHANGE",
+      "AFRICA",
+      "BASKETBALL",
+      "DANCE",
+      "SON"
+    ],
+    "sentence": "My son changed the Africa basketball dance.",
+    "id": 1117,
+    "note": "Threshold exp - 67-83% (1H+0M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "JACKET",
+      "THURSDAY",
+      "BIRTHDAY",
+      "BUT",
+      "HOT"
+    ],
+    "sentence": "The hot jacket on Thursday is for the birthday, but it is fine.",
+    "id": 1118,
+    "note": "Threshold exp - 67-83% (1H+0M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 80.0
+  },
+  {
+    "glosses": [
+      "HOT",
+      "WALK",
+      "ENJOY",
+      "GIVE",
+      "BASKETBALL"
+    ],
+    "sentence": "I enjoy walking and giving hot basketball.",
+    "id": 1119,
+    "note": "Threshold exp - 67-83% (0H+1M+4E, len=5)",
+    "target_band": "67-83%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "DRINK",
+      "GIVE",
+      "HOT",
+      "STUDY"
+    ],
+    "sentence": "I drink hot water and give time to study.",
+    "id": 1120,
+    "note": "Threshold exp - 83-100% (0H+0M+4E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "DRINK",
+      "COMPUTER",
+      "HELP",
+      "BASKETBALL"
+    ],
+    "sentence": "The computer helps with drinking and basketball.",
+    "id": 1121,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 92.2
+  },
+  {
+    "glosses": [
+      "WATER",
+      "WALK",
+      "JACKET",
+      "AFRICA",
+      "SON"
+    ],
+    "sentence": "My son in Africa walked in a water jacket.",
+    "id": 1122,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "JACKET",
+      "ENJOY",
+      "PAPER",
+      "THURSDAY"
+    ],
+    "sentence": "The jacket on Thursday is to enjoy the paper.",
+    "id": 1123,
+    "note": "Threshold exp - 83-100% (0H+0M+4E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "MAN",
+      "DEAF",
+      "CHAIR"
+    ],
+    "sentence": "The man is deaf and sits in the chair.",
+    "id": 1124,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "AFRICA",
+      "THANKSGIVING",
+      "BEFORE",
+      "HOT",
+      "PLAY"
+    ],
+    "sentence": "Africa is hot before the Thanksgiving play.",
+    "id": 1125,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 98.8
+  },
+  {
+    "glosses": [
+      "AFRICA",
+      "GIVE",
+      "CHANGE",
+      "BASKETBALL",
+      "MAN"
+    ],
+    "sentence": "Give the man from Africa a change to play basketball.",
+    "id": 1126,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "JACKET",
+      "THANKSGIVING",
+      "DOCTOR",
+      "DEAF",
+      "STUDY"
+    ],
+    "sentence": "The deaf doctor studied the jacket on Thanksgiving.",
+    "id": 1127,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 98.8
+  },
+  {
+    "glosses": [
+      "FAMILY",
+      "CHAIR",
+      "TELL",
+      "BOWLING",
+      "PAPER"
+    ],
+    "sentence": "My family told the bowling paper about the chair.",
+    "id": 1128,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "WATER",
+      "TIME",
+      "DEAF",
+      "JACKET",
+      "NEED"
+    ],
+    "sentence": "The deaf person needs water, time, and a jacket.",
+    "id": 1129,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 93.8
+  },
+  {
+    "glosses": [
+      "TELL",
+      "HOT",
+      "WRONG",
+      "SON"
+    ],
+    "sentence": "Tell my hot and wrong son.",
+    "id": 1130,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "FAMILY",
+      "DRINK",
+      "HELP",
+      "MAN",
+      "THURSDAY"
+    ],
+    "sentence": "My family drinks and helps the man on Thursday.",
+    "id": 1131,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "WRONG",
+      "CHANGE",
+      "NO",
+      "THURSDAY"
+    ],
+    "sentence": "The wrong change was on Thursday, no.",
+    "id": 1132,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "WATER",
+      "FAMILY",
+      "THANKSGIVING",
+      "SON",
+      "TIME"
+    ],
+    "sentence": "My son's family has water for Thanksgiving time.",
+    "id": 1133,
+    "note": "Threshold exp - 83-100% (0H+1M+4E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 98.8
+  },
+  {
+    "glosses": [
+      "WRONG",
+      "DRINK",
+      "TELL",
+      "BEFORE"
+    ],
+    "sentence": "I was wrong to drink before, so tell me.",
+    "id": 1134,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "BOWLING",
+      "TALL",
+      "GIVE"
+    ],
+    "sentence": "I give a tall bowling ball.",
+    "id": 1135,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "HOT",
+      "DEAF",
+      "TIME"
+    ],
+    "sentence": "The hot deaf time was important.",
+    "id": 1136,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "WRONG",
+      "DRINK",
+      "SON"
+    ],
+    "sentence": "My son was wrong about the drink.",
+    "id": 1137,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "STUDY",
+      "THURSDAY",
+      "YEAR",
+      "PLAY",
+      "HOT"
+    ],
+    "sentence": "I study and play hot Thursday every year.",
+    "id": 1138,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "DOCTOR",
+      "CHANGE",
+      "SON",
+      "PLAY"
+    ],
+    "sentence": "The doctor changed my son's play.",
+    "id": 1139,
+    "note": "Threshold exp - 83-100% (0H+0M+4E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "STUDY",
+      "HELP",
+      "BUT"
+    ],
+    "sentence": "I study, but I help.",
+    "id": 1140,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "DRINK",
+      "APPLE",
+      "TIME"
+    ],
+    "sentence": "I drink apple juice this time.",
+    "id": 1141,
+    "note": "Threshold exp - 83-100% (0H+0M+3E, len=3)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "JACKET",
+      "CHANGE",
+      "GIVE",
+      "ORANGE",
+      "BOWLING"
+    ],
+    "sentence": "I give the orange jacket and change the bowling.",
+    "id": 1142,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "PAPER",
+      "WALK",
+      "SON",
+      "FAMILY"
+    ],
+    "sentence": "My son walked with paper for the family.",
+    "id": 1143,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "SON",
+      "DEAF",
+      "PLAY",
+      "HELP"
+    ],
+    "sentence": "My deaf son plays and helps.",
+    "id": 1144,
+    "note": "Threshold exp - 83-100% (0H+0M+4E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "FINE",
+      "BASKETBALL",
+      "ENJOY",
+      "HELP"
+    ],
+    "sentence": "I enjoy fine basketball and help.",
+    "id": 1145,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "DOCTOR",
+      "WRONG",
+      "FAMILY",
+      "HELP",
+      "CHAIR"
+    ],
+    "sentence": "The doctor was wrong, but my family helps with the chair.",
+    "id": 1146,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "STUDY",
+      "ORANGE",
+      "NEED",
+      "DOCTOR"
+    ],
+    "sentence": "I study the orange and need a doctor.",
+    "id": 1147,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 92.2
+  },
+  {
+    "glosses": [
+      "WRONG",
+      "THURSDAY",
+      "ORANGE",
+      "SON",
+      "AFRICA"
+    ],
+    "sentence": "My wrong son went to Africa on Thursday for an orange.",
+    "id": 1148,
+    "note": "Threshold exp - 83-100% (0H+0M+5E, len=5)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  },
+  {
+    "glosses": [
+      "WALK",
+      "PLAY",
+      "CHANGE",
+      "ENJOY"
+    ],
+    "sentence": "I walk and play to change and enjoy.",
+    "id": 1149,
+    "note": "Threshold exp - 83-100% (0H+1M+3E, len=4)",
+    "target_band": "83-100%",
+    "expected_top3_acc": 100.0
+  }
+]
