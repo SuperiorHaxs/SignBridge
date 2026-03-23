@@ -14,9 +14,12 @@ Methods:
 import os
 import sys
 import json
+import uuid
+import shutil
+import threading
 import tempfile
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 
 # ============================================================================
 # PATH CONFIGURATION
@@ -357,6 +360,131 @@ English sentence:"""
 
 
 # ============================================================================
+# ROUTES — Caption Video (upload → pipeline → download)
+# ============================================================================
+
+# In-memory job store: { job_id: { status, progress, message, output_path, error } }
+CAPTION_JOBS = {}
+CAPTION_JOBS_DIR = Path(tempfile.gettempdir()) / "signbridge_caption_jobs"
+CAPTION_JOBS_DIR.mkdir(exist_ok=True)
+
+CLOSED_CAPTIONS_DIR = Path(__file__).parent.parent / "closed-captions"
+
+
+def _run_caption_job(job_id: str, input_path: str):
+    """Run the caption_video pipeline in a background thread."""
+    job = CAPTION_JOBS[job_id]
+    output_path = str(CAPTION_JOBS_DIR / job_id / "captioned.mp4")
+    Path(output_path).parent.mkdir(exist_ok=True)
+
+    try:
+        # Import caption_video inline so it only loads heavy libs when needed
+        sys.path.insert(0, str(CLOSED_CAPTIONS_DIR))
+        from caption_video import caption_video as _caption_video
+
+        # Monkey-patch progress updates into the print output by wrapping
+        import builtins
+        original_print = builtins.print
+
+        def progress_print(*args, **kwargs):
+            msg = " ".join(str(a) for a in args)
+            original_print(*args, **kwargs)
+            # Map pipeline step messages to progress %
+            if "[1/5]" in msg:
+                job.update(progress=10, message="Converting video to pose...")
+            elif "[2/5]" in msg:
+                job.update(progress=30, message="Segmenting signs...")
+            elif "[3/5]" in msg:
+                job.update(progress=55, message="Running model inference...")
+            elif "[4/5]" in msg:
+                job.update(progress=75, message="Building captions with LLM...")
+            elif "[5/5]" in msg:
+                job.update(progress=90, message="Burning captions onto video...")
+
+        builtins.print = progress_print
+        try:
+            _caption_video(input_path, output_path)
+        finally:
+            builtins.print = original_print
+
+        job.update(status="done", progress=100, message="Done!", output_path=output_path)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        job.update(status="error", message=str(e))
+    finally:
+        # Clean up the uploaded input
+        try:
+            os.remove(input_path)
+        except Exception:
+            pass
+
+
+class _Job(dict):
+    """Simple thread-safe job state dict."""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._lock = threading.Lock()
+
+    def update(self, **kwargs):
+        with self._lock:
+            super().update(kwargs)
+
+
+@app.route("/api/caption-video", methods=["POST"])
+def caption_video_upload():
+    """Accept video upload, start background captioning job, return job_id."""
+    if "video" not in request.files:
+        return jsonify({"success": False, "error": "No video file provided"}), 400
+
+    video_file = request.files["video"]
+    if not video_file.filename:
+        return jsonify({"success": False, "error": "Empty filename"}), 400
+
+    job_id = str(uuid.uuid4())
+
+    # Save upload to temp file (keep extension)
+    ext = Path(video_file.filename).suffix or ".mp4"
+    input_path = str(CAPTION_JOBS_DIR / f"{job_id}_input{ext}")
+    video_file.save(input_path)
+
+    # Create job and start thread
+    job = _Job(status="running", progress=0, message="Starting pipeline...",
+               output_path=None, error=None)
+    CAPTION_JOBS[job_id] = job
+
+    t = threading.Thread(target=_run_caption_job, args=(job_id, input_path), daemon=True)
+    t.start()
+
+    return jsonify({"success": True, "job_id": job_id})
+
+
+@app.route("/api/caption-video/<job_id>", methods=["GET"])
+def caption_video_status(job_id):
+    """Poll job status."""
+    job = CAPTION_JOBS.get(job_id)
+    if not job:
+        return jsonify({"success": False, "error": "Job not found"}), 404
+    return jsonify({"success": True, **{k: v for k, v in job.items() if k != "_lock"}})
+
+
+@app.route("/api/caption-video/<job_id>/download", methods=["GET"])
+def caption_video_download(job_id):
+    """Download the captioned video once the job is done."""
+    job = CAPTION_JOBS.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    if job.get("status") != "done":
+        return jsonify({"error": "Job not complete"}), 400
+    output_path = job.get("output_path")
+    if not output_path or not Path(output_path).exists():
+        return jsonify({"error": "Output file missing"}), 500
+    return send_file(output_path, mimetype="video/mp4",
+                     as_attachment=True, download_name="captioned.mp4")
+
+
+# ============================================================================
 # ROUTES — Static file serving
 # ============================================================================
 
@@ -387,6 +515,22 @@ def serve_sample_video(sample_id):
         return send_from_directory(str(sample_dir), "original_video.mp4")
     print(f"[Samples] Not found: {video_path}")
     return "Sample video not found", 404
+
+
+@app.route("/api/samples/<sample_id>")
+def get_sample_metadata(sample_id):
+    """Return metadata for a breakdown sample."""
+    metadata_path = SAMPLES_DIR / sample_id / "metadata.json"
+    if not metadata_path.exists():
+        return jsonify({"error": "Sample not found"}), 404
+    with open(metadata_path) as f:
+        return jsonify(json.load(f))
+
+
+@app.route("/demo-data/samples/<path:filepath>")
+def serve_sample_file(filepath):
+    """Serve media files from demo-data samples directory."""
+    return send_from_directory(SAMPLES_DIR, filepath)
 
 
 # ============================================================================

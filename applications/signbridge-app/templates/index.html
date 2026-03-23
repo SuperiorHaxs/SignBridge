@@ -12,8 +12,8 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a14;
-            color: #e0e0e0;
+            background: #f5f5fa;
+            color: #1a1a2e;
             min-height: 100vh;
             overflow-x: hidden;
         }
@@ -23,34 +23,35 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 20px;
-            background: #0d0d1a;
-            border-bottom: 1px solid #1e1e3a;
+            padding: 16px 28px;
+            background: #ffffff;
+            border-bottom: 2px solid #e0e0ee;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
         .app-logo {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #6c63ff;
-            letter-spacing: 0.5px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #5b4fe6;
+            letter-spacing: 1.5px;
         }
 
-        .app-logo span { color: #4caf80; }
+        .app-logo span { color: #22b573; }
 
         /* ── Header toggles ── */
         .header-toggle {
             display: inline-flex;
-            background: #111122;
-            border: 1px solid #1e1e3a;
-            border-radius: 6px;
+            background: #f0f0f8;
+            border: 1px solid #d0d0e0;
+            border-radius: 8px;
             overflow: hidden;
         }
         .htog-btn {
             background: transparent;
             border: none;
-            color: #555;
-            padding: 4px 10px;
-            font-size: 0.68rem;
+            color: #888;
+            padding: 7px 16px;
+            font-size: 0.78rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             text-transform: uppercase;
@@ -58,19 +59,20 @@
             transition: all 0.2s;
         }
         .htog-btn.active {
-            background: #1a1a3a;
-            color: var(--active-color, #e0e0e0);
+            background: #ffffff;
+            color: var(--active-color, #1a1a2e);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
         .htog-btn:hover:not(.active) {
-            color: #999;
-            background: #151530;
+            color: #555;
+            background: #e8e8f4;
         }
         .htog-btn.locked {
             cursor: default;
-            opacity: 0.7;
+            opacity: 0.6;
         }
         .htog-btn.locked:hover:not(.active) {
-            color: #555;
+            color: #888;
             background: transparent;
         }
 
@@ -103,13 +105,14 @@
 
         .camera-box {
             flex: 1;
-            background: #111122;
+            background: #ffffff;
             border-radius: 14px;
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
-            border: 1px solid #1e1e3a;
+            border: 1px solid #d0d0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         }
 
         .camera-topbar {
@@ -117,8 +120,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 8px 14px;
-            background: #13132a;
-            border-bottom: 1px solid #1e1e3a;
+            background: #f8f8fc;
+            border-bottom: 1px solid #e0e0ee;
         }
 
         .camera-title {
@@ -126,7 +129,7 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
-            color: #b07cf0;
+            color: #7c5cf0;
         }
 
         .rec-badge {
@@ -149,7 +152,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            background: #0a0a14;
+            background: #1a1a2e;
             min-height: 280px;
         }
 
@@ -163,7 +166,7 @@
         }
 
         .camera-placeholder {
-            color: #444;
+            color: #999;
             font-size: 0.9rem;
             text-align: center;
             padding: 20px;
@@ -218,19 +221,19 @@
         .status-bar {
             padding: 12px 16px;
             min-height: 50px;
-            background: #0d0d1a;
+            background: #f8f8fc;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             font-size: 0.95rem;
-            border-top: 1px solid #1e1e3a;
+            border-top: 1px solid #e0e0ee;
         }
 
-        .status-bar .gloss { color: #6c8cff; font-family: monospace; font-weight: 600; letter-spacing: 1px; }
-        .status-bar .sentence { color: #4caf80; font-weight: 500; }
-        .status-bar .prompt { color: #666; font-style: italic; }
-        .status-bar .processing { color: #f0a050; animation: pulse 1s infinite; }
+        .status-bar .gloss { color: #4a6cf7; font-family: monospace; font-weight: 600; letter-spacing: 1px; }
+        .status-bar .sentence { color: #1a9e5c; font-weight: 500; }
+        .status-bar .prompt { color: #888; font-style: italic; }
+        .status-bar .processing { color: #e08a30; animation: pulse 1s infinite; }
         .status-bar .doctor-script {
             display: flex;
             flex-direction: column;
@@ -281,24 +284,25 @@
             transition: all 0.2s;
         }
 
-        .btn-primary { background: #4a6cf7; color: #fff; }
-        .btn-primary:hover { background: #3a5ce5; }
-        .btn-primary:disabled { background: #333; opacity: 0.5; cursor: not-allowed; }
+        .btn-primary { background: #5b4fe6; color: #fff; }
+        .btn-primary:hover { background: #4a3ed0; }
+        .btn-primary:disabled { background: #ccc; opacity: 0.5; cursor: not-allowed; }
 
-        .btn-secondary { background: #1e1e3a; color: #aaa; }
-        .btn-secondary:hover { background: #2a2a50; color: #fff; }
+        .btn-secondary { background: #e8e8f4; color: #555; }
+        .btn-secondary:hover { background: #d8d8e8; color: #1a1a2e; }
 
 
         /* Transcript side */
         .transcript-side {
             flex: 1;
-            background: #111122;
+            background: #ffffff;
             border-radius: 14px;
             display: flex;
             flex-direction: column;
             min-width: 280px;
             max-width: 360px;
-            border: 1px solid #1e1e3a;
+            border: 1px solid #d0d0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             min-height: 0;
         }
 
@@ -311,9 +315,9 @@
             right: 16px;
             top: 50%;
             transform: translateY(-50%);
-            background: #1a1a3a;
-            border: 1px solid #2a2a4a;
-            color: #888;
+            background: #f0f0f8;
+            border: 1px solid #d0d0e0;
+            color: #666;
             width: 28px;
             height: 56px;
             border-radius: 8px;
@@ -326,8 +330,8 @@
             z-index: 10;
         }
         .transcript-toggle:hover {
-            border-color: #6c63ff;
-            color: #e0e0e0;
+            border-color: #5b4fe6;
+            color: #1a1a2e;
         }
         .transcript-toggle.show-btn {
             position: fixed;
@@ -340,8 +344,8 @@
             padding: 14px 18px;
             font-weight: 600;
             font-size: 0.9rem;
-            color: #888;
-            border-bottom: 1px solid #1e1e3a;
+            color: #555;
+            border-bottom: 1px solid #e0e0ee;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: flex;
@@ -349,9 +353,9 @@
             align-items: center;
         }
         .transcript-collapse-btn {
-            background: none;
-            border: 1px solid #2a2a4a;
-            color: #888;
+            background: #f0f0f8;
+            border: 1px solid #d0d0e0;
+            color: #666;
             width: 24px;
             height: 24px;
             border-radius: 6px;
@@ -387,8 +391,8 @@
 
         @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
 
-        .msg.doctor { background: #1a2e4a; color: #c0d8f0; align-self: flex-start; border-bottom-left-radius: 3px; }
-        .msg.patient { background: #2e1a4a; color: #d0c0f0; align-self: flex-end; border-bottom-right-radius: 3px; }
+        .msg.doctor { background: #e8f0ff; color: #1a2e50; align-self: flex-start; border-bottom-left-radius: 3px; }
+        .msg.patient { background: #f0e8ff; color: #2e1a50; align-self: flex-end; border-bottom-right-radius: 3px; }
 
         .msg .speaker {
             font-weight: 700;
@@ -398,17 +402,17 @@
             margin-bottom: 3px;
             opacity: 0.7;
         }
-        .msg.doctor .speaker { color: #7cb3f0; }
-        .msg.patient .speaker { color: #b07cf0; }
+        .msg.doctor .speaker { color: #3a7ad4; }
+        .msg.patient .speaker { color: #7c4ad4; }
 
         /* ── Vocabulary Panel ── */
         .vocab-panel {
             margin-top: 6px;
         }
         .vocab-toggle-btn {
-            background: #111122;
-            border: 1px solid #1e1e3a;
-            color: #888;
+            background: #f0f0f8;
+            border: 1px solid #d0d0e0;
+            color: #666;
             padding: 5px 12px;
             border-radius: 6px;
             font-size: 0.72rem;
@@ -418,7 +422,7 @@
             gap: 6px;
             transition: all 0.2s;
         }
-        .vocab-toggle-btn:hover { background: #1a1a2e; color: #aaa; }
+        .vocab-toggle-btn:hover { background: #e8e8f4; color: #555; }
         .vocab-toggle-btn .vocab-arrow { transition: transform 0.2s; display: inline-block; font-size: 0.6rem; }
         .vocab-toggle-btn.open .vocab-arrow { transform: rotate(180deg); }
         .vocab-chip-container {
@@ -492,20 +496,20 @@
             margin-bottom: 8px;
         }
         .home-title h1 {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #e0e0e0;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a1a2e;
         }
-        .home-title h1 em { color: #6c63ff; font-style: normal; }
-        .home-title h1 em span { color: #4caf80; }
+        .home-title h1 em { color: #5b4fe6; font-style: normal; }
+        .home-title h1 em span { color: #22b573; }
         .home-subtitle {
             text-align: center;
             color: #666;
-            font-size: 0.85rem;
+            font-size: 0.95rem;
             margin-bottom: 28px;
         }
         .home-section-label {
-            color: #888;
+            color: #777;
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 1.5px;
@@ -520,8 +524,8 @@
             margin-bottom: 28px;
         }
         .scenario-card {
-            background: #111122;
-            border: 1px solid #1e1e3a;
+            background: #ffffff;
+            border: 1px solid #d0d0e0;
             border-radius: 12px;
             padding: 18px 20px;
             cursor: pointer;
@@ -529,18 +533,22 @@
             display: flex;
             align-items: flex-start;
             gap: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         .scenario-card:hover {
-            border-color: #4a6cf7;
-            background: #14142e;
+            border-color: #5b4fe6;
+            background: #f8f6ff;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(91,79,230,0.12);
         }
         .scenario-card.featured {
-            border-color: #4caf80;
+            border-color: #22b573;
+            border-width: 2px;
         }
         .scenario-card.featured:hover {
-            border-color: #5dc990;
-            background: #0f1f18;
+            border-color: #1a9e5c;
+            background: #f0faf5;
+            box-shadow: 0 4px 12px rgba(34,181,115,0.12);
         }
         .scenario-icon {
             font-size: 1.5rem;
@@ -551,12 +559,12 @@
         .scenario-info h3 {
             font-size: 0.95rem;
             font-weight: 600;
-            color: #e0e0e0;
+            color: #1a1a2e;
             margin-bottom: 4px;
         }
         .scenario-info p {
             font-size: 0.75rem;
-            color: #777;
+            color: #666;
             line-height: 1.4;
         }
         .scenario-badge {
@@ -569,8 +577,8 @@
             letter-spacing: 0.5px;
             margin-top: 6px;
         }
-        .badge-healthcare { background: #1a3a2a; color: #4caf80; }
-        .badge-generic { background: #1a2040; color: #6c8cff; }
+        .badge-healthcare { background: #e0f8ee; color: #1a8a55; }
+        .badge-generic { background: #e8eeff; color: #4a6cf7; }
 
         /* ── Mode Toggle ── */
         .mode-toggle-row {
@@ -579,8 +587,8 @@
         }
         .mode-toggle {
             display: inline-flex;
-            background: #111122;
-            border: 1px solid #1e1e3a;
+            background: #ebebf4;
+            border: 1px solid #d0d0e0;
             border-radius: 10px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -588,7 +596,7 @@
         .mode-btn {
             background: transparent;
             border: none;
-            color: #777;
+            color: #888;
             padding: 10px 24px;
             font-size: 0.85rem;
             font-weight: 600;
@@ -599,9 +607,9 @@
             gap: 8px;
         }
         .mode-btn.active {
-            background: #1a1a3a;
-            color: #e0e0e0;
-            box-shadow: inset 0 0 0 1px #4a6cf7;
+            background: #ffffff;
+            color: #1a1a2e;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
         }
         .mode-btn:hover:not(.active) {
             color: #bbb;
@@ -615,9 +623,9 @@
 
         /* ── Back Button ── */
         .back-btn {
-            background: none;
-            border: 1px solid #2a2a4a;
-            color: #888;
+            background: #f0f0f8;
+            border: 1px solid #d0d0e0;
+            color: #555;
             padding: 6px 14px;
             border-radius: 8px;
             font-size: 0.75rem;
@@ -628,16 +636,299 @@
             gap: 6px;
         }
         .back-btn:hover {
-            border-color: #6c63ff;
-            color: #e0e0e0;
+            border-color: #5b4fe6;
+            color: #1a1a2e;
+            background: #e8e6ff;
+        }
+
+        /* ── Training Sub-tabs ── */
+        .training-subtabs {
+            display: flex;
+            background: #ebebf4;
+            border: 1px solid #d0d0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 auto 28px;
+            width: fit-content;
+        }
+        .subtab-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            padding: 9px 22px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.3px;
+        }
+        .subtab-btn.active {
+            background: #ffffff;
+            color: #5b4fe6;
+            box-shadow: 0 1px 4px rgba(91,79,230,0.15);
+        }
+        .subtab-btn:hover:not(.active) { color: #555; background: #e0e0ee; }
+
+        /* ── Coming-soon scenario card ── */
+        .scenario-card.coming-soon {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .badge-coming { background: #2a2a2a; color: #666; }
+
+        /* ── Caption Video / Live Captions screen ── */
+        .live-captions-layout {
+            display: none;
+            flex-direction: column;
+            height: calc(100vh - 56px);
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 16px;
+            gap: 14px;
+        }
+        .lc-topbar { display: flex; align-items: center; justify-content: space-between; }
+        .lc-camera-box {
+            background: #0d0d1a;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .lc-camera-view {
+            width: 100%; height: 200px;
+            position: relative; background: #050510;
+        }
+        .lc-camera-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .lc-camera-placeholder {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            color: #333; font-size: 0.85rem;
+        }
+        .lc-status-bar {
+            padding: 8px 14px; font-size: 0.75rem;
+            color: #666; border-top: 1px solid #1e1e3a; min-height: 34px;
+        }
+        .lc-caption-area {
+            flex: 1;
+            background: #0d0d1a;
+            border: 1px solid #1e1e3a;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+        .lc-section-label {
+            font-size: 0.65rem; color: #555;
+            text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;
+        }
+        .lc-paragraph {
+            font-size: 1.05rem; line-height: 1.85; color: #c8c8c8; min-height: 48px;
+        }
+        .lc-chunk { transition: color 0.5s; }
+        .lc-chunk.fresh { color: #4caf80; }
+        .lc-gloss-buffer {
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+            padding-top: 10px; border-top: 1px solid #1e1e3a;
+        }
+        .lc-buffer-label {
+            font-size: 0.65rem; color: #555;
+            text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
+        }
+        .lc-gloss-chip {
+            background: #1e1e3a; color: #c8b0ff;
+            padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+        }
+        .lc-thinking {
+            display: none; font-size: 0.75rem; color: #6c63ff; font-style: italic;
+        }
+        .lc-controls { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+
+        /* ══════════════════════════════════════════
+           LIVE DEMO — Camera + Caption
+           ══════════════════════════════════════════ */
+        #phaseLiveDemo {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            height: calc(100vh - 60px);
+            background: #f5f5fa;
+        }
+        .live-demo-branding {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .live-demo-branding .brand-name {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+        .live-demo-branding .brand-name .brand-sign { color: #5b4fe6; }
+        .live-demo-branding .brand-name .brand-bridge { color: #22b573; }
+        .live-demo-branding .brand-tagline {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 2px;
+        }
+        .live-demo-container {
+            max-width: 700px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+        .live-demo-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .live-demo-camera {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #1a1a2e;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 2px solid #d0d0e0;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .live-demo-camera video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .live-demo-camera .placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-size: 0.95rem;
+        }
+        .live-demo-caption-box {
+            background: #ffffff;
+            border: 2px solid #d0d0e0;
+            border-radius: 14px;
+            padding: 28px 32px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .live-demo-caption-label {
+            font-size: 0.7rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .live-demo-caption-text {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.5;
         }
 
         @media (max-width: 768px) {
             .home-screen { padding: 20px 12px; }
             .scenario-grid { grid-template-columns: 1fr; }
-            .home-title h1 { font-size: 1.3rem; }
+            .home-title h1 { font-size: 1.5rem; }
             .mode-btn { padding: 8px 16px; font-size: 0.8rem; }
+            .lc-camera-view { height: 150px; }
+            .live-demo-caption-text { font-size: 1.1rem; }
         }
+
+        /* ══════════════════════════════════════════
+           BREAKDOWN PHASE
+           ══════════════════════════════════════════ */
+        #phaseBreakdown {
+            display: none;
+            flex-direction: column;
+            padding: 24px;
+            max-width: 960px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .breakdown-header { text-align: center; margin-bottom: 24px; }
+        .breakdown-header h2 { font-size: 1.4rem; color: #1a1a2e; margin-bottom: 6px; }
+        .breakdown-header p { color: #666; font-size: 0.9rem; }
+
+        .sentence-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .sentence-tab {
+            background: #f0f0f8; border: 1px solid #d0d0e0; color: #666;
+            border-radius: 8px; padding: 8px 16px; cursor: pointer; font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .sentence-tab.active { background: #ffffff; border-color: #5b4fe6; color: #5b4fe6; box-shadow: 0 1px 4px rgba(91,79,230,0.15); }
+
+        .pipeline-section { display: none; }
+        .pipeline-section.active { display: block; }
+
+        .pipeline-step {
+            background: #ffffff; border: 1px solid #d0d0e0; border-radius: 12px;
+            padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .step-number {
+            width: 28px; height: 28px; border-radius: 50%; background: #6c63ff;
+            color: #fff; font-weight: 700; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .step-title { font-weight: 600; color: #5b4fe6; font-size: 0.95rem; }
+
+        .segment-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+        .segment-card, .prediction-card {
+            background: #f8f8fc; border: 1px solid #d0d0e0; border-radius: 8px;
+            overflow: hidden; width: 150px; flex-shrink: 0;
+        }
+        .segment-card video, .prediction-card video {
+            width: 100%; height: 100px; object-fit: cover; display: block;
+        }
+        .seg-label { padding: 4px 8px; font-size: 0.75rem; color: #666; text-align: center; }
+
+        .pred-info { padding: 8px; }
+        .pred-top1 { font-size: 0.8rem; font-weight: 700; margin-bottom: 4px; }
+        .confidence-bar { height: 4px; background: #e0e0ee; border-radius: 2px; margin-bottom: 6px; }
+        .conf-fill { height: 100%; border-radius: 2px; }
+        .top-k-list { font-size: 0.7rem; color: #888; }
+        .top-k-item { display: flex; justify-content: space-between; padding: 1px 0; }
+
+        .construction-display {
+            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+        }
+        .construct-box {
+            flex: 1; min-width: 180px; background: #f8f8fc; border-radius: 8px; padding: 14px;
+        }
+        .construct-box.raw { border: 1px solid #e0d0b0; }
+        .construct-box.llm { border: 1px solid #b0e0c0; }
+        .box-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .box-content { font-size: 1rem; font-weight: 600; color: #1a1a2e; }
+        .construct-box.llm .box-content { color: #1a9e5c; }
+        .construct-arrow { font-size: 1.5rem; color: #5b4fe6; flex-shrink: 0; }
+
+        .breakdown-nav {
+            display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap;
+        }
+        .breakdown-nav button {
+            padding: 10px 24px; border-radius: 8px; border: 1px solid #d0d0e0;
+            background: #f0f0f8; color: #555; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
+        }
+        .breakdown-nav button:hover { border-color: #5b4fe6; color: #1a1a2e; background: #e8e6ff; }
+        .breakdown-nav button.primary { background: #5b4fe6; border-color: #5b4fe6; color: #fff; }
+
+        #btnHowItWorks {
+            display: none; padding: 12px 28px; border-radius: 10px;
+            background: linear-gradient(135deg, #5b4fe6, #8b6cf0);
+            color: #fff; font-size: 0.95rem; font-weight: 600;
+            border: none; cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
+        }
+        #btnHowItWorks:hover { opacity: 0.85; }
     </style>
 </head>
 <body>
@@ -646,7 +937,7 @@
     <div class="app-logo" style="cursor:pointer" onclick="showHomeScreen()">Sign<span>Bridge</span></div>
     <div style="display:flex;gap:8px;align-items:center">
         <div class="header-toggle" id="headerModeToggle">
-            <button class="htog-btn {{ 'active' if mode == 'demo' }}" id="htogDemo" onclick="setAppMode('demo')" style="--active-color:#f0a050">Demo</button>
+            <button class="htog-btn {{ 'active' if mode == 'demo' }}" id="htogDemo" onclick="setAppMode('demo')" style="--active-color:#f0a050">Training</button>
             <button class="htog-btn {{ 'active' if mode == 'live' }}" id="htogLive" onclick="setAppMode('live')" style="--active-color:#4caf80">Live</button>
         </div>
         <div class="header-toggle" id="headerMethodToggle">
@@ -664,6 +955,15 @@
         <h1>Welcome to <em>Sign<span>Bridge</span></em></h1>
     </div>
     <div class="home-subtitle">Choose a scenario to begin communicating</div>
+
+    <!-- Training sub-tabs: only shown in demo/training mode -->
+    <div class="training-subtabs" id="trainingSubtabs">
+        <button class="subtab-btn active" id="subtabScripted" onclick="switchTrainingSubTab('scripted')">&#x1F3AC; Scripted Demo</button>
+        <button class="subtab-btn" id="subtabLiveCaptions" onclick="switchTrainingSubTab('live-captions')">&#x1F3AC; Caption Video</button>
+    </div>
+
+    <!-- SCRIPTED DEMO content -->
+    <div id="demoScenarios">
 
     <!-- Mode toggle: In-Person vs Video Call -->
     <div class="mode-toggle-row">
@@ -757,6 +1057,174 @@
             </div>
         </div>
     </div>
+
+    </div><!-- /#demoScenarios -->
+
+    <!-- CAPTION VIDEO scenarios (hidden by default) -->
+    <div id="liveCaptionsScenarios" style="display:none">
+
+    <div class="home-section-label">Specialized</div>
+    <div class="scenario-grid">
+        <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('doctor_visit', 'Doctor Visit')">
+            <div class="scenario-icon">&#x1F3E5;</div>
+            <div class="scenario-info">
+                <h3>Doctor Visit</h3>
+                <p>Upload a signing video — get it back with English captions burned in</p>
+                <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="home-section-label">General Scenarios <span style="color:#444;font-size:0.65rem;margin-left:8px">— coming soon</span></div>
+    <div class="scenario-grid">
+        <div class="scenario-card coming-soon">
+            <div class="scenario-icon">&#x1F37D;</div>
+            <div class="scenario-info"><h3>Restaurant</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+        </div>
+        <div class="scenario-card coming-soon">
+            <div class="scenario-icon">&#x1F6D2;</div>
+            <div class="scenario-info"><h3>Shopping</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+        </div>
+        <div class="scenario-card coming-soon">
+            <div class="scenario-icon">&#x1F4BC;</div>
+            <div class="scenario-info"><h3>Job Interview</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+        </div>
+        <div class="scenario-card coming-soon">
+            <div class="scenario-icon">&#x1F3E6;</div>
+            <div class="scenario-info"><h3>Banking</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+        </div>
+    </div>
+
+    </div><!-- /#liveCaptionsScenarios -->
+
+    <!-- LIVE MODE sub-tabs: only shown in live mode -->
+    <div class="training-subtabs" id="liveSubtabs" style="display:none">
+        <button class="subtab-btn active" id="subtabLiveScenarios" onclick="switchLiveSubTab('scenarios')">&#x1F3AF; Scenarios</button>
+        <button class="subtab-btn" id="subtabLiveDemo" onclick="switchLiveSubTab('demo')">&#x1F4F7; Live Demo</button>
+    </div>
+
+    <!-- LIVE SCENARIOS content (same scenario cards, shown in live mode by default) -->
+    <div id="liveScenarios" style="display:none">
+        <div class="mode-toggle-row">
+            <div class="mode-toggle" id="liveModeToggle">
+                <button class="mode-btn active" onclick="setInteractionMode('in-person')">
+                    <span class="mode-icon">&#x1F91D;</span> In-Person
+                </button>
+                <button class="mode-btn" onclick="setInteractionMode('video-call')">
+                    <span class="mode-icon">&#x1F4F9;</span> Video Call
+                </button>
+            </div>
+        </div>
+        <div class="home-section-label">Specialized</div>
+        <div class="scenario-grid">
+            <div class="scenario-card featured" onclick="selectScenario('doctor_visit', 'Doctor Visit')">
+                <div class="scenario-icon">&#x1F3E5;</div>
+                <div class="scenario-info">
+                    <h3>Doctor Visit</h3>
+                    <p>Medical appointments, describing symptoms, understanding treatment</p>
+                    <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+                </div>
+            </div>
+        </div>
+        <div class="home-section-label">General Scenarios</div>
+        <div class="scenario-grid">
+            <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
+                <div class="scenario-icon">&#x1F37D;</div>
+                <div class="scenario-info"><h3>Restaurant</h3><p>Ordering food, asking about the menu, dietary needs</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
+                <div class="scenario-icon">&#x1F6D2;</div>
+                <div class="scenario-info"><h3>Shopping</h3><p>Retail stores, finding items, asking about prices</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Emergency')">
+                <div class="scenario-icon">&#x1F6A8;</div>
+                <div class="scenario-info"><h3>Emergency</h3><p>Urgent situations, communicating with first responders</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LIVE DEMO tab content (hardcoded camera + caption) -->
+    <div id="liveDemoTab" style="display:none; text-align:center; max-width:600px; margin:0 auto; padding-top:16px;">
+        <div class="scenario-card featured" onclick="startLiveDemo()" style="justify-content:center; cursor:pointer;">
+            <div class="scenario-icon" style="font-size:2rem">&#x1F4F7;</div>
+            <div class="scenario-info" style="text-align:left">
+                <h3>Start Live Demo</h3>
+                <p>Opens camera with real-time closed captioning display</p>
+                <span class="scenario-badge badge-healthcare">Hardcoded demo</span>
+            </div>
+        </div>
+    </div>
+
+</div><!-- /#homeScreen -->
+
+<!-- ══════════════════════════════════════════
+     CAPTION VIDEO SCREEN
+     Upload → pipeline → download
+     ══════════════════════════════════════════ -->
+<div class="live-captions-layout" id="phaseLiveCaptions" style="justify-content:flex-start;overflow-y:auto">
+
+    <div class="lc-topbar">
+        <button class="back-btn" onclick="showHomeScreen()">&#x2190; Back</button>
+        <span id="lcScenarioLabel" style="color:#666;font-size:0.75rem;font-weight:600;letter-spacing:0.5px">CAPTION VIDEO</span>
+    </div>
+
+    <div id="cvUploadZone" style="
+        border: 2px dashed #2e2e4a; border-radius: 14px; padding: 52px 24px;
+        text-align: center; cursor: pointer; transition: border-color 0.2s; background: #0d0d1a;
+    "
+    onclick="document.getElementById('cvFileInput').click()"
+    ondragover="event.preventDefault(); this.style.borderColor='#6c63ff'"
+    ondragleave="this.style.borderColor='#2e2e4a'"
+    ondrop="cvHandleDrop(event)">
+        <div style="font-size:2.5rem;margin-bottom:12px">&#x1F4F9;</div>
+        <div style="font-size:1rem;font-weight:600;color:#c8c8c8;margin-bottom:6px">Drop your ASL video here</div>
+        <div style="font-size:0.78rem;color:#555">or click to browse &nbsp;·&nbsp; MP4, MOV, WebM</div>
+        <input type="file" id="cvFileInput" accept="video/*" style="display:none" onchange="cvHandleFile(this.files[0])">
+    </div>
+
+    <div id="cvProgress" style="display:none; background:#0d0d1a; border:1px solid #1e1e3a; border-radius:12px; padding:20px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span id="cvFileName" style="font-size:0.85rem;color:#c8b0ff;font-weight:600"></span>
+            <span id="cvProgressPct" style="font-size:0.75rem;color:#666">0%</span>
+        </div>
+        <div style="height:6px;background:#1e1e3a;border-radius:3px;overflow:hidden;margin-bottom:10px">
+            <div id="cvProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6c63ff,#4caf80);border-radius:3px;transition:width 0.4s"></div>
+        </div>
+        <div id="cvStatusMsg" style="font-size:0.8rem;color:#777;font-style:italic">Starting...</div>
+    </div>
+
+    <div id="cvResult" style="display:none; background:#0d0d1a; border:1px solid #1a3a2a; border-radius:12px; padding:20px;">
+        <div style="font-size:0.65rem;color:#4caf80;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px">&#x2714; Captioning Complete</div>
+        <video id="cvResultVideo" controls style="width:100%;border-radius:8px;background:#000;max-height:380px"></video>
+        <div style="display:flex;gap:10px;margin-top:14px">
+            <button class="btn btn-primary" id="cvDownloadBtn" style="background:#4caf80">&#x2B07; Download Video</button>
+            <button class="btn btn-secondary" onclick="cvReset()">Caption Another</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     LIVE DEMO SCREEN — Camera + Hardcoded Caption
+     ══════════════════════════════════════════ -->
+<div id="phaseLiveDemo">
+    <div class="live-demo-container">
+        <div class="live-demo-topbar">
+            <button class="back-btn" onclick="stopLiveDemo()">&#x2190; Back</button>
+        </div>
+        <div class="live-demo-branding">
+            <div class="brand-name"><span class="brand-sign">Sign</span><span class="brand-bridge">Bridge</span></div>
+            <div class="brand-tagline">Real-time ASL to English Translation</div>
+        </div>
+        <div class="live-demo-camera">
+            <div class="placeholder" id="liveDemoPlaceholder">Starting camera...</div>
+            <video id="liveDemoCameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
+        </div>
+        <div class="live-demo-caption-box">
+            <div class="live-demo-caption-label">Closed Caption</div>
+            <div class="live-demo-caption-text" id="liveDemoCaptionText">Can I have a coffee?</div>
+        </div>
+    </div>
 </div>
 
 <!-- ══════════════════════════════════════════
@@ -799,6 +1267,7 @@
             <button class="btn btn-secondary" id="btnRestart" style="display:none">Restart</button>
             <button class="btn btn-primary" id="btnRecordSign" style="display:none;background:#b07cf0">Record Sign</button>
             <button class="btn btn-primary" id="btnSendMessage" style="display:none;background:#4caf80">Send Message</button>
+            <button id="btnHowItWorks" onclick="showBreakdown()">&#x1F9EA; How does SignBridge work?</button>
         </div>
     </div>
 
@@ -812,6 +1281,24 @@
 
 </div>
 <button class="transcript-toggle show-btn" id="btnShowTranscript" onclick="toggleTranscript()" style="display:none" title="Show transcript">&#x1F4AC;</button>
+
+<!-- ══════════════════════════════════════════
+     BREAKDOWN PHASE — Pipeline explainer
+     Only shown at end of demo mode
+     ══════════════════════════════════════════ -->
+<div id="phaseBreakdown">
+    <div class="breakdown-header">
+        <h2>How Does SignBridge Work?</h2>
+        <p>Let's break down how SignBridge translated the patient's signs into English sentences.</p>
+    </div>
+    <div class="sentence-tabs" id="breakdownTabs"></div>
+    <div id="breakdownSections"></div>
+    <div class="breakdown-nav">
+        <button onclick="hideBreakdown()">&#x2190; Back to Conversation</button>
+        <button class="primary" onclick="showHomeScreen()">&#x21BA; Try Another Scenario</button>
+    </div>
+</div>
+
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -882,6 +1369,7 @@ function setAppMode(mode) {
     MODE = mode;
     document.getElementById('htogDemo').classList.toggle('active', mode === 'demo');
     document.getElementById('htogLive').classList.toggle('active', mode === 'live');
+    updateSubTabVisibility();
 }
 
 function lockHeaderToggles() {
@@ -1002,11 +1490,381 @@ function toggleVocabPanel() {
     toggleBtn.classList.toggle('open', !isOpen);
 }
 
+// ══════════════════════════════════════════════════════════════
+// TRAINING SUB-TABS (Scripted Demo | Live Captions)
+// ══════════════════════════════════════════════════════════════
+let currentTrainingSubTab = 'scripted';
+
+function switchTrainingSubTab(tab) {
+    currentTrainingSubTab = tab;
+    document.getElementById('subtabScripted').classList.toggle('active', tab === 'scripted');
+    document.getElementById('subtabLiveCaptions').classList.toggle('active', tab === 'live-captions');
+    document.getElementById('demoScenarios').style.display = tab === 'scripted' ? 'block' : 'none';
+    document.getElementById('liveCaptionsScenarios').style.display = tab === 'live-captions' ? 'block' : 'none';
+    document.querySelector('.mode-toggle-row').style.display = tab === 'scripted' ? 'block' : 'none';
+}
+
+// Show/hide sub-tabs based on app mode
+function updateSubTabVisibility() {
+    const trainingTabs = document.getElementById('trainingSubtabs');
+    const liveTabs = document.getElementById('liveSubtabs');
+    const demoScenarios = document.getElementById('demoScenarios');
+    const liveCaptionsScenarios = document.getElementById('liveCaptionsScenarios');
+    const liveScenarios = document.getElementById('liveScenarios');
+    const liveDemoTab = document.getElementById('liveDemoTab');
+
+    if (MODE === 'demo') {
+        trainingTabs.style.display = 'flex';
+        liveTabs.style.display = 'none';
+        // Show whichever training sub-tab is active
+        demoScenarios.style.display = currentTrainingSubTab === 'scripted' ? 'block' : 'none';
+        liveCaptionsScenarios.style.display = currentTrainingSubTab === 'live-captions' ? 'block' : 'none';
+        liveScenarios.style.display = 'none';
+        liveDemoTab.style.display = 'none';
+    } else {
+        trainingTabs.style.display = 'none';
+        liveTabs.style.display = 'flex';
+        demoScenarios.style.display = 'none';
+        liveCaptionsScenarios.style.display = 'none';
+        // Show whichever live sub-tab is active
+        liveScenarios.style.display = currentLiveSubTab === 'scenarios' ? 'block' : 'none';
+        liveDemoTab.style.display = currentLiveSubTab === 'demo' ? 'block' : 'none';
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE SUB-TABS (Scenarios | Live Demo)
+// ══════════════════════════════════════════════════════════════
+let currentLiveSubTab = 'scenarios';
+
+function switchLiveSubTab(tab) {
+    currentLiveSubTab = tab;
+    document.getElementById('subtabLiveScenarios').classList.toggle('active', tab === 'scenarios');
+    document.getElementById('subtabLiveDemo').classList.toggle('active', tab === 'demo');
+    document.getElementById('liveScenarios').style.display = tab === 'scenarios' ? 'block' : 'none';
+    document.getElementById('liveDemoTab').style.display = tab === 'demo' ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE DEMO — Camera + Hardcoded Caption
+// ══════════════════════════════════════════════════════════════
+let liveDemoCameraStream = null;
+
+async function startLiveDemo() {
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('phaseLiveDemo').style.display = 'flex';
+    lockHeaderToggles();
+
+    // Start camera — simplified constraints for iPad/Safari compatibility
+    const placeholder = document.getElementById('liveDemoPlaceholder');
+    placeholder.textContent = 'Requesting camera access...';
+    try {
+        liveDemoCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const feed = document.getElementById('liveDemoCameraFeed');
+        feed.srcObject = liveDemoCameraStream;
+        feed.setAttribute('autoplay', '');
+        feed.setAttribute('playsinline', '');
+        feed.setAttribute('muted', '');
+        await feed.play();
+        feed.style.display = 'block';
+        placeholder.style.display = 'none';
+    } catch (e) {
+        placeholder.textContent = 'Camera error: ' + (e.name || '') + ' - ' + (e.message || 'Unknown error');
+        console.error('Camera error:', e);
+    }
+}
+
+function stopLiveDemo() {
+    if (liveDemoCameraStream) {
+        liveDemoCameraStream.getTracks().forEach(t => t.stop());
+        liveDemoCameraStream = null;
+    }
+    const feed = document.getElementById('liveDemoCameraFeed');
+    feed.style.display = 'none';
+    feed.srcObject = null;
+    document.getElementById('liveDemoPlaceholder').style.display = 'flex';
+    document.getElementById('liveDemoPlaceholder').textContent = 'Starting camera...';
+    document.getElementById('phaseLiveDemo').style.display = 'none';
+    showHomeScreen();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE CAPTIONS — State
+// ══════════════════════════════════════════════════════════════
+let lcCameraStream = null;
+let lcGlossBuffer = [];          // pending glosses waiting to be flushed
+let lcParagraphText = '';        // full accumulated paragraph text
+let lcActive = false;
+let lcSelectedDomain = 'doctor_visit';
+let lcSelectedScenario = 'Doctor Visit';
+let lcHistory = [];              // conversation history for LLM context
+const LC_BUFFER_THRESHOLD = 4;  // flush after N glosses
+
+function selectLiveCaptionsScenario(domain, scenarioName) {
+    lcSelectedDomain = domain;
+    lcSelectedScenario = scenarioName;
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('phaseLiveCaptions').style.display = 'flex';
+    document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
+    // Reset state
+    lcGlossBuffer = [];
+    lcParagraphText = '';
+    lcHistory = [];
+    document.getElementById('lcParagraph').innerHTML = '<span style="color:#333">Captions will appear here as you sign...</span>';
+    document.getElementById('lcGlossChips').innerHTML = '';
+    document.getElementById('lcThinking').style.display = 'none';
+    document.getElementById('lcStatusBar').textContent = 'Press "Start" to begin live captioning';
+    document.getElementById('lcBtnStart').style.display = 'inline-flex';
+    document.getElementById('lcBtnStop').style.display = 'none';
+}
+
+async function startLiveCaptions() {
+    lcActive = true;
+    document.getElementById('lcBtnStart').style.display = 'none';
+    document.getElementById('lcBtnStop').style.display = 'inline-flex';
+    document.getElementById('lcStatusBar').innerHTML = '<span style="color:#4caf80">&#x25CF; Listening — sign and record signs below...</span>';
+
+    // Start camera
+    try {
+        lcCameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+        });
+        const feed = document.getElementById('lcCameraFeed');
+        feed.srcObject = lcCameraStream;
+        feed.style.display = 'block';
+        document.getElementById('lcCameraPlaceholder').style.display = 'none';
+    } catch (e) {
+        document.getElementById('lcCameraPlaceholder').textContent = 'Camera unavailable';
+    }
+
+    // Clear placeholder text if still showing
+    const para = document.getElementById('lcParagraph');
+    if (para.querySelector('span[style]')) para.innerHTML = '';
+}
+
+function stopLiveCaptions() {
+    lcActive = false;
+    if (lcCameraStream) {
+        lcCameraStream.getTracks().forEach(t => t.stop());
+        lcCameraStream = null;
+    }
+    const feed = document.getElementById('lcCameraFeed');
+    feed.style.display = 'none';
+    feed.srcObject = null;
+    document.getElementById('lcCameraPlaceholder').style.display = 'flex';
+    document.getElementById('lcBtnStart').style.display = 'inline-flex';
+    document.getElementById('lcBtnStop').style.display = 'none';
+    document.getElementById('lcStatusBar').textContent = 'Stopped.';
+}
+
+function clearLiveCaptions() {
+    lcGlossBuffer = [];
+    lcParagraphText = '';
+    lcHistory = [];
+    document.getElementById('lcParagraph').innerHTML = '';
+    document.getElementById('lcGlossChips').innerHTML = '';
+    document.getElementById('lcThinking').style.display = 'none';
+}
+
+// Call this whenever a new gloss is detected in live captions mode
+// (will be wired up to the inference pipeline or called manually for now)
+function lcAddGloss(gloss) {
+    if (!lcActive) return;
+    lcGlossBuffer.push(gloss);
+    renderLcBuffer();
+    document.getElementById('lcStatusBar').textContent = `Signs buffered: ${lcGlossBuffer.map(g => g.toUpperCase()).join(' · ')}`;
+    if (lcGlossBuffer.length >= LC_BUFFER_THRESHOLD) {
+        lcFlushBuffer();
+    }
+}
+
+function renderLcBuffer() {
+    const chips = document.getElementById('lcGlossChips');
+    chips.innerHTML = lcGlossBuffer.map(g =>
+        `<span class="lc-gloss-chip">${g.toUpperCase()}</span>`
+    ).join(' ');
+}
+
+async function lcFlushBuffer() {
+    if (lcGlossBuffer.length === 0) return;
+    const glosses = [...lcGlossBuffer];
+    lcGlossBuffer = [];
+    renderLcBuffer();
+
+    const thinking = document.getElementById('lcThinking');
+    thinking.style.display = 'inline';
+
+    let sentence = glosses.join(' ');
+    try {
+        const resp = await fetch('/api/construct-sentence', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ glosses, conversation_history: lcHistory })
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) sentence = result.sentence.trim();
+    } catch (e) {
+        console.warn('[LiveCaptions] LLM error, using raw glosses:', e);
+    }
+
+    thinking.style.display = 'none';
+
+    // Append to paragraph as a fresh (green) chunk, then fade to normal
+    lcParagraphText += (lcParagraphText ? ' ' : '') + sentence;
+    lcHistory.push({ speaker: 'patient', text: sentence });
+
+    const para = document.getElementById('lcParagraph');
+    const chunk = document.createElement('span');
+    chunk.className = 'lc-chunk fresh';
+    chunk.textContent = (para.innerHTML ? ' ' : '') + sentence;
+    para.appendChild(chunk);
+
+    // Fade the fresh highlight after 2s
+    setTimeout(() => chunk.classList.remove('fresh'), 2000);
+
+    // Auto-scroll
+    const area = document.getElementById('lcParagraph').closest('.lc-caption-area');
+    if (area) area.scrollTop = area.scrollHeight;
+
+    document.getElementById('lcStatusBar').innerHTML = '<span style="color:#4caf80">&#x25CF; Listening — sign and record signs below...</span>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// CAPTION VIDEO — Upload, poll, download
+// ══════════════════════════════════════════════════════════════
+let cvJobId = null;
+let cvPollInterval = null;
+
+function cvHandleDrop(e) {
+    e.preventDefault();
+    document.getElementById('cvUploadZone').style.borderColor = '#2e2e4a';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) cvHandleFile(file);
+}
+
+async function cvHandleFile(file) {
+    if (!file) return;
+    cvReset();
+
+    // Show progress area
+    document.getElementById('cvUploadZone').style.display = 'none';
+    document.getElementById('cvProgress').style.display = 'block';
+    document.getElementById('cvFileName').textContent = file.name;
+    document.getElementById('cvProgressPct').textContent = '0%';
+    document.getElementById('cvProgressBar').style.width = '0%';
+    document.getElementById('cvStatusMsg').textContent = 'Uploading...';
+
+    // Upload
+    const form = new FormData();
+    form.append('video', file);
+    let resp;
+    try {
+        resp = await fetch('/api/caption-video', { method: 'POST', body: form });
+    } catch (e) {
+        cvShowError('Upload failed: ' + e.message);
+        return;
+    }
+    const data = await resp.json();
+    if (!data.success) { cvShowError(data.error || 'Upload failed'); return; }
+
+    cvJobId = data.job_id;
+    document.getElementById('cvStatusMsg').textContent = 'Pipeline starting...';
+    document.getElementById('cvProgressBar').style.width = '5%';
+    document.getElementById('cvProgressPct').textContent = '5%';
+
+    // Poll for status
+    cvPollInterval = setInterval(cvPollStatus, 2000);
+}
+
+async function cvPollStatus() {
+    if (!cvJobId) return;
+    try {
+        const resp = await fetch(`/api/caption-video/${cvJobId}`);
+        const job = await resp.json();
+        if (!job.success) return;
+
+        const pct = job.progress || 0;
+        document.getElementById('cvProgressBar').style.width = pct + '%';
+        document.getElementById('cvProgressPct').textContent = pct + '%';
+        document.getElementById('cvStatusMsg').textContent = job.message || '';
+
+        if (job.status === 'done') {
+            clearInterval(cvPollInterval);
+            cvShowResult();
+        } else if (job.status === 'error') {
+            clearInterval(cvPollInterval);
+            cvShowError(job.message || 'Pipeline error');
+        }
+    } catch (e) {
+        console.warn('[CaptionVideo] Poll error:', e);
+    }
+}
+
+function cvShowResult() {
+    document.getElementById('cvProgress').style.display = 'none';
+    document.getElementById('cvResult').style.display = 'block';
+
+    const videoUrl = `/api/caption-video/${cvJobId}/download`;
+    // Show inline preview (fetch as blob so it streams properly)
+    fetch(videoUrl)
+        .then(r => r.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const vid = document.getElementById('cvResultVideo');
+            vid.src = url;
+
+            // Download button
+            const btn = document.getElementById('cvDownloadBtn');
+            btn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'captioned.mp4';
+                a.click();
+            };
+        });
+}
+
+function cvShowError(msg) {
+    document.getElementById('cvProgress').style.display = 'block';
+    document.getElementById('cvStatusMsg').textContent = '✗ Error: ' + msg;
+    document.getElementById('cvStatusMsg').style.color = '#f07070';
+}
+
+function cvReset() {
+    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
+    cvJobId = null;
+    document.getElementById('cvUploadZone').style.display = 'block';
+    document.getElementById('cvProgress').style.display = 'none';
+    document.getElementById('cvResult').style.display = 'none';
+    document.getElementById('cvStatusMsg').style.color = '';
+    const vid = document.getElementById('cvResultVideo');
+    if (vid.src) { URL.revokeObjectURL(vid.src); vid.src = ''; }
+    document.getElementById('cvFileInput').value = '';
+}
+
+
+function selectLiveCaptionsScenario(domain, scenarioName) {
+    document.getElementById('homeScreen').style.display = 'none';
+    document.getElementById('phaseLiveCaptions').style.display = 'flex';
+    document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
+    cvReset();
+}
+
 function showHomeScreen() {
     // Reset and go back to home
     document.getElementById('homeScreen').style.display = 'block';
     document.getElementById('phaseConvo').style.display = 'none';
+    document.getElementById('phaseLiveCaptions').style.display = 'none';
+    document.getElementById('phaseLiveDemo').style.display = 'none';
+    // Stop live demo camera if running
+    if (liveDemoCameraStream) {
+        liveDemoCameraStream.getTracks().forEach(t => t.stop());
+        liveDemoCameraStream = null;
+    }
+    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
     unlockHeaderToggles();
+    updateSubTabVisibility();
     // Hide vocab panel
     document.getElementById('vocabPanel').style.display = 'none';
     document.getElementById('vocabChips').classList.remove('open');
@@ -1302,6 +2160,10 @@ function playSignVideo(url) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// Init sub-tab visibility on page load
+updateSubTabVisibility();
+
+// ══════════════════════════════════════════════════════════════
 // LOAD DATA (demo mode only)
 // ══════════════════════════════════════════════════════════════
 if (MODE === 'demo') {
@@ -1351,6 +2213,7 @@ btnRestart.addEventListener('click', () => {
     recBadge.classList.remove('on');
     recBorder.classList.remove('on');
     signVid.style.display = 'none';
+    document.getElementById('btnHowItWorks').style.display = 'none';
     statusBar.innerHTML = '<span class="prompt">Press "Start" to begin the conversation</span>';
     stopLiveMode();
     stopCamera();
@@ -1369,6 +2232,9 @@ async function playNextTurn() {
     if (currentTurn >= conversation.turns.length || !isPlaying) {
         statusBar.innerHTML = '<span class="sentence">Conversation complete!</span>';
         stopCamera();
+        if (MODE === 'demo') {
+            document.getElementById('btnHowItWorks').style.display = 'inline-block';
+        }
         return;
     }
 
@@ -1831,6 +2697,192 @@ function addMsg(type, speaker, text) {
     d.innerHTML = `<div class="speaker">${speaker}</div><div>${text}</div>`;
     transcriptMsgs.appendChild(d);
     transcriptMsgs.scrollTop = transcriptMsgs.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════
+// BREAKDOWN PHASE (demo mode only)
+// ══════════════════════════════════════════════════════════════
+let breakdownData = [];
+let breakdownLoaded = false;
+
+async function loadBreakdownSamples() {
+    if (breakdownLoaded || !conversation || !conversation.breakdown_samples) return;
+    breakdownData = [];
+    for (const sampleId of conversation.breakdown_samples) {
+        try {
+            const resp = await fetch(`/api/samples/${sampleId}`);
+            if (resp.ok) {
+                const meta = await resp.json();
+                breakdownData.push({ sampleId, meta });
+            }
+        } catch (e) {
+            console.warn('[Breakdown] Failed to load sample:', sampleId, e);
+        }
+    }
+    breakdownLoaded = true;
+}
+
+async function showBreakdown() {
+    await loadBreakdownSamples();
+    document.getElementById('phaseConvo').style.display = 'none';
+    document.getElementById('phaseBreakdown').style.display = 'flex';
+    window.scrollTo(0, 0);
+    renderBreakdown();
+}
+
+function hideBreakdown() {
+    document.getElementById('phaseBreakdown').style.display = 'none';
+    document.getElementById('phaseConvo').style.display = 'flex';
+}
+
+function renderBreakdown() {
+    const tabsEl = document.getElementById('breakdownTabs');
+    const sectionsEl = document.getElementById('breakdownSections');
+    tabsEl.innerHTML = '';
+    sectionsEl.innerHTML = '';
+
+    if (breakdownData.length === 0) {
+        sectionsEl.innerHTML = '<p style="color:#888;text-align:center;padding:40px;">No breakdown samples available.</p>';
+        return;
+    }
+
+    breakdownData.forEach((item, idx) => {
+        const segments = (item.meta.precomputed || {}).segments || [];
+        const rawGlosses = segments.map(s => s.top_1).join(' ').toUpperCase() || item.sampleId;
+
+        // Tab
+        const tab = document.createElement('button');
+        tab.className = 'sentence-tab' + (idx === 0 ? ' active' : '');
+        tab.textContent = `Sentence ${idx + 1}: "${rawGlosses}"`;
+        tab.onclick = () => {
+            document.querySelectorAll('.sentence-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pipeline-section').forEach(s => s.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`bd-section-${idx}`).classList.add('active');
+        };
+        tabsEl.appendChild(tab);
+
+        // Section
+        const sec = document.createElement('div');
+        sec.className = 'pipeline-section' + (idx === 0 ? ' active' : '');
+        sec.id = `bd-section-${idx}`;
+        sec.innerHTML = buildBreakdownHTML(item);
+        sectionsEl.appendChild(sec);
+    });
+}
+
+function buildBreakdownHTML(item) {
+    const { sampleId, meta } = item;
+    const precomputed = meta.precomputed || {};
+    const segments = precomputed.segments || [];
+    const rawSentence = precomputed.raw_sentence || segments.map(s => s.top_1).join(' ');
+    const llmSentence = precomputed.llm_sentence || meta.reference_sentence || rawSentence;
+    const refSentence = meta.reference_sentence || '';
+
+    let html = '';
+
+    // Step 1: Pose estimation video
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">1</div>
+            <div class="step-title">Pose Estimation — Extracting body keypoints</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888;margin-bottom:12px;">MediaPipe Holistic extracts 75 keypoints (hands, face, body) from the video, creating a skeletal representation of the signer.</p>
+            <div style="text-align:center;">
+                <video src="/demo-data/samples/${sampleId}/pose_video.mp4"
+                       controls muted playsinline
+                       style="max-width:100%;max-height:280px;border-radius:8px;background:#0d0d1a;"></video>
+            </div>
+        </div>
+    </div>`;
+
+    // Step 2: Segmentation
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">2</div>
+            <div class="step-title">Segmentation — Splitting into ${segments.length} individual signs</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888;margin-bottom:12px;">SignBridge detects motion boundaries in the pose data to separate the continuous signing into individual sign segments.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        html += `
+                <div class="segment-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="seg-label">Segment ${i+1}</div>
+                </div>`;
+    });
+
+    html += `</div></div></div>`;
+
+    // Step 3: Sign recognition
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">3</div>
+            <div class="step-title">Sign Recognition — Identifying each sign</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888;margin-bottom:12px;">Each segment is fed through an ST-GCN model trained on the WLASL dataset. The model outputs confidence scores for each possible sign.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        const top1 = seg.top_1 || 'unknown';
+        const confidence = seg.confidence || 0;
+        const topK = seg.top_k || [{ gloss: top1, confidence }];
+        const pct = Math.round(confidence * 100);
+        const color = pct >= 80 ? '#4caf80' : pct >= 50 ? '#f0a050' : '#ff5555';
+
+        html += `
+                <div class="prediction-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="pred-info">
+                        <div class="pred-top1" style="color:${color}">${top1.toUpperCase()} — ${pct}%</div>
+                        <div class="confidence-bar"><div class="conf-fill" style="width:${pct}%;background:${color}"></div></div>
+                        <div class="top-k-list">`;
+        topK.forEach(k => {
+            html += `<div class="top-k-item"><span>${k.gloss}</span><span>${Math.round(k.confidence*100)}%</span></div>`;
+        });
+        html += `</div></div></div>`;
+    });
+
+    html += `</div></div></div>`;
+
+    // Step 4: LLM sentence construction
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">4</div>
+            <div class="step-title">LLM Sentence Construction — Building natural English</div>
+        </div>
+        <div class="step-content">
+            <p style="color:#888;margin-bottom:16px;">The recognized glosses are sent to Gemini along with conversation context. The LLM transforms raw ASL glosses into a grammatically correct English sentence.</p>
+            <div class="construction-display">
+                <div class="construct-box raw">
+                    <div class="box-label">Raw Glosses (Model Output)</div>
+                    <div class="box-content">${rawSentence.toUpperCase()}</div>
+                </div>
+                <div class="construct-arrow">&#8594;</div>
+                <div class="construct-box llm">
+                    <div class="box-label">SignBridge Output (Gemini)</div>
+                    <div class="box-content">"${llmSentence}"</div>
+                </div>
+            </div>
+            ${refSentence ? `<p style="color:#555;margin-top:14px;font-size:0.82rem;text-align:center;">Reference: "${refSentence}"</p>` : ''}
+        </div>
+    </div>`;
+
+    return html;
 }
 
 </script>
