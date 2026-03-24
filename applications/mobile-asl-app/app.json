@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "ASL Communicator",
+    "slug": "mobile-asl-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2c3e50"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.asl.communicator",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to detect ASL signs",
+        "NSMicrophoneUsageDescription": "This app uses the microphone for speech-to-text",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition for captions"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2c3e50"
+      },
+      "package": "com.asl.communicator",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow ASL Communicator to access your camera for sign detection"
+        }
+      ]
+    ]
+  }
+}
