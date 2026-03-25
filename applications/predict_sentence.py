@@ -397,10 +397,21 @@ class EndToEndPipeline:
         try:
             self.model, self.tokenizer, self.masked_class_ids = load_model_from_checkpoint(self.checkpoint_path)
             print("SUCCESS: Checkpoint model loaded successfully")
+
+            # Load model config for keypoint extraction
+            config_path = os.path.join(self.checkpoint_path, "config.json")
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    self.model_config = json.load(f)
+                print(f"Loaded config from {config_path}")
+                print(f"  Keypoints: {self.model_config.get('num_pose_keypoints', 'unknown')}")
+            else:
+                self.model_config = {}
         except Exception as e:
             print(f"ERROR: Failed to load checkpoint: {e}")
             print("WARNING: Falling back to default model")
             self.masked_class_ids = []
+            self.model_config = {}
 
     def _create_temp_directory(self):
         """Create temporary working directory"""
@@ -620,6 +631,9 @@ class EndToEndPipeline:
 
             print(f"Pose file loaded: {full_pose.body.data.shape[0]} total frames")
 
+            # Track sentence breaks from metadata
+            self._sentence_break_indices = set()
+
             # Create segment files based on metadata boundaries
             segment_files = []
             for i, seg_info in enumerate(segments_info):
@@ -628,6 +642,11 @@ class EndToEndPipeline:
                 end = seg_info['end_frame'] + 1  # +1 because slice end is exclusive
 
                 print(f"\nExtracting segment {i+1}/{len(segments_info)}: {gloss} (frames {start}:{end})")
+
+                # Track sentence break markers
+                if seg_info.get('sentence_break_after', False):
+                    self._sentence_break_indices.add(i)
+                    print(f"  [SENTENCE BREAK after this sign]")
 
                 # Extract segment frames
                 segment_data = full_pose.body.data[start:end]
@@ -660,11 +679,15 @@ class EndToEndPipeline:
                 segment_files.append(segment_path)
 
             # Final summary
+            if self._sentence_break_indices:
+                print(f"\nSENTENCE BREAKS: {len(self._sentence_break_indices)} detected at segment indices: {sorted(self._sentence_break_indices)}")
+
             print(f"\nRESULT: {len(segment_files)} segments created:")
             for i, seg_file in enumerate(segment_files):
                 file_name = os.path.basename(seg_file)
                 file_size = os.path.getsize(seg_file)
-                print(f"  {i+1:2d}. {file_name} ({file_size:,} bytes)")
+                brk = " [BREAK]" if i in self._sentence_break_indices else ""
+                print(f"  {i+1:2d}. {file_name} ({file_size:,} bytes){brk}")
 
             return segment_files
 
@@ -703,32 +726,50 @@ class EndToEndPipeline:
 
                 print(f"DEBUG: Extracted sequence shape: {pose_sequence.shape}")
 
-                # Extract 75-point subset (pose + hands, exclude face)
-                # MediaPipe format: 33 pose + 468 face + 21 left hand + 21 right hand = 543 total
-                # We need: 33 pose + 21 left hand + 21 right hand = 75 keypoints
-                if pose_sequence.shape[1] == 543:
-                    # Extract pose (0:33), left hand (501:522), right hand (522:543)
-                    pose_75pt = np.concatenate([
+                # Extract keypoint subset matching model config
+                # MediaPipe Holistic layout (576 total):
+                #   0-32:    Pose (33 points)
+                #   33-500:  Face (468 points)
+                #   501-521: Left Hand (21 points)
+                #   522-542: Right Hand (21 points)
+                #   543-575: Pose World 3D (33 points)
+                #
+                # Model configs:
+                #   75pt = 33 pose + 21 left hand + 21 right hand
+                #   83pt = 33 pose + 21 left hand + 21 right hand + 8 face
+                #
+                # 8 face landmark indices (raw): [1, 61, 291, 152, 107, 336, 33, 263]
+                # Offset by 33 in holistic: [34, 94, 324, 185, 140, 369, 66, 296]
+                FACE_MINIMAL_INDICES = [34, 94, 324, 185, 140, 369, 66, 296]
+
+                num_model_keypoints = self.model_config.get('num_pose_keypoints', 75) if hasattr(self, 'model_config') else 75
+
+                if pose_sequence.shape[1] in (543, 576):
+                    # Extract pose + hands
+                    pose_parts = [
                         pose_sequence[:, 0:33, :],      # Pose landmarks
                         pose_sequence[:, 501:522, :],   # Left hand landmarks
-                        pose_sequence[:, 522:543, :]    # Right hand landmarks
-                    ], axis=1)
-                    print(f"DEBUG: Extracted 75-point subset: {pose_75pt.shape}")
-                elif pose_sequence.shape[1] == 75:
-                    # Already 75 keypoints
-                    pose_75pt = pose_sequence
-                    print(f"DEBUG: Already 75 keypoints: {pose_75pt.shape}")
+                        pose_sequence[:, 522:543, :],   # Right hand landmarks
+                    ]
+                    if num_model_keypoints == 83:
+                        # Also extract 8 face landmarks
+                        pose_parts.append(pose_sequence[:, FACE_MINIMAL_INDICES, :])
+                    extracted = np.concatenate(pose_parts, axis=1)
+                    print(f"DEBUG: Extracted {extracted.shape[1]}-point subset from {pose_sequence.shape[1]} keypoints: {extracted.shape}")
+                elif pose_sequence.shape[1] in (75, 83):
+                    extracted = pose_sequence
+                    print(f"DEBUG: Already {extracted.shape[1]} keypoints: {extracted.shape}")
                 else:
                     print(f"WARNING: Unexpected keypoint count: {pose_sequence.shape[1]}, using as-is")
-                    pose_75pt = pose_sequence
+                    extracted = pose_sequence
 
                 # Create pickle file
                 pickle_filename = os.path.basename(pose_file).replace('.pose', '.pkl')
                 pickle_path = os.path.join(self.temp_dir, pickle_filename)
 
                 pickle_data = {
-                    'keypoints': pose_75pt[:, :, :2],  # x, y coordinates only
-                    'confidences': pose_75pt[:, :, 3] if pose_75pt.shape[2] > 3 else np.ones(pose_75pt.shape[:2]),  # visibility scores
+                    'keypoints': extracted[:, :, :2],  # x, y coordinates only
+                    'confidences': extracted[:, :, 2] if extracted.shape[2] > 2 else np.ones(extracted.shape[:2]),
                     'gloss': 'UNKNOWN'  # Placeholder
                 }
 
@@ -832,6 +873,8 @@ class EndToEndPipeline:
         # Determine which prompt file to load
         elif prompt_type == "simple":
             prompt_file = os.path.join(prompts_dir, "llm_prompt_simple.txt")
+        elif prompt_type == "topk_self_critique":
+            prompt_file = os.path.join(prompts_dir, "llm_prompt_topk_self_critique.txt")
         elif prompt_type == "topk":
             if self.no_confidence_scores:
                 prompt_file = os.path.join(prompts_dir, "llm_prompt_topk_no_confidence.txt")
@@ -874,6 +917,23 @@ Return only the constructed English sentence, nothing else."""
             print(f"ERROR: Failed to load prompt template: {e}")
             raise
 
+    def _group_glosses_by_sentence(self, glosses):
+        """Group glosses into sentences using sentence break indices from metadata."""
+        if not hasattr(self, '_sentence_break_indices') or not self._sentence_break_indices:
+            return None  # No sentence breaks available
+
+        sentences = []
+        current_sentence = []
+        for i, g in enumerate(glosses):
+            current_sentence.append(g)
+            if i in self._sentence_break_indices:
+                sentences.append(current_sentence)
+                current_sentence = []
+        if current_sentence:
+            sentences.append(current_sentence)
+
+        return sentences
+
     def step5_construct_sentence_with_llm(self, glosses):
         """Step 5: Use LLM to construct grammatically correct sentence"""
         print("\n" + "="*60)
@@ -881,6 +941,19 @@ Return only the constructed English sentence, nothing else."""
         print("="*60)
         print(f"DEBUG_INFO: step5_construct_sentence_with_llm called with {len(glosses)} glosses")
         print(f"DEBUG_INFO: LLM enabled: {self.use_llm}")
+
+        # Check for sentence groupings from metadata
+        sentence_groups = self._group_glosses_by_sentence(glosses)
+        if sentence_groups:
+            print(f"SENTENCE GROUPS: {len(sentence_groups)} sentences detected from metadata")
+            for i, group in enumerate(sentence_groups, 1):
+                group_strs = []
+                for g in group:
+                    if isinstance(g, dict):
+                        group_strs.append(g.get('gloss', g.get('top_prediction', 'UNKNOWN')))
+                    elif g != '<UNKNOWN>':
+                        group_strs.append(str(g))
+                print(f"  Sentence {i}: {' '.join(group_strs)}")
 
         # Process glosses - extract strings and top-k info
         processed_glosses = []
@@ -934,44 +1007,142 @@ Return only the constructed English sentence, nothing else."""
         try:
             # Create LLM provider from environment configuration
             llm = create_llm_provider(
-                max_tokens=500,  # Sentence construction needs moderate token count
+                max_tokens=1500,  # Paragraph construction needs more tokens
                 timeout=30  # 30 seconds should be plenty for sentence construction
             )
 
             # Create prompt based on whether we have top-k predictions
             if has_top_k:
-                # Build detailed input with top-k alternatives
-                gloss_details = []
-                for i, g in enumerate(processed_glosses, 1):
-                    if isinstance(g, dict):
-                        # Handle both 'top_k' and 'top_k_predictions' keys
-                        top_k_list = g.get('top_k_predictions', g.get('top_k', []))
-                        if top_k_list:
-                            if self.no_confidence_scores:
-                                # Format WITHOUT confidence scores (comma-separated)
-                                glosses = ", ".join([f"'{pred['gloss']}'" for pred in top_k_list])
-                                detail = f"Position {i}: {glosses}\n"
-                            else:
-                                # Format WITH confidence scores (numbered options)
-                                detail = f"Position {i}:\n"
-                                for j, pred in enumerate(top_k_list, 1):
-                                    detail += f"  Option {j}: '{pred['gloss']}' (confidence: {pred['confidence']:.1%})\n"
-                        else:
-                            # Fallback to main gloss
-                            detail = f"Position {i}: '{g.get('gloss', 'UNKNOWN')}'\n"
-                        gloss_details.append(detail)
-                    else:
-                        gloss_details.append(f"Position {i}: '{g}'\n")
+                # Per-sentence-group LLM calls with self-critique prompt
+                if sentence_groups:
+                    print(f"DEBUG: Using PER-SENTENCE self-critique for {len(sentence_groups)} groups")
+                    collected_sentences = []
+                    import re
 
-                # Load prompt from external file
-                prompt = self._load_llm_prompt("topk", gloss_details=''.join(gloss_details))
-                mode_str = "NO-CONFIDENCE" if self.no_confidence_scores else "WITH-CONFIDENCE"
-                print(f"DEBUG: Using TOP-K prompt ({mode_str}) with {len(processed_glosses)} positions")
-                print(f"DEBUG: First position details: {gloss_details[0][:100] if gloss_details else 'none'}")
+                    for grp_idx, group in enumerate(sentence_groups):
+                        # Build position-level top-k details for this group only
+                        gloss_details = []
+                        for pos, g in enumerate(group, 1):
+                            if isinstance(g, dict):
+                                top_k_list = g.get('top_k_predictions', g.get('top_k', []))
+                                if top_k_list:
+                                    detail = f"Position {pos}:\n"
+                                    for j, pred in enumerate(top_k_list[:3], 1):
+                                        detail += f"  Option {j}: '{pred['gloss']}' (confidence: {pred['confidence']:.1%})\n"
+                                else:
+                                    detail = f"Position {pos}: '{g.get('gloss', g.get('top_prediction', 'UNKNOWN'))}'\n"
+                                gloss_details.append(detail)
+                            elif g != '<UNKNOWN>':
+                                gloss_details.append(f"Position {pos}: '{g}'\n")
+
+                        # Build context from previously generated sentences
+                        context_str = ""
+                        if collected_sentences:
+                            context_str = (
+                                "CONTEXT — Previous sentences generated from this signing sequence "
+                                "(use for coherence, do not repeat them):\n"
+                                + "\n".join(f"  {i+1}. {s}" for i, s in enumerate(collected_sentences))
+                            )
+
+                        prompt = self._load_llm_prompt("topk_self_critique",
+                            gloss_details=''.join(gloss_details),
+                            context_section=context_str)
+
+                        print(f"\n  Sentence group {grp_idx+1}/{len(sentence_groups)}: {len(group)} signs (context: {len(collected_sentences)} prior sentences)")
+
+                        # Call LLM for this group
+                        for attempt in range(max_retries):
+                            try:
+                                response = llm.generate(prompt)
+                                # Extract sentence from JSON response (may be wrapped in ```json ... ```)
+                                try:
+                                    cleaned = re.sub(r'```json\s*', '', response)
+                                    cleaned = re.sub(r'```\s*', '', cleaned).strip()
+                                    result = json.loads(cleaned)
+                                    sentence = result.get('sentence', response.strip())
+                                    scores = result.get('plausibility', {})
+                                    revised = result.get('revised', False)
+                                    print(f"    Sentence: '{sentence}'")
+                                    print(f"    Scores: G={scores.get('grammatical','?')} S={scores.get('semantic','?')} N={scores.get('naturalness','?')} {'(revised)' if revised else ''}")
+                                except (json.JSONDecodeError, ValueError):
+                                    # Try to find "sentence" field in partial JSON
+                                    sent_match = re.search(r'"sentence"\s*:\s*"([^"]*)"', response)
+                                    if sent_match:
+                                        sentence = sent_match.group(1)
+                                        print(f"    Sentence (partial parse): '{sentence}'")
+                                    else:
+                                        sentence = response.strip()
+                                        print(f"    Raw response: '{sentence[:150]}...'")
+
+                                collected_sentences.append(sentence)
+                                break
+                            except Exception as retry_error:
+                                if attempt < max_retries - 1:
+                                    import time
+                                    wait_time = (attempt + 1) * 2
+                                    print(f"    WARNING: LLM failed (attempt {attempt+1}): {retry_error}")
+                                    time.sleep(wait_time)
+                                else:
+                                    # Fallback: join top-1 glosses
+                                    fallback = ' '.join(
+                                        g.get('gloss', g.get('top_prediction', '?')) if isinstance(g, dict) else str(g)
+                                        for g in group if g != '<UNKNOWN>'
+                                    )
+                                    collected_sentences.append(fallback)
+                                    print(f"    FALLBACK: '{fallback}'")
+
+                    final = ' '.join(collected_sentences)
+                    print(f"\nSUCCESS: Combined {len(collected_sentences)} sentences")
+                    print(f"CONSTRUCTED SENTENCE: '{final}'")
+                    return final
+
+                else:
+                    # Build detailed input with top-k alternatives
+                    gloss_details = []
+                    for i, g in enumerate(processed_glosses, 1):
+                        if isinstance(g, dict):
+                            top_k_list = g.get('top_k_predictions', g.get('top_k', []))
+                            if top_k_list:
+                                if self.no_confidence_scores:
+                                    glosses = ", ".join([f"'{pred['gloss']}'" for pred in top_k_list])
+                                    detail = f"Position {i}: {glosses}\n"
+                                else:
+                                    detail = f"Position {i}:\n"
+                                    for j, pred in enumerate(top_k_list, 1):
+                                        detail += f"  Option {j}: '{pred['gloss']}' (confidence: {pred['confidence']:.1%})\n"
+                            else:
+                                detail = f"Position {i}: '{g.get('gloss', 'UNKNOWN')}'\n"
+                            gloss_details.append(detail)
+                        else:
+                            gloss_details.append(f"Position {i}: '{g}'\n")
+
+                    prompt = self._load_llm_prompt("topk", gloss_details=''.join(gloss_details))
+                    mode_str = "NO-CONFIDENCE" if self.no_confidence_scores else "WITH-CONFIDENCE"
+                    print(f"DEBUG: Using TOP-K prompt ({mode_str}) with {len(processed_glosses)} positions")
+                    print(f"DEBUG: First position details: {gloss_details[0][:100] if gloss_details else 'none'}")
             else:
-                # Load simple prompt from external file
-                prompt = self._load_llm_prompt("simple", glosses=', '.join(processed_glosses))
-                print(f"DEBUG: Using SIMPLE prompt with glosses: {', '.join(processed_glosses)}")
+                # Check if we have sentence groupings to enhance the prompt
+                if sentence_groups:
+                    # Format glosses with sentence separators for the LLM
+                    sentence_strs = []
+                    for group in sentence_groups:
+                        group_glosses = []
+                        for g in group:
+                            if isinstance(g, dict):
+                                group_glosses.append(g.get('gloss', g.get('top_prediction', 'UNKNOWN')))
+                            elif g != '<UNKNOWN>':
+                                group_glosses.append(str(g))
+                        sentence_strs.append(', '.join(group_glosses))
+                    grouped_input = ' | '.join(sentence_strs)
+                    prompt = self._load_llm_prompt("simple", glosses=grouped_input)
+                    # Append sentence structure hint to the prompt
+                    prompt += "\n\nNote: The glosses are grouped into sentences separated by '|'. Each group represents a separate sentence or clause. Construct a multi-sentence paragraph preserving this structure."
+                    print(f"DEBUG: Using SIMPLE prompt with {len(sentence_groups)} sentence groups")
+                    print(f"DEBUG: Grouped glosses: {grouped_input}")
+                else:
+                    # Load simple prompt from external file
+                    prompt = self._load_llm_prompt("simple", glosses=', '.join(processed_glosses))
+                    print(f"DEBUG: Using SIMPLE prompt with glosses: {', '.join(processed_glosses)}")
 
             print("PROMPT: Sending request to LLM...")
 

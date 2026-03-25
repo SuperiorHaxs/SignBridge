@@ -1042,6 +1042,12 @@ def create_dataset_splits(num_classes, config, gloss_file=None):
     total_files = sum(len(files) for files in files_by_class.values())
     print_status(f"Found {total_files} pose files across {len(files_by_class)} classes", "INFO")
 
+    if total_files == 0:
+        print_status("No pose files found via flat directory lookup - skipping pose splits", "WARNING")
+        print_status("Augmentation step will use pose_files_by_gloss/ directly", "INFO")
+        print()
+        return True
+
     print_status("Creating split directories", "INFO")
     create_split_directories(pose_split_dir, target_classes)
 

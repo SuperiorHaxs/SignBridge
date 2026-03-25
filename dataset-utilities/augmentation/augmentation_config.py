@@ -32,7 +32,7 @@ TARGET_SAMPLES_PER_CLASS = TARGET_TRAIN_SAMPLES_PER_CLASS
 # Generate enough augmentations so val/test have reasonable data
 # Val+Test get ~30% of families, each family needs some samples
 # Base augmentations: moderate amount, not trying to hit train target yet
-BASE_AUGMENTATIONS_PER_VIDEO = 60  # Creates families of size 61 (1 orig + 60 aug)
+BASE_AUGMENTATIONS_PER_VIDEO = 20  # Creates families of size 21 (1 orig + 20 aug)
 
 # Minimum base augmentations (ensures some variety even for large classes)
 MIN_BASE_AUGMENTATIONS = 5

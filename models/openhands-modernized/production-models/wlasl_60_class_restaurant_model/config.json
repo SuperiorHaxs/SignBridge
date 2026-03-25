@@ -1,0 +1,21 @@
+{
+  "num_pose_keypoints": 83,
+  "pose_channels": 3,
+  "pose_coord_features": 249,
+  "use_finger_features": true,
+  "finger_features": 30,
+  "use_motion_features": true,
+  "motion_features": 8,
+  "use_spatial_features": true,
+  "spatial_features": 40,
+  "pose_features": 327,
+  "hidden_size": 64,
+  "num_hidden_layers": 3,
+  "num_attention_heads": 8,
+  "intermediate_size": 256,
+  "max_position_embeddings": 257,
+  "dropout_prob": 0.5,
+  "layer_norm_eps": 1e-12,
+  "vocab_size": 60,
+  "use_cls_token": true
+}

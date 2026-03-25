@@ -1,5 +1,6 @@
 {
   "generic": "wlasl_43_class_50s_model",
   "healthcare": "wlasl_38_class_healthcare_model",
-  "doctor_visit": "wlasl_45_class_doctor_visit_model"
+  "doctor_visit": "wlasl_45_class_doctor_visit_model",
+  "restaurant": "wlasl_60_class_restaurant_model"
 }

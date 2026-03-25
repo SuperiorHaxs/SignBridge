@@ -1,0 +1,10001 @@
+[
+  {
+    "id": 1,
+    "glosses": [
+      "arm",
+      "bad"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 2,
+    "glosses": [
+      "arm",
+      "headache",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 3,
+    "glosses": [
+      "arm",
+      "neck",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 4,
+    "glosses": [
+      "arm",
+      "pain"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 5,
+    "glosses": [
+      "arm",
+      "pain",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 6,
+    "glosses": [
+      "arm",
+      "pain",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 7,
+    "glosses": [
+      "arm",
+      "pain",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 8,
+    "glosses": [
+      "arm",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 9,
+    "glosses": [
+      "arm",
+      "sick",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 10,
+    "glosses": [
+      "arm",
+      "sneeze",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 11,
+    "glosses": [
+      "arm",
+      "stress"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 12,
+    "glosses": [
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 13,
+    "glosses": [
+      "arm",
+      "stress",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 14,
+    "glosses": [
+      "day",
+      "arm",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 15,
+    "glosses": [
+      "day",
+      "arm",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 16,
+    "glosses": [
+      "day",
+      "arm",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 17,
+    "glosses": [
+      "day",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 18,
+    "glosses": [
+      "day",
+      "eye",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 19,
+    "glosses": [
+      "day",
+      "eye",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 20,
+    "glosses": [
+      "day",
+      "eye",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 21,
+    "glosses": [
+      "day",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 22,
+    "glosses": [
+      "day",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 23,
+    "glosses": [
+      "day",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 24,
+    "glosses": [
+      "day",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 25,
+    "glosses": [
+      "day",
+      "heart",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 26,
+    "glosses": [
+      "day",
+      "heart",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 27,
+    "glosses": [
+      "day",
+      "heart",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 28,
+    "glosses": [
+      "day",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 29,
+    "glosses": [
+      "day",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 30,
+    "glosses": [
+      "day",
+      "his",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 31,
+    "glosses": [
+      "day",
+      "his",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 32,
+    "glosses": [
+      "day",
+      "his",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 33,
+    "glosses": [
+      "day",
+      "his",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 34,
+    "glosses": [
+      "day",
+      "his",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 35,
+    "glosses": [
+      "day",
+      "his",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 36,
+    "glosses": [
+      "day",
+      "his",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 37,
+    "glosses": [
+      "day",
+      "his",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 38,
+    "glosses": [
+      "day",
+      "his",
+      "neck",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 39,
+    "glosses": [
+      "day",
+      "his",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 40,
+    "glosses": [
+      "day",
+      "his",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 41,
+    "glosses": [
+      "day",
+      "his",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 42,
+    "glosses": [
+      "day",
+      "his",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 43,
+    "glosses": [
+      "day",
+      "his",
+      "stomach",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 44,
+    "glosses": [
+      "day",
+      "my",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 45,
+    "glosses": [
+      "day",
+      "my",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 46,
+    "glosses": [
+      "day",
+      "my",
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 47,
+    "glosses": [
+      "day",
+      "my",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 48,
+    "glosses": [
+      "day",
+      "my",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 49,
+    "glosses": [
+      "day",
+      "my",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 50,
+    "glosses": [
+      "day",
+      "my",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 51,
+    "glosses": [
+      "day",
+      "my",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 52,
+    "glosses": [
+      "day",
+      "neck",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 53,
+    "glosses": [
+      "day",
+      "neck",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 54,
+    "glosses": [
+      "day",
+      "shoulder",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 55,
+    "glosses": [
+      "day",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 56,
+    "glosses": [
+      "day",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 57,
+    "glosses": [
+      "day",
+      "sick",
+      "now",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 58,
+    "glosses": [
+      "day",
+      "sick",
+      "now",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 59,
+    "glosses": [
+      "day",
+      "sick",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 60,
+    "glosses": [
+      "day",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 61,
+    "glosses": [
+      "day",
+      "stomach",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 62,
+    "glosses": [
+      "day",
+      "stomach",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 63,
+    "glosses": [
+      "day",
+      "stomach",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 64,
+    "glosses": [
+      "day",
+      "their",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 65,
+    "glosses": [
+      "day",
+      "their",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 66,
+    "glosses": [
+      "day",
+      "their",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 67,
+    "glosses": [
+      "day",
+      "their",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 68,
+    "glosses": [
+      "day",
+      "their",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 69,
+    "glosses": [
+      "day",
+      "their",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 70,
+    "glosses": [
+      "day",
+      "their",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 71,
+    "glosses": [
+      "day",
+      "your",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 72,
+    "glosses": [
+      "day",
+      "your",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 73,
+    "glosses": [
+      "day",
+      "your",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 74,
+    "glosses": [
+      "day",
+      "your",
+      "eye",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 75,
+    "glosses": [
+      "day",
+      "your",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 76,
+    "glosses": [
+      "day",
+      "your",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 77,
+    "glosses": [
+      "day",
+      "your",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 78,
+    "glosses": [
+      "day",
+      "your",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 79,
+    "glosses": [
+      "day",
+      "your",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 80,
+    "glosses": [
+      "day",
+      "your",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 81,
+    "glosses": [
+      "day",
+      "your",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 82,
+    "glosses": [
+      "day",
+      "your",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 83,
+    "glosses": [
+      "day",
+      "your",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 84,
+    "glosses": [
+      "day",
+      "your",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 85,
+    "glosses": [
+      "evening",
+      "arm",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 86,
+    "glosses": [
+      "evening",
+      "arm",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 87,
+    "glosses": [
+      "evening",
+      "arm",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 88,
+    "glosses": [
+      "evening",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 89,
+    "glosses": [
+      "evening",
+      "eye",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 90,
+    "glosses": [
+      "evening",
+      "eye",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 91,
+    "glosses": [
+      "evening",
+      "heart",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 92,
+    "glosses": [
+      "evening",
+      "heart",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 93,
+    "glosses": [
+      "evening",
+      "his",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 94,
+    "glosses": [
+      "evening",
+      "his",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 95,
+    "glosses": [
+      "evening",
+      "his",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 96,
+    "glosses": [
+      "evening",
+      "his",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 97,
+    "glosses": [
+      "evening",
+      "his",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 98,
+    "glosses": [
+      "evening",
+      "his",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 99,
+    "glosses": [
+      "evening",
+      "his",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 100,
+    "glosses": [
+      "evening",
+      "his",
+      "neck",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 101,
+    "glosses": [
+      "evening",
+      "his",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 102,
+    "glosses": [
+      "evening",
+      "his",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 103,
+    "glosses": [
+      "evening",
+      "my",
+      "eye",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 104,
+    "glosses": [
+      "evening",
+      "my",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 105,
+    "glosses": [
+      "evening",
+      "my",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 106,
+    "glosses": [
+      "evening",
+      "my",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 107,
+    "glosses": [
+      "evening",
+      "my",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 108,
+    "glosses": [
+      "evening",
+      "my",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 109,
+    "glosses": [
+      "evening",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 110,
+    "glosses": [
+      "evening",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 111,
+    "glosses": [
+      "evening",
+      "pain"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 112,
+    "glosses": [
+      "evening",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 113,
+    "glosses": [
+      "evening",
+      "shoulder",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 114,
+    "glosses": [
+      "evening",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 115,
+    "glosses": [
+      "evening",
+      "sick",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 116,
+    "glosses": [
+      "evening",
+      "sick",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 117,
+    "glosses": [
+      "evening",
+      "stomach",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 118,
+    "glosses": [
+      "evening",
+      "stomach",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 119,
+    "glosses": [
+      "evening",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 120,
+    "glosses": [
+      "evening",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 121,
+    "glosses": [
+      "evening",
+      "their",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 122,
+    "glosses": [
+      "evening",
+      "their",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 123,
+    "glosses": [
+      "evening",
+      "their",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 124,
+    "glosses": [
+      "evening",
+      "their",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 125,
+    "glosses": [
+      "evening",
+      "their",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 126,
+    "glosses": [
+      "evening",
+      "their",
+      "neck",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 127,
+    "glosses": [
+      "evening",
+      "their",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 128,
+    "glosses": [
+      "evening",
+      "their",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 129,
+    "glosses": [
+      "evening",
+      "their",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 130,
+    "glosses": [
+      "evening",
+      "their",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 131,
+    "glosses": [
+      "evening",
+      "their",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 132,
+    "glosses": [
+      "evening",
+      "their",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 133,
+    "glosses": [
+      "evening",
+      "your",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 134,
+    "glosses": [
+      "evening",
+      "your",
+      "eye",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 135,
+    "glosses": [
+      "evening",
+      "your",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 136,
+    "glosses": [
+      "evening",
+      "your",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 137,
+    "glosses": [
+      "evening",
+      "your",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 138,
+    "glosses": [
+      "evening",
+      "your",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 139,
+    "glosses": [
+      "evening",
+      "your",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 140,
+    "glosses": [
+      "evening",
+      "your",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 141,
+    "glosses": [
+      "evening",
+      "your",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 142,
+    "glosses": [
+      "evening",
+      "your",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 143,
+    "glosses": [
+      "eye",
+      "bad"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 144,
+    "glosses": [
+      "eye",
+      "headache",
+      "pain",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 145,
+    "glosses": [
+      "eye",
+      "headache",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 146,
+    "glosses": [
+      "eye",
+      "headache",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 147,
+    "glosses": [
+      "eye",
+      "pain"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 148,
+    "glosses": [
+      "eye",
+      "pain",
+      "six",
+      "hour"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 149,
+    "glosses": [
+      "eye",
+      "sick",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 150,
+    "glosses": [
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 151,
+    "glosses": [
+      "eye",
+      "sneeze",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 152,
+    "glosses": [
+      "eye",
+      "sneeze",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 153,
+    "glosses": [
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 154,
+    "glosses": [
+      "eye",
+      "stress",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 155,
+    "glosses": [
+      "eye",
+      "stress",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 156,
+    "glosses": [
+      "goodbye",
+      "headache"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 157,
+    "glosses": [
+      "goodbye",
+      "his",
+      "arm",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 158,
+    "glosses": [
+      "goodbye",
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 159,
+    "glosses": [
+      "goodbye",
+      "his",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 160,
+    "glosses": [
+      "goodbye",
+      "my",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 161,
+    "glosses": [
+      "goodbye",
+      "their",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 162,
+    "glosses": [
+      "goodbye",
+      "their",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 163,
+    "glosses": [
+      "goodbye",
+      "their",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 164,
+    "glosses": [
+      "goodbye",
+      "your",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 165,
+    "glosses": [
+      "goodbye",
+      "your",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 166,
+    "glosses": [
+      "goodbye",
+      "your",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 167,
+    "glosses": [
+      "goodbye",
+      "your",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 168,
+    "glosses": [
+      "headache",
+      "but",
+      "evening",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 169,
+    "glosses": [
+      "headache",
+      "but",
+      "recover",
+      "day"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 170,
+    "glosses": [
+      "headache",
+      "but",
+      "recover",
+      "hour"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 171,
+    "glosses": [
+      "headache",
+      "but",
+      "recover",
+      "tomorrow"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 172,
+    "glosses": [
+      "headache",
+      "but",
+      "sunday",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 173,
+    "glosses": [
+      "headache",
+      "need",
+      "thermometer",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 174,
+    "glosses": [
+      "headache",
+      "need",
+      "wheelchair"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 175,
+    "glosses": [
+      "hearing aid",
+      "bad"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 176,
+    "glosses": [
+      "hearing aid",
+      "how"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 177,
+    "glosses": [
+      "heart",
+      "pain",
+      "but",
+      "recover",
+      "tomorrow"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 178,
+    "glosses": [
+      "heart",
+      "pain",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 179,
+    "glosses": [
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 180,
+    "glosses": [
+      "heart",
+      "stress",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 181,
+    "glosses": [
+      "hello",
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 182,
+    "glosses": [
+      "hello",
+      "his",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 183,
+    "glosses": [
+      "hello",
+      "his",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 184,
+    "glosses": [
+      "hello",
+      "my",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 185,
+    "glosses": [
+      "hello",
+      "my",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 186,
+    "glosses": [
+      "hello",
+      "my",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 187,
+    "glosses": [
+      "hello",
+      "my",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 188,
+    "glosses": [
+      "hello",
+      "my",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 189,
+    "glosses": [
+      "hello",
+      "sneeze"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 190,
+    "glosses": [
+      "hello",
+      "their",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 191,
+    "glosses": [
+      "hello",
+      "their",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 192,
+    "glosses": [
+      "hello",
+      "their",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 193,
+    "glosses": [
+      "hello",
+      "your",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 194,
+    "glosses": [
+      "his",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 195,
+    "glosses": [
+      "his",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 196,
+    "glosses": [
+      "his",
+      "arm",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 197,
+    "glosses": [
+      "his",
+      "arm",
+      "headache",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 198,
+    "glosses": [
+      "his",
+      "arm",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 199,
+    "glosses": [
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 200,
+    "glosses": [
+      "his",
+      "arm",
+      "pain",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 201,
+    "glosses": [
+      "his",
+      "arm",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 202,
+    "glosses": [
+      "his",
+      "arm",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 203,
+    "glosses": [
+      "his",
+      "arm",
+      "sick",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 204,
+    "glosses": [
+      "his",
+      "arm",
+      "sick",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 205,
+    "glosses": [
+      "his",
+      "arm",
+      "sneeze",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 206,
+    "glosses": [
+      "his",
+      "arm",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 207,
+    "glosses": [
+      "his",
+      "arm",
+      "stress",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 208,
+    "glosses": [
+      "his",
+      "arm",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 209,
+    "glosses": [
+      "his",
+      "arm",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 210,
+    "glosses": [
+      "his",
+      "eye",
+      "headache",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 211,
+    "glosses": [
+      "his",
+      "eye",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 212,
+    "glosses": [
+      "his",
+      "eye",
+      "pain",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 213,
+    "glosses": [
+      "his",
+      "eye",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 214,
+    "glosses": [
+      "his",
+      "eye",
+      "sneeze",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 215,
+    "glosses": [
+      "his",
+      "eye",
+      "stress",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 216,
+    "glosses": [
+      "his",
+      "eye",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 217,
+    "glosses": [
+      "his",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 218,
+    "glosses": [
+      "his",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 219,
+    "glosses": [
+      "his",
+      "heart",
+      "headache",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 220,
+    "glosses": [
+      "his",
+      "heart",
+      "pain",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 221,
+    "glosses": [
+      "his",
+      "heart",
+      "sneeze",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 222,
+    "glosses": [
+      "his",
+      "heart",
+      "sneeze",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 223,
+    "glosses": [
+      "his",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 224,
+    "glosses": [
+      "his",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 225,
+    "glosses": [
+      "his",
+      "neck",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 226,
+    "glosses": [
+      "his",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 227,
+    "glosses": [
+      "his",
+      "neck",
+      "pain",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 228,
+    "glosses": [
+      "his",
+      "neck",
+      "pain",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 229,
+    "glosses": [
+      "his",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 230,
+    "glosses": [
+      "his",
+      "neck",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 231,
+    "glosses": [
+      "his",
+      "neck",
+      "sneeze",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 232,
+    "glosses": [
+      "his",
+      "neck",
+      "sneeze",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 233,
+    "glosses": [
+      "his",
+      "neck",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 234,
+    "glosses": [
+      "his",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 235,
+    "glosses": [
+      "his",
+      "right",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 236,
+    "glosses": [
+      "his",
+      "shoulder",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 237,
+    "glosses": [
+      "his",
+      "shoulder",
+      "headache",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 238,
+    "glosses": [
+      "his",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 239,
+    "glosses": [
+      "his",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 240,
+    "glosses": [
+      "his",
+      "shoulder",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 241,
+    "glosses": [
+      "his",
+      "shoulder",
+      "sick",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 242,
+    "glosses": [
+      "his",
+      "shoulder",
+      "stress",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 243,
+    "glosses": [
+      "his",
+      "shoulder",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 244,
+    "glosses": [
+      "his",
+      "shoulder",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 245,
+    "glosses": [
+      "his",
+      "shoulder",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 246,
+    "glosses": [
+      "his",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 247,
+    "glosses": [
+      "his",
+      "stomach",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 248,
+    "glosses": [
+      "his",
+      "stomach",
+      "headache",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 249,
+    "glosses": [
+      "his",
+      "stomach",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 250,
+    "glosses": [
+      "his",
+      "stomach",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 251,
+    "glosses": [
+      "his",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 252,
+    "glosses": [
+      "his",
+      "stomach",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 253,
+    "glosses": [
+      "his",
+      "stomach",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 254,
+    "glosses": [
+      "his",
+      "stomach",
+      "sick",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 255,
+    "glosses": [
+      "his",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 256,
+    "glosses": [
+      "his",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 257,
+    "glosses": [
+      "his",
+      "stomach",
+      "sneeze",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 258,
+    "glosses": [
+      "his",
+      "stomach",
+      "sneeze",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 259,
+    "glosses": [
+      "his",
+      "stomach",
+      "sneeze",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 260,
+    "glosses": [
+      "his",
+      "stomach",
+      "stress",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 261,
+    "glosses": [
+      "hospital",
+      "when"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 262,
+    "glosses": [
+      "hospital",
+      "which",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 263,
+    "glosses": [
+      "hour",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 264,
+    "glosses": [
+      "hour",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 265,
+    "glosses": [
+      "hour",
+      "eye",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 266,
+    "glosses": [
+      "hour",
+      "eye",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 267,
+    "glosses": [
+      "hour",
+      "eye",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 268,
+    "glosses": [
+      "hour",
+      "eye",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 269,
+    "glosses": [
+      "hour",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 270,
+    "glosses": [
+      "hour",
+      "heart",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 271,
+    "glosses": [
+      "hour",
+      "heart",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 272,
+    "glosses": [
+      "hour",
+      "heart",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 273,
+    "glosses": [
+      "hour",
+      "his",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 274,
+    "glosses": [
+      "hour",
+      "his",
+      "eye",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 275,
+    "glosses": [
+      "hour",
+      "his",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 276,
+    "glosses": [
+      "hour",
+      "his",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 277,
+    "glosses": [
+      "hour",
+      "his",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 278,
+    "glosses": [
+      "hour",
+      "his",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 279,
+    "glosses": [
+      "hour",
+      "his",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 280,
+    "glosses": [
+      "hour",
+      "my",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 281,
+    "glosses": [
+      "hour",
+      "my",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 282,
+    "glosses": [
+      "hour",
+      "my",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 283,
+    "glosses": [
+      "hour",
+      "my",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 284,
+    "glosses": [
+      "hour",
+      "my",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 285,
+    "glosses": [
+      "hour",
+      "my",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 286,
+    "glosses": [
+      "hour",
+      "my",
+      "neck",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 287,
+    "glosses": [
+      "hour",
+      "my",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 288,
+    "glosses": [
+      "hour",
+      "my",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 289,
+    "glosses": [
+      "hour",
+      "my",
+      "stomach",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 290,
+    "glosses": [
+      "hour",
+      "my",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 291,
+    "glosses": [
+      "hour",
+      "my",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 292,
+    "glosses": [
+      "hour",
+      "my",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 293,
+    "glosses": [
+      "hour",
+      "neck",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 294,
+    "glosses": [
+      "hour",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 295,
+    "glosses": [
+      "hour",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 296,
+    "glosses": [
+      "hour",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 297,
+    "glosses": [
+      "hour",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 298,
+    "glosses": [
+      "hour",
+      "sick",
+      "now",
+      "arm",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 299,
+    "glosses": [
+      "hour",
+      "stomach",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 300,
+    "glosses": [
+      "hour",
+      "stomach",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 301,
+    "glosses": [
+      "hour",
+      "stomach",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 302,
+    "glosses": [
+      "hour",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 303,
+    "glosses": [
+      "hour",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 304,
+    "glosses": [
+      "hour",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 305,
+    "glosses": [
+      "hour",
+      "their",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 306,
+    "glosses": [
+      "hour",
+      "their",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 307,
+    "glosses": [
+      "hour",
+      "their",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 308,
+    "glosses": [
+      "hour",
+      "their",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 309,
+    "glosses": [
+      "hour",
+      "their",
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 310,
+    "glosses": [
+      "hour",
+      "their",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 311,
+    "glosses": [
+      "hour",
+      "their",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 312,
+    "glosses": [
+      "hour",
+      "their",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 313,
+    "glosses": [
+      "hour",
+      "your",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 314,
+    "glosses": [
+      "hour",
+      "your",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 315,
+    "glosses": [
+      "hour",
+      "your",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 316,
+    "glosses": [
+      "hour",
+      "your",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 317,
+    "glosses": [
+      "hour",
+      "your",
+      "eye",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 318,
+    "glosses": [
+      "hour",
+      "your",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 319,
+    "glosses": [
+      "hour",
+      "your",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 320,
+    "glosses": [
+      "hour",
+      "your",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 321,
+    "glosses": [
+      "hour",
+      "your",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 322,
+    "glosses": [
+      "hour",
+      "your",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 323,
+    "glosses": [
+      "hour",
+      "your",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 324,
+    "glosses": [
+      "hour",
+      "your",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 325,
+    "glosses": [
+      "hour",
+      "your",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 326,
+    "glosses": [
+      "hour",
+      "your",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 327,
+    "glosses": [
+      "hour",
+      "your",
+      "stomach",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 328,
+    "glosses": [
+      "my",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 329,
+    "glosses": [
+      "my",
+      "arm",
+      "pain",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 330,
+    "glosses": [
+      "my",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 331,
+    "glosses": [
+      "my",
+      "arm",
+      "sick",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 332,
+    "glosses": [
+      "my",
+      "arm",
+      "sneeze",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 333,
+    "glosses": [
+      "my",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 334,
+    "glosses": [
+      "my",
+      "arm",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 335,
+    "glosses": [
+      "my",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 336,
+    "glosses": [
+      "my",
+      "eye",
+      "headache",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 337,
+    "glosses": [
+      "my",
+      "eye",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 338,
+    "glosses": [
+      "my",
+      "eye",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 339,
+    "glosses": [
+      "my",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 340,
+    "glosses": [
+      "my",
+      "eye",
+      "pain",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 341,
+    "glosses": [
+      "my",
+      "eye",
+      "sick",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 342,
+    "glosses": [
+      "my",
+      "eye",
+      "sick",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 343,
+    "glosses": [
+      "my",
+      "eye",
+      "stress",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 344,
+    "glosses": [
+      "my",
+      "eye",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 345,
+    "glosses": [
+      "my",
+      "eye",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 346,
+    "glosses": [
+      "my",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 347,
+    "glosses": [
+      "my",
+      "heart",
+      "headache",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 348,
+    "glosses": [
+      "my",
+      "heart",
+      "headache",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 349,
+    "glosses": [
+      "my",
+      "heart",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 350,
+    "glosses": [
+      "my",
+      "heart",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 351,
+    "glosses": [
+      "my",
+      "heart",
+      "sick",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 352,
+    "glosses": [
+      "my",
+      "heart",
+      "sick",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 353,
+    "glosses": [
+      "my",
+      "heart",
+      "stress",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 354,
+    "glosses": [
+      "my",
+      "heart",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 355,
+    "glosses": [
+      "my",
+      "heart",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 356,
+    "glosses": [
+      "my",
+      "heart",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 357,
+    "glosses": [
+      "my",
+      "neck",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 358,
+    "glosses": [
+      "my",
+      "neck",
+      "pain",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 359,
+    "glosses": [
+      "my",
+      "neck",
+      "sneeze",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 360,
+    "glosses": [
+      "my",
+      "neck",
+      "sneeze",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 361,
+    "glosses": [
+      "my",
+      "neck",
+      "sneeze",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 362,
+    "glosses": [
+      "my",
+      "neck",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 363,
+    "glosses": [
+      "my",
+      "neck",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 364,
+    "glosses": [
+      "my",
+      "neck",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 365,
+    "glosses": [
+      "my",
+      "need",
+      "hospital"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 366,
+    "glosses": [
+      "my",
+      "need",
+      "recover"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 367,
+    "glosses": [
+      "my",
+      "right",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 368,
+    "glosses": [
+      "my",
+      "right",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 369,
+    "glosses": [
+      "my",
+      "right",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 370,
+    "glosses": [
+      "my",
+      "right",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 371,
+    "glosses": [
+      "my",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 372,
+    "glosses": [
+      "my",
+      "shoulder",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 373,
+    "glosses": [
+      "my",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 374,
+    "glosses": [
+      "my",
+      "shoulder",
+      "pain",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 375,
+    "glosses": [
+      "my",
+      "shoulder",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 376,
+    "glosses": [
+      "my",
+      "shoulder",
+      "stress",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 377,
+    "glosses": [
+      "my",
+      "shoulder",
+      "stress",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 378,
+    "glosses": [
+      "my",
+      "shoulder",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 379,
+    "glosses": [
+      "my",
+      "shoulder",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 380,
+    "glosses": [
+      "my",
+      "stomach",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 381,
+    "glosses": [
+      "my",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 382,
+    "glosses": [
+      "my",
+      "stomach",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 383,
+    "glosses": [
+      "my",
+      "stomach",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 384,
+    "glosses": [
+      "my",
+      "stomach",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 385,
+    "glosses": [
+      "my",
+      "stomach",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 386,
+    "glosses": [
+      "neck",
+      "bad",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 387,
+    "glosses": [
+      "neck",
+      "headache",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 388,
+    "glosses": [
+      "neck",
+      "headache",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 389,
+    "glosses": [
+      "neck",
+      "headache",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 390,
+    "glosses": [
+      "neck",
+      "pain",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 391,
+    "glosses": [
+      "neck",
+      "pain",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 392,
+    "glosses": [
+      "neck",
+      "pain",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 393,
+    "glosses": [
+      "neck",
+      "shoulder",
+      "pain",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 394,
+    "glosses": [
+      "neck",
+      "sick"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 395,
+    "glosses": [
+      "neck",
+      "sick",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 396,
+    "glosses": [
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 397,
+    "glosses": [
+      "need",
+      "hearing aid",
+      "please"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 398,
+    "glosses": [
+      "need",
+      "pregnant",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 399,
+    "glosses": [
+      "night",
+      "arm",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 400,
+    "glosses": [
+      "night",
+      "heart",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 401,
+    "glosses": [
+      "night",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 402,
+    "glosses": [
+      "night",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 403,
+    "glosses": [
+      "night",
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 404,
+    "glosses": [
+      "night",
+      "his",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 405,
+    "glosses": [
+      "night",
+      "his",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 406,
+    "glosses": [
+      "night",
+      "his",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 407,
+    "glosses": [
+      "night",
+      "his",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 408,
+    "glosses": [
+      "night",
+      "his",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 409,
+    "glosses": [
+      "night",
+      "his",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 410,
+    "glosses": [
+      "night",
+      "his",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 411,
+    "glosses": [
+      "night",
+      "his",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 412,
+    "glosses": [
+      "night",
+      "my",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 413,
+    "glosses": [
+      "night",
+      "my",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 414,
+    "glosses": [
+      "night",
+      "my",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 415,
+    "glosses": [
+      "night",
+      "my",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 416,
+    "glosses": [
+      "night",
+      "my",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 417,
+    "glosses": [
+      "night",
+      "my",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 418,
+    "glosses": [
+      "night",
+      "my",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 419,
+    "glosses": [
+      "night",
+      "my",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 420,
+    "glosses": [
+      "night",
+      "my",
+      "shoulder",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 421,
+    "glosses": [
+      "night",
+      "my",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 422,
+    "glosses": [
+      "night",
+      "my",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 423,
+    "glosses": [
+      "night",
+      "my",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 424,
+    "glosses": [
+      "night",
+      "my",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 425,
+    "glosses": [
+      "night",
+      "my",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 426,
+    "glosses": [
+      "night",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 427,
+    "glosses": [
+      "night",
+      "neck",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 428,
+    "glosses": [
+      "night",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 429,
+    "glosses": [
+      "night",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 430,
+    "glosses": [
+      "night",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 431,
+    "glosses": [
+      "night",
+      "shoulder",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 432,
+    "glosses": [
+      "night",
+      "shoulder",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 433,
+    "glosses": [
+      "night",
+      "sick",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 434,
+    "glosses": [
+      "night",
+      "sick",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 435,
+    "glosses": [
+      "night",
+      "sick",
+      "now",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 436,
+    "glosses": [
+      "night",
+      "stomach",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 437,
+    "glosses": [
+      "night",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 438,
+    "glosses": [
+      "night",
+      "stomach",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 439,
+    "glosses": [
+      "night",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 440,
+    "glosses": [
+      "night",
+      "their",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 441,
+    "glosses": [
+      "night",
+      "their",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 442,
+    "glosses": [
+      "night",
+      "their",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 443,
+    "glosses": [
+      "night",
+      "their",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 444,
+    "glosses": [
+      "night",
+      "their",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 445,
+    "glosses": [
+      "night",
+      "their",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 446,
+    "glosses": [
+      "night",
+      "their",
+      "shoulder",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 447,
+    "glosses": [
+      "night",
+      "their",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 448,
+    "glosses": [
+      "night",
+      "their",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 449,
+    "glosses": [
+      "night",
+      "your",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 450,
+    "glosses": [
+      "night",
+      "your",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 451,
+    "glosses": [
+      "night",
+      "your",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 452,
+    "glosses": [
+      "night",
+      "your",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 453,
+    "glosses": [
+      "night",
+      "your",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 454,
+    "glosses": [
+      "night",
+      "your",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 455,
+    "glosses": [
+      "night",
+      "your",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 456,
+    "glosses": [
+      "night",
+      "your",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 457,
+    "glosses": [
+      "night",
+      "your",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 458,
+    "glosses": [
+      "night",
+      "your",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 459,
+    "glosses": [
+      "night",
+      "your",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 460,
+    "glosses": [
+      "night",
+      "your",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 461,
+    "glosses": [
+      "now",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 462,
+    "glosses": [
+      "now",
+      "eye",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 463,
+    "glosses": [
+      "now",
+      "heart",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 464,
+    "glosses": [
+      "now",
+      "heart",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 465,
+    "glosses": [
+      "now",
+      "his",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 466,
+    "glosses": [
+      "now",
+      "his",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 467,
+    "glosses": [
+      "now",
+      "his",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 468,
+    "glosses": [
+      "now",
+      "his",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 469,
+    "glosses": [
+      "now",
+      "his",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 470,
+    "glosses": [
+      "now",
+      "his",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 471,
+    "glosses": [
+      "now",
+      "his",
+      "neck",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 472,
+    "glosses": [
+      "now",
+      "his",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 473,
+    "glosses": [
+      "now",
+      "his",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 474,
+    "glosses": [
+      "now",
+      "my",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 475,
+    "glosses": [
+      "now",
+      "my",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 476,
+    "glosses": [
+      "now",
+      "my",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 477,
+    "glosses": [
+      "now",
+      "my",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 478,
+    "glosses": [
+      "now",
+      "my",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 479,
+    "glosses": [
+      "now",
+      "my",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 480,
+    "glosses": [
+      "now",
+      "my",
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 481,
+    "glosses": [
+      "now",
+      "my",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 482,
+    "glosses": [
+      "now",
+      "my",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 483,
+    "glosses": [
+      "now",
+      "my",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 484,
+    "glosses": [
+      "now",
+      "my",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 485,
+    "glosses": [
+      "now",
+      "my",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 486,
+    "glosses": [
+      "now",
+      "my",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 487,
+    "glosses": [
+      "now",
+      "my",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 488,
+    "glosses": [
+      "now",
+      "shoulder",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 489,
+    "glosses": [
+      "now",
+      "shoulder",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 490,
+    "glosses": [
+      "now",
+      "shoulder",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 491,
+    "glosses": [
+      "now",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 492,
+    "glosses": [
+      "now",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 493,
+    "glosses": [
+      "now",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 494,
+    "glosses": [
+      "now",
+      "sick"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 495,
+    "glosses": [
+      "now",
+      "sick",
+      "now",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 496,
+    "glosses": [
+      "now",
+      "sick",
+      "now",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 497,
+    "glosses": [
+      "now",
+      "sick",
+      "now",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 498,
+    "glosses": [
+      "now",
+      "sick",
+      "recover",
+      "sunday"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 499,
+    "glosses": [
+      "now",
+      "sick",
+      "recover",
+      "sunday",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 500,
+    "glosses": [
+      "now",
+      "sick",
+      "recover",
+      "tomorrow",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 501,
+    "glosses": [
+      "now",
+      "stomach",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 502,
+    "glosses": [
+      "now",
+      "stomach",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 503,
+    "glosses": [
+      "now",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 504,
+    "glosses": [
+      "now",
+      "their",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 505,
+    "glosses": [
+      "now",
+      "their",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 506,
+    "glosses": [
+      "now",
+      "their",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 507,
+    "glosses": [
+      "now",
+      "their",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 508,
+    "glosses": [
+      "now",
+      "their",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 509,
+    "glosses": [
+      "now",
+      "their",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 510,
+    "glosses": [
+      "now",
+      "their",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 511,
+    "glosses": [
+      "now",
+      "their",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 512,
+    "glosses": [
+      "now",
+      "their",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 513,
+    "glosses": [
+      "now",
+      "their",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 514,
+    "glosses": [
+      "now",
+      "their",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 515,
+    "glosses": [
+      "now",
+      "your",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 516,
+    "glosses": [
+      "now",
+      "your",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 517,
+    "glosses": [
+      "now",
+      "your",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 518,
+    "glosses": [
+      "now",
+      "your",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 519,
+    "glosses": [
+      "now",
+      "your",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 520,
+    "glosses": [
+      "now",
+      "your",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 521,
+    "glosses": [
+      "now",
+      "your",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 522,
+    "glosses": [
+      "now",
+      "your",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 523,
+    "glosses": [
+      "now",
+      "your",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 524,
+    "glosses": [
+      "now",
+      "your",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 525,
+    "glosses": [
+      "pain",
+      "but",
+      "day",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 526,
+    "glosses": [
+      "pain",
+      "but",
+      "need",
+      "hospital"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 527,
+    "glosses": [
+      "pain",
+      "but",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 528,
+    "glosses": [
+      "pain",
+      "but",
+      "recover",
+      "hour"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 529,
+    "glosses": [
+      "pain",
+      "but",
+      "recover",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 530,
+    "glosses": [
+      "pain",
+      "but",
+      "recover",
+      "six"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 531,
+    "glosses": [
+      "pain",
+      "but",
+      "recover",
+      "tomorrow"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 532,
+    "glosses": [
+      "pain",
+      "need",
+      "hearing aid",
+      "now"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 533,
+    "glosses": [
+      "pain",
+      "need",
+      "pregnant",
+      "now"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 534,
+    "glosses": [
+      "pain",
+      "need",
+      "recover",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 535,
+    "glosses": [
+      "please",
+      "need",
+      "wheelchair"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 536,
+    "glosses": [
+      "please",
+      "recover",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 537,
+    "glosses": [
+      "please",
+      "thermometer",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 538,
+    "glosses": [
+      "pregnant",
+      "hospital",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 539,
+    "glosses": [
+      "pregnant",
+      "how"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 540,
+    "glosses": [
+      "pregnant",
+      "stress"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 541,
+    "glosses": [
+      "pregnant",
+      "where"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 542,
+    "glosses": [
+      "pregnant",
+      "which"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 543,
+    "glosses": [
+      "recover",
+      "what"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 544,
+    "glosses": [
+      "right",
+      "arm",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 545,
+    "glosses": [
+      "right",
+      "arm",
+      "pain",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 546,
+    "glosses": [
+      "right",
+      "arm",
+      "pain",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 547,
+    "glosses": [
+      "right",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 548,
+    "glosses": [
+      "right",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 549,
+    "glosses": [
+      "right",
+      "heart",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 550,
+    "glosses": [
+      "right",
+      "heart",
+      "pain",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 551,
+    "glosses": [
+      "shoulder",
+      "bad",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 552,
+    "glosses": [
+      "shoulder",
+      "pain",
+      "but",
+      "recover",
+      "now"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 553,
+    "glosses": [
+      "shoulder",
+      "pain",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 554,
+    "glosses": [
+      "shoulder",
+      "pain",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 555,
+    "glosses": [
+      "shoulder",
+      "sick",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 556,
+    "glosses": [
+      "shoulder",
+      "sick",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 557,
+    "glosses": [
+      "shoulder",
+      "sneeze",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 558,
+    "glosses": [
+      "shoulder",
+      "stress",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 559,
+    "glosses": [
+      "shoulder",
+      "stress",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 560,
+    "glosses": [
+      "sick",
+      "but",
+      "hour",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 561,
+    "glosses": [
+      "sick",
+      "but",
+      "recover",
+      "night"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 562,
+    "glosses": [
+      "sick",
+      "but",
+      "recover",
+      "now"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 563,
+    "glosses": [
+      "sick",
+      "but",
+      "recover",
+      "sunday"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 564,
+    "glosses": [
+      "sick",
+      "but",
+      "tomorrow",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 565,
+    "glosses": [
+      "sick",
+      "but",
+      "yesterday",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 566,
+    "glosses": [
+      "sick",
+      "need",
+      "pregnant"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 567,
+    "glosses": [
+      "sick",
+      "need",
+      "recover",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 568,
+    "glosses": [
+      "sick",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 569,
+    "glosses": [
+      "six",
+      "arm",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 570,
+    "glosses": [
+      "six",
+      "arm",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 571,
+    "glosses": [
+      "six",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 572,
+    "glosses": [
+      "six",
+      "eye",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 573,
+    "glosses": [
+      "six",
+      "eye",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 574,
+    "glosses": [
+      "six",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 575,
+    "glosses": [
+      "six",
+      "heart",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 576,
+    "glosses": [
+      "six",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 577,
+    "glosses": [
+      "six",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 578,
+    "glosses": [
+      "six",
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 579,
+    "glosses": [
+      "six",
+      "his",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 580,
+    "glosses": [
+      "six",
+      "his",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 581,
+    "glosses": [
+      "six",
+      "his",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 582,
+    "glosses": [
+      "six",
+      "his",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 583,
+    "glosses": [
+      "six",
+      "his",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 584,
+    "glosses": [
+      "six",
+      "his",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 585,
+    "glosses": [
+      "six",
+      "his",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 586,
+    "glosses": [
+      "six",
+      "his",
+      "neck",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 587,
+    "glosses": [
+      "six",
+      "his",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 588,
+    "glosses": [
+      "six",
+      "his",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 589,
+    "glosses": [
+      "six",
+      "his",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 590,
+    "glosses": [
+      "six",
+      "his",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 591,
+    "glosses": [
+      "six",
+      "his",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 592,
+    "glosses": [
+      "six",
+      "my",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 593,
+    "glosses": [
+      "six",
+      "my",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 594,
+    "glosses": [
+      "six",
+      "my",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 595,
+    "glosses": [
+      "six",
+      "my",
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 596,
+    "glosses": [
+      "six",
+      "my",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 597,
+    "glosses": [
+      "six",
+      "my",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 598,
+    "glosses": [
+      "six",
+      "my",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 599,
+    "glosses": [
+      "six",
+      "my",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 600,
+    "glosses": [
+      "six",
+      "my",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 601,
+    "glosses": [
+      "six",
+      "my",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 602,
+    "glosses": [
+      "six",
+      "my",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 603,
+    "glosses": [
+      "six",
+      "my",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 604,
+    "glosses": [
+      "six",
+      "neck",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 605,
+    "glosses": [
+      "six",
+      "need",
+      "pregnant"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 606,
+    "glosses": [
+      "six",
+      "sick",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 607,
+    "glosses": [
+      "six",
+      "stomach",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 608,
+    "glosses": [
+      "six",
+      "stomach",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 609,
+    "glosses": [
+      "six",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 610,
+    "glosses": [
+      "six",
+      "their",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 611,
+    "glosses": [
+      "six",
+      "their",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 612,
+    "glosses": [
+      "six",
+      "their",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 613,
+    "glosses": [
+      "six",
+      "their",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 614,
+    "glosses": [
+      "six",
+      "their",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 615,
+    "glosses": [
+      "six",
+      "their",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 616,
+    "glosses": [
+      "six",
+      "their",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 617,
+    "glosses": [
+      "six",
+      "their",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 618,
+    "glosses": [
+      "six",
+      "their",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 619,
+    "glosses": [
+      "six",
+      "their",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 620,
+    "glosses": [
+      "six",
+      "their",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 621,
+    "glosses": [
+      "six",
+      "their",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 622,
+    "glosses": [
+      "six",
+      "their",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 623,
+    "glosses": [
+      "six",
+      "their",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 624,
+    "glosses": [
+      "six",
+      "their",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 625,
+    "glosses": [
+      "six",
+      "your",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 626,
+    "glosses": [
+      "six",
+      "your",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 627,
+    "glosses": [
+      "six",
+      "your",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 628,
+    "glosses": [
+      "six",
+      "your",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 629,
+    "glosses": [
+      "six",
+      "your",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 630,
+    "glosses": [
+      "six",
+      "your",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 631,
+    "glosses": [
+      "six",
+      "your",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 632,
+    "glosses": [
+      "six",
+      "your",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 633,
+    "glosses": [
+      "six",
+      "your",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 634,
+    "glosses": [
+      "six",
+      "your",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 635,
+    "glosses": [
+      "six",
+      "your",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 636,
+    "glosses": [
+      "sneeze",
+      "but",
+      "evening",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 637,
+    "glosses": [
+      "sneeze",
+      "but",
+      "hour",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 638,
+    "glosses": [
+      "sneeze",
+      "but",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 639,
+    "glosses": [
+      "sneeze",
+      "but",
+      "recover",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 640,
+    "glosses": [
+      "sneeze",
+      "but",
+      "sunday",
+      "recover"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 641,
+    "glosses": [
+      "sneeze",
+      "need",
+      "pregnant"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 642,
+    "glosses": [
+      "stomach",
+      "bad",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 643,
+    "glosses": [
+      "stomach",
+      "bad",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 644,
+    "glosses": [
+      "stomach",
+      "bad",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 645,
+    "glosses": [
+      "stomach",
+      "pain",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 646,
+    "glosses": [
+      "stomach",
+      "pain",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 647,
+    "glosses": [
+      "stomach",
+      "sick",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 648,
+    "glosses": [
+      "stomach",
+      "sick",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 649,
+    "glosses": [
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 650,
+    "glosses": [
+      "stomach",
+      "stress",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 651,
+    "glosses": [
+      "stomach",
+      "stress",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 652,
+    "glosses": [
+      "stomach",
+      "stress",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 653,
+    "glosses": [
+      "stress",
+      "need",
+      "hearing aid",
+      "now"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 654,
+    "glosses": [
+      "stress",
+      "need",
+      "pregnant",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 655,
+    "glosses": [
+      "stress",
+      "need",
+      "thermometer",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 656,
+    "glosses": [
+      "stress",
+      "need",
+      "wheelchair"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 657,
+    "glosses": [
+      "stress",
+      "need",
+      "wheelchair",
+      "please"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 658,
+    "glosses": [
+      "stress",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 659,
+    "glosses": [
+      "sunday",
+      "arm",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 660,
+    "glosses": [
+      "sunday",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 661,
+    "glosses": [
+      "sunday",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 662,
+    "glosses": [
+      "sunday",
+      "heart",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 663,
+    "glosses": [
+      "sunday",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 664,
+    "glosses": [
+      "sunday",
+      "his",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 665,
+    "glosses": [
+      "sunday",
+      "his",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 666,
+    "glosses": [
+      "sunday",
+      "his",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 667,
+    "glosses": [
+      "sunday",
+      "his",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 668,
+    "glosses": [
+      "sunday",
+      "his",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 669,
+    "glosses": [
+      "sunday",
+      "his",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 670,
+    "glosses": [
+      "sunday",
+      "his",
+      "heart",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 671,
+    "glosses": [
+      "sunday",
+      "his",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 672,
+    "glosses": [
+      "sunday",
+      "his",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 673,
+    "glosses": [
+      "sunday",
+      "his",
+      "stomach",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 674,
+    "glosses": [
+      "sunday",
+      "his",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 675,
+    "glosses": [
+      "sunday",
+      "my",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 676,
+    "glosses": [
+      "sunday",
+      "my",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 677,
+    "glosses": [
+      "sunday",
+      "my",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 678,
+    "glosses": [
+      "sunday",
+      "my",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 679,
+    "glosses": [
+      "sunday",
+      "my",
+      "heart",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 680,
+    "glosses": [
+      "sunday",
+      "my",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 681,
+    "glosses": [
+      "sunday",
+      "my",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 682,
+    "glosses": [
+      "sunday",
+      "my",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 683,
+    "glosses": [
+      "sunday",
+      "my",
+      "shoulder",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 684,
+    "glosses": [
+      "sunday",
+      "my",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 685,
+    "glosses": [
+      "sunday",
+      "my",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 686,
+    "glosses": [
+      "sunday",
+      "my",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 687,
+    "glosses": [
+      "sunday",
+      "need",
+      "wheelchair"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 688,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 689,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 690,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 691,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 692,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 693,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 694,
+    "glosses": [
+      "sunday",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 695,
+    "glosses": [
+      "sunday",
+      "sick",
+      "now",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 696,
+    "glosses": [
+      "sunday",
+      "stomach",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 697,
+    "glosses": [
+      "sunday",
+      "stomach",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 698,
+    "glosses": [
+      "sunday",
+      "stress"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 699,
+    "glosses": [
+      "sunday",
+      "their",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 700,
+    "glosses": [
+      "sunday",
+      "their",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 701,
+    "glosses": [
+      "sunday",
+      "their",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 702,
+    "glosses": [
+      "sunday",
+      "their",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 703,
+    "glosses": [
+      "sunday",
+      "their",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 704,
+    "glosses": [
+      "sunday",
+      "their",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 705,
+    "glosses": [
+      "sunday",
+      "their",
+      "neck",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 706,
+    "glosses": [
+      "sunday",
+      "their",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 707,
+    "glosses": [
+      "sunday",
+      "their",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 708,
+    "glosses": [
+      "sunday",
+      "their",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 709,
+    "glosses": [
+      "sunday",
+      "their",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 710,
+    "glosses": [
+      "sunday",
+      "their",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 711,
+    "glosses": [
+      "sunday",
+      "their",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 712,
+    "glosses": [
+      "sunday",
+      "their",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 713,
+    "glosses": [
+      "sunday",
+      "their",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 714,
+    "glosses": [
+      "sunday",
+      "your",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 715,
+    "glosses": [
+      "sunday",
+      "your",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 716,
+    "glosses": [
+      "sunday",
+      "your",
+      "eye",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 717,
+    "glosses": [
+      "sunday",
+      "your",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 718,
+    "glosses": [
+      "sunday",
+      "your",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 719,
+    "glosses": [
+      "sunday",
+      "your",
+      "neck",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 720,
+    "glosses": [
+      "sunday",
+      "your",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 721,
+    "glosses": [
+      "sunday",
+      "your",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 722,
+    "glosses": [
+      "sunday",
+      "your",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 723,
+    "glosses": [
+      "sunday",
+      "your",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 724,
+    "glosses": [
+      "sunday",
+      "your",
+      "stomach",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 725,
+    "glosses": [
+      "sunday",
+      "your",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 726,
+    "glosses": [
+      "their",
+      "arm",
+      "pain",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 727,
+    "glosses": [
+      "their",
+      "arm",
+      "pain",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 728,
+    "glosses": [
+      "their",
+      "arm",
+      "pain",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 729,
+    "glosses": [
+      "their",
+      "arm",
+      "sick",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 730,
+    "glosses": [
+      "their",
+      "arm",
+      "sick",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 731,
+    "glosses": [
+      "their",
+      "arm",
+      "sneeze",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 732,
+    "glosses": [
+      "their",
+      "arm",
+      "stress",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 733,
+    "glosses": [
+      "their",
+      "arm",
+      "stress",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 734,
+    "glosses": [
+      "their",
+      "arm",
+      "stress",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 735,
+    "glosses": [
+      "their",
+      "arm",
+      "what"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 736,
+    "glosses": [
+      "their",
+      "eye",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 737,
+    "glosses": [
+      "their",
+      "eye",
+      "headache",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 738,
+    "glosses": [
+      "their",
+      "eye",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 739,
+    "glosses": [
+      "their",
+      "eye",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 740,
+    "glosses": [
+      "their",
+      "eye",
+      "sick",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 741,
+    "glosses": [
+      "their",
+      "eye",
+      "sneeze",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 742,
+    "glosses": [
+      "their",
+      "eye",
+      "sneeze",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 743,
+    "glosses": [
+      "their",
+      "eye",
+      "sneeze",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 744,
+    "glosses": [
+      "their",
+      "eye",
+      "stress",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 745,
+    "glosses": [
+      "their",
+      "eye",
+      "stress",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 746,
+    "glosses": [
+      "their",
+      "eye",
+      "stress",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 747,
+    "glosses": [
+      "their",
+      "heart",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 748,
+    "glosses": [
+      "their",
+      "heart",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 749,
+    "glosses": [
+      "their",
+      "heart",
+      "pain",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 750,
+    "glosses": [
+      "their",
+      "heart",
+      "sick",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 751,
+    "glosses": [
+      "their",
+      "heart",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 752,
+    "glosses": [
+      "their",
+      "heart",
+      "stress",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 753,
+    "glosses": [
+      "their",
+      "heart",
+      "stress",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 754,
+    "glosses": [
+      "their",
+      "heart",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 755,
+    "glosses": [
+      "their",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 756,
+    "glosses": [
+      "their",
+      "neck",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 757,
+    "glosses": [
+      "their",
+      "neck",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 758,
+    "glosses": [
+      "their",
+      "neck",
+      "pain",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 759,
+    "glosses": [
+      "their",
+      "neck",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 760,
+    "glosses": [
+      "their",
+      "neck",
+      "sneeze",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 761,
+    "glosses": [
+      "their",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 762,
+    "glosses": [
+      "their",
+      "neck",
+      "stress",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 763,
+    "glosses": [
+      "their",
+      "neck",
+      "stress",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 764,
+    "glosses": [
+      "their",
+      "neck",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 765,
+    "glosses": [
+      "their",
+      "need",
+      "wheelchair"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 766,
+    "glosses": [
+      "their",
+      "right",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 767,
+    "glosses": [
+      "their",
+      "right",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 768,
+    "glosses": [
+      "their",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 769,
+    "glosses": [
+      "their",
+      "shoulder",
+      "headache",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 770,
+    "glosses": [
+      "their",
+      "shoulder",
+      "headache",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 771,
+    "glosses": [
+      "their",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 772,
+    "glosses": [
+      "their",
+      "shoulder",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 773,
+    "glosses": [
+      "their",
+      "shoulder",
+      "pain",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 774,
+    "glosses": [
+      "their",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 775,
+    "glosses": [
+      "their",
+      "shoulder",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 776,
+    "glosses": [
+      "their",
+      "shoulder",
+      "sick",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 777,
+    "glosses": [
+      "their",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 778,
+    "glosses": [
+      "their",
+      "shoulder",
+      "stress",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 779,
+    "glosses": [
+      "their",
+      "shoulder",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 780,
+    "glosses": [
+      "their",
+      "shoulder",
+      "who"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 781,
+    "glosses": [
+      "their",
+      "shoulder",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 782,
+    "glosses": [
+      "their",
+      "stomach",
+      "headache",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 783,
+    "glosses": [
+      "their",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 784,
+    "glosses": [
+      "their",
+      "stomach",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 785,
+    "glosses": [
+      "their",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 786,
+    "glosses": [
+      "their",
+      "stomach",
+      "sneeze",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 787,
+    "glosses": [
+      "their",
+      "stomach",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 788,
+    "glosses": [
+      "thermometer",
+      "when"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 789,
+    "glosses": [
+      "they",
+      "need",
+      "recover"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 790,
+    "glosses": [
+      "they",
+      "need",
+      "thermometer"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 791,
+    "glosses": [
+      "they",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 792,
+    "glosses": [
+      "tomorrow",
+      "arm",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 793,
+    "glosses": [
+      "tomorrow",
+      "eye",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 794,
+    "glosses": [
+      "tomorrow",
+      "eye",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 795,
+    "glosses": [
+      "tomorrow",
+      "eye",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 796,
+    "glosses": [
+      "tomorrow",
+      "heart",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 797,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 798,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 799,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 800,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 801,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 802,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 803,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 804,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 805,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 806,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "right",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 807,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "right",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 808,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "right",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 809,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 810,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 811,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 812,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 813,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 814,
+    "glosses": [
+      "tomorrow",
+      "his",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 815,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 816,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 817,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 818,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "arm",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 819,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 820,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 821,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "eye",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 822,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 823,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 824,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 825,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 826,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "right",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 827,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "right",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 828,
+    "glosses": [
+      "tomorrow",
+      "my",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 829,
+    "glosses": [
+      "tomorrow",
+      "neck",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 830,
+    "glosses": [
+      "tomorrow",
+      "neck",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 831,
+    "glosses": [
+      "tomorrow",
+      "neck",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 832,
+    "glosses": [
+      "tomorrow",
+      "need",
+      "hearing aid"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 833,
+    "glosses": [
+      "tomorrow",
+      "pain"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 834,
+    "glosses": [
+      "tomorrow",
+      "shoulder",
+      "bad",
+      "recover",
+      "how"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 835,
+    "glosses": [
+      "tomorrow",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 836,
+    "glosses": [
+      "tomorrow",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 837,
+    "glosses": [
+      "tomorrow",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 838,
+    "glosses": [
+      "tomorrow",
+      "shoulder",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 839,
+    "glosses": [
+      "tomorrow",
+      "sick",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 840,
+    "glosses": [
+      "tomorrow",
+      "sick",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 841,
+    "glosses": [
+      "tomorrow",
+      "sick",
+      "now",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 842,
+    "glosses": [
+      "tomorrow",
+      "stomach",
+      "bad",
+      "recover",
+      "when"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 843,
+    "glosses": [
+      "tomorrow",
+      "stress"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 844,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 845,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 846,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "heart",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 847,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "neck",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 848,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 849,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 850,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 851,
+    "glosses": [
+      "tomorrow",
+      "their",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 852,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 853,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "eye",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 854,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 855,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 856,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 857,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "neck",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 858,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 859,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "neck",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 860,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 861,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 862,
+    "glosses": [
+      "tomorrow",
+      "your",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 863,
+    "glosses": [
+      "who",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 864,
+    "glosses": [
+      "who",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 865,
+    "glosses": [
+      "who",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 866,
+    "glosses": [
+      "who",
+      "sick"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 867,
+    "glosses": [
+      "yesterday",
+      "arm",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 868,
+    "glosses": [
+      "yesterday",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 869,
+    "glosses": [
+      "yesterday",
+      "eye",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 870,
+    "glosses": [
+      "yesterday",
+      "eye",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 871,
+    "glosses": [
+      "yesterday",
+      "eye",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 872,
+    "glosses": [
+      "yesterday",
+      "eye",
+      "pain",
+      "now",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 873,
+    "glosses": [
+      "yesterday",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 874,
+    "glosses": [
+      "yesterday",
+      "headache"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 875,
+    "glosses": [
+      "yesterday",
+      "heart",
+      "bad",
+      "recover",
+      "where"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 876,
+    "glosses": [
+      "yesterday",
+      "heart",
+      "bad",
+      "recover",
+      "which"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 877,
+    "glosses": [
+      "yesterday",
+      "heart",
+      "bad",
+      "recover",
+      "who"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 878,
+    "glosses": [
+      "yesterday",
+      "heart",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 879,
+    "glosses": [
+      "yesterday",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 880,
+    "glosses": [
+      "yesterday",
+      "his",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 881,
+    "glosses": [
+      "yesterday",
+      "his",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 882,
+    "glosses": [
+      "yesterday",
+      "his",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 883,
+    "glosses": [
+      "yesterday",
+      "his",
+      "arm",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 884,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 885,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 886,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 887,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 888,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 889,
+    "glosses": [
+      "yesterday",
+      "his",
+      "heart",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 890,
+    "glosses": [
+      "yesterday",
+      "his",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 891,
+    "glosses": [
+      "yesterday",
+      "his",
+      "neck",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 892,
+    "glosses": [
+      "yesterday",
+      "his",
+      "right",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 893,
+    "glosses": [
+      "yesterday",
+      "his",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 894,
+    "glosses": [
+      "yesterday",
+      "his",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 895,
+    "glosses": [
+      "yesterday",
+      "my",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 896,
+    "glosses": [
+      "yesterday",
+      "my",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 897,
+    "glosses": [
+      "yesterday",
+      "my",
+      "arm",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 898,
+    "glosses": [
+      "yesterday",
+      "my",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 899,
+    "glosses": [
+      "yesterday",
+      "my",
+      "eye",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 900,
+    "glosses": [
+      "yesterday",
+      "my",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 901,
+    "glosses": [
+      "yesterday",
+      "my",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 902,
+    "glosses": [
+      "yesterday",
+      "my",
+      "eye",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 903,
+    "glosses": [
+      "yesterday",
+      "my",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 904,
+    "glosses": [
+      "yesterday",
+      "my",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 905,
+    "glosses": [
+      "yesterday",
+      "my",
+      "heart",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 906,
+    "glosses": [
+      "yesterday",
+      "my",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 907,
+    "glosses": [
+      "yesterday",
+      "my",
+      "neck",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 908,
+    "glosses": [
+      "yesterday",
+      "my",
+      "right",
+      "arm",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 909,
+    "glosses": [
+      "yesterday",
+      "my",
+      "shoulder",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 910,
+    "glosses": [
+      "yesterday",
+      "my",
+      "shoulder",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 911,
+    "glosses": [
+      "yesterday",
+      "my",
+      "stomach",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 912,
+    "glosses": [
+      "yesterday",
+      "need",
+      "pregnant"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 913,
+    "glosses": [
+      "yesterday",
+      "shoulder",
+      "bad",
+      "recover",
+      "why"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 914,
+    "glosses": [
+      "yesterday",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 915,
+    "glosses": [
+      "yesterday",
+      "sick"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 916,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 917,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 918,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "now",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 919,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "now",
+      "stomach",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 920,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "recover",
+      "sunday"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 921,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "recover",
+      "tomorrow"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 922,
+    "glosses": [
+      "yesterday",
+      "sick",
+      "shoulder",
+      "pain"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 923,
+    "glosses": [
+      "yesterday",
+      "sneeze"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 924,
+    "glosses": [
+      "yesterday",
+      "stomach",
+      "bad",
+      "recover",
+      "what"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 925,
+    "glosses": [
+      "yesterday",
+      "their",
+      "arm",
+      "headache",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 926,
+    "glosses": [
+      "yesterday",
+      "their",
+      "arm",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 927,
+    "glosses": [
+      "yesterday",
+      "their",
+      "eye",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 928,
+    "glosses": [
+      "yesterday",
+      "their",
+      "eye",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 929,
+    "glosses": [
+      "yesterday",
+      "their",
+      "heart",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 930,
+    "glosses": [
+      "yesterday",
+      "their",
+      "heart",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 931,
+    "glosses": [
+      "yesterday",
+      "their",
+      "neck",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 932,
+    "glosses": [
+      "yesterday",
+      "their",
+      "right",
+      "heart",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 933,
+    "glosses": [
+      "yesterday",
+      "their",
+      "shoulder",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 934,
+    "glosses": [
+      "yesterday",
+      "their",
+      "shoulder",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 935,
+    "glosses": [
+      "yesterday",
+      "their",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 936,
+    "glosses": [
+      "yesterday",
+      "their",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 937,
+    "glosses": [
+      "yesterday",
+      "their",
+      "stomach",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 938,
+    "glosses": [
+      "yesterday",
+      "their",
+      "stomach",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 939,
+    "glosses": [
+      "yesterday",
+      "their",
+      "stomach",
+      "sneeze",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 940,
+    "glosses": [
+      "yesterday",
+      "your",
+      "arm",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 941,
+    "glosses": [
+      "yesterday",
+      "your",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 942,
+    "glosses": [
+      "yesterday",
+      "your",
+      "arm",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 943,
+    "glosses": [
+      "yesterday",
+      "your",
+      "eye",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 944,
+    "glosses": [
+      "yesterday",
+      "your",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 945,
+    "glosses": [
+      "yesterday",
+      "your",
+      "eye",
+      "stress"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 946,
+    "glosses": [
+      "yesterday",
+      "your",
+      "heart",
+      "pain",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 947,
+    "glosses": [
+      "yesterday",
+      "your",
+      "neck",
+      "stress",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 948,
+    "glosses": [
+      "yesterday",
+      "your",
+      "right",
+      "eye",
+      "pain"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 949,
+    "glosses": [
+      "yesterday",
+      "your",
+      "shoulder",
+      "sick",
+      "bad"
+    ],
+    "num_signs": 5
+  },
+  {
+    "id": 950,
+    "glosses": [
+      "yesterday",
+      "your",
+      "shoulder",
+      "sneeze"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 951,
+    "glosses": [
+      "yesterday",
+      "your",
+      "stomach",
+      "headache"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 952,
+    "glosses": [
+      "yesterday",
+      "your",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 953,
+    "glosses": [
+      "your",
+      "arm",
+      "headache"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 954,
+    "glosses": [
+      "your",
+      "arm",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 955,
+    "glosses": [
+      "your",
+      "arm",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 956,
+    "glosses": [
+      "your",
+      "arm",
+      "pain",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 957,
+    "glosses": [
+      "your",
+      "arm",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 958,
+    "glosses": [
+      "your",
+      "arm",
+      "sick",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 959,
+    "glosses": [
+      "your",
+      "arm",
+      "sick",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 960,
+    "glosses": [
+      "your",
+      "arm",
+      "sneeze",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 961,
+    "glosses": [
+      "your",
+      "arm",
+      "stress",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 962,
+    "glosses": [
+      "your",
+      "arm",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 963,
+    "glosses": [
+      "your",
+      "eye",
+      "pain",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 964,
+    "glosses": [
+      "your",
+      "eye",
+      "sick"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 965,
+    "glosses": [
+      "your",
+      "eye",
+      "sick",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 966,
+    "glosses": [
+      "your",
+      "eye",
+      "sick",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 967,
+    "glosses": [
+      "your",
+      "eye",
+      "stress",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 968,
+    "glosses": [
+      "your",
+      "eye",
+      "why"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 969,
+    "glosses": [
+      "your",
+      "hearing aid",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 970,
+    "glosses": [
+      "your",
+      "heart",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 971,
+    "glosses": [
+      "your",
+      "heart",
+      "pain",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 972,
+    "glosses": [
+      "your",
+      "heart",
+      "sneeze",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 973,
+    "glosses": [
+      "your",
+      "heart",
+      "stress",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 974,
+    "glosses": [
+      "your",
+      "heart",
+      "stress",
+      "when"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 975,
+    "glosses": [
+      "your",
+      "neck",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 976,
+    "glosses": [
+      "your",
+      "neck",
+      "pain"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 977,
+    "glosses": [
+      "your",
+      "neck",
+      "pain",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 978,
+    "glosses": [
+      "your",
+      "neck",
+      "sick",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 979,
+    "glosses": [
+      "your",
+      "neck",
+      "sneeze",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 980,
+    "glosses": [
+      "your",
+      "neck",
+      "stress",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 981,
+    "glosses": [
+      "your",
+      "neck",
+      "when"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 982,
+    "glosses": [
+      "your",
+      "need",
+      "pregnant"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 983,
+    "glosses": [
+      "your",
+      "pregnant"
+    ],
+    "num_signs": 2
+  },
+  {
+    "id": 984,
+    "glosses": [
+      "your",
+      "right",
+      "eye",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 985,
+    "glosses": [
+      "your",
+      "right",
+      "heart",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 986,
+    "glosses": [
+      "your",
+      "right",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 987,
+    "glosses": [
+      "your",
+      "shoulder",
+      "bad"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 988,
+    "glosses": [
+      "your",
+      "shoulder",
+      "headache",
+      "what"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 989,
+    "glosses": [
+      "your",
+      "shoulder",
+      "headache",
+      "which"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 990,
+    "glosses": [
+      "your",
+      "shoulder",
+      "how"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 991,
+    "glosses": [
+      "your",
+      "shoulder",
+      "sick",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 992,
+    "glosses": [
+      "your",
+      "shoulder",
+      "sneeze",
+      "who"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 993,
+    "glosses": [
+      "your",
+      "shoulder",
+      "stress",
+      "how"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 994,
+    "glosses": [
+      "your",
+      "shoulder",
+      "stress",
+      "where"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 995,
+    "glosses": [
+      "your",
+      "shoulder",
+      "where"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 996,
+    "glosses": [
+      "your",
+      "shoulder",
+      "which"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 997,
+    "glosses": [
+      "your",
+      "stomach",
+      "headache",
+      "why"
+    ],
+    "num_signs": 4
+  },
+  {
+    "id": 998,
+    "glosses": [
+      "your",
+      "stomach",
+      "sneeze"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 999,
+    "glosses": [
+      "your",
+      "stomach",
+      "stress"
+    ],
+    "num_signs": 3
+  },
+  {
+    "id": 1000,
+    "glosses": [
+      "your",
+      "stomach",
+      "stress",
+      "who"
+    ],
+    "num_signs": 4
+  }
+]

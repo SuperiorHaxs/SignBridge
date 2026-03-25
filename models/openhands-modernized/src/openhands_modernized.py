@@ -74,8 +74,16 @@ class OpenHandsConfig:
     use_finger_features: bool = True  # Whether to extract and use finger features
     finger_features: int = 30         # 15 per hand (extension, spread, distances, openness)
 
+    # Motion features - hand velocity and activity detection
+    use_motion_features: bool = True   # Whether to extract velocity + hand-detected features
+    motion_features: int = 8           # 6 velocity + 2 hand-active flags per frame
+
+    # Spatial features - trajectory, palm, location, handshape, face region, contact, repetition, interaction, rotation
+    use_spatial_features: bool = True  # Whether to extract spatial features
+    spatial_features: int = 40         # 26 original + 4 face region + 2 contact + 2 repetition + 4 interaction + 2 rotation
+
     # Total features per frame
-    pose_features: int = 279      # 249 coords + 30 finger features (when enabled)
+    pose_features: int = 327      # 249 coords + 30 finger + 8 motion + 40 spatial (when all enabled)
 
     # Transformer architecture - UPGRADED for better capacity
     hidden_size: int = 256        # Increased from 64 (4x larger)
@@ -556,12 +564,16 @@ class OpenHandsModel(nn.Module):
         pose_data: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         finger_features: Optional[torch.Tensor] = None,
+        motion_features: Optional[torch.Tensor] = None,
+        spatial_features: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
         Args:
             pose_data: (batch_size, seq_len, 83, 3) - frames x keypoints x (x,y,z)
             attention_mask: (batch_size, seq_len) - mask for padding
             finger_features: (batch_size, seq_len, 30) - optional finger features
+            motion_features: (batch_size, seq_len, 8) - optional velocity + hand-active features
+            spatial_features: (batch_size, seq_len, 26) - optional trajectory/palm/location/handshape features
 
         Returns:
             logits: (batch_size, vocab_size) - classification scores
@@ -576,6 +588,23 @@ class OpenHandsModel(nn.Module):
         # Concatenate finger features if provided
         if finger_features is not None and self.config.use_finger_features:
             pose_features = torch.cat([pose_features, finger_features], dim=-1)  # (N, T, 279)
+
+        # Concatenate motion features if model expects them
+        if self.config.use_motion_features:
+            if motion_features is not None:
+                pose_features = torch.cat([pose_features, motion_features], dim=-1)  # (N, T, 287)
+            else:
+                # Pad with zeros for backward compatibility with old checkpoints/data
+                zeros = torch.zeros(batch_size, seq_len, self.config.motion_features, device=pose_features.device)
+                pose_features = torch.cat([pose_features, zeros], dim=-1)
+
+        # Concatenate spatial features if model expects them
+        if getattr(self.config, 'use_spatial_features', False):
+            if spatial_features is not None:
+                pose_features = torch.cat([pose_features, spatial_features], dim=-1)  # (N, T, 313)
+            else:
+                zeros = torch.zeros(batch_size, seq_len, self.config.spatial_features, device=pose_features.device)
+                pose_features = torch.cat([pose_features, zeros], dim=-1)
 
         # Apply transformer
         hidden_states = self.transformer(pose_features, attention_mask)  # (N, T+1, 256)
@@ -692,9 +721,10 @@ class WLASLPoseProcessor:
             return pose_83
 
         except Exception as e:
-            print(f"WARNING: Error loading {pickle_path}: {e}")
-            # Return dummy data (83 points, 3 channels)
-            return np.zeros((30, 83, 3), dtype=np.float32)
+            import traceback
+            print(f"WARNING: Error loading {pickle_path}: {type(e).__name__}: {e}")
+            traceback.print_exc()
+            raise  # Let caller handle it instead of returning dummy data
 
     def preprocess_pose_sequence(self, pose_sequence: np.ndarray, augment: bool = False) -> np.ndarray:
         """Preprocess pose sequence with normalization and optional augmentation."""
@@ -732,6 +762,337 @@ class WLASLPoseProcessor:
 
         return finger_features.astype(np.float32)
 
+    def extract_motion_features(self, pose_sequence: np.ndarray) -> np.ndarray:
+        """
+        Extract velocity and hand-activity features from pose sequence.
+
+        Args:
+            pose_sequence: (frames, 83, 3) pose landmarks
+
+        Returns:
+            (frames, 8) motion features array:
+            - [0] left hand centroid velocity (magnitude)
+            - [1] left hand centroid velocity max (rolling)
+            - [2] right hand centroid velocity (magnitude)
+            - [3] right hand centroid velocity max (rolling)
+            - [4] left/right velocity ratio
+            - [5] right/left velocity ratio
+            - [6] left hand active flag (0 or 1)
+            - [7] right hand active flag (0 or 1)
+        """
+        frames = len(pose_sequence)
+        features = np.zeros((frames, 8), dtype=np.float32)
+
+        if frames < 2:
+            return features
+
+        # Extract hand regions (xy only for velocity)
+        left_hand = pose_sequence[:, 33:54, :2]   # (frames, 21, 2)
+        right_hand = pose_sequence[:, 54:75, :2]   # (frames, 21, 2)
+
+        # Centroids per frame
+        left_centroid = np.mean(left_hand, axis=1)    # (frames, 2)
+        right_centroid = np.mean(right_hand, axis=1)   # (frames, 2)
+
+        # Frame-to-frame displacement magnitude
+        left_vel = np.linalg.norm(np.diff(left_centroid, axis=0), axis=1)   # (frames-1,)
+        right_vel = np.linalg.norm(np.diff(right_centroid, axis=0), axis=1)  # (frames-1,)
+
+        # Feature 0,2: instantaneous velocity (shift by 1 so frame 0 = 0)
+        features[1:, 0] = left_vel
+        features[1:, 2] = right_vel
+
+        # Feature 1,3: rolling max velocity (window=5)
+        window = min(5, frames - 1)
+        for i in range(1, frames):
+            start = max(1, i - window + 1)
+            features[i, 1] = np.max(features[start:i + 1, 0])
+            features[i, 3] = np.max(features[start:i + 1, 2])
+
+        # Feature 4,5: velocity ratios (with epsilon to avoid div/0)
+        eps = 1e-6
+        features[:, 4] = features[:, 0] / (features[:, 2] + eps)
+        features[:, 5] = features[:, 2] / (features[:, 0] + eps)
+
+        # Feature 6,7: hand active flags
+        # Hand is "active" if displacement > threshold AND keypoints are non-zero
+        active_thresh = 0.005
+        left_present = np.any(np.abs(left_hand) > 1e-4, axis=(1, 2))
+        right_present = np.any(np.abs(right_hand) > 1e-4, axis=(1, 2))
+
+        features[1:, 6] = (left_vel > active_thresh).astype(np.float32) * left_present[1:].astype(np.float32)
+        features[1:, 7] = (right_vel > active_thresh).astype(np.float32) * right_present[1:].astype(np.float32)
+
+        return features
+
+    def extract_spatial_features(self, pose_sequence: np.ndarray) -> np.ndarray:
+        """
+        Extract spatial features: trajectory, palm orientation, hand location, handshape dynamics,
+        face region specificity, hand-body contact, repetition count, hand-hand interaction, wrist rotation.
+
+        Args:
+            pose_sequence: (frames, 83, 3) pose landmarks
+
+        Returns:
+            (frames, 40) spatial features array:
+            Features 0-9: Movement Trajectory (per frame, both hands)
+              [0] right hand dx (normalized movement direction x)
+              [1] right hand dy (normalized movement direction y)
+              [2] left hand dx
+              [3] left hand dy
+              [4] right hand circularity (rolling cross-product accumulation)
+              [5] left hand circularity
+              [6] right hand linearity (rolling net/path ratio)
+              [7] left hand linearity
+              [8] right hand cumulative path (normalized)
+              [9] left hand cumulative path (normalized)
+            Features 10-15: Palm Orientation (per frame, both hands)
+              [10] right palm normal x
+              [11] right palm normal y
+              [12] right palm normal z
+              [13] left palm normal x
+              [14] left palm normal y
+              [15] left palm normal z
+            Features 16-21: Hand Location Relative to Body (per frame)
+              [16] right hand y relative to nose
+              [17] right hand x relative to nose
+              [18] left hand y relative to nose
+              [19] left hand x relative to nose
+              [20] distance between hands
+              [21] vertical zone indicator (0=face, 0.5=chest, 1=waist)
+            Features 22-25: Handshape Dynamics (per frame)
+              [22] right hand openness delta (change from previous frame)
+              [23] left hand openness delta
+              [24] right finger spread velocity
+              [25] left finger spread velocity
+        """
+        frames = len(pose_sequence)
+        features = np.zeros((frames, 40), dtype=np.float32)
+
+        if frames < 3:
+            return features
+
+        # Key landmarks
+        left_hand = pose_sequence[:, 33:54, :2]    # (frames, 21, 2)
+        right_hand = pose_sequence[:, 54:75, :2]   # (frames, 21, 2)
+        left_hand_3d = pose_sequence[:, 33:54, :]  # (frames, 21, 3) - for palm orientation
+        right_hand_3d = pose_sequence[:, 54:75, :] # (frames, 21, 3)
+        nose = pose_sequence[:, 0, :2]             # (frames, 2)
+        left_shoulder = pose_sequence[:, 11, :2]
+        right_shoulder = pose_sequence[:, 12, :2]
+        chest = (left_shoulder + right_shoulder) / 2
+
+        # Hand centroids
+        lh_centroid = np.mean(left_hand, axis=1)   # (frames, 2)
+        rh_centroid = np.mean(right_hand, axis=1)   # (frames, 2)
+
+        # ── Trajectory features (0-9) ──────────────────────────────────
+
+        # Displacements
+        rh_disp = np.diff(rh_centroid, axis=0)  # (frames-1, 2)
+        lh_disp = np.diff(lh_centroid, axis=0)
+
+        rh_dist = np.linalg.norm(rh_disp, axis=1, keepdims=True)  # (frames-1, 1)
+        lh_dist = np.linalg.norm(lh_disp, axis=1, keepdims=True)
+
+        # [0-3] Normalized movement direction
+        rh_dir = rh_disp / np.maximum(rh_dist, 1e-6)
+        lh_dir = lh_disp / np.maximum(lh_dist, 1e-6)
+        features[1:, 0] = rh_dir[:, 0]  # right dx
+        features[1:, 1] = rh_dir[:, 1]  # right dy
+        features[1:, 2] = lh_dir[:, 0]  # left dx
+        features[1:, 3] = lh_dir[:, 1]  # left dy
+
+        # [4-5] Circularity (rolling cross-product, window=7)
+        window = min(7, frames - 1)
+        for i in range(2, frames):
+            start = max(1, i - window + 1)
+            # Cross product of consecutive displacement vectors
+            rh_seg = rh_disp[start-1:i]
+            lh_seg = lh_disp[start-1:i]
+            if len(rh_seg) >= 2:
+                rh_cross = np.sum(rh_seg[:-1, 0] * rh_seg[1:, 1] - rh_seg[:-1, 1] * rh_seg[1:, 0])
+                lh_cross = np.sum(lh_seg[:-1, 0] * lh_seg[1:, 1] - lh_seg[:-1, 1] * lh_seg[1:, 0])
+                rh_path = np.sum(rh_dist[start-1:i, 0])
+                lh_path = np.sum(lh_dist[start-1:i, 0])
+                features[i, 4] = rh_cross / max(rh_path**2, 1e-6) * len(rh_seg)
+                features[i, 5] = lh_cross / max(lh_path**2, 1e-6) * len(lh_seg)
+
+        # [6-7] Linearity (rolling net/path, window=7)
+        for i in range(1, frames):
+            start = max(0, i - window)
+            rh_net = np.linalg.norm(rh_centroid[i] - rh_centroid[start])
+            lh_net = np.linalg.norm(lh_centroid[i] - lh_centroid[start])
+            rh_path = np.sum(rh_dist[start:i, 0]) if i > start else 1e-6
+            lh_path = np.sum(lh_dist[start:i, 0]) if i > start else 1e-6
+            features[i, 6] = rh_net / max(rh_path, 1e-6)
+            features[i, 7] = lh_net / max(lh_path, 1e-6)
+
+        # [8-9] Cumulative path (normalized by shoulder width for scale invariance)
+        shoulder_width = np.mean(np.linalg.norm(right_shoulder - left_shoulder, axis=1))
+        scale = max(shoulder_width, 1e-4)
+        rh_cum = np.cumsum(rh_dist[:, 0])
+        lh_cum = np.cumsum(lh_dist[:, 0])
+        features[1:, 8] = rh_cum / scale
+        features[1:, 9] = lh_cum / scale
+
+        # ── Palm Orientation features (10-15) ──────────────────────────
+
+        # Palm normal from wrist(0), index_mcp(5), pinky_mcp(17)
+        for hand_3d, offset in [(right_hand_3d, 10), (left_hand_3d, 13)]:
+            wrist = hand_3d[:, 0, :]
+            index_mcp = hand_3d[:, 5, :]
+            pinky_mcp = hand_3d[:, 17, :]
+            v1 = index_mcp - wrist
+            v2 = pinky_mcp - wrist
+            normal = np.cross(v1, v2)  # (frames, 3)
+            norm_mag = np.linalg.norm(normal, axis=1, keepdims=True)
+            normal = normal / np.maximum(norm_mag, 1e-6)
+            features[:, offset] = normal[:, 0]
+            features[:, offset + 1] = normal[:, 1]
+            features[:, offset + 2] = normal[:, 2]
+
+        # ── Hand Location features (16-21) ─────────────────────────────
+
+        # [16-19] Position relative to nose
+        features[:, 16] = rh_centroid[:, 1] - nose[:, 1]  # rh y rel nose
+        features[:, 17] = rh_centroid[:, 0] - nose[:, 0]  # rh x rel nose
+        features[:, 18] = lh_centroid[:, 1] - nose[:, 1]  # lh y rel nose
+        features[:, 19] = lh_centroid[:, 0] - nose[:, 0]  # lh x rel nose
+
+        # [20] Distance between hands (normalized by shoulder width)
+        features[:, 20] = np.linalg.norm(rh_centroid - lh_centroid, axis=1) / scale
+
+        # [21] Vertical zone (right hand): 0=face, 0.5=chest, 1.0=waist
+        shoulder_to_nose = np.abs(chest[:, 1] - nose[:, 1])
+        rh_y_offset = rh_centroid[:, 1] - nose[:, 1]
+        features[:, 21] = np.clip(rh_y_offset / np.maximum(shoulder_to_nose, 1e-4), 0, 2) / 2
+
+        # ── Handshape Dynamics features (22-25) ────────────────────────
+
+        # Compute per-frame hand openness (avg fingertip-to-wrist distance)
+        tip_indices = [4, 8, 12, 16, 20]
+        for hand, offset in [(right_hand, 22), (left_hand, 23)]:
+            wrist = hand[:, 0, :]  # (frames, 2)
+            hand_size = np.linalg.norm(hand[:, 9, :] - wrist, axis=1)  # middle MCP to wrist
+            tip_dists = np.mean([np.linalg.norm(hand[:, t, :] - wrist, axis=1) for t in tip_indices], axis=0)
+            openness = tip_dists / np.maximum(hand_size, 1e-6)
+            # Delta openness
+            features[1:, offset] = np.diff(openness)
+
+        # Finger spread velocity (avg spread angle change between frames)
+        for hand, offset in [(right_hand, 24), (left_hand, 25)]:
+            wrist = hand[:, 0, :]
+            spreads = np.zeros(frames)
+            for i in range(len(tip_indices) - 1):
+                v1 = hand[:, tip_indices[i], :] - wrist
+                v2 = hand[:, tip_indices[i + 1], :] - wrist
+                cos_angle = np.sum(v1 * v2, axis=1) / (np.linalg.norm(v1, axis=1) * np.linalg.norm(v2, axis=1) + 1e-6)
+                spreads += np.degrees(np.arccos(np.clip(cos_angle, -1, 1)))
+            spreads /= (len(tip_indices) - 1)
+            features[1:, offset] = np.diff(spreads)
+
+        # ── Face Region Specificity features (26-29) ──────────────────
+
+        # Face landmarks in 83-point format: indices 75-82
+        # 75=nose tip, 76=left mouth, 77=right mouth, 78=chin,
+        # 79=left eyebrow, 80=right eyebrow, 81=left eye, 82=right eye
+        mouth_center = (pose_sequence[:, 76, :2] + pose_sequence[:, 77, :2]) / 2
+        chin = pose_sequence[:, 78, :2]
+        forehead = (pose_sequence[:, 79, :2] + pose_sequence[:, 80, :2]) / 2
+
+        # [26-27] Right hand distance to mouth and chin (normalized)
+        features[:, 26] = np.linalg.norm(rh_centroid - mouth_center, axis=1) / scale
+        features[:, 27] = np.linalg.norm(rh_centroid - chin, axis=1) / scale
+
+        # [28-29] Left hand distance to mouth and chin (normalized)
+        features[:, 28] = np.linalg.norm(lh_centroid - mouth_center, axis=1) / scale
+        features[:, 29] = np.linalg.norm(lh_centroid - chin, axis=1) / scale
+
+        # ── Hand-Body Contact Detection features (30-31) ──────────────
+
+        # Contact = hand centroid within threshold distance of body landmark
+        contact_thresh = 0.15 * scale  # ~15% of shoulder width
+
+        # [30] Right hand contact score (min distance to nearest body landmark / threshold)
+        rh_to_nose = np.linalg.norm(rh_centroid - nose, axis=1)
+        rh_to_mouth = np.linalg.norm(rh_centroid - mouth_center, axis=1)
+        rh_to_chin = np.linalg.norm(rh_centroid - chin, axis=1)
+        rh_to_chest = np.linalg.norm(rh_centroid - chest, axis=1)
+        rh_min_dist = np.minimum(np.minimum(rh_to_nose, rh_to_mouth), np.minimum(rh_to_chin, rh_to_chest))
+        features[:, 30] = np.clip(1.0 - rh_min_dist / max(contact_thresh, 1e-6), 0, 1)
+
+        # [31] Left hand contact score
+        lh_to_nose = np.linalg.norm(lh_centroid - nose, axis=1)
+        lh_to_mouth = np.linalg.norm(lh_centroid - mouth_center, axis=1)
+        lh_to_chin = np.linalg.norm(lh_centroid - chin, axis=1)
+        lh_to_chest = np.linalg.norm(lh_centroid - chest, axis=1)
+        lh_min_dist = np.minimum(np.minimum(lh_to_nose, lh_to_mouth), np.minimum(lh_to_chin, lh_to_chest))
+        features[:, 31] = np.clip(1.0 - lh_min_dist / max(contact_thresh, 1e-6), 0, 1)
+
+        # ── Movement Repetition Count features (32-33) ────────────────
+
+        # Detect direction reversals in y-axis (vertical bounces = repetitions)
+        for hand_centroid, offset in [(rh_centroid, 32), (lh_centroid, 33)]:
+            y_vel = np.diff(hand_centroid[:, 1])
+            # Count sign changes in y-velocity (each reversal = half a repetition)
+            sign_changes = np.diff(np.sign(y_vel))
+            reversals = np.abs(sign_changes) > 1  # sign changed (not just zero-crossing)
+            # Rolling count of reversals (window=frames), normalized
+            cumulative = np.cumsum(np.concatenate([[0, 0], reversals.astype(np.float32)]))
+            # Encode as repetition density (reversals per 10 frames)
+            window = min(10, frames - 2)
+            for t in range(2, frames):
+                start = max(0, t - window)
+                features[t, offset] = (cumulative[t] - cumulative[start]) / max(window, 1) * 10
+
+        # ── Hand-to-Hand Interaction features (34-37) ─────────────────
+
+        # [34] Hands distance (already have [20] but this is un-normalized for contact)
+        hands_dist = np.linalg.norm(rh_centroid - lh_centroid, axis=1)
+
+        # [34] Hand-hand contact score (1 when touching, 0 when far)
+        hand_contact_thresh = 0.1 * scale
+        features[:, 34] = np.clip(1.0 - hands_dist / max(hand_contact_thresh, 1e-6), 0, 1)
+
+        # [35] Hand symmetry: are hands mirroring each other's movement?
+        if len(rh_centroid) > 1:
+            rh_vel_vec = np.diff(rh_centroid, axis=0)  # (frames-1, 2)
+            lh_vel_vec = np.diff(lh_centroid, axis=0)
+            # Mirror = opposite x, same y
+            mirror_x = -lh_vel_vec[:, 0]  # flip left hand x
+            rh_x = rh_vel_vec[:, 0]
+            # Correlation of mirrored movements
+            rh_norm = np.linalg.norm(rh_vel_vec, axis=1)
+            lh_norm = np.linalg.norm(lh_vel_vec, axis=1)
+            active = (rh_norm > 1e-4) & (lh_norm > 1e-4)
+            if np.sum(active) > 2:
+                cos_mirror = np.sum(rh_vel_vec[active] * np.column_stack([mirror_x[active], lh_vel_vec[active, 1]]), axis=1) / (rh_norm[active] * lh_norm[active] + 1e-6)
+                features[1:, 35] = 0  # default
+                features[1:, 35][active] = cos_mirror
+
+        # [36] Hands crossing: whether hands have crossed over (left hand is right of right hand)
+        features[:, 36] = (lh_centroid[:, 0] > rh_centroid[:, 0]).astype(np.float32)
+
+        # [37] Relative vertical position of hands (positive = right hand above left)
+        features[:, 37] = (lh_centroid[:, 1] - rh_centroid[:, 1]) / scale
+
+        # ── Wrist Rotation features (38-39) ───────────────────────────
+
+        # Track rotation of hand orientation over time using index-pinky vector angle
+        for hand_3d, offset in [(right_hand_3d, 38), (left_hand_3d, 39)]:
+            index_tip = hand_3d[:, 5, :2]   # index MCP
+            pinky_tip = hand_3d[:, 17, :2]   # pinky MCP
+            hand_vec = pinky_tip - index_tip
+            hand_angle = np.arctan2(hand_vec[:, 1], hand_vec[:, 0])
+            # Angular velocity (rotation speed per frame)
+            features[1:, offset] = np.diff(hand_angle)
+            # Wrap to [-pi, pi]
+            features[:, offset] = np.where(features[:, offset] > np.pi, features[:, offset] - 2*np.pi, features[:, offset])
+            features[:, offset] = np.where(features[:, offset] < -np.pi, features[:, offset] + 2*np.pi, features[:, offset])
+
+        return features
+
     def pad_or_truncate_sequence(self, pose_sequence: np.ndarray, max_length: int = 256) -> Tuple[np.ndarray, np.ndarray]:
         """Pad or truncate pose sequence to fixed length."""
         seq_len = len(pose_sequence)
@@ -765,6 +1126,7 @@ class WLASLOpenHandsDataset(Dataset):
 
     def __init__(self, pose_files: List[str], labels: List[str], gloss_to_id: Dict[str, int],
                  max_seq_length: int = 256, augment: bool = False, use_finger_features: bool = True,
+                 use_motion_features: bool = True, use_spatial_features: bool = True,
                  cache_in_memory: bool = True, cache_dir: str = None):
         self.pose_files = pose_files
         self.labels = labels
@@ -772,6 +1134,8 @@ class WLASLOpenHandsDataset(Dataset):
         self.max_seq_length = max_seq_length
         self.augment = augment
         self.use_finger_features = use_finger_features and FINGER_FEATURES_AVAILABLE
+        self.use_motion_features = use_motion_features
+        self.use_spatial_features = use_spatial_features
         self.processor = WLASLPoseProcessor()
         self.cache_in_memory = cache_in_memory
         self.cache_dir = cache_dir
@@ -788,7 +1152,7 @@ class WLASLOpenHandsDataset(Dataset):
         # Use filename + settings as key (filename is unique across the pool)
         basename = os.path.basename(filepath)
         key = hashlib.md5(
-            f"{basename}|{self.max_seq_length}|{self.use_finger_features}".encode()
+            f"{basename}|{self.max_seq_length}|{self.use_finger_features}|{self.use_motion_features}".encode()
         ).hexdigest()[:12]
         return f"{basename}_{key}"
 
@@ -828,7 +1192,14 @@ class WLASLOpenHandsDataset(Dataset):
                 self._result_cache[idx] = disk_cache[file_key]
                 cache_hits += 1
             else:
-                self._result_cache[idx] = self._compute_item(idx)
+                try:
+                    self._result_cache[idx] = self._compute_item(idx)
+                except Exception as e:
+                    # Skip corrupt/unloadable files - mark for removal
+                    print(f"WARNING: Skipping corrupt file {self.pose_files[idx]}: {e}")
+                    self._result_cache[idx] = None
+                    cache_misses += 1
+                    continue
                 if self.cache_dir:
                     disk_cache[file_key] = self._result_cache[idx]
                     new_since_save += 1
@@ -850,6 +1221,20 @@ class WLASLOpenHandsDataset(Dataset):
                 elapsed = _time.perf_counter() - t0
                 print(f"  PRE-CACHE: {idx+1}/{len(self.pose_files)} "
                       f"({cache_hits} cached, {cache_misses} computed, {elapsed:.0f}s)", flush=True)
+
+        # Remove corrupt/skipped samples
+        skipped = [idx for idx, val in self._result_cache.items() if val is None]
+        if skipped:
+            print(f"  PRE-CACHE: Removing {len(skipped)} corrupt samples from dataset")
+            # Rebuild without corrupt entries
+            valid_indices = [i for i in range(len(self.pose_files)) if self._result_cache.get(i) is not None]
+            self.pose_files = [self.pose_files[i] for i in valid_indices]
+            self.labels = [self.labels[i] for i in valid_indices]
+            new_cache = {}
+            for new_idx, old_idx in enumerate(valid_indices):
+                new_cache[new_idx] = self._result_cache[old_idx]
+            self._result_cache = new_cache
+            self._cache = {}
 
         elapsed = _time.perf_counter() - t0
         print(f"  PRE-CACHE: {len(self.pose_files)} samples ready in {elapsed:.1f}s "
@@ -887,6 +1272,20 @@ class WLASLOpenHandsDataset(Dataset):
         else:
             finger_features = None
 
+        # Extract motion features BEFORE padding (on actual data only)
+        use_motion = self.use_motion_features
+        if use_motion:
+            motion_features = self.processor.extract_motion_features(pose_sequence)
+        else:
+            motion_features = None
+
+        # Extract spatial features BEFORE padding (on actual data only)
+        use_spatial = self.use_spatial_features
+        if use_spatial:
+            spatial_features = self.processor.extract_spatial_features(pose_sequence)
+        else:
+            spatial_features = None
+
         # Pad/truncate pose sequence
         pose_sequence, attention_mask = self.processor.pad_or_truncate_sequence(pose_sequence, self.max_seq_length)
 
@@ -898,6 +1297,25 @@ class WLASLOpenHandsDataset(Dataset):
             elif seq_len < self.max_seq_length:
                 padding = np.zeros((self.max_seq_length - seq_len, 30), dtype=np.float32)
                 finger_features = np.vstack([finger_features, padding])
+
+        # Pad motion features to match
+        if use_motion and motion_features is not None:
+            seq_len = len(motion_features)
+            if seq_len > self.max_seq_length:
+                motion_features = motion_features[:self.max_seq_length]
+            elif seq_len < self.max_seq_length:
+                padding = np.zeros((self.max_seq_length - seq_len, 8), dtype=np.float32)
+                motion_features = np.vstack([motion_features, padding])
+
+        # Pad spatial features to match
+        if use_spatial and spatial_features is not None:
+            n_spatial = spatial_features.shape[1]
+            seq_len = len(spatial_features)
+            if seq_len > self.max_seq_length:
+                spatial_features = spatial_features[:self.max_seq_length]
+            elif seq_len < self.max_seq_length:
+                padding = np.zeros((self.max_seq_length - seq_len, n_spatial), dtype=np.float32)
+                spatial_features = np.vstack([spatial_features, padding])
 
         # Get label
         label_text = self.labels[idx]
@@ -913,6 +1331,12 @@ class WLASLOpenHandsDataset(Dataset):
 
         if self.use_finger_features:
             result['finger_features'] = torch.tensor(finger_features, dtype=torch.float32)  # (T, 30)
+
+        if use_motion and motion_features is not None:
+            result['motion_features'] = torch.tensor(motion_features, dtype=torch.float32)  # (T, 8)
+
+        if use_spatial and spatial_features is not None:
+            result['spatial_features'] = torch.tensor(spatial_features, dtype=torch.float32)  # (T, 26)
 
         return result
 

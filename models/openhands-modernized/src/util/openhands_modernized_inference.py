@@ -63,6 +63,8 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
             pose_coord_features=config_dict.get('pose_coord_features', 150),
             use_finger_features=config_dict.get('use_finger_features', False),
             finger_features=config_dict.get('finger_features', 0),
+            use_motion_features=config_dict.get('use_motion_features', False),
+            motion_features=config_dict.get('motion_features', 0),
             pose_features=config_dict.get('pose_features', 150),
             hidden_size=config_dict.get('hidden_size', 64),
             num_hidden_layers=config_dict.get('num_hidden_layers', 3),
@@ -139,6 +141,19 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
             finger_features = np.concatenate([finger_features, padding], axis=0)
         finger_features_tensor = torch.tensor(finger_features, dtype=torch.float32).unsqueeze(0)  # (1, T, 30)
 
+    # Extract motion features before padding if model uses them
+    motion_features_tensor = None
+    if hasattr(model, 'config') and getattr(model.config, 'use_motion_features', False):
+        import numpy as np
+        motion_features = processor.extract_motion_features(pose_sequence)
+        max_length = 256
+        if len(motion_features) > max_length:
+            motion_features = motion_features[:max_length]
+        else:
+            padding = np.zeros((max_length - len(motion_features), 8), dtype=np.float32)
+            motion_features = np.concatenate([motion_features, padding], axis=0)
+        motion_features_tensor = torch.tensor(motion_features, dtype=torch.float32).unsqueeze(0)  # (1, T, 8)
+
     pose_sequence, attention_mask = processor.pad_or_truncate_sequence(pose_sequence, max_length=256)
 
     # Convert to tensors and add batch dimension
@@ -147,7 +162,7 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
 
     # Predict
     with torch.no_grad():
-        logits = model(pose_tensor, mask_tensor, finger_features=finger_features_tensor)  # (1, vocab_size)
+        logits = model(pose_tensor, mask_tensor, finger_features=finger_features_tensor, motion_features=motion_features_tensor)  # (1, vocab_size)
 
         # Apply class masking if configured
         if masked_class_ids:

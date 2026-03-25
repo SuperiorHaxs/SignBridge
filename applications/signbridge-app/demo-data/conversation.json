@@ -21,26 +21,26 @@
     },
     {
       "speaker": "patient",
-      "glosses": ["time", "son", "go", "bed"],
-      "asl_sentence": "It is time for my son to go to bed.",
-      "sign_videos": ["time", "son", "go", "bed"],
-      "sentence_sample": "time-son-go-bed-k"
+      "glosses": ["son", "bed", "time"],
+      "asl_sentence": "My son's bed time.",
+      "sign_videos": ["son", "bed", "time"],
+      "sentence_sample": null
     },
     {
       "speaker": "doctor",
-      "text": "I see. Does he stay active during the day?",
-      "duration": 3.5
+      "text": "I see. Why are you concerned?",
+      "duration": 3.0
     },
     {
       "speaker": "patient",
       "glosses": ["work", "full", "time"],
-      "asl_sentence": "He works full time as a doctor.",
+      "asl_sentence": "He works full time.",
       "sign_videos": ["work", "full", "time"],
       "sentence_sample": "work-full-time-doctor-k"
     },
     {
       "speaker": "doctor",
-      "text": "That's good. Make sure he gets outside and stays active. Take care!",
+      "text": "Ask him to try to keep the same schedule every night. That will help.",
       "duration": 4.5
     },
     {
@@ -51,5 +51,5 @@
       "sentence_sample": null
     }
   ],
-  "breakdown_samples": ["time-son-go-bed-k", "work-full-time-doctor-k"]
+  "breakdown_samples": ["work-full-time-doctor-k"]
 }

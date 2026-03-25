@@ -247,7 +247,7 @@
             letter-spacing: 1px;
         }
         .status-bar .script-line {
-            color: #fff;
+            color: #1a1a2e;
             font-size: 1.1rem;
             font-weight: 600;
         }
@@ -430,7 +430,7 @@
             flex-wrap: wrap;
             gap: 5px;
             padding: 8px 0;
-            max-height: 140px;
+            max-height: 50vh;
             overflow-y: auto;
         }
         .vocab-chip-container.open { display: flex; }
@@ -455,33 +455,7 @@
         .vocab-chip-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
         .vocab-chip-container::-webkit-scrollbar-track { background: transparent; }
 
-        /* ══════════════════════════════════════════
-           MOBILE
-           ══════════════════════════════════════════ */
-        @media (max-width: 768px) {
-            .conversation-layout {
-                flex-direction: column;
-                height: calc(100vh - 56px);
-                padding: 10px;
-                gap: 10px;
-            }
-            .camera-side { flex: 1; min-height: 0; }
-            .camera-view { min-height: 200px; }
-            .transcript-side {
-                flex: none;
-                min-width: unset;
-                max-width: 100%;
-                max-height: 220px;
-            }
-            .transcript-side.collapsed {
-                display: none !important;
-            }
-            .transcript-msgs { padding: 10px; gap: 6px; }
-            .msg { font-size: 0.82rem; padding: 8px 10px; }
-            .controls-row { padding: 6px 10px; }
-            .btn { padding: 8px 18px; font-size: 0.82rem; }
-
-        }
+        /* Responsive styles moved to consolidated media queries at end of <style> */
 
         /* ══════════════════════════════════════════
            HOME / SCENARIO SELECTION
@@ -835,14 +809,7 @@
             line-height: 1.5;
         }
 
-        @media (max-width: 768px) {
-            .home-screen { padding: 20px 12px; }
-            .scenario-grid { grid-template-columns: 1fr; }
-            .home-title h1 { font-size: 1.5rem; }
-            .mode-btn { padding: 8px 16px; font-size: 0.8rem; }
-            .lc-camera-view { height: 150px; }
-            .live-demo-caption-text { font-size: 1.1rem; }
-        }
+        /* Responsive styles for home/live-demo moved to consolidated media queries at end of <style> */
 
         /* ══════════════════════════════════════════
            BREAKDOWN PHASE
@@ -929,6 +896,327 @@
             border: none; cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
         }
         #btnHowItWorks:hover { opacity: 0.85; }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Tablets (769px - 1024px)
+           ══════════════════════════════════════════ */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .app-header { padding: 12px 20px; }
+            .app-logo { font-size: 1.8rem; }
+
+            .conversation-layout { padding: 12px; gap: 12px; }
+            .transcript-side { min-width: 240px; max-width: 300px; }
+
+            .home-screen { padding: 24px 16px; }
+            .scenario-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+
+            .live-demo-container { max-width: 600px; }
+            .live-demo-caption-box { padding: 20px 24px; }
+            .live-demo-caption-text { font-size: 1.4rem; }
+
+            #phaseBreakdown { padding: 20px 16px; }
+            .segment-card, .prediction-card { width: 130px; }
+            .segment-card video, .prediction-card video { height: 85px; }
+
+            .pip-self { width: 140px; height: 105px; }
+        }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Phones / Small Tablets (max 768px)
+           ══════════════════════════════════════════ */
+        @media (max-width: 768px) {
+            /* -- Header -- */
+            .app-header {
+                padding: 10px 14px;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .app-logo { font-size: 1.6rem; }
+            .htog-btn {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+            }
+
+            /* -- Conversation layout -- */
+            .conversation-layout {
+                flex-direction: column;
+                height: calc(100vh - 56px);
+                padding: 8px;
+                gap: 8px;
+            }
+            .camera-side { flex: 1; min-height: 0; }
+            .camera-view { min-height: 180px; }
+            .transcript-side {
+                flex: none;
+                min-width: unset;
+                max-width: 100%;
+                max-height: 200px;
+                border-radius: 10px;
+            }
+            .transcript-side.collapsed { display: none !important; }
+            .transcript-title { padding: 10px 14px; font-size: 0.82rem; }
+            .transcript-msgs { padding: 10px; gap: 6px; }
+            .msg { font-size: 0.82rem; padding: 8px 10px; }
+
+            /* -- Controls -- */
+            .controls-row {
+                padding: 6px 8px;
+                gap: 8px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .btn {
+                padding: 10px 18px;
+                font-size: 0.82rem;
+                min-height: 44px;
+            }
+
+            /* -- PIP self-view -- */
+            .pip-self { width: 120px; height: 90px; border-radius: 8px; }
+
+            /* -- Status bar -- */
+            .status-bar { padding: 8px 12px; font-size: 0.85rem; min-height: 44px; }
+
+            /* -- Camera box -- */
+            .camera-box { border-radius: 10px; }
+            .camera-topbar { padding: 6px 12px; }
+            .camera-title { font-size: 0.72rem; }
+
+            /* -- Home screen -- */
+            .home-screen { padding: 20px 12px; }
+            .home-title h1 { font-size: 1.5rem; }
+            .home-subtitle { font-size: 0.85rem; margin-bottom: 20px; }
+            .scenario-grid { grid-template-columns: 1fr; gap: 10px; }
+            .scenario-card { padding: 14px 16px; gap: 12px; min-height: 44px; }
+            .scenario-icon { font-size: 1.3rem; }
+            .scenario-info h3 { font-size: 0.9rem; }
+
+            /* -- Mode toggle -- */
+            .mode-btn { padding: 8px 16px; font-size: 0.8rem; min-height: 44px; }
+            .mode-toggle-row { margin-bottom: 20px; }
+
+            /* -- Training subtabs -- */
+            .training-subtabs { margin-bottom: 20px; }
+            .subtab-btn { padding: 8px 14px; font-size: 0.75rem; min-height: 44px; }
+
+            /* -- Live captions -- */
+            .live-captions-layout { padding: 12px; gap: 10px; max-width: 100%; }
+            .lc-camera-view { height: 150px; }
+            .lc-caption-area { padding: 14px; }
+            .lc-paragraph { font-size: 0.95rem; line-height: 1.7; }
+
+            /* -- Live demo -- */
+            #phaseLiveDemo { padding: 14px; height: calc(100vh - 56px); }
+            .live-demo-container { max-width: 100%; gap: 12px; }
+            .live-demo-branding .brand-name { font-size: 2.2rem; }
+            .live-demo-branding .brand-tagline { font-size: 0.78rem; }
+            .live-demo-camera { border-radius: 10px; }
+            .live-demo-caption-box { padding: 18px 16px; border-radius: 10px; }
+            .live-demo-caption-text { font-size: 1.1rem; }
+
+            /* -- Breakdown -- */
+            #phaseBreakdown { padding: 16px 12px; }
+            .breakdown-header h2 { font-size: 1.2rem; }
+            .breakdown-header p { font-size: 0.82rem; }
+            .segment-grid { gap: 8px; }
+            .segment-card, .prediction-card { width: 120px; }
+            .segment-card video, .prediction-card video { height: 80px; }
+            .pipeline-step { padding: 14px; }
+            .construction-display { gap: 10px; }
+            .construct-box { min-width: 140px; padding: 10px; }
+            .construct-arrow { font-size: 1.2rem; }
+            .sentence-tab { padding: 6px 12px; font-size: 0.8rem; min-height: 44px; }
+            .breakdown-nav button { padding: 10px 18px; font-size: 0.82rem; min-height: 44px; }
+
+            /* -- Back button -- */
+            .back-btn { min-height: 44px; padding: 8px 14px; font-size: 0.78rem; }
+
+            /* -- Vocab panel -- */
+            .vocab-toggle-btn { min-height: 44px; padding: 8px 14px; }
+            .vocab-chip { padding: 4px 10px; font-size: 0.7rem; }
+        }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Small phones portrait (max 480px)
+           ══════════════════════════════════════════ */
+        @media (max-width: 480px) {
+            /* -- Header stacks toggles below logo -- */
+            .app-header {
+                padding: 8px 10px;
+                justify-content: center;
+            }
+            .app-logo { font-size: 1.4rem; width: 100%; text-align: center; }
+            .htog-btn {
+                padding: 5px 10px;
+                font-size: 0.65rem;
+            }
+
+            /* -- Conversation -- */
+            .conversation-layout {
+                padding: 6px;
+                gap: 6px;
+                height: calc(100vh - 80px);
+            }
+            .camera-view { min-height: 140px; }
+            .transcript-side { max-height: 160px; }
+            .transcript-title { padding: 8px 10px; font-size: 0.78rem; }
+            .transcript-msgs { padding: 8px; gap: 4px; }
+            .msg { font-size: 0.78rem; padding: 6px 8px; max-width: 95%; }
+
+            /* -- Controls -- */
+            .controls-row { padding: 4px 6px; gap: 6px; }
+            .btn { padding: 8px 14px; font-size: 0.78rem; }
+
+            /* -- PIP -- */
+            .pip-self { width: 100px; height: 75px; bottom: 8px; right: 8px; border-radius: 6px; }
+
+            /* -- Status bar -- */
+            .status-bar { padding: 6px 8px; font-size: 0.78rem; }
+            .status-bar .script-line { font-size: 0.95rem; }
+
+            /* -- Home screen -- */
+            .home-screen { padding: 14px 8px; }
+            .home-title h1 { font-size: 1.3rem; }
+            .home-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
+            .scenario-card { padding: 12px; gap: 10px; }
+            .scenario-icon { font-size: 1.2rem; width: 30px; }
+            .scenario-info h3 { font-size: 0.85rem; }
+            .scenario-info p { font-size: 0.7rem; }
+
+            /* -- Mode toggle smaller -- */
+            .mode-toggle-row { margin-bottom: 16px; }
+            .mode-btn { padding: 7px 12px; font-size: 0.75rem; gap: 5px; }
+            .mode-icon { font-size: 0.85rem; }
+            .mode-description { font-size: 0.7rem; }
+
+            /* -- Training subtabs -- */
+            .training-subtabs { margin-bottom: 16px; }
+            .subtab-btn { padding: 7px 10px; font-size: 0.7rem; }
+
+            /* -- Live captions -- */
+            .live-captions-layout { padding: 8px; gap: 8px; }
+            .lc-camera-view { height: 120px; }
+            .lc-paragraph { font-size: 0.88rem; }
+            .lc-caption-area { padding: 10px; gap: 10px; }
+
+            /* -- Live demo -- */
+            #phaseLiveDemo { padding: 10px; }
+            .live-demo-container { gap: 10px; }
+            .live-demo-branding { margin-bottom: 6px; }
+            .live-demo-branding .brand-name { font-size: 1.8rem; }
+            .live-demo-branding .brand-tagline { font-size: 0.72rem; }
+            .live-demo-camera { border-radius: 8px; aspect-ratio: 3/4; }
+            .live-demo-caption-box { padding: 14px 12px; border-radius: 8px; }
+            .live-demo-caption-text { font-size: 1rem; }
+            .live-demo-caption-label { font-size: 0.65rem; margin-bottom: 8px; }
+
+            /* -- Breakdown -- */
+            #phaseBreakdown { padding: 12px 8px; }
+            .breakdown-header { margin-bottom: 16px; }
+            .breakdown-header h2 { font-size: 1.05rem; }
+            .breakdown-header p { font-size: 0.78rem; }
+            .segment-grid { gap: 6px; }
+            .segment-card, .prediction-card { width: 110px; }
+            .segment-card video, .prediction-card video { height: 70px; }
+            .seg-label { font-size: 0.68rem; padding: 3px 6px; }
+            .pred-info { padding: 6px; }
+            .pred-top1 { font-size: 0.72rem; }
+            .top-k-list { font-size: 0.65rem; }
+            .pipeline-step { padding: 12px; margin-bottom: 12px; }
+            .step-title { font-size: 0.85rem; }
+            .construction-display { flex-direction: column; gap: 8px; }
+            .construct-arrow { transform: rotate(90deg); }
+            .construct-box { min-width: unset; width: 100%; }
+            .sentence-tab { padding: 5px 10px; font-size: 0.75rem; }
+            .breakdown-nav { gap: 8px; }
+            .breakdown-nav button { padding: 8px 16px; font-size: 0.8rem; width: 100%; }
+
+            /* -- Vocab chips -- */
+            .vocab-chip-container { max-height: 40vh; }
+        }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Portrait orientation fixes
+           ══════════════════════════════════════════ */
+        @media (orientation: portrait) and (max-width: 768px) {
+            /* In portrait, camera takes priority, transcript is small */
+            .conversation-layout { flex-direction: column; }
+            .camera-side { flex: 1; }
+            .transcript-side { flex: none; max-height: 25vh; }
+
+            /* Live demo camera should be taller in portrait */
+            .live-demo-camera { aspect-ratio: 3/4; }
+        }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Landscape orientation on phones
+           ══════════════════════════════════════════ */
+        @media (orientation: landscape) and (max-height: 500px) {
+            /* Very short viewport in landscape phone */
+            .app-header { padding: 4px 12px; }
+            .app-logo { font-size: 1.2rem; }
+            .htog-btn { padding: 4px 10px; font-size: 0.65rem; min-height: 36px; }
+
+            .conversation-layout {
+                flex-direction: row;
+                height: calc(100vh - 40px);
+                padding: 4px 8px;
+                gap: 6px;
+            }
+            .camera-side { flex: 2; }
+            .camera-view { min-height: 100px; }
+            .transcript-side {
+                flex: 1;
+                min-width: 180px;
+                max-width: 260px;
+                max-height: unset;
+            }
+            .controls-row { padding: 4px 6px; gap: 6px; }
+            .btn { padding: 6px 14px; font-size: 0.75rem; min-height: 36px; }
+            .status-bar { padding: 4px 8px; font-size: 0.75rem; min-height: 32px; }
+            .camera-topbar { padding: 4px 8px; }
+            .pip-self { width: 100px; height: 75px; }
+
+            /* Home screen in landscape phone */
+            .home-screen { padding: 10px; }
+            .home-title h1 { font-size: 1.3rem; }
+            .scenario-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+
+            /* Live demo in landscape */
+            #phaseLiveDemo { padding: 8px; height: calc(100vh - 40px); }
+            .live-demo-branding { margin-bottom: 4px; }
+            .live-demo-branding .brand-name { font-size: 1.6rem; }
+            .live-demo-branding .brand-tagline { display: none; }
+            .live-demo-camera { aspect-ratio: 16/9; }
+            .live-demo-caption-box { padding: 10px 14px; }
+            .live-demo-caption-text { font-size: 1rem; }
+
+            /* Breakdown in landscape phone */
+            #phaseBreakdown { padding: 10px; }
+            .breakdown-header { margin-bottom: 12px; }
+            .breakdown-header h2 { font-size: 1.1rem; }
+
+            /* Live captions in landscape */
+            .lc-camera-view { height: 100px; }
+        }
+
+        /* ══════════════════════════════════════════
+           RESPONSIVE — Tablet landscape specific
+           ══════════════════════════════════════════ */
+        @media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
+            .conversation-layout {
+                flex-direction: row;
+                height: calc(100vh - 56px);
+            }
+            .camera-side { flex: 2; }
+            .transcript-side { min-width: 240px; max-width: 300px; max-height: unset; }
+        }
+
+        /* Ensure no horizontal scroll globally */
+        html, body { max-width: 100vw; overflow-x: hidden; }
     </style>
 </head>
 <body>
@@ -936,6 +1224,7 @@
 <header class="app-header">
     <div class="app-logo" style="cursor:pointer" onclick="showHomeScreen()">Sign<span>Bridge</span></div>
     <div style="display:flex;gap:8px;align-items:center">
+        <button class="back-btn" id="headerHomeBtn" onclick="showHomeScreen()" style="display:none">&#x1F3E0; Home</button>
         <div class="header-toggle" id="headerModeToggle">
             <button class="htog-btn {{ 'active' if mode == 'demo' }}" id="htogDemo" onclick="setAppMode('demo')" style="--active-color:#f0a050">Training</button>
             <button class="htog-btn {{ 'active' if mode == 'live' }}" id="htogLive" onclick="setAppMode('live')" style="--active-color:#4caf80">Live</button>
@@ -951,32 +1240,16 @@
      HOME SCREEN — Scenario Selection
      ══════════════════════════════════════════ -->
 <div class="home-screen" id="homeScreen">
-    <div class="home-title">
-        <h1>Welcome to <em>Sign<span>Bridge</span></em></h1>
-    </div>
-    <div class="home-subtitle">Choose a scenario to begin communicating</div>
+    <div class="home-subtitle" style="margin-top:12px">Choose a scenario to begin communicating</div>
 
     <!-- Training sub-tabs: only shown in demo/training mode -->
     <div class="training-subtabs" id="trainingSubtabs">
         <button class="subtab-btn active" id="subtabScripted" onclick="switchTrainingSubTab('scripted')">&#x1F3AC; Scripted Demo</button>
-        <button class="subtab-btn" id="subtabLiveCaptions" onclick="switchTrainingSubTab('live-captions')">&#x1F3AC; Caption Video</button>
+        <button class="subtab-btn" id="subtabTrainingLiveDemo" onclick="switchTrainingSubTab('live-demo')">&#x1F4F7; Live Demo</button>
     </div>
 
     <!-- SCRIPTED DEMO content -->
     <div id="demoScenarios">
-
-    <!-- Mode toggle: In-Person vs Video Call -->
-    <div class="mode-toggle-row">
-        <div class="mode-toggle" id="modeToggle">
-            <button class="mode-btn active" id="btnInPerson" onclick="setInteractionMode('in-person')">
-                <span class="mode-icon">&#x1F91D;</span> In-Person
-            </button>
-            <button class="mode-btn" id="btnVideoCall" onclick="setInteractionMode('video-call')">
-                <span class="mode-icon">&#x1F4F9;</span> Video Call
-            </button>
-        </div>
-        <div class="mode-description" id="modeDescription">Speaker is physically present — full camera view for signing</div>
-    </div>
 
     <div class="home-section-label">Specialized</div>
     <div class="scenario-grid">
@@ -988,18 +1261,18 @@
                 <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
             </div>
         </div>
-    </div>
-
-    <div class="home-section-label">General Scenarios</div>
-    <div class="scenario-grid">
-        <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
+        <div class="scenario-card featured" onclick="selectScenario('restaurant', 'Restaurant')">
             <div class="scenario-icon">&#x1F37D;</div>
             <div class="scenario-info">
                 <h3>Restaurant</h3>
                 <p>Ordering food, asking about the menu, dietary needs</p>
-                <span class="scenario-badge badge-generic">General model</span>
+                <span class="scenario-badge badge-healthcare">Restaurant model</span>
             </div>
         </div>
+    </div>
+
+    <div class="home-section-label">General Scenarios</div>
+    <div class="scenario-grid">
         <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
             <div class="scenario-icon">&#x1F6D2;</div>
             <div class="scenario-info">
@@ -1060,47 +1333,22 @@
 
     </div><!-- /#demoScenarios -->
 
-    <!-- CAPTION VIDEO scenarios (hidden by default) -->
-    <div id="liveCaptionsScenarios" style="display:none">
-
-    <div class="home-section-label">Specialized</div>
-    <div class="scenario-grid">
-        <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('doctor_visit', 'Doctor Visit')">
-            <div class="scenario-icon">&#x1F3E5;</div>
-            <div class="scenario-info">
-                <h3>Doctor Visit</h3>
-                <p>Upload a signing video — get it back with English captions burned in</p>
-                <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+    <!-- TRAINING LIVE DEMO content (hidden by default) -->
+    <div id="trainingLiveDemoTab" style="display:none; text-align:center; max-width:600px; margin:0 auto; padding-top:16px;">
+        <div class="scenario-card featured" onclick="startLiveDemo()" style="justify-content:center; cursor:pointer;">
+            <div class="scenario-icon" style="font-size:2rem">&#x1F4F7;</div>
+            <div class="scenario-info" style="text-align:left">
+                <h3>Start Live Demo</h3>
+                <p>Opens camera with real-time closed captioning display</p>
+                <span class="scenario-badge badge-healthcare">Live camera demo</span>
             </div>
         </div>
     </div>
 
-    <div class="home-section-label">General Scenarios <span style="color:#444;font-size:0.65rem;margin-left:8px">— coming soon</span></div>
-    <div class="scenario-grid">
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon">&#x1F37D;</div>
-            <div class="scenario-info"><h3>Restaurant</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon">&#x1F6D2;</div>
-            <div class="scenario-info"><h3>Shopping</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon">&#x1F4BC;</div>
-            <div class="scenario-info"><h3>Job Interview</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon">&#x1F3E6;</div>
-            <div class="scenario-info"><h3>Banking</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-    </div>
-
-    </div><!-- /#liveCaptionsScenarios -->
-
     <!-- LIVE MODE sub-tabs: only shown in live mode -->
     <div class="training-subtabs" id="liveSubtabs" style="display:none">
-        <button class="subtab-btn active" id="subtabLiveScenarios" onclick="switchLiveSubTab('scenarios')">&#x1F3AF; Scenarios</button>
-        <button class="subtab-btn" id="subtabLiveDemo" onclick="switchLiveSubTab('demo')">&#x1F4F7; Live Demo</button>
+        <button class="subtab-btn active" id="subtabLiveScenarios" onclick="switchLiveSubTab('scenarios')">&#x1F3AF; Conversations</button>
+        <button class="subtab-btn" id="subtabLiveCaptions" onclick="switchLiveSubTab('live-captions')">&#x1F3AC; Caption Video</button>
     </div>
 
     <!-- LIVE SCENARIOS content (same scenario cards, shown in live mode by default) -->
@@ -1125,20 +1373,78 @@
                     <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
                 </div>
             </div>
+            <div class="scenario-card featured" onclick="selectScenario('restaurant', 'Restaurant')">
+                <div class="scenario-icon">&#x1F37D;</div>
+                <div class="scenario-info"><h3>Restaurant</h3><p>Ordering food, asking about the menu, dietary needs</p><span class="scenario-badge badge-healthcare">Restaurant model</span></div>
+            </div>
         </div>
         <div class="home-section-label">General Scenarios</div>
         <div class="scenario-grid">
-            <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
-                <div class="scenario-icon">&#x1F37D;</div>
-                <div class="scenario-info"><h3>Restaurant</h3><p>Ordering food, asking about the menu, dietary needs</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
             <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
                 <div class="scenario-icon">&#x1F6D2;</div>
                 <div class="scenario-info"><h3>Shopping</h3><p>Retail stores, finding items, asking about prices</p><span class="scenario-badge badge-generic">General model</span></div>
             </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Job Interview')">
+                <div class="scenario-icon">&#x1F4BC;</div>
+                <div class="scenario-info"><h3>Job Interview</h3><p>Professional conversations, interviews, workplace meetings</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Banking')">
+                <div class="scenario-icon">&#x1F3E6;</div>
+                <div class="scenario-info"><h3>Banking</h3><p>Bank visits, account inquiries, financial services</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
             <div class="scenario-card" onclick="selectScenario('generic', 'Emergency')">
                 <div class="scenario-icon">&#x1F6A8;</div>
                 <div class="scenario-info"><h3>Emergency</h3><p>Urgent situations, communicating with first responders</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Education')">
+                <div class="scenario-icon">&#x1F393;</div>
+                <div class="scenario-info"><h3>Education</h3><p>Classroom, parent-teacher conferences, campus interactions</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Travel')">
+                <div class="scenario-icon">&#x2708;</div>
+                <div class="scenario-info"><h3>Travel</h3><p>Airport, hotel check-in, directions, transportation</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+            <div class="scenario-card" onclick="selectScenario('generic', 'Government Services')">
+                <div class="scenario-icon">&#x1F3DB;</div>
+                <div class="scenario-info"><h3>Government Services</h3><p>DMV, post office, social services, public offices</p><span class="scenario-badge badge-generic">General model</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CAPTION VIDEO scenarios (live mode) -->
+    <div id="liveCaptionsScenarios" style="display:none">
+        <div class="home-section-label">Specialized</div>
+        <div class="scenario-grid">
+            <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('doctor_visit', 'Doctor Visit')">
+                <div class="scenario-icon">&#x1F3E5;</div>
+                <div class="scenario-info">
+                    <h3>Doctor Visit</h3>
+                    <p>Upload a signing video — get it back with English captions burned in</p>
+                    <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+                </div>
+            </div>
+            <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('restaurant', 'Restaurant')">
+                <div class="scenario-icon">&#x1F37D;</div>
+                <div class="scenario-info">
+                    <h3>Restaurant</h3>
+                    <p>Upload a signing video — get it back with English captions burned in</p>
+                    <span class="scenario-badge badge-healthcare">Restaurant model</span>
+                </div>
+            </div>
+        </div>
+        <div class="home-section-label">General Scenarios <span style="color:#444;font-size:0.65rem;margin-left:8px">— coming soon</span></div>
+        <div class="scenario-grid">
+            <div class="scenario-card coming-soon">
+                <div class="scenario-icon">&#x1F6D2;</div>
+                <div class="scenario-info"><h3>Shopping</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+            </div>
+            <div class="scenario-card coming-soon">
+                <div class="scenario-icon">&#x1F4BC;</div>
+                <div class="scenario-info"><h3>Job Interview</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+            </div>
+            <div class="scenario-card coming-soon">
+                <div class="scenario-icon">&#x1F3E6;</div>
+                <div class="scenario-info"><h3>Banking</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
             </div>
         </div>
     </div>
@@ -1390,6 +1696,7 @@ function selectScenario(domain, scenarioName) {
     selectedScenario = scenarioName;
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('phaseConvo').style.display = 'flex';
+    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
 
     const modeLabel = interactionMode === 'in-person' ? 'In-Person' : 'Video Call';
     document.getElementById('scenarioLabel').textContent = scenarioName + ' \u2022 ' + modeLabel;
@@ -1498,10 +1805,9 @@ let currentTrainingSubTab = 'scripted';
 function switchTrainingSubTab(tab) {
     currentTrainingSubTab = tab;
     document.getElementById('subtabScripted').classList.toggle('active', tab === 'scripted');
-    document.getElementById('subtabLiveCaptions').classList.toggle('active', tab === 'live-captions');
+    document.getElementById('subtabTrainingLiveDemo').classList.toggle('active', tab === 'live-demo');
     document.getElementById('demoScenarios').style.display = tab === 'scripted' ? 'block' : 'none';
-    document.getElementById('liveCaptionsScenarios').style.display = tab === 'live-captions' ? 'block' : 'none';
-    document.querySelector('.mode-toggle-row').style.display = tab === 'scripted' ? 'block' : 'none';
+    document.getElementById('trainingLiveDemoTab').style.display = tab === 'live-demo' ? 'block' : 'none';
 }
 
 // Show/hide sub-tabs based on app mode
@@ -1510,6 +1816,7 @@ function updateSubTabVisibility() {
     const liveTabs = document.getElementById('liveSubtabs');
     const demoScenarios = document.getElementById('demoScenarios');
     const liveCaptionsScenarios = document.getElementById('liveCaptionsScenarios');
+    const trainingLiveDemoTab = document.getElementById('trainingLiveDemoTab');
     const liveScenarios = document.getElementById('liveScenarios');
     const liveDemoTab = document.getElementById('liveDemoTab');
 
@@ -1518,17 +1825,19 @@ function updateSubTabVisibility() {
         liveTabs.style.display = 'none';
         // Show whichever training sub-tab is active
         demoScenarios.style.display = currentTrainingSubTab === 'scripted' ? 'block' : 'none';
-        liveCaptionsScenarios.style.display = currentTrainingSubTab === 'live-captions' ? 'block' : 'none';
+        trainingLiveDemoTab.style.display = currentTrainingSubTab === 'live-demo' ? 'block' : 'none';
+        liveCaptionsScenarios.style.display = 'none';
         liveScenarios.style.display = 'none';
         liveDemoTab.style.display = 'none';
     } else {
         trainingTabs.style.display = 'none';
         liveTabs.style.display = 'flex';
         demoScenarios.style.display = 'none';
-        liveCaptionsScenarios.style.display = 'none';
+        trainingLiveDemoTab.style.display = 'none';
+        liveDemoTab.style.display = 'none';
         // Show whichever live sub-tab is active
         liveScenarios.style.display = currentLiveSubTab === 'scenarios' ? 'block' : 'none';
-        liveDemoTab.style.display = currentLiveSubTab === 'demo' ? 'block' : 'none';
+        liveCaptionsScenarios.style.display = currentLiveSubTab === 'live-captions' ? 'block' : 'none';
     }
 }
 
@@ -1540,9 +1849,9 @@ let currentLiveSubTab = 'scenarios';
 function switchLiveSubTab(tab) {
     currentLiveSubTab = tab;
     document.getElementById('subtabLiveScenarios').classList.toggle('active', tab === 'scenarios');
-    document.getElementById('subtabLiveDemo').classList.toggle('active', tab === 'demo');
+    document.getElementById('subtabLiveCaptions').classList.toggle('active', tab === 'live-captions');
     document.getElementById('liveScenarios').style.display = tab === 'scenarios' ? 'block' : 'none';
-    document.getElementById('liveDemoTab').style.display = tab === 'demo' ? 'block' : 'none';
+    document.getElementById('liveCaptionsScenarios').style.display = tab === 'live-captions' ? 'block' : 'none';
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1553,6 +1862,7 @@ let liveDemoCameraStream = null;
 async function startLiveDemo() {
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('phaseLiveDemo').style.display = 'flex';
+    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
     lockHeaderToggles();
 
     // Start camera — simplified constraints for iPad/Safari compatibility
@@ -1605,6 +1915,7 @@ function selectLiveCaptionsScenario(domain, scenarioName) {
     lcSelectedScenario = scenarioName;
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('phaseLiveCaptions').style.display = 'flex';
+    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
     document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
     // Reset state
     lcGlossBuffer = [];
@@ -1847,12 +2158,22 @@ function cvReset() {
 function selectLiveCaptionsScenario(domain, scenarioName) {
     document.getElementById('homeScreen').style.display = 'none';
     document.getElementById('phaseLiveCaptions').style.display = 'flex';
+    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
     document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
     cvReset();
 }
 
 function showHomeScreen() {
+    // Stop any ongoing playback immediately
+    isPlaying = false;
+    cancelAllSleeps();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    // Stop any playing sign video
+    if (signVid) { signVid.pause(); signVid.removeAttribute('src'); signVid.style.display = 'none'; }
+    // Stop speech recognition if active
+    if (liveRecognition) { try { liveRecognition.abort(); } catch(e) {} liveRecognition = null; }
     // Reset and go back to home
+    document.getElementById('headerHomeBtn').style.display = 'none';
     document.getElementById('homeScreen').style.display = 'block';
     document.getElementById('phaseConvo').style.display = 'none';
     document.getElementById('phaseLiveCaptions').style.display = 'none';
@@ -1896,7 +2217,15 @@ cameraView.appendChild(signVid);
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
-const sleep = ms => new Promise(r => setTimeout(r, ms));
+let _sleepTimers = [];
+const sleep = ms => new Promise(r => {
+    const id = setTimeout(r, ms);
+    _sleepTimers.push(id);
+});
+function cancelAllSleeps() {
+    _sleepTimers.forEach(id => clearTimeout(id));
+    _sleepTimers = [];
+}
 
 // Validate LLM sentence — reject if it goes off-script
 function isLLMSentenceValid(llmSentence, glosses, hardcoded) {
@@ -2018,8 +2347,14 @@ function speak(text) {
         function doSpeak() {
             speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
-            u.rate = 0.9;
-            u.pitch = 1.0;
+            u.rate = 0.95;
+            u.pitch = 1.3;
+            // Prefer a young male voice
+            const voices = speechSynthesis.getVoices();
+            const preferred = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang) && !/female/i.test(v.name))
+                || voices.find(v => /David|Mark|James|Daniel|Guy/i.test(v.name))
+                || voices.find(v => /en/i.test(v.lang) && !/female|zira|hazel|susan|jenny/i.test(v.name));
+            if (preferred) u.voice = preferred;
             const timeout = setTimeout(() => { console.log('[TTS] Timeout'); speechSynthesis.cancel(); resolve(); },
                 Math.max(text.split(' ').length * 500, 2500) + 3000);
             u.onend = () => { clearTimeout(timeout); resolve(); };
@@ -2119,6 +2454,7 @@ function listenForSpeech(expectedText) {
 // ══════════════════════════════════════════════════════════════
 function playSignVideo(url) {
     return new Promise(resolve => {
+        if (!isPlaying) { resolve(false); return; }
         let done = false;
         function finish(r) {
             if (done) return;
@@ -2126,6 +2462,7 @@ function playSignVideo(url) {
             signVid.onended = null;
             signVid.onerror = null;
             signVid.onloadeddata = null;
+            signVid.onpause = null;
             clearTimeout(to);
             resolve(r);
         }
@@ -2136,6 +2473,7 @@ function playSignVideo(url) {
         signVid.onloadeddata = null;
 
         const to = setTimeout(() => finish(false), 5000);
+        signVid.onpause = () => { if (!isPlaying) finish(false); };
 
         signVid.onerror = () => finish(false);
         signVid.onloadedmetadata = () => {
@@ -2230,10 +2568,12 @@ btnRestart.addEventListener('click', () => {
 
 async function playNextTurn() {
     if (currentTurn >= conversation.turns.length || !isPlaying) {
-        statusBar.innerHTML = '<span class="sentence">Conversation complete!</span>';
-        stopCamera();
-        if (MODE === 'demo') {
-            document.getElementById('btnHowItWorks').style.display = 'inline-block';
+        if (isPlaying) {
+            statusBar.innerHTML = '<span class="sentence">Conversation complete!</span>';
+            stopCamera();
+            if (MODE === 'demo') {
+                document.getElementById('btnHowItWorks').style.display = 'inline-block';
+            }
         }
         return;
     }
@@ -2245,13 +2585,16 @@ async function playNextTurn() {
         await playPatientTurnDemo(turn);
     }
 
+    if (!isPlaying) return;
     currentTurn++;
     await sleep(600);
+    if (!isPlaying) return;
     playNextTurn();
 }
 
 // ── Demo: Speaker turn ──
 async function playDoctorTurnDemo(turn) {
+    if (!isPlaying) return;
     signVid.style.display = 'none';
 
     // If user is the signer (method=sign), display the speaker's line as text (no TTS)
@@ -2629,6 +2972,7 @@ function recordFromCamera(durationMs) {
 
 // ── Demo mode: play sign videos → LLM → TTS (original behavior) ──
 async function playPatientTurnDemo(turn) {
+    if (!isPlaying) return;
     const glosses = turn.glosses;
     const signs = turn.sign_videos || glosses;
     const sampleId = turn.sentence_sample;
@@ -2640,39 +2984,43 @@ async function playPatientTurnDemo(turn) {
     let usedSentenceVideo = false;
 
     // Try full-sentence video from samples first
-    if (sampleId) {
+    if (sampleId && isPlaying) {
         const sampleUrl = `/samples/${sampleId}/original_video.mp4`;
         console.log('[Demo] Trying sample video:', sampleUrl);
         const played = await playSignVideo(sampleUrl);
         if (played) {
             usedSentenceVideo = true;
-            // Show all glosses after the full video finishes
             statusBar.innerHTML = '<span class="gloss">Detected: ' + glosses.map(g => g.toUpperCase()).join(' ') + '</span>';
         }
     }
 
     // Fallback: play individual sign-bank videos
-    if (!usedSentenceVideo) {
+    if (!usedSentenceVideo && isPlaying) {
         let accumulated = [];
-        for (let i = 0; i < signs.length; i++) {
-            // Play video first, then show the detected gloss after it finishes
+        for (let i = 0; i < signs.length && isPlaying; i++) {
             const played = await playSignVideo(`/sign-bank/${signs[i]}.mp4`);
+            if (!isPlaying) return;
             if (!played) await sleep(1200);
+            if (!isPlaying) return;
 
             accumulated.push(signs[i].toUpperCase());
             statusBar.innerHTML = '<span class="gloss">Detected: ' + accumulated.join(' ') + '</span>';
             await sleep(250);
+            if (!isPlaying) return;
         }
     }
 
+    if (!isPlaying) return;
     recBadge.classList.remove('on');
     recBorder.classList.remove('on');
     signVid.style.display = 'none';
     await sleep(400);
+    if (!isPlaying) return;
 
     // Use the pre-written sentence from conversation JSON (no LLM needed in demo)
     statusBar.innerHTML = '<span class="processing">SignBridge constructing sentence...</span>';
-    await sleep(600); // brief pause for visual effect
+    await sleep(600);
+    if (!isPlaying) return;
 
     const sentence = turn.asl_sentence;
 
@@ -2682,9 +3030,10 @@ async function playPatientTurnDemo(turn) {
     history.push({ speaker: 'patient', text: sentence });
 
     // TTS: in-person always (speaker can hear), video-call only if "I Speak" (speaker has the device)
-    if (interactionMode === 'in-person' || METHOD === 'speak') {
+    if (isPlaying && (interactionMode === 'in-person' || METHOD === 'speak')) {
         await speak(sentence);
     }
+    if (!isPlaying) return;
     await sleep(800);
 }
 

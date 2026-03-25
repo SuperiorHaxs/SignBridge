@@ -126,7 +126,7 @@ def load_from_manifest(manifest_path, pickle_pool_path):
 # ============================================================================
 
 # Architecture selection
-def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1, use_finger_features=True):
+def create_model(num_classes, architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1, use_finger_features=True, use_motion_features=True, use_spatial_features=True):
     """Create model based on architecture choice and size."""
     if architecture == "openhands" or architecture == "transformer":
         # Configure model size
@@ -134,6 +134,10 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
             default_hidden = 256  # Updated to match openhands-modernized design
             default_layers = 6
             default_heads = 16
+        elif model_size == "medium":
+            default_hidden = 128
+            default_layers = 4
+            default_heads = 8
         elif model_size == "small":
             default_hidden = 64
             default_layers = 3
@@ -153,6 +157,15 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
         final_layers = num_layers if num_layers is not None else default_layers
         final_heads = min(default_heads, final_hidden // 8) if final_hidden >= 8 else 1
 
+        # Calculate total features: 249 coords + 30 finger (optional) + 8 motion (optional) + 26 spatial (optional)
+        total_features = 249
+        if use_finger_features:
+            total_features += 30
+        if use_motion_features:
+            total_features += 8
+        if use_spatial_features:
+            total_features += 40
+
         config = OpenHandsConfig(
             vocab_size=num_classes,
             hidden_size=final_hidden,
@@ -161,7 +174,9 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
             intermediate_size=final_hidden * 4,  # Scale intermediate size
             dropout_prob=dropout,  # Configurable dropout
             use_finger_features=use_finger_features,
-            pose_features=279 if use_finger_features else 249
+            use_motion_features=use_motion_features,
+            use_spatial_features=use_spatial_features,
+            pose_features=total_features
         )
         model = OpenHandsModel(config)
         print(f"MODEL: OpenHands Architecture ({model_size.upper()}) for {num_classes} classes")
@@ -169,6 +184,7 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
         print(f"   Pose channels: {config.pose_channels} (xyz coordinates)")
         print(f"   Coord features: {config.pose_coord_features} ({config.num_pose_keypoints} × {config.pose_channels})")
         print(f"   Finger features: {config.finger_features} (enabled: {config.use_finger_features})")
+        print(f"   Motion features: {config.motion_features} (enabled: {config.use_motion_features})")
         print(f"   Total features: {config.pose_features} per frame")
         print(f"   Hidden size: {config.hidden_size}")
         print(f"   Transformer layers: {config.num_hidden_layers}")
@@ -199,9 +215,17 @@ def evaluate_model_improved(model, data_loader, device):
             finger_features = batch.get('finger_features')
             if finger_features is not None:
                 finger_features = finger_features.to(device)
+            # Get motion features if available
+            motion_features = batch.get('motion_features')
+            if motion_features is not None:
+                motion_features = motion_features.to(device)
+            # Get spatial features if available
+            spatial_features = batch.get('spatial_features')
+            if spatial_features is not None:
+                spatial_features = spatial_features.to(device)
 
             # Forward pass
-            logits = model(pose_sequences, attention_masks, finger_features)
+            logits = model(pose_sequences, attention_masks, finger_features, motion_features, spatial_features)
             loss = criterion(logits, labels)
 
             # Calculate accuracy
@@ -338,7 +362,7 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
                            label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None,
-                           manifest_path=None, use_finger_features=True, manifest_dir=None, lr_override=None):
+                           manifest_path=None, use_finger_features=True, use_spatial_features=True, manifest_dir=None, lr_override=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -604,7 +628,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     dataset_loader.id_to_gloss = id_to_gloss
 
     # Create model with selected architecture
-    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout, use_finger_features)
+    model, model_config = create_model(len(unique_glosses), architecture, model_size, hidden_size, num_layers, dropout, use_finger_features, use_spatial_features=use_spatial_features)
     model.to(device)
 
     # Use pre-split data if available, otherwise use the loaded training data
@@ -821,12 +845,20 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
             finger_features = batch.get('finger_features')
             if finger_features is not None:
                 finger_features = finger_features.to(device)
+            # Get motion features if available
+            motion_features = batch.get('motion_features')
+            if motion_features is not None:
+                motion_features = motion_features.to(device)
+            # Get spatial features if available
+            spatial_features = batch.get('spatial_features')
+            if spatial_features is not None:
+                spatial_features = spatial_features.to(device)
 
             if len(labels.shape) > 1:
                 labels = labels.squeeze(-1)
 
             optimizer.zero_grad()
-            logits = model(pose_sequences, attention_mask, finger_features)
+            logits = model(pose_sequences, attention_mask, finger_features, motion_features, spatial_features)
             # Label smoothing: prevents overconfident predictions, improves top-k accuracy
             loss = torch.nn.functional.cross_entropy(logits, labels, label_smoothing=label_smoothing)
 
@@ -1082,6 +1114,8 @@ if __name__ == "__main__":
                        help='Gradient clipping max norm (default: 1.0). Prevents gradient explosions')
     parser.add_argument('--no-finger-features', action='store_true',
                        help='Disable finger feature extraction (faster training, may reduce accuracy)')
+    parser.add_argument('--no-spatial-features', action='store_true',
+                       help='Disable spatial feature extraction (trajectory, palm, location, handshape dynamics)')
     parser.add_argument('--force-fresh', action='store_true',
                        help='Ignore any existing checkpoint and start fresh training')
     parser.add_argument('--manifest', type=str, default=None,
@@ -1113,10 +1147,12 @@ if __name__ == "__main__":
         args.classes = detected_classes
         args.manifest = str(train_manifest)
         args.dataset = 'augmented'
-        # Extract pickle_pool from manifest if present
-        if 'pickle_pool' in manifest_data:
+        # Extract pickle_pool from manifest if present (only if --augmented-path not already set)
+        if 'pickle_pool' in manifest_data and not args.augmented_path:
             args.augmented_path = manifest_data['pickle_pool']
             print(f"PICKLE-POOL: {args.augmented_path} (from manifest)")
+        elif args.augmented_path:
+            print(f"PICKLE-POOL: {args.augmented_path} (from --augmented-path, overrides manifest)")
 
     # Auto-generate augmented path from config if not provided (skip if manifest-dir already set it)
     if args.dataset == 'augmented' and not args.augmented_path and not args.manifest_dir:
@@ -1187,6 +1223,7 @@ if __name__ == "__main__":
                 weight_decay=args.weight_decay,
                 manifest_path=args.manifest,
                 use_finger_features=not args.no_finger_features,
+                use_spatial_features=not args.no_spatial_features,
                 manifest_dir=args.manifest_dir,
                 lr_override=args.lr,
             )
