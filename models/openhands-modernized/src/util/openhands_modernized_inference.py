@@ -74,7 +74,9 @@ def load_model_from_checkpoint(checkpoint_path: str, vocab_size: int = None):
             dropout_prob=config_dict.get('dropout_prob', 0.1),
             layer_norm_eps=config_dict.get('layer_norm_eps', 1e-12),
             vocab_size=config_dict.get('vocab_size', vocab_size or 20),
-            use_cls_token=config_dict.get('use_cls_token', True)
+            use_cls_token=config_dict.get('use_cls_token', True),
+            use_spatial_features=config_dict.get('use_spatial_features', False),
+            spatial_features=config_dict.get('spatial_features', 0)
         )
         print(f"Loaded config from {config_file}")
         print(f"  hidden_size={config.hidden_size}, num_layers={config.num_hidden_layers}, vocab={config.vocab_size}")
@@ -158,7 +160,7 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
 
     # Convert to tensors and add batch dimension
     pose_tensor = torch.tensor(pose_sequence, dtype=torch.float32).unsqueeze(0)  # (1, T, 83, 3)
-    mask_tensor = torch.tensor(attention_mask, dtype=torch.long).unsqueeze(0)  # (1, T) - must be long like training!
+    mask_tensor = torch.tensor(attention_mask, dtype=torch.float32).unsqueeze(0)  # (1, T) float32 matches training
 
     # Predict
     with torch.no_grad():
@@ -197,3 +199,154 @@ def predict_pose_file(pickle_path: str, model=None, tokenizer=None, checkpoint_p
         'confidence': confidence,
         'top_k_predictions': top_k_predictions
     }
+
+
+def _extract_features(pickle_path: str, model):
+    """
+    Extract shared features from a pose file (everything before the classification head).
+    Returns (pose_tensor, mask_tensor, finger_features_tensor, motion_features_tensor, spatial_features_tensor).
+    """
+    processor = WLASLPoseProcessor()
+    pose_sequence = processor.load_pickle_pose(pickle_path)
+    pose_sequence = processor.preprocess_pose_sequence(pose_sequence, augment=False)
+
+    finger_features_tensor = None
+    if hasattr(model, 'config') and model.config.use_finger_features:
+        finger_features = processor.extract_finger_features(pose_sequence)
+        max_length = 256
+        if len(finger_features) > max_length:
+            finger_features = finger_features[:max_length]
+        else:
+            padding = np.zeros((max_length - len(finger_features), 30), dtype=np.float32)
+            finger_features = np.concatenate([finger_features, padding], axis=0)
+        finger_features_tensor = torch.tensor(finger_features, dtype=torch.float32).unsqueeze(0)
+
+    motion_features_tensor = None
+    if hasattr(model, 'config') and getattr(model.config, 'use_motion_features', False):
+        motion_features = processor.extract_motion_features(pose_sequence)
+        max_length = 256
+        if len(motion_features) > max_length:
+            motion_features = motion_features[:max_length]
+        else:
+            padding = np.zeros((max_length - len(motion_features), 8), dtype=np.float32)
+            motion_features = np.concatenate([motion_features, padding], axis=0)
+        motion_features_tensor = torch.tensor(motion_features, dtype=torch.float32).unsqueeze(0)
+
+    spatial_features_tensor = None
+    if hasattr(model, 'config') and getattr(model.config, 'use_spatial_features', False):
+        spatial_features = processor.extract_spatial_features(pose_sequence)
+        max_length = 256
+        if len(spatial_features) > max_length:
+            spatial_features = spatial_features[:max_length]
+        else:
+            n_sf = spatial_features.shape[1] if spatial_features.ndim > 1 else 12
+            padding = np.zeros((max_length - len(spatial_features), n_sf), dtype=np.float32)
+            spatial_features = np.concatenate([spatial_features, padding], axis=0)
+        spatial_features_tensor = torch.tensor(spatial_features, dtype=torch.float32).unsqueeze(0)
+
+    pose_sequence, attention_mask = processor.pad_or_truncate_sequence(pose_sequence, max_length=256)
+    pose_tensor = torch.tensor(pose_sequence, dtype=torch.float32).unsqueeze(0)
+    mask_tensor = torch.tensor(attention_mask, dtype=torch.float32).unsqueeze(0)
+
+    return pose_tensor, mask_tensor, finger_features_tensor, motion_features_tensor, spatial_features_tensor
+
+
+def _classify_with_model(model, pose_tensor, mask_tensor, finger_features, motion_features,
+                         spatial_features, id_to_gloss, masked_class_ids=None):
+    """Run classification head on pre-extracted features. Returns (gloss, confidence, top_k)."""
+    with torch.no_grad():
+        logits = model(pose_tensor, mask_tensor,
+                       finger_features=finger_features,
+                       motion_features=motion_features)
+
+        if masked_class_ids:
+            for class_id in masked_class_ids:
+                logits[:, class_id] = float('-inf')
+
+        probs = torch.softmax(logits, dim=-1)
+        confidence, pred_id = torch.max(probs, dim=-1)
+
+        top_k = 5
+        top_probs, top_ids = torch.topk(probs, k=min(top_k, probs.shape[-1]), dim=-1)
+
+        predictions = []
+        for prob, idx in zip(top_probs[0], top_ids[0]):
+            gloss = id_to_gloss.get(str(idx.item()), f"UNKNOWN_{idx.item()}")
+            predictions.append({'gloss': gloss, 'confidence': prob.item()})
+
+    return {
+        'gloss': id_to_gloss.get(str(pred_id.item()), f"UNKNOWN_{pred_id.item()}"),
+        'confidence': confidence.item(),
+        'top_k_predictions': predictions,
+    }
+
+
+def predict_dual_model(pickle_path: str,
+                       domain_model=None, domain_tokenizer=None, domain_masked=None,
+                       common_model=None, common_tokenizer=None, common_masked=None):
+    """
+    Dual-model prediction: extract features once, classify with both domain and common models.
+    Returns the merged top predictions from both models, with the highest confidence pick as the primary.
+
+    Args:
+        pickle_path: Path to pickle file with pose data
+        domain_model/tokenizer/masked: Domain-specific model + vocab
+        common_model/tokenizer/masked: Common words model + vocab
+
+    Returns:
+        dict: {gloss, confidence, source, domain_result, common_result, top_k_predictions}
+    """
+    # Use whichever model is available to extract features (same architecture)
+    ref_model = domain_model or common_model
+
+    # 1. Extract features ONCE
+    pose_t, mask_t, ff, mf, sf = _extract_features(pickle_path, ref_model)
+
+    # 2. Classify with domain model
+    domain_result = None
+    if domain_model and domain_tokenizer:
+        domain_result = _classify_with_model(
+            domain_model, pose_t, mask_t, ff, mf, sf,
+            domain_tokenizer, domain_masked)
+
+    # 3. Classify with common model
+    common_result = None
+    if common_model and common_tokenizer:
+        common_result = _classify_with_model(
+            common_model, pose_t, mask_t, ff, mf, sf,
+            common_tokenizer, common_masked)
+
+    # 4. Merge: pick the model with higher confidence as primary
+    if domain_result and common_result:
+        if domain_result['confidence'] >= common_result['confidence']:
+            primary = domain_result
+            source = 'domain'
+        else:
+            primary = common_result
+            source = 'common'
+
+        # Merge top_k from both (deduplicate, sort by confidence)
+        seen = set()
+        merged_top_k = []
+        for pred in (domain_result['top_k_predictions'] + common_result['top_k_predictions']):
+            if pred['gloss'] not in seen:
+                seen.add(pred['gloss'])
+                merged_top_k.append(pred)
+        merged_top_k.sort(key=lambda x: x['confidence'], reverse=True)
+
+        return {
+            'gloss': primary['gloss'],
+            'confidence': primary['confidence'],
+            'source': source,
+            'domain_result': domain_result,
+            'common_result': common_result,
+            'top_k_predictions': merged_top_k[:10],
+        }
+    elif domain_result:
+        domain_result['source'] = 'domain'
+        return domain_result
+    elif common_result:
+        common_result['source'] = 'common'
+        return common_result
+    else:
+        return {'gloss': 'UNKNOWN', 'confidence': 0.0, 'top_k_predictions': []}

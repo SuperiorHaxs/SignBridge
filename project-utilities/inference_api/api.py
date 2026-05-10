@@ -81,11 +81,7 @@ def predict():
             pickle_path = tmp.name
 
         try:
-            model, id_to_gloss, masked_class_ids = registry.get_model(domain)
-            result = predict_pose_file(
-                pickle_path, model=model, tokenizer=id_to_gloss,
-                masked_class_ids=masked_class_ids
-            )
+            result = registry.predict(pickle_path, domain)
             result['domain'] = domain
             return jsonify(result)
         except ValueError as e:
@@ -109,11 +105,7 @@ def predict():
             return jsonify({'error': f'File not found: {pickle_path}'}), 404
 
         try:
-            model, id_to_gloss, masked_class_ids = registry.get_model(domain)
-            result = predict_pose_file(
-                pickle_path, model=model, tokenizer=id_to_gloss,
-                masked_class_ids=masked_class_ids
-            )
+            result = registry.predict(pickle_path, domain)
             result['domain'] = domain
             return jsonify(result)
         except ValueError as e:
@@ -154,21 +146,13 @@ def predict_batch():
     if not pickle_paths:
         return jsonify({'error': 'Missing pickle_paths'}), 400
 
-    try:
-        model, id_to_gloss, masked_class_ids = registry.get_model(domain)
-    except (ValueError, FileNotFoundError) as e:
-        return jsonify({'error': str(e)}), 400
-
     predictions = []
     for path in pickle_paths:
         if not Path(path).exists():
             predictions.append({'error': f'File not found: {path}'})
             continue
         try:
-            result = predict_pose_file(
-                path, model=model, tokenizer=id_to_gloss,
-                masked_class_ids=masked_class_ids
-            )
+            result = registry.predict(path, domain)
             predictions.append(result)
         except Exception as e:
             predictions.append({'error': str(e)})

@@ -1,0 +1,41 @@
+Production Models — Active Glosses Available to SignBridge App
+================================================================
+
+Source:    asl-v1/models/openhands-modernized/production-models/registry.json
+Per-model: class_index_mapping.json (total) and masked_classes.json (excluded)
+Active glosses = Total classes in checkpoint - Masked class IDs
+Generated:  2026-05-05
+
++--------------------------+-----------+--------------------------------------+--------+--------+----------------+
+| Domain                   | Role      | Model directory                      | Total  | Masked | Active glosses |
++--------------------------+-----------+--------------------------------------+--------+--------+----------------+
+| Emergency                | Domain    | wlasl_116_emergency_model            |   116  |   54   |       62       |
+| Doctor Visit             | Domain    | wlasl_116_doctor_visit_model         |   116  |   56   |       60       |
+| Restaurant               | Domain    | wlasl_116_restaurant_model           |   116  |   68   |       48       |
+| Education                | Domain    | wlasl_97_education_model             |    97  |   34   |       63       |
+| Travel                   | Domain    | wlasl_50_travel_model                |    50  |   20   |       30       |
+| Shopping                 | Domain    | wlasl_116_shopping_model             |   116  |   63   |       53       |
+| Job Interview            | Domain    | wlasl_116_job_interview_model        |   116  |   55   |       61       |
+| Government Services      | Domain    | wlasl_116_government_services_model  |   116  |   48   |       68       |
+| Banking                  | Domain    | wlasl_116_banking_model              |   116  |   55   |       61       |
+| Common Words             | Domain    | wlasl_116_common_words_model         |   116  |   76   |       40       |
++--------------------------+-----------+--------------------------------------+--------+--------+----------------+
+| Common Words (companion) | Companion | wlasl_50_common_words_model          |    50  |   18   |       32       |
+| Fallback                 | Fallback  | wlasl_43_class_50s_model             |    43  |    3   |       40       |
++--------------------------+-----------+--------------------------------------+--------+--------+----------------+
+| TOTALS (12 models)       |           |                                      |  1168  |  550   |      618       |
++--------------------------+-----------+--------------------------------------+--------+--------+----------------+
+
+Notes
+-----
+- "Active glosses" is what SignBridge can actually predict per-domain at
+  inference time. Masked class IDs are produced by the trainer for glosses
+  that did not meet quality thresholds (e.g. too few training samples after
+  the train-split anti-leakage filter) and are zeroed out of the softmax
+  inside load_model_from_checkpoint().
+- At inference, every domain model runs alongside the Common Words
+  companion model (32 active glosses), so the effective vocabulary the user
+  sees per domain is roughly: <domain active> + 32 (minus any overlap).
+- The Fallback model is loaded when no domain-specific model is requested.
+- Sums in the TOTALS row are arithmetic only; they double-count any glosses
+  that appear in multiple domain models (e.g. common-words overlap).

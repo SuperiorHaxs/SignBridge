@@ -1,0 +1,16 @@
+{
+  "name": "SignBridge",
+  "short_name": "SignBridge",
+  "description": "Real-time ASL to English translation for everyday conversations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf0e6",
+  "theme_color": "#c4872a",
+  "icons": [
+    {
+      "src": "/static/img/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

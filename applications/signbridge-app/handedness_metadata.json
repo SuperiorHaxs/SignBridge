@@ -1,0 +1,1163 @@
+{
+  "thresholds": {
+    "silent_rate_below": 0.1,
+    "both_active_above": 0.25,
+    "min_samples": 3
+  },
+  "classification_counts": {
+    "one_handed": 53,
+    "two_handed": 93,
+    "ambiguous": 13,
+    "insufficient_data": 5
+  },
+  "glosses": {
+    "ACCIDENT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.446,
+      "r_hand_rate": 0.761,
+      "samples": 11
+    },
+    "ADDRESS": {
+      "type": "insufficient_data",
+      "dominant": null,
+      "l_hand_rate": 0.559,
+      "r_hand_rate": 0.539,
+      "samples": 2
+    },
+    "AFRICA": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.671,
+      "samples": 7
+    },
+    "AGE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.726,
+      "samples": 5
+    },
+    "ALL": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.603,
+      "r_hand_rate": 0.745,
+      "samples": 6
+    },
+    "ALLERGY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.629,
+      "r_hand_rate": 0.754,
+      "samples": 5
+    },
+    "ANSWER": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.617,
+      "r_hand_rate": 0.62,
+      "samples": 5
+    },
+    "APPLE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.632,
+      "samples": 7
+    },
+    "APPOINTMENT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.674,
+      "r_hand_rate": 0.691,
+      "samples": 8
+    },
+    "BAD": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.215,
+      "r_hand_rate": 0.505,
+      "samples": 8
+    },
+    "BASKETBALL": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.633,
+      "r_hand_rate": 0.64,
+      "samples": 9
+    },
+    "BATH": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.532,
+      "r_hand_rate": 0.535,
+      "samples": 4
+    },
+    "BATHROOM": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.607,
+      "samples": 5
+    },
+    "BED": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.272,
+      "r_hand_rate": 0.642,
+      "samples": 9
+    },
+    "BEFORE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.333,
+      "r_hand_rate": 0.766,
+      "samples": 14
+    },
+    "BETTER": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.555,
+      "samples": 3
+    },
+    "BIRD": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.589,
+      "samples": 8
+    },
+    "BIRTHDAY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.25,
+      "r_hand_rate": 0.79,
+      "samples": 4
+    },
+    "BLACK": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.045,
+      "r_hand_rate": 0.528,
+      "samples": 8
+    },
+    "BLOOD": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.712,
+      "r_hand_rate": 0.575,
+      "samples": 3
+    },
+    "BLUE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.541,
+      "samples": 6
+    },
+    "BOOK": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.616,
+      "r_hand_rate": 0.644,
+      "samples": 4
+    },
+    "BOWLING": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.174,
+      "r_hand_rate": 0.499,
+      "samples": 10
+    },
+    "BREATHE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.836,
+      "r_hand_rate": 0.892,
+      "samples": 4
+    },
+    "BROWN": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.576,
+      "samples": 6
+    },
+    "BUT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.51,
+      "r_hand_rate": 0.727,
+      "samples": 5
+    },
+    "CAN": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.636,
+      "r_hand_rate": 0.632,
+      "samples": 7
+    },
+    "CANDY": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.001,
+      "r_hand_rate": 0.629,
+      "samples": 9
+    },
+    "CHAIR": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.632,
+      "r_hand_rate": 0.655,
+      "samples": 5
+    },
+    "CHANGE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.65,
+      "r_hand_rate": 0.614,
+      "samples": 8
+    },
+    "CHEAT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.733,
+      "r_hand_rate": 0.709,
+      "samples": 7
+    },
+    "CITY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.451,
+      "r_hand_rate": 0.531,
+      "samples": 6
+    },
+    "CLOTHES": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.464,
+      "r_hand_rate": 0.462,
+      "samples": 3
+    },
+    "COLD": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.759,
+      "r_hand_rate": 0.737,
+      "samples": 10
+    },
+    "COLOR": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.075,
+      "r_hand_rate": 0.708,
+      "samples": 6
+    },
+    "COMFORTABLE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.761,
+      "r_hand_rate": 0.73,
+      "samples": 5
+    },
+    "COMPUTER": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.442,
+      "r_hand_rate": 0.714,
+      "samples": 9
+    },
+    "COOK": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.66,
+      "r_hand_rate": 0.61,
+      "samples": 5
+    },
+    "COOL": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.199,
+      "r_hand_rate": 0.64,
+      "samples": 13
+    },
+    "CORN": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.051,
+      "r_hand_rate": 0.603,
+      "samples": 9
+    },
+    "COUGH": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.023,
+      "r_hand_rate": 0.704,
+      "samples": 4
+    },
+    "COUSIN": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.628,
+      "samples": 12
+    },
+    "COW": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.449,
+      "r_hand_rate": 0.617,
+      "samples": 7
+    },
+    "DANCE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.745,
+      "r_hand_rate": 0.733,
+      "samples": 5
+    },
+    "DARK": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.683,
+      "r_hand_rate": 0.622,
+      "samples": 9
+    },
+    "DEAF": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.735,
+      "samples": 9
+    },
+    "DECIDE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.644,
+      "r_hand_rate": 0.693,
+      "samples": 6
+    },
+    "DIZZY": {
+      "type": "insufficient_data",
+      "dominant": null,
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.677,
+      "samples": 2
+    },
+    "DOCTOR": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.49,
+      "r_hand_rate": 0.658,
+      "samples": 7
+    },
+    "DOG": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.125,
+      "r_hand_rate": 0.672,
+      "samples": 8
+    },
+    "DRINK": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.001,
+      "r_hand_rate": 0.67,
+      "samples": 12
+    },
+    "EAT": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.538,
+      "samples": 5
+    },
+    "EMERGENCY": {
+      "type": "insufficient_data",
+      "dominant": null,
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.609,
+      "samples": 2
+    },
+    "ENJOY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.749,
+      "r_hand_rate": 0.817,
+      "samples": 6
+    },
+    "FAMILY": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.681,
+      "r_hand_rate": 0.659,
+      "samples": 9
+    },
+    "FEEL": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.624,
+      "samples": 5
+    },
+    "FINE": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.107,
+      "r_hand_rate": 0.597,
+      "samples": 6
+    },
+    "FINISH": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.381,
+      "r_hand_rate": 0.685,
+      "samples": 7
+    },
+    "FISH": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.277,
+      "r_hand_rate": 0.604,
+      "samples": 8
+    },
+    "FORGET": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.738,
+      "samples": 5
+    },
+    "FULL": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.31,
+      "r_hand_rate": 0.632,
+      "samples": 8
+    },
+    "GIVE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.571,
+      "r_hand_rate": 0.746,
+      "samples": 8
+    },
+    "GO": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.455,
+      "r_hand_rate": 0.745,
+      "samples": 13
+    },
+    "GOOD": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.361,
+      "r_hand_rate": 0.659,
+      "samples": 8
+    },
+    "GRADUATE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.723,
+      "r_hand_rate": 0.722,
+      "samples": 8
+    },
+    "GRADUATION": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.684,
+      "r_hand_rate": 0.73,
+      "samples": 3
+    },
+    "HALLOWEEN": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.667,
+      "r_hand_rate": 0.66,
+      "samples": 6
+    },
+    "HAT": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.602,
+      "samples": 7
+    },
+    "HEADACHE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.709,
+      "r_hand_rate": 0.729,
+      "samples": 7
+    },
+    "HEAR": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.119,
+      "r_hand_rate": 0.532,
+      "samples": 6
+    },
+    "HEARING": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.016,
+      "r_hand_rate": 0.548,
+      "samples": 6
+    },
+    "HEART": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.26,
+      "r_hand_rate": 0.731,
+      "samples": 5
+    },
+    "HELP": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.739,
+      "r_hand_rate": 0.811,
+      "samples": 10
+    },
+    "HERE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.54,
+      "r_hand_rate": 0.586,
+      "samples": 5
+    },
+    "HOSPITAL": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.562,
+      "samples": 4
+    },
+    "HOT": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.002,
+      "r_hand_rate": 0.681,
+      "samples": 8
+    },
+    "HOW": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.692,
+      "r_hand_rate": 0.653,
+      "samples": 7
+    },
+    "HURRY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.572,
+      "r_hand_rate": 0.588,
+      "samples": 4
+    },
+    "HURT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.721,
+      "r_hand_rate": 0.704,
+      "samples": 3
+    },
+    "INFECTION": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.615,
+      "samples": 4
+    },
+    "INSURANCE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.006,
+      "r_hand_rate": 0.637,
+      "samples": 4
+    },
+    "JACKET": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.657,
+      "r_hand_rate": 0.658,
+      "samples": 4
+    },
+    "KISS": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.578,
+      "r_hand_rate": 0.622,
+      "samples": 7
+    },
+    "KNOW": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.54,
+      "samples": 6
+    },
+    "LANGUAGE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.684,
+      "r_hand_rate": 0.726,
+      "samples": 7
+    },
+    "LAST": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.394,
+      "r_hand_rate": 0.729,
+      "samples": 10
+    },
+    "LATER": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.336,
+      "r_hand_rate": 0.625,
+      "samples": 9
+    },
+    "LETTER": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.743,
+      "r_hand_rate": 0.645,
+      "samples": 9
+    },
+    "LIKE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.004,
+      "r_hand_rate": 0.688,
+      "samples": 8
+    },
+    "MAN": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.029,
+      "r_hand_rate": 0.609,
+      "samples": 8
+    },
+    "MANY": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.767,
+      "r_hand_rate": 0.743,
+      "samples": 8
+    },
+    "MEDICINE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.553,
+      "r_hand_rate": 0.58,
+      "samples": 6
+    },
+    "MEET": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.764,
+      "r_hand_rate": 0.781,
+      "samples": 7
+    },
+    "MISTAKE": {
+      "type": "insufficient_data",
+      "dominant": null,
+      "l_hand_rate": 0.013,
+      "r_hand_rate": 0.606,
+      "samples": 2
+    },
+    "MORE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.718,
+      "r_hand_rate": 0.704,
+      "samples": 6
+    },
+    "MORNING": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.649,
+      "r_hand_rate": 0.506,
+      "samples": 4
+    },
+    "MOTHER": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.004,
+      "r_hand_rate": 0.587,
+      "samples": 8
+    },
+    "NAME": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.672,
+      "r_hand_rate": 0.665,
+      "samples": 4
+    },
+    "NEED": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.509,
+      "samples": 4
+    },
+    "NERVOUS": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.645,
+      "r_hand_rate": 0.608,
+      "samples": 4
+    },
+    "NIGHT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.566,
+      "r_hand_rate": 0.639,
+      "samples": 3
+    },
+    "NO": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.004,
+      "r_hand_rate": 0.717,
+      "samples": 9
+    },
+    "NOW": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.644,
+      "r_hand_rate": 0.682,
+      "samples": 7
+    },
+    "NURSE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.419,
+      "r_hand_rate": 0.554,
+      "samples": 4
+    },
+    "ORANGE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.006,
+      "r_hand_rate": 0.418,
+      "samples": 8
+    },
+    "PAIN": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.689,
+      "r_hand_rate": 0.694,
+      "samples": 3
+    },
+    "PAPER": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.503,
+      "r_hand_rate": 0.434,
+      "samples": 5
+    },
+    "PATIENT": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.442,
+      "samples": 5
+    },
+    "PHONE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.522,
+      "samples": 3
+    },
+    "PINK": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.01,
+      "r_hand_rate": 0.458,
+      "samples": 7
+    },
+    "PIZZA": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.739,
+      "samples": 10
+    },
+    "PLAY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.708,
+      "r_hand_rate": 0.715,
+      "samples": 9
+    },
+    "PLEASE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.741,
+      "samples": 5
+    },
+    "PREGNANT": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.179,
+      "r_hand_rate": 0.652,
+      "samples": 3
+    },
+    "PURPLE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.011,
+      "r_hand_rate": 0.484,
+      "samples": 6
+    },
+    "QUESTION": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.022,
+      "r_hand_rate": 0.573,
+      "samples": 3
+    },
+    "RIGHT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.349,
+      "r_hand_rate": 0.498,
+      "samples": 6
+    },
+    "SAD": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.663,
+      "r_hand_rate": 0.665,
+      "samples": 6
+    },
+    "SAME": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.116,
+      "r_hand_rate": 0.707,
+      "samples": 6
+    },
+    "SCHOOL": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.6,
+      "r_hand_rate": 0.562,
+      "samples": 7
+    },
+    "SECRETARY": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.654,
+      "r_hand_rate": 0.581,
+      "samples": 8
+    },
+    "SEE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.003,
+      "r_hand_rate": 0.696,
+      "samples": 3
+    },
+    "SHIRT": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.254,
+      "r_hand_rate": 0.689,
+      "samples": 8
+    },
+    "SHORT": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.211,
+      "r_hand_rate": 0.642,
+      "samples": 11
+    },
+    "SICK": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.542,
+      "r_hand_rate": 0.586,
+      "samples": 6
+    },
+    "SIT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.715,
+      "r_hand_rate": 0.646,
+      "samples": 4
+    },
+    "SLEEP": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.722,
+      "samples": 4
+    },
+    "SON": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.783,
+      "r_hand_rate": 0.788,
+      "samples": 7
+    },
+    "SORRY": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.004,
+      "r_hand_rate": 0.818,
+      "samples": 5
+    },
+    "STAND": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.818,
+      "r_hand_rate": 0.753,
+      "samples": 3
+    },
+    "STOMACH": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.129,
+      "r_hand_rate": 0.67,
+      "samples": 5
+    },
+    "STOP": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.449,
+      "r_hand_rate": 0.547,
+      "samples": 3
+    },
+    "STRESS": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.67,
+      "r_hand_rate": 0.717,
+      "samples": 6
+    },
+    "STUDY": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.709,
+      "r_hand_rate": 0.687,
+      "samples": 8
+    },
+    "SURGERY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.572,
+      "r_hand_rate": 0.572,
+      "samples": 4
+    },
+    "TABLE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.442,
+      "r_hand_rate": 0.47,
+      "samples": 3
+    },
+    "TALL": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.197,
+      "r_hand_rate": 0.657,
+      "samples": 10
+    },
+    "TELL": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.765,
+      "samples": 7
+    },
+    "TEMPERATURE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.564,
+      "r_hand_rate": 0.629,
+      "samples": 5
+    },
+    "THANK YOU": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.619,
+      "samples": 5
+    },
+    "THANKSGIVING": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.297,
+      "r_hand_rate": 0.676,
+      "samples": 9
+    },
+    "THIN": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.232,
+      "r_hand_rate": 0.606,
+      "samples": 13
+    },
+    "THURSDAY": {
+      "type": "ambiguous",
+      "dominant": "right",
+      "l_hand_rate": 0.146,
+      "r_hand_rate": 0.733,
+      "samples": 7
+    },
+    "TIME": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.665,
+      "r_hand_rate": 0.689,
+      "samples": 6
+    },
+    "TODAY": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.83,
+      "r_hand_rate": 0.855,
+      "samples": 7
+    },
+    "UNDERSTAND": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.002,
+      "r_hand_rate": 0.65,
+      "samples": 5
+    },
+    "WAIT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.718,
+      "r_hand_rate": 0.701,
+      "samples": 8
+    },
+    "WALK": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.71,
+      "r_hand_rate": 0.757,
+      "samples": 8
+    },
+    "WANT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.671,
+      "r_hand_rate": 0.614,
+      "samples": 7
+    },
+    "WATER": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.002,
+      "r_hand_rate": 0.591,
+      "samples": 7
+    },
+    "WHAT": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.567,
+      "r_hand_rate": 0.504,
+      "samples": 10
+    },
+    "WHEELCHAIR": {
+      "type": "insufficient_data",
+      "dominant": null,
+      "l_hand_rate": 0.921,
+      "r_hand_rate": 0.891,
+      "samples": 2
+    },
+    "WHEN": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.629,
+      "r_hand_rate": 0.623,
+      "samples": 6
+    },
+    "WHERE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.524,
+      "samples": 5
+    },
+    "WHITE": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.691,
+      "samples": 8
+    },
+    "WHO": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.001,
+      "r_hand_rate": 0.42,
+      "samples": 11
+    },
+    "WIFE": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.565,
+      "r_hand_rate": 0.625,
+      "samples": 5
+    },
+    "WOMAN": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.606,
+      "samples": 8
+    },
+    "WORK": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.728,
+      "r_hand_rate": 0.703,
+      "samples": 8
+    },
+    "WORSE": {
+      "type": "two_handed",
+      "dominant": "left",
+      "l_hand_rate": 0.672,
+      "r_hand_rate": 0.625,
+      "samples": 4
+    },
+    "WRONG": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.579,
+      "samples": 5
+    },
+    "YEAR": {
+      "type": "two_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.696,
+      "r_hand_rate": 0.698,
+      "samples": 7
+    },
+    "YELLOW": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.59,
+      "samples": 6
+    },
+    "YES": {
+      "type": "one_handed",
+      "dominant": "right",
+      "l_hand_rate": 0.0,
+      "r_hand_rate": 0.664,
+      "samples": 10
+    }
+  }
+}

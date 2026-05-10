@@ -85,13 +85,15 @@ def get_dataset_paths(num_classes):
     return paths
 
 
-def load_from_manifest(manifest_path, pickle_pool_path):
+def load_from_manifest(manifest_path, pickle_pool_path, max_samples_per_class=None):
     """
     Load file paths and labels from a manifest file.
 
     Args:
         manifest_path: Path to manifest JSON file
         pickle_pool_path: Path to augmented_pool/pickle/ directory (or flat pickle dir)
+        max_samples_per_class: Optional cap on training samples per class.
+            Keeps all original videos, fills remaining slots with augmented.
 
     Returns:
         Tuple of (file_paths, labels)
@@ -114,13 +116,30 @@ def load_from_manifest(manifest_path, pickle_pool_path):
     file_paths = []
     labels = []
 
+    capped_count = 0
     for gloss, families in manifest['classes'].items():
         gloss_dir = pickle_pool if flat_layout else pickle_pool / gloss.lower()
+        gloss_files = []
         for family in families:
             for filename in family['files']:
                 file_path = gloss_dir / filename
-                file_paths.append(str(file_path))
-                labels.append(gloss.upper())
+                gloss_files.append(str(file_path))
+
+        # Apply per-class cap if specified
+        if max_samples_per_class and len(gloss_files) > max_samples_per_class:
+            import re as _re
+            # Keep originals first (filenames like "12345.pkl"), then augmented
+            originals = [f for f in gloss_files if _re.search(r'[\\/]\d+\.pkl$', f)]
+            augmented = [f for f in gloss_files if f not in set(originals)]
+            remaining = max_samples_per_class - len(originals)
+            gloss_files = originals + augmented[:max(0, remaining)]
+            capped_count += 1
+
+        file_paths.extend(gloss_files)
+        labels.extend([gloss.upper()] * len(gloss_files))
+
+    if max_samples_per_class and capped_count > 0:
+        print(f"SAMPLE-CAP: {capped_count} classes capped to {max_samples_per_class} samples/class")
 
     return file_paths, labels
 # ============================================================================
@@ -182,7 +201,7 @@ def create_model(num_classes, architecture="openhands", model_size="small", hidd
         print(f"MODEL: OpenHands Architecture ({model_size.upper()}) for {num_classes} classes")
         print(f"   Pose keypoints: {config.num_pose_keypoints} (83pt = 33 pose + 42 hands + 8 face)")
         print(f"   Pose channels: {config.pose_channels} (xyz coordinates)")
-        print(f"   Coord features: {config.pose_coord_features} ({config.num_pose_keypoints} × {config.pose_channels})")
+        print(f"   Coord features: {config.pose_coord_features} ({config.num_pose_keypoints} x {config.pose_channels})")
         print(f"   Finger features: {config.finger_features} (enabled: {config.use_finger_features})")
         print(f"   Motion features: {config.motion_features} (enabled: {config.use_motion_features})")
         print(f"   Total features: {config.pose_features} per frame")
@@ -254,7 +273,7 @@ def evaluate_model_improved(model, data_loader, device):
 # OpenHands architecture doesn't need separate config functions - all configuration is in OpenHandsConfig
 
 def save_checkpoint(model, optimizer, epoch, best_val_acc, patience_counter,
-                   training_config, model_dir):
+                   training_config, model_dir, extra=None):
     """Save complete training checkpoint with all state."""
     checkpoint = {
         # Model and optimizer state
@@ -275,6 +294,8 @@ def save_checkpoint(model, optimizer, epoch, best_val_acc, patience_counter,
         # Random states for reproducibility
         'random_state': torch.get_rng_state(),
     }
+    if extra:
+        checkpoint.update(extra)
 
     # Save checkpoint
     checkpoint_path = f"{model_dir}/checkpoint.pth"
@@ -359,10 +380,85 @@ def restore_from_checkpoint(checkpoint, model, optimizer):
         checkpoint['patience_counter']
     )
 
+
+# ── Training helpers (Items 4, 5, 7) ──────────────────────────────────────────
+
+CRITERIA_TOP1       = 70.0   # per-gloss Top-1 threshold
+CRITERIA_TOP3       = 85.0   # per-gloss Top-3 threshold
+CRITERIA_EVAL_EVERY = 10     # run per-gloss eval every N epochs
+BOOST_EPOCHS        = {50, 100}  # epochs at which to refresh sampler with failing-gloss boost
+BOOST_FACTOR        = 2.0    # weight multiplier for failing glosses in sampler
+
+
+def _compute_class_weights(label_counts, unique_glosses, gloss_to_id, device):
+    """Inverse-frequency class weights for CrossEntropyLoss (Item 4)."""
+    total = sum(label_counts.values())
+    n = len(unique_glosses)
+    weights = torch.ones(n, dtype=torch.float32)
+    for gloss, idx in gloss_to_id.items():
+        cnt = label_counts.get(gloss, 1)
+        weights[idx] = total / (n * cnt)
+    weights = weights / weights.mean()   # normalize so mean weight == 1 (preserves loss scale)
+    return weights.to(device)
+
+
+def _per_gloss_val_eval(model, val_loader, id_to_gloss, device):
+    """Fast per-gloss Top-1/Top-3 accuracy over val_loader (Items 5 & 7)."""
+    from collections import defaultdict as _dd
+    c1 = _dd(int); c3 = _dd(int); tot = _dd(int)
+    model.eval()
+    with torch.no_grad():
+        for batch in val_loader:
+            poses  = batch['pose_sequence'].to(device)
+            masks  = batch['attention_mask'].to(device)
+            labels = batch['label'].to(device)
+            ff = batch.get('finger_features')
+            if ff is not None: ff = ff.to(device)
+            mf = batch.get('motion_features')
+            if mf is not None: mf = mf.to(device)
+            sf = batch.get('spatial_features')
+            if sf is not None: sf = sf.to(device)
+            logits = model(poses, masks, ff, mf, sf)
+            top3 = torch.topk(logits, min(3, logits.shape[-1]), dim=-1).indices
+            for i, lbl in enumerate(labels.tolist()):
+                g = id_to_gloss.get(lbl, f"UNK_{lbl}")
+                tot[g] += 1
+                if top3[i, 0].item() == lbl:
+                    c1[g] += 1
+                if lbl in top3[i].tolist():
+                    c3[g] += 1
+    results = {}
+    n_pass = 0
+    for g in tot:
+        n = tot[g]
+        t1 = 100.0 * c1[g] / n
+        t3 = 100.0 * c3[g] / n
+        meets = (t1 >= CRITERIA_TOP1) and (t3 >= CRITERIA_TOP3)
+        if meets:
+            n_pass += 1
+        results[g] = {'top1': round(t1, 1), 'top3': round(t3, 1), 'meets': meets}
+    n_total = len(results)
+    pct = n_pass / n_total if n_total > 0 else 0.0
+    results['_summary'] = {'n_passing': n_pass, 'n_total': n_total, 'pct': round(pct, 4)}
+    return results
+
+
+def _make_weighted_sampler(train_labels, label_counts, boost_set=None):
+    """Per-sample WeightedRandomSampler with optional boost for failing glosses (Item 7)."""
+    weights = []
+    for lbl in train_labels:
+        w = 1.0 / max(label_counts.get(lbl, 1), 1)
+        if boost_set and lbl in boost_set:
+            w *= BOOST_FACTOR
+        weights.append(w)
+    return WeightedRandomSampler(weights, len(weights), replacement=True)
+
+
 def train_multi_class_model(num_classes=20, dataset_type='original', augmented_path=None, early_stopping_patience=None,
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
                            label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None,
-                           manifest_path=None, use_finger_features=True, use_spatial_features=True, manifest_dir=None, lr_override=None):
+                           manifest_path=None, use_finger_features=True, use_spatial_features=True, manifest_dir=None,
+                           lr_override=None, max_samples_per_class=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -406,12 +502,12 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         pickle_pool = augmented_path if augmented_path else train_manifest.get('pickle_pool', '')
         print(f"LOADING: Reading train manifest from {train_manifest_path}")
         print(f"PICKLE-POOL: {pickle_pool}")
-        all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool)
+        all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool, max_samples_per_class)
         print(f"FOUND: {len(all_pose_files)} train files")
 
         val_manifest_path = str(Path(manifest_dir) / "val_manifest.json")
         print(f"LOADING: Reading val manifest from {val_manifest_path}")
-        val_pose_files, val_labels = load_from_manifest(val_manifest_path, pickle_pool)
+        val_pose_files, val_labels = load_from_manifest(val_manifest_path, pickle_pool)  # no cap on val
         print(f"FOUND: {len(val_pose_files)} val files")
 
         target_glosses = set(g.upper() for g in train_manifest['classes'].keys())
@@ -432,7 +528,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
             if manifest_path:
                 print(f"MANIFEST: Using custom manifest (--manifest flag): {manifest_path}")
             print(f"LOADING: Reading train manifest from {train_manifest_path}")
-            all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool)
+            all_pose_files, all_labels = load_from_manifest(train_manifest_path, pickle_pool, max_samples_per_class)
             print(f"FOUND: {len(all_pose_files)} train files")
 
             # Load val data from val manifest
@@ -619,6 +715,9 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     gloss_to_id = {gloss: i for i, gloss in enumerate(unique_glosses)}
     id_to_gloss = {i: gloss for i, gloss in enumerate(unique_glosses)}
 
+    # Item 4: per-class loss weights (computed here, used in training loop)
+    train_label_counts = Counter(filtered_labels)
+
     print(f"SUCCESS: Training with {len(unique_glosses)} classes")
 
     # Set attributes for dataset loader compatibility
@@ -688,8 +787,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         cache_dir=cache_dir
     )
 
-    # CLASS BALANCING: Using shuffle for now (WeightedRandomSampler causes hang)
-    print(f"\nCLASS BALANCING: Using shuffle (WeightedRandomSampler currently disabled)")
+    # Item 4+7: WeightedRandomSampler for class balancing (num_workers=0 avoids hang)
+    print(f"\nCLASS BALANCING: WeightedRandomSampler (inverse-frequency, Item 4)")
 
     # Conditional training parameters based on dataset type
     if dataset_type == 'augmented':
@@ -743,9 +842,18 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
     else:
         print(f"  LR warmup: {warmup_epochs} epochs (custom)")
 
-    # Use shuffle instead of weighted sampler
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+    # Item 4: class-weighted sampler (no shuffle= when using sampler)
+    # Use dataset's actual labels — pre-caching may have removed corrupt samples,
+    # so train_dataset.labels can be shorter than the original train_labels list.
+    actual_train_labels = train_dataset.labels
+    actual_label_counts = Counter(actual_train_labels)
+    if len(actual_train_labels) != len(train_labels):
+        print(f"CLASS BALANCING: Sampler rebuilt after corrupt-sample removal "
+              f"({len(train_labels)} -> {len(actual_train_labels)} samples)")
+        train_label_counts = actual_label_counts
+    _train_sampler = _make_weighted_sampler(actual_train_labels, actual_label_counts)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=_train_sampler, num_workers=0)
+    val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False,          num_workers=0)
 
     # Use PyTorch's built-in optimizer (much faster than custom Python implementation)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=final_weight_decay, betas=(0.9, 0.999))
@@ -812,9 +920,14 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         'weight_decay': final_weight_decay
     }
 
+    # Item 4: per-class loss weights
+    class_weights = _compute_class_weights(train_label_counts, unique_glosses, gloss_to_id, device)
+    print(f"CLASS WEIGHTS: min={class_weights.min():.3f}  max={class_weights.max():.3f}  mean={class_weights.mean():.3f}")
+
     # Try to load checkpoint and resume if compatible
     start_epoch = 0
     best_val_acc = 0.0
+    best_criteria_pct = 0.0   # Item 5: primary checkpoint metric
     patience_counter = 0
 
     checkpoint = load_checkpoint_if_compatible(model_dir, training_config, force_fresh)
@@ -822,6 +935,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         start_epoch, best_val_acc, patience_counter = restore_from_checkpoint(
             checkpoint, model, optimizer
         )
+        best_criteria_pct = checkpoint.get('best_criteria_pct', 0.0)
         print(f"RESUMED: Starting from epoch {start_epoch}, best val acc: {best_val_acc:.2f}%")
 
     # Training loop with conditional parameters
@@ -859,8 +973,8 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
 
             optimizer.zero_grad()
             logits = model(pose_sequences, attention_mask, finger_features, motion_features, spatial_features)
-            # Label smoothing: prevents overconfident predictions, improves top-k accuracy
-            loss = torch.nn.functional.cross_entropy(logits, labels, label_smoothing=label_smoothing)
+            # Item 4: weighted cross-entropy + label smoothing
+            loss = torch.nn.functional.cross_entropy(logits, labels, weight=class_weights, label_smoothing=label_smoothing)
 
             loss.backward()
             # Gradient clipping: prevents gradient explosions
@@ -879,7 +993,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         avg_loss = total_loss / len(train_loader)
         train_accuracy = 100 * correct / total
 
-        # Validation
+        # Validation (overall accuracy)
         val_results = evaluate_model_improved(model, val_loader, device)
         val_accuracy = val_results['top1_accuracy']
         val_top3_accuracy = val_results['top3_accuracy']
@@ -895,32 +1009,49 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"  VAL: Val Acc (Top-3): {val_top3_accuracy:.2f}%")
         print(f"  LR: {current_lr:.6f}")
 
-        # Save best model
-        if val_accuracy > best_val_acc:
+        # Item 5: per-gloss criteria eval every CRITERIA_EVAL_EVERY epochs
+        criteria_pct = best_criteria_pct   # keep last known value between eval epochs
+        if (epoch + 1) % CRITERIA_EVAL_EVERY == 0 or epoch == start_epoch:
+            pg = _per_gloss_val_eval(model, val_loader, id_to_gloss, device)
+            criteria_pct = pg['_summary']['pct']
+            n_pass = pg['_summary']['n_passing']
+            n_tot  = pg['_summary']['n_total']
+            print(f"  CRITERIA: {n_pass}/{n_tot} glosses pass ({criteria_pct*100:.1f}%)")
+
+        # Item 7: refresh sampler at BOOST_EPOCHS with failing-gloss upweighting
+        if (epoch + 1) in BOOST_EPOCHS:
+            pg_boost = _per_gloss_val_eval(model, val_loader, id_to_gloss, device)
+            failing = {g for g, m in pg_boost.items() if g != '_summary' and not m['meets']}
+            if failing:
+                _train_sampler = _make_weighted_sampler(actual_train_labels, actual_label_counts, boost_set=failing)
+                train_loader   = DataLoader(train_dataset, batch_size=batch_size, sampler=_train_sampler, num_workers=0)
+                print(f"  BOOST: Epoch {epoch+1} - upweighted {len(failing)} failing glosses in sampler")
+
+        # Item 5: save best model based on criteria_pct (primary), val_accuracy (tiebreak)
+        improved = (criteria_pct > best_criteria_pct) or \
+                   (criteria_pct == best_criteria_pct and val_accuracy > best_val_acc)
+        if improved:
+            best_criteria_pct = criteria_pct
             best_val_acc = val_accuracy
             patience_counter = 0
-            print(f"  BEST: New best validation accuracy!")
+            print(f"  BEST: criteria={criteria_pct*100:.1f}%  val_acc={val_accuracy:.2f}%")
 
-            # Save best model weights
             if hasattr(model, 'save_pretrained'):
-                # CNN+LSTM model with HuggingFace style saving
                 model.save_pretrained(model_dir)
             else:
-                # Transformer model with PyTorch style saving
                 torch.save(model.state_dict(), f"{model_dir}/pytorch_model.bin")
-                # Also save config for loading later
                 if hasattr(model, 'config'):
                     with open(f"{model_dir}/config.json", 'w') as f:
                         json.dump(model.config.__dict__, f, indent=2)
-
             print(f"  SAVED: Best model saved")
         else:
             patience_counter += 1
 
-        # Save checkpoint every epoch (can resume from any point)
+        # Save checkpoint every epoch (stores best_criteria_pct for resume)
         save_checkpoint(
             model, optimizer, epoch, best_val_acc,
-            patience_counter, training_config, model_dir
+            patience_counter, training_config, model_dir,
+            extra={'best_criteria_pct': best_criteria_pct}
         )
 
         # Early stopping (only if enabled)
@@ -1126,6 +1257,9 @@ if __name__ == "__main__":
     parser.add_argument('--cache-dir', type=str, default=None,
                        help='Directory to save/load precomputed dataset cache (.pt files). '
                             'Persists across runs to skip the 30min precomputation step.')
+    parser.add_argument('--max-samples-per-class', type=int, default=None,
+                       help='Cap training samples per class. Keeps all originals, '
+                            'fills remaining with augmented. Reduces training time.')
 
     args = parser.parse_args()
 
@@ -1226,6 +1360,7 @@ if __name__ == "__main__":
                 use_spatial_features=not args.no_spatial_features,
                 manifest_dir=args.manifest_dir,
                 lr_override=args.lr,
+                max_samples_per_class=args.max_samples_per_class,
             )
 
             print()

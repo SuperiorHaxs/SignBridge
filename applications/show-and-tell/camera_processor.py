@@ -112,10 +112,14 @@ class CameraProcessor:
 
         # Convert WebM to MP4 if needed (OpenCV compatibility)
         if video_format.lower() == 'webm':
+            t_conv_start = time.time()
             mp4_path = self.temp_dir / f"video_{timestamp}.mp4"
             if self._convert_webm_to_mp4(str(video_path), str(mp4_path)):
                 video_path.unlink()  # Remove webm
                 video_path = mp4_path
+                print(f"[Pipeline]   ffmpeg convert: {time.time()-t_conv_start:.1f}s")
+            else:
+                print(f"[Pipeline]   ffmpeg convert FAILED after {time.time()-t_conv_start:.1f}s — using raw {video_format}")
 
         # Run video_to_pose
         pose_path = self.temp_dir / f"pose_{timestamp}.pose"
@@ -324,19 +328,28 @@ class CameraProcessor:
         Returns:
             Prediction dict or None on failure
         """
+        import time as _time
+
         # Step 1: Video to pose
+        t0 = _time.time()
         pose_path = self.video_bytes_to_pose(video_bytes, video_format)
+        t1 = _time.time()
+        print(f"[Pipeline] Step 1 video_to_pose: {t1-t0:.1f}s")
         if not pose_path:
             return None
 
         # Step 2: Pose to pickle
         pickle_path = self.pose_to_pickle(str(pose_path))
+        t2 = _time.time()
+        print(f"[Pipeline] Step 2 pose_to_pickle: {t2-t1:.1f}s")
         if not pickle_path:
             self._cleanup_file(pose_path)
             return None
 
         # Step 3: Predict
         result = self.predict(str(pickle_path), domain=domain)
+        t3 = _time.time()
+        print(f"[Pipeline] Step 3 predict: {t3-t2:.1f}s | Total: {t3-t0:.1f}s")
 
         # Cleanup temp files
         self._cleanup_file(pose_path)
@@ -375,17 +388,36 @@ class CameraProcessor:
 
         return result
 
+    def _get_ffmpeg_path(self):
+        """Find ffmpeg binary — check PATH first, then imageio_ffmpeg bundle."""
+        import shutil
+        path = shutil.which('ffmpeg')
+        if path:
+            return path
+        try:
+            import imageio_ffmpeg
+            return imageio_ffmpeg.get_ffmpeg_exe()
+        except ImportError:
+            return None
+
     def _convert_webm_to_mp4(self, webm_path: str, mp4_path: str) -> bool:
         """Convert WebM to MP4 using ffmpeg."""
+        ffmpeg = self._get_ffmpeg_path()
+        if not ffmpeg:
+            print("[CameraProcessor] WARNING: ffmpeg not found — cannot convert WebM to MP4")
+            return False
         try:
             cmd = [
-                'ffmpeg', '-y', '-i', webm_path,
+                ffmpeg, '-y', '-i', webm_path,
                 '-c:v', 'libx264', '-preset', 'ultrafast',
                 '-c:a', 'aac', mp4_path
             ]
             result = subprocess.run(cmd, capture_output=True, timeout=30)
+            if result.returncode != 0:
+                print(f"[CameraProcessor] ffmpeg conversion failed: {result.stderr[:200] if result.stderr else 'no stderr'}")
             return result.returncode == 0 and Path(mp4_path).exists()
-        except:
+        except Exception as e:
+            print(f"[CameraProcessor] ffmpeg error: {e}")
             return False
 
     def _cleanup_file(self, file_path: Path):

@@ -19,7 +19,7 @@ MODELS_DIR = PROJECT_ROOT / "models"
 sys.path.insert(0, str(MODELS_DIR / "openhands-modernized" / "src"))
 sys.path.insert(0, str(MODELS_DIR / "openhands-modernized" / "src" / "util"))
 
-from openhands_modernized_inference import load_model_from_checkpoint
+from openhands_modernized_inference import load_model_from_checkpoint, predict_dual_model
 
 # Default production models directory
 PRODUCTION_MODELS_DIR = MODELS_DIR / "openhands-modernized" / "production-models"
@@ -55,22 +55,49 @@ class ModelRegistry:
             print(f"  {domain:>12s} -> {model_dir} ({num_classes} classes, exists={exists})")
 
     def _load_registry(self) -> dict:
-        """Load domain registry from JSON file or use defaults."""
+        """Load domain registry from JSON file or use defaults.
+
+        Supports both the new format ({"domains": {...}, "fallback_model": ...})
+        and the legacy flat format ({"domain": "model_dir"}).
+        Returns a flat dict of {domain: model_dir_name} for internal use.
+        """
+        raw = None
         registry_path = os.environ.get("DOMAIN_REGISTRY_PATH")
         if registry_path and Path(registry_path).exists():
             print(f"[ModelRegistry] Registry source: env DOMAIN_REGISTRY_PATH={registry_path}")
             with open(registry_path, 'r') as f:
-                return json.load(f)
+                raw = json.load(f)
+        else:
+            local_registry = self._models_dir / "registry.json"
+            if local_registry.exists():
+                print(f"[ModelRegistry] Registry source: {local_registry}")
+                with open(local_registry, 'r') as f:
+                    raw = json.load(f)
 
-        # Check for registry.json in models dir
-        local_registry = self._models_dir / "registry.json"
-        if local_registry.exists():
-            print(f"[ModelRegistry] Registry source: {local_registry}")
-            with open(local_registry, 'r') as f:
-                return json.load(f)
+        if raw is None:
+            print(f"[ModelRegistry] Registry source: DEFAULT_REGISTRY (no registry.json found)")
+            return DEFAULT_REGISTRY.copy()
 
-        print(f"[ModelRegistry] Registry source: DEFAULT_REGISTRY (no registry.json found)")
-        return DEFAULT_REGISTRY.copy()
+        # New format: {"domains": {key: {model_dir, status, ...}}, "fallback_model": ..., "common_model": ...}
+        if "domains" in raw:
+            flat = {}
+            fallback = raw.get("fallback_model")
+            for domain_key, entry in raw["domains"].items():
+                model_dir = entry.get("model_dir")
+                if model_dir:
+                    flat[domain_key] = model_dir
+            # Register fallback as "generic" if not already present
+            if fallback and "generic" not in flat:
+                flat["generic"] = fallback
+            # Register common model (shared across all domains)
+            common = raw.get("common_model", {})
+            common_dir = common.get("model_dir") if isinstance(common, dict) else None
+            if common_dir:
+                flat["_common"] = common_dir
+            return flat
+
+        # Legacy flat format: {"domain": "model_dir_name"}
+        return raw
 
     def register_domain(self, domain: str, model_dir_name: str):
         """Register a new domain -> model mapping."""
@@ -114,6 +141,45 @@ class ModelRegistry:
             self._cache[domain] = (model, id_to_gloss, masked_class_ids)
 
         return model, id_to_gloss, masked_class_ids
+
+    def get_common_model(self):
+        """Get the shared common words model. Returns (model, id_to_gloss, masked_class_ids) or None."""
+        if "_common" not in self._registry:
+            return None
+        try:
+            return self.get_model("_common")
+        except (ValueError, FileNotFoundError):
+            return None
+
+    def predict(self, pickle_path: str, domain: str = "generic"):
+        """
+        Dual-model prediction: run domain model + common model, merge results.
+        Falls back to domain-only if common model is unavailable.
+
+        Returns:
+            dict: {gloss, confidence, source, domain_result, common_result, top_k_predictions}
+        """
+        domain_model, domain_tokenizer, domain_masked = self.get_model(domain)
+        common = self.get_common_model()
+
+        if common:
+            common_model, common_tokenizer, common_masked = common
+            return predict_dual_model(
+                pickle_path,
+                domain_model=domain_model, domain_tokenizer=domain_tokenizer,
+                domain_masked=domain_masked,
+                common_model=common_model, common_tokenizer=common_tokenizer,
+                common_masked=common_masked,
+            )
+        else:
+            # No common model — single model prediction
+            from openhands_modernized_inference import predict_pose_file
+            result = predict_pose_file(
+                pickle_path, model=domain_model, tokenizer=domain_tokenizer,
+                masked_class_ids=domain_masked,
+            )
+            result['source'] = 'domain'
+            return result
 
     def get_domains(self) -> dict:
         """

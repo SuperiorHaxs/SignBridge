@@ -3468,7 +3468,10 @@ if __name__ == '__main__':
     print(f"Plausibility (Gemini) Available: {GEMINI_AVAILABLE}")
     print("=" * 60)
     port = int(os.environ.get('PORT', 5000))
-    print(f"Starting server on http://localhost:{port}")
+    use_ssl = os.environ.get('SSL', '').lower() in ('1', 'true', 'yes')
+    protocol = "https" if use_ssl else "http"
+    print(f"Starting server on {protocol}://localhost:{port}")
     print("=" * 60)
 
-    app.run(debug=True, host='0.0.0.0', port=port)
+    ssl_ctx = 'adhoc' if use_ssl else None
+    app.run(debug=True, host='0.0.0.0', port=port, ssl_context=ssl_ctx)

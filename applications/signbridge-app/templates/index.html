@@ -3,1620 +3,409 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#c4872a">
+    <meta name="description" content="SignBridge — Real-time ASL to English translation for everyday conversations">
     <title>SignBridge</title>
-    <style>
-        /* ══════════════════════════════════════════
-           BASE
-           ══════════════════════════════════════════ */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a1e;
-            color: #f0ebe0;
-            min-height: 100vh;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ── Header ── */
-        .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 28px;
-            background: rgba(20,20,24,0.95);
-            backdrop-filter: saturate(180%) blur(20px);
-            -webkit-backdrop-filter: saturate(180%) blur(20px);
-            border-bottom: 1px solid rgba(224,210,180,0.08);
-            box-shadow: none;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .app-logo {
-            font-size: 2.4rem;
-            font-weight: 800;
-            color: #e8dcc0;
-            letter-spacing: 1px;
-        }
-
-        .app-logo span { color: #d4a843; }
-
-        /* ── Header toggles ── */
-        .header-toggle {
-            display: inline-flex;
-            background: rgba(224,210,180,0.08);
-            border: none;
-            border-radius: 20px;
-            overflow: hidden;
-            gap: 2px;
-            padding: 3px;
-        }
-        .htog-btn {
-            background: transparent;
-            border: none;
-            color: rgba(224,210,180,0.4);
-            padding: 6px 18px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-radius: 18px;
-        }
-        .htog-btn.active {
-            background: #e8dcc0;
-            color: #1a1a1e;
-            box-shadow: none;
-        }
-        .htog-btn:hover:not(.active) {
-            color: rgba(224,210,180,0.7);
-        }
-        .htog-btn.locked {
-            cursor: default;
-            opacity: 0.4;
-        }
-        .htog-btn.locked:hover:not(.active) {
-            color: rgba(224,210,180,0.4);
-        }
-
-        /* ══════════════════════════════════════════
-           LAYOUT
-           ══════════════════════════════════════════ */
-
-        /* ══════════════════════════════════════════
-           PHASE 1: CONVERSATION
-           ══════════════════════════════════════════ */
-        .conversation-layout {
-            flex: 1;
-            display: flex;
-            gap: 16px;
-            padding: 16px;
-            height: calc(100vh - 56px);
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* Camera side */
-        .camera-side {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            min-height: 0;
-        }
-
-        .camera-box {
-            flex: 1;
-            background: #242428;
-            border-radius: 20px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid rgba(224,210,180,0.08);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-        }
-
-        .camera-topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 16px;
-            background: #242428;
-            border-bottom: 1px solid rgba(224,210,180,0.06);
-        }
-
-        .camera-title {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: #d4a843;
-        }
-
-        .rec-badge {
-            display: none;
-            padding: 2px 10px;
-            border-radius: 10px;
-            background: #ff4444;
-            color: #fff;
-            font-size: 0.7rem;
-            font-weight: 700;
-            animation: pulse 1s infinite;
-        }
-        .rec-badge.on { display: inline-block; }
-
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-
-        .camera-view {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            background: #000000;
-            min-height: 280px;
-        }
-
-        .camera-view > video {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-
-        .camera-placeholder {
-            color: #999;
-            font-size: 0.9rem;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .rec-border {
-            display: none;
-            position: absolute;
-            inset: 0;
-            border: 3px solid #ff4444;
-            pointer-events: none;
-            z-index: 5;
-        }
-        .rec-border.on { display: block; }
-
-        /* Self-view PIP overlay (live mode video call layout) */
-        .pip-self {
-            display: none;
-            position: absolute;
-            bottom: 12px;
-            right: 12px;
-            width: 160px;
-            height: 120px;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 2px solid rgba(108, 99, 255, 0.8);
-            z-index: 10;
-            background: #0a0a14;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
-        .pip-self video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1);
-        }
-        .pip-self .pip-label {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            font-size: 0.65rem;
-            color: #fff;
-            background: rgba(0,0,0,0.6);
-            padding: 3px 8px;
-            text-align: center;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
-        /* Status bar under camera */
-        .status-bar {
-            padding: 12px 16px;
-            min-height: 50px;
-            background: #242428;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 0.95rem;
-            border-top: 1px solid rgba(224,210,180,0.06);
-        }
-
-        .status-bar .gloss { color: #e8dcc0; font-family: 'SF Mono', monospace; font-weight: 600; letter-spacing: 1px; }
-        .status-bar .sentence { color: #8bc78b; font-weight: 500; }
-        .status-bar .prompt { color: rgba(224,210,180,0.4); font-style: italic; }
-        .status-bar .processing { color: #d4a843; animation: pulse 1s infinite; }
-        .status-bar .doctor-script {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-        }
-        .status-bar .script-label {
-            color: #7cb3f0;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .status-bar .script-line {
-            color: #1a1a2e;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-        .status-bar .script-hint {
-            color: #555;
-            font-size: 0.75rem;
-        }
-        .status-bar .listening-indicator {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff4444;
-            margin-right: 6px;
-            animation: pulse 1s infinite;
-        }
-
-        /* Controls under camera */
-        .controls-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 10px 16px;
-        }
-
-        .btn {
-            padding: 10px 28px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 980px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 0.2px;
-        }
-
-        .btn-primary { background: #e8dcc0; color: #1a1a1e; }
-        .btn-primary:hover { background: #f0e8d4; }
-        .btn-primary:disabled { background: #333338; color: #666; cursor: not-allowed; }
-
-        .btn-secondary { background: transparent; color: #e8dcc0; border: 1.5px solid rgba(224,210,180,0.3); }
-        .btn-secondary:hover { background: #e8dcc0; color: #1a1a1e; }
-
-
-        /* Transcript side */
-        .transcript-side {
-            flex: 1;
-            background: #242428;
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            min-width: 280px;
-            max-width: 360px;
-            border: 1px solid rgba(224,210,180,0.08);
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-            min-height: 0;
-        }
-
-        .transcript-side.collapsed {
-            display: none !important;
-        }
-
-        .transcript-toggle {
-            position: absolute;
-            right: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: #242428;
-            border: 1px solid rgba(224,210,180,0.1);
-            color: #d4a843;
-            width: 28px;
-            height: 56px;
-            border-radius: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            transition: all 0.2s;
-            z-index: 10;
-        }
-        .transcript-toggle:hover {
-            border-color: #5b4fe6;
-            color: #1a1a2e;
-        }
-        .transcript-toggle.show-btn {
-            position: fixed;
-            right: 12px;
-            top: 50%;
-            border-radius: 8px 0 0 8px;
-        }
-
-        .transcript-title {
-            padding: 14px 18px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #e8dcc0;
-            border-bottom: 1px solid rgba(224,210,180,0.08);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .transcript-collapse-btn {
-            background: rgba(224,210,180,0.08);
-            border: none;
-            color: #d4a843;
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .transcript-collapse-btn:hover {
-            border-color: #6c63ff;
-            color: #e0e0e0;
-        }
-
-        .transcript-msgs {
-            flex: 1;
-            overflow-y: auto;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .msg {
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 0.88rem;
-            line-height: 1.5;
-            max-width: 90%;
-            animation: fadeUp 0.3s ease;
-        }
-
-        @keyframes fadeUp { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:translateY(0) } }
-
-        .msg.doctor { background: rgba(224,210,180,0.08); color: #f0ebe0; align-self: flex-start; border-bottom-left-radius: 3px; border: none; }
-        .msg.patient { background: #d4a843; color: #1a1a1e; align-self: flex-end; border-bottom-right-radius: 3px; border: none; }
-
-        .msg .speaker {
-            font-weight: 700;
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-bottom: 4px;
-        }
-        .msg.doctor .speaker { color: #d4a843; }
-        .msg.patient .speaker { color: rgba(26,26,30,0.6); }
-
-        /* ── Vocabulary Panel ── */
-        .vocab-panel {
-            margin-top: 6px;
-        }
-        .vocab-toggle-btn {
-            background: rgba(224,210,180,0.06);
-            border: none;
-            color: rgba(224,210,180,0.4);
-            padding: 5px 12px;
-            border-radius: 6px;
-            font-size: 0.72rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .vocab-toggle-btn:hover { background: rgba(224,210,180,0.1); color: #e8dcc0; }
-        .vocab-toggle-btn .vocab-arrow { transition: transform 0.2s; display: inline-block; font-size: 0.6rem; }
-        .vocab-toggle-btn.open .vocab-arrow { transform: rotate(180deg); }
-        .vocab-chip-container {
-            display: none;
-            flex-wrap: wrap;
-            gap: 5px;
-            padding: 8px 0;
-            max-height: 50vh;
-            overflow-y: auto;
-        }
-        .vocab-chip-container.open { display: flex; }
-        .vocab-chip {
-            background: rgba(224,210,180,0.06);
-            border: none;
-            color: #e8dcc0;
-            padding: 3px 9px;
-            border-radius: 12px;
-            font-size: 0.68rem;
-            font-weight: 500;
-            white-space: nowrap;
-            letter-spacing: 0.3px;
-        }
-        .vocab-chip.cat-medical { color: #8bc78b; background: rgba(139,199,139,0.1); }
-        .vocab-chip.cat-action { color: #8ba8e8; background: rgba(139,168,232,0.1); }
-        .vocab-chip.cat-question { color: #d4a843; background: rgba(212,168,67,0.1); }
-        .vocab-chip.cat-descriptor { color: #c08ae8; background: rgba(192,138,232,0.1); }
-        .vocab-chip.cat-time { color: #6cc0d4; background: rgba(108,192,212,0.1); }
-        .vocab-chip.cat-general { color: rgba(224,210,180,0.5); background: rgba(224,210,180,0.06); }
-        .vocab-chip-container::-webkit-scrollbar { width: 4px; }
-        .vocab-chip-container::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-        .vocab-chip-container::-webkit-scrollbar-track { background: transparent; }
-
-        /* Responsive styles moved to consolidated media queries at end of <style> */
-
-        /* ══════════════════════════════════════════
-           HOME / SCENARIO SELECTION
-           ══════════════════════════════════════════ */
-        .home-screen {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 32px 20px;
-        }
-        .home-title {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-        .home-title h1 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #e8dcc0;
-            letter-spacing: -0.5px;
-        }
-        .home-title h1 em { color: #e8dcc0; font-style: normal; }
-        .home-title h1 em span { color: #d4a843; }
-        .home-subtitle {
-            text-align: center;
-            color: rgba(224,210,180,0.45);
-            font-size: 0.95rem;
-            margin-bottom: 36px;
-        }
-        .home-section-label {
-            color: #d4a843;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            padding-left: 4px;
-        }
-        .scenario-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 12px;
-            margin-bottom: 28px;
-        }
-        .scenario-card {
-            background: #3a3a40;
-            border: 1px solid rgba(224,210,180,0.1);
-            border-radius: 18px;
-            padding: 20px 22px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-        }
-        .scenario-card:hover {
-            transform: translateY(-4px);
-            border-color: rgba(212,168,67,0.2);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.35);
-        }
-        .scenario-card.featured {
-            background: linear-gradient(135deg, #d4a843, #c09530);
-            color: #1a1a1e;
-            border: none;
-        }
-        .scenario-card.featured:hover {
-            box-shadow: 0 12px 32px rgba(212,168,67,0.3);
-        }
-        .scenario-icon {
-            font-size: 1.6rem;
-            flex-shrink: 0;
-            width: 42px;
-            height: 42px;
-            text-align: center;
-            line-height: 42px;
-            background: rgba(212,168,67,0.12);
-            border-radius: 12px;
-        }
-        .scenario-card.featured .scenario-icon {
-            background: rgba(26,26,30,0.15);
-        }
-        .scenario-icon .ico {
-            display: block;
-            font-size: 1.3rem;
-            color: #d4a843;
-            line-height: 42px;
-        }
-        .scenario-card.featured .scenario-icon .ico {
-            color: #2a2010;
-        }
-        .scenario-info h3 {
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: #f5f0e5;
-            margin-bottom: 5px;
-            letter-spacing: 0.2px;
-        }
-        .scenario-info p {
-            font-size: 0.78rem;
-            color: #c8bda8;
-            line-height: 1.5;
-        }
-        .scenario-card.featured .scenario-info p { color: rgba(26,26,30,0.55); }
-        .scenario-badge {
-            display: inline-block;
-            font-size: 0.6rem;
-            padding: 3px 10px;
-            border-radius: 980px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 6px;
-        }
-        .badge-healthcare { background: rgba(212,168,67,0.15); color: #d4a843; border: none; }
-        .badge-generic { background: rgba(224,210,180,0.06); color: rgba(224,210,180,0.5); border: none; }
-        .scenario-card.featured .badge-healthcare { background: rgba(26,26,30,0.15); color: #1a1a1e; }
-
-        /* ── Mode Toggle ── */
-        .mode-toggle-row {
-            text-align: center;
-            margin-bottom: 28px;
-        }
-        .mode-toggle {
-            display: inline-flex;
-            background: rgba(224,210,180,0.06);
-            border: none;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 8px;
-            padding: 3px;
-            gap: 2px;
-        }
-        .mode-btn {
-            background: transparent;
-            border: none;
-            color: rgba(224,210,180,0.4);
-            padding: 10px 24px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-radius: 10px;
-        }
-        .mode-btn.active {
-            background: #e8dcc0;
-            color: #1a1a1e;
-            box-shadow: none;
-        }
-        .mode-btn:hover:not(.active) {
-            color: #e8dcc0;
-        }
-        .mode-icon { font-size: 1rem; }
-        .mode-description {
-            color: rgba(224,210,180,0.4);
-            font-size: 0.75rem;
-        }
-
-        /* ── Back Button ── */
-        .back-btn {
-            background: rgba(224,210,180,0.08);
-            border: none;
-            color: #e8dcc0;
-            padding: 6px 14px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .back-btn:hover {
-            background: rgba(224,210,180,0.14);
-            color: #e8dcc0;
-        }
-
-        /* ── Training Sub-tabs ── */
-        .training-subtabs {
-            display: flex;
-            background: rgba(224,210,180,0.06);
-            border: none;
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 0 auto 28px;
-            width: fit-content;
-            padding: 3px;
-            gap: 2px;
-        }
-        .subtab-btn {
-            background: transparent;
-            border: none;
-            color: rgba(224,210,180,0.4);
-            padding: 9px 22px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            letter-spacing: 0.3px;
-            border-radius: 10px;
-        }
-        .subtab-btn.active {
-            background: #e8dcc0;
-            color: #1a1a1e;
-            box-shadow: none;
-        }
-        .subtab-btn:hover:not(.active) { color: #e8dcc0; }
-
-        /* ── Coming-soon scenario card ── */
-        .scenario-card.coming-soon {
-            opacity: 0.4;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .badge-coming { background: rgba(224,210,180,0.06); color: rgba(224,210,180,0.3); }
-
-        /* ── Caption Video / Live Captions screen ── */
-        .live-captions-layout {
-            display: none;
-            flex-direction: column;
-            height: calc(100vh - 56px);
-            max-width: 820px;
-            margin: 0 auto;
-            padding: 16px;
-            gap: 14px;
-        }
-        .lc-topbar { display: flex; align-items: center; justify-content: space-between; }
-        .lc-camera-box {
-            background: #242428;
-            border: 1px solid rgba(224,210,180,0.08);
-            border-radius: 20px;
-            overflow: hidden;
-            flex-shrink: 0;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-        }
-        .lc-camera-view {
-            width: 100%; height: 200px;
-            position: relative; background: #000;
-        }
-        .lc-camera-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .lc-camera-placeholder {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            color: rgba(224,210,180,0.3); font-size: 0.85rem;
-        }
-        .lc-status-bar {
-            padding: 8px 14px; font-size: 0.75rem;
-            color: rgba(224,210,180,0.4); border-top: 1px solid rgba(224,210,180,0.06); min-height: 34px;
-        }
-        .lc-caption-area {
-            flex: 1;
-            background: #242428;
-            border: 1px solid rgba(224,210,180,0.08);
-            border-radius: 20px;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            min-height: 0;
-        }
-        .lc-section-label {
-            font-size: 0.65rem; color: #d4a843;
-            text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;
-        }
-        .lc-paragraph {
-            font-size: 1.05rem; line-height: 1.85; color: #f0ebe0; min-height: 48px;
-        }
-        .lc-chunk { transition: color 0.5s; }
-        .lc-chunk.fresh { color: #d4a843; }
-        .lc-gloss-buffer {
-            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-            padding-top: 10px; border-top: 1px solid rgba(224,210,180,0.08);
-        }
-        .lc-buffer-label {
-            font-size: 0.65rem; color: #d4a843;
-            text-transform: uppercase; letter-spacing: 1px; font-weight: 600;
-        }
-        .lc-gloss-chip {
-            background: rgba(212,168,67,0.15); color: #d4a843; border: none;
-            padding: 4px 12px; border-radius: 980px; font-size: 0.75rem; font-weight: 600;
-        }
-        .lc-thinking {
-            display: none; font-size: 0.75rem; color: #d4a843; font-style: italic;
-        }
-        .lc-controls { display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
-
-        /* ══════════════════════════════════════════
-           LIVE DEMO — Camera + Caption
-           ══════════════════════════════════════════ */
-        #phaseLiveDemo {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 24px;
-            height: calc(100vh - 60px);
-            background: #111114;
-        }
-        .live-demo-branding {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .live-demo-branding .brand-name {
-            font-size: 4.5rem;
-            font-weight: 800;
-            letter-spacing: 2px;
-        }
-        .live-demo-branding .brand-name .brand-sign { color: #e8dcc0; }
-        .live-demo-branding .brand-name .brand-bridge { color: #d4a843; }
-        .live-demo-branding .brand-tagline {
-            font-size: 0.9rem;
-            color: rgba(255,255,255,0.35);
-            margin-top: 6px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            font-weight: 500;
-        }
-        .live-demo-container {
-            max-width: 700px;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            flex: 1;
-        }
-        .live-demo-topbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .live-demo-topbar .back-btn {
-            background: rgba(255,255,255,0.08);
-            border: none;
-            color: rgba(255,255,255,0.6);
-            border-radius: 980px;
-        }
-        .live-demo-topbar .back-btn:hover {
-            background: rgba(255,255,255,0.14);
-            color: #f5f5f7;
-        }
-        .live-demo-camera {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 4/3;
-            background: #000;
-            border-radius: 24px;
-            overflow: hidden;
-            border: none;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.5);
-        }
-        .live-demo-camera video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-        .live-demo-camera .placeholder {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255,255,255,0.25);
-            font-size: 0.95rem;
-        }
-        .live-demo-caption-box {
-            background: rgba(255,255,255,0.06);
-            border: none;
-            border-radius: 20px;
-            padding: 32px 36px;
-            text-align: center;
-        }
-        .live-demo-caption-label {
-            font-size: 0.65rem;
-            color: #d4a843;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            font-weight: 600;
-            margin-bottom: 14px;
-        }
-        .live-demo-caption-text {
-            font-size: 2rem;
-            font-weight: 600;
-            color: #e8dcc0;
-            line-height: 1.5;
-            letter-spacing: -0.3px;
-        }
-
-        /* Responsive styles for home/live-demo moved to consolidated media queries at end of <style> */
-
-        /* ══════════════════════════════════════════
-           BREAKDOWN PHASE
-           ══════════════════════════════════════════ */
-        #phaseBreakdown {
-            display: none;
-            flex-direction: column;
-            padding: 24px;
-            max-width: 960px;
-            margin: 0 auto;
-            width: 100%;
-        }
-        .breakdown-header { text-align: center; margin-bottom: 24px; }
-        .breakdown-header h2 { font-size: 1.4rem; color: #e8dcc0; margin-bottom: 6px; font-weight: 700; letter-spacing: -0.3px; }
-        .breakdown-header p { color: rgba(224,210,180,0.45); font-size: 0.9rem; }
-
-        .sentence-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        .sentence-tab {
-            background: rgba(224,210,180,0.06); border: none; color: rgba(224,210,180,0.4);
-            border-radius: 980px; padding: 8px 18px; cursor: pointer; font-size: 0.85rem;
-            transition: all 0.3s ease;
-        }
-        .sentence-tab.active { background: #e8dcc0; color: #1a1a1e; }
-
-        .pipeline-section { display: none; }
-        .pipeline-section.active { display: block; }
-
-        .pipeline-step {
-            background: #ffffff; border: 1px solid #d0d0e0; border-radius: 12px;
-            padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .step-number {
-            width: 28px; height: 28px; border-radius: 50%; background: #6c63ff;
-            color: #fff; font-weight: 700; font-size: 0.85rem;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
-        .step-title { font-weight: 600; color: #5b4fe6; font-size: 0.95rem; }
-
-        .segment-grid { display: flex; flex-wrap: wrap; gap: 12px; }
-        .segment-card, .prediction-card {
-            background: #f8f8fc; border: 1px solid #d0d0e0; border-radius: 8px;
-            overflow: hidden; width: 150px; flex-shrink: 0;
-        }
-        .segment-card video, .prediction-card video {
-            width: 100%; height: 100px; object-fit: cover; display: block;
-        }
-        .seg-label { padding: 4px 8px; font-size: 0.75rem; color: #666; text-align: center; }
-
-        .pred-info { padding: 8px; }
-        .pred-top1 { font-size: 0.8rem; font-weight: 700; margin-bottom: 4px; }
-        .confidence-bar { height: 4px; background: #e0e0ee; border-radius: 2px; margin-bottom: 6px; }
-        .conf-fill { height: 100%; border-radius: 2px; }
-        .top-k-list { font-size: 0.7rem; color: #888; }
-        .top-k-item { display: flex; justify-content: space-between; padding: 1px 0; }
-
-        .construction-display {
-            display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-        }
-        .construct-box {
-            flex: 1; min-width: 180px; background: #f8f8fc; border-radius: 8px; padding: 14px;
-        }
-        .construct-box.raw { border: 1px solid #e0d0b0; }
-        .construct-box.llm { border: 1px solid #b0e0c0; }
-        .box-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .box-content { font-size: 1rem; font-weight: 600; color: #1a1a2e; }
-        .construct-box.llm .box-content { color: #1a9e5c; }
-        .construct-arrow { font-size: 1.5rem; color: #5b4fe6; flex-shrink: 0; }
-
-        .breakdown-nav {
-            display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap;
-        }
-        .breakdown-nav button {
-            padding: 10px 24px; border-radius: 8px; border: 1px solid #d0d0e0;
-            background: #f0f0f8; color: #555; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
-        }
-        .breakdown-nav button:hover { border-color: #5b4fe6; color: #1a1a2e; background: #e8e6ff; }
-        .breakdown-nav button.primary { background: #5b4fe6; border-color: #5b4fe6; color: #fff; }
-
-        #btnHowItWorks {
-            display: none; padding: 12px 28px; border-radius: 10px;
-            background: linear-gradient(135deg, #5b4fe6, #8b6cf0);
-            color: #fff; font-size: 0.95rem; font-weight: 600;
-            border: none; cursor: pointer; margin-top: 8px; transition: opacity 0.2s;
-        }
-        #btnHowItWorks:hover { opacity: 0.85; }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Tablets (769px - 1024px)
-           ══════════════════════════════════════════ */
-        @media (min-width: 769px) and (max-width: 1024px) {
-            .app-header { padding: 12px 20px; }
-            .app-logo { font-size: 1.8rem; }
-
-            .conversation-layout { padding: 12px; gap: 12px; }
-            .transcript-side { min-width: 240px; max-width: 300px; }
-
-            .home-screen { padding: 24px 16px; }
-            .scenario-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-
-            .live-demo-container { max-width: 600px; }
-            .live-demo-caption-box { padding: 20px 24px; }
-            .live-demo-caption-text { font-size: 1.4rem; }
-
-            #phaseBreakdown { padding: 20px 16px; }
-            .segment-card, .prediction-card { width: 130px; }
-            .segment-card video, .prediction-card video { height: 85px; }
-
-            .pip-self { width: 140px; height: 105px; }
-        }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Phones / Small Tablets (max 768px)
-           ══════════════════════════════════════════ */
-        @media (max-width: 768px) {
-            /* -- Header -- */
-            .app-header {
-                padding: 10px 14px;
-                flex-wrap: wrap;
-                gap: 8px;
-            }
-            .app-logo { font-size: 1.6rem; }
-            .htog-btn {
-                padding: 6px 12px;
-                font-size: 0.7rem;
-                min-height: 44px;
-                display: inline-flex;
-                align-items: center;
-            }
-
-            /* -- Conversation layout -- */
-            .conversation-layout {
-                flex-direction: column;
-                height: calc(100vh - 56px);
-                padding: 8px;
-                gap: 8px;
-            }
-            .camera-side { flex: 1; min-height: 0; }
-            .camera-view { min-height: 180px; }
-            .transcript-side {
-                flex: none;
-                min-width: unset;
-                max-width: 100%;
-                max-height: 200px;
-                border-radius: 10px;
-            }
-            .transcript-side.collapsed { display: none !important; }
-            .transcript-title { padding: 10px 14px; font-size: 0.82rem; }
-            .transcript-msgs { padding: 10px; gap: 6px; }
-            .msg { font-size: 0.82rem; padding: 8px 10px; }
-
-            /* -- Controls -- */
-            .controls-row {
-                padding: 6px 8px;
-                gap: 8px;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            .btn {
-                padding: 10px 18px;
-                font-size: 0.82rem;
-                min-height: 44px;
-            }
-
-            /* -- PIP self-view -- */
-            .pip-self { width: 120px; height: 90px; border-radius: 8px; }
-
-            /* -- Status bar -- */
-            .status-bar { padding: 8px 12px; font-size: 0.85rem; min-height: 44px; }
-
-            /* -- Camera box -- */
-            .camera-box { border-radius: 10px; }
-            .camera-topbar { padding: 6px 12px; }
-            .camera-title { font-size: 0.72rem; }
-
-            /* -- Home screen -- */
-            .home-screen { padding: 20px 12px; }
-            .home-title h1 { font-size: 1.5rem; }
-            .home-subtitle { font-size: 0.85rem; margin-bottom: 20px; }
-            .scenario-grid { grid-template-columns: 1fr; gap: 10px; }
-            .scenario-card { padding: 14px 16px; gap: 12px; min-height: 44px; }
-            .scenario-icon { font-size: 1.3rem; }
-            .scenario-info h3 { font-size: 0.9rem; }
-
-            /* -- Mode toggle -- */
-            .mode-btn { padding: 8px 16px; font-size: 0.8rem; min-height: 44px; }
-            .mode-toggle-row { margin-bottom: 20px; }
-
-            /* -- Training subtabs -- */
-            .training-subtabs { margin-bottom: 20px; }
-            .subtab-btn { padding: 8px 14px; font-size: 0.75rem; min-height: 44px; }
-
-            /* -- Live captions -- */
-            .live-captions-layout { padding: 12px; gap: 10px; max-width: 100%; }
-            .lc-camera-view { height: 150px; }
-            .lc-caption-area { padding: 14px; }
-            .lc-paragraph { font-size: 0.95rem; line-height: 1.7; }
-
-            /* -- Live demo -- */
-            #phaseLiveDemo { padding: 14px; height: calc(100vh - 56px); }
-            .live-demo-container { max-width: 100%; gap: 12px; }
-            .live-demo-branding .brand-name { font-size: 2.2rem; }
-            .live-demo-branding .brand-tagline { font-size: 0.78rem; }
-            .live-demo-camera { border-radius: 10px; }
-            .live-demo-caption-box { padding: 18px 16px; border-radius: 10px; }
-            .live-demo-caption-text { font-size: 1.1rem; }
-
-            /* -- Breakdown -- */
-            #phaseBreakdown { padding: 16px 12px; }
-            .breakdown-header h2 { font-size: 1.2rem; }
-            .breakdown-header p { font-size: 0.82rem; }
-            .segment-grid { gap: 8px; }
-            .segment-card, .prediction-card { width: 120px; }
-            .segment-card video, .prediction-card video { height: 80px; }
-            .pipeline-step { padding: 14px; }
-            .construction-display { gap: 10px; }
-            .construct-box { min-width: 140px; padding: 10px; }
-            .construct-arrow { font-size: 1.2rem; }
-            .sentence-tab { padding: 6px 12px; font-size: 0.8rem; min-height: 44px; }
-            .breakdown-nav button { padding: 10px 18px; font-size: 0.82rem; min-height: 44px; }
-
-            /* -- Back button -- */
-            .back-btn { min-height: 44px; padding: 8px 14px; font-size: 0.78rem; }
-
-            /* -- Vocab panel -- */
-            .vocab-toggle-btn { min-height: 44px; padding: 8px 14px; }
-            .vocab-chip { padding: 4px 10px; font-size: 0.7rem; }
-        }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Small phones portrait (max 480px)
-           ══════════════════════════════════════════ */
-        @media (max-width: 480px) {
-            /* -- Header stacks toggles below logo -- */
-            .app-header {
-                padding: 8px 10px;
-                justify-content: center;
-            }
-            .app-logo { font-size: 1.4rem; width: 100%; text-align: center; }
-            .htog-btn {
-                padding: 5px 10px;
-                font-size: 0.65rem;
-            }
-
-            /* -- Conversation -- */
-            .conversation-layout {
-                padding: 6px;
-                gap: 6px;
-                height: calc(100vh - 80px);
-            }
-            .camera-view { min-height: 140px; }
-            .transcript-side { max-height: 160px; }
-            .transcript-title { padding: 8px 10px; font-size: 0.78rem; }
-            .transcript-msgs { padding: 8px; gap: 4px; }
-            .msg { font-size: 0.78rem; padding: 6px 8px; max-width: 95%; }
-
-            /* -- Controls -- */
-            .controls-row { padding: 4px 6px; gap: 6px; }
-            .btn { padding: 8px 14px; font-size: 0.78rem; }
-
-            /* -- PIP -- */
-            .pip-self { width: 100px; height: 75px; bottom: 8px; right: 8px; border-radius: 6px; }
-
-            /* -- Status bar -- */
-            .status-bar { padding: 6px 8px; font-size: 0.78rem; }
-            .status-bar .script-line { font-size: 0.95rem; }
-
-            /* -- Home screen -- */
-            .home-screen { padding: 14px 8px; }
-            .home-title h1 { font-size: 1.3rem; }
-            .home-subtitle { font-size: 0.8rem; margin-bottom: 16px; }
-            .scenario-card { padding: 12px; gap: 10px; }
-            .scenario-icon { font-size: 1.2rem; width: 30px; }
-            .scenario-info h3 { font-size: 0.85rem; }
-            .scenario-info p { font-size: 0.7rem; }
-
-            /* -- Mode toggle smaller -- */
-            .mode-toggle-row { margin-bottom: 16px; }
-            .mode-btn { padding: 7px 12px; font-size: 0.75rem; gap: 5px; }
-            .mode-icon { font-size: 0.85rem; }
-            .mode-description { font-size: 0.7rem; }
-
-            /* -- Training subtabs -- */
-            .training-subtabs { margin-bottom: 16px; }
-            .subtab-btn { padding: 7px 10px; font-size: 0.7rem; }
-
-            /* -- Live captions -- */
-            .live-captions-layout { padding: 8px; gap: 8px; }
-            .lc-camera-view { height: 120px; }
-            .lc-paragraph { font-size: 0.88rem; }
-            .lc-caption-area { padding: 10px; gap: 10px; }
-
-            /* -- Live demo -- */
-            #phaseLiveDemo { padding: 10px; }
-            .live-demo-container { gap: 10px; }
-            .live-demo-branding { margin-bottom: 6px; }
-            .live-demo-branding .brand-name { font-size: 1.8rem; }
-            .live-demo-branding .brand-tagline { font-size: 0.72rem; }
-            .live-demo-camera { border-radius: 8px; aspect-ratio: 3/4; }
-            .live-demo-caption-box { padding: 14px 12px; border-radius: 8px; }
-            .live-demo-caption-text { font-size: 1rem; }
-            .live-demo-caption-label { font-size: 0.65rem; margin-bottom: 8px; }
-
-            /* -- Breakdown -- */
-            #phaseBreakdown { padding: 12px 8px; }
-            .breakdown-header { margin-bottom: 16px; }
-            .breakdown-header h2 { font-size: 1.05rem; }
-            .breakdown-header p { font-size: 0.78rem; }
-            .segment-grid { gap: 6px; }
-            .segment-card, .prediction-card { width: 110px; }
-            .segment-card video, .prediction-card video { height: 70px; }
-            .seg-label { font-size: 0.68rem; padding: 3px 6px; }
-            .pred-info { padding: 6px; }
-            .pred-top1 { font-size: 0.72rem; }
-            .top-k-list { font-size: 0.65rem; }
-            .pipeline-step { padding: 12px; margin-bottom: 12px; }
-            .step-title { font-size: 0.85rem; }
-            .construction-display { flex-direction: column; gap: 8px; }
-            .construct-arrow { transform: rotate(90deg); }
-            .construct-box { min-width: unset; width: 100%; }
-            .sentence-tab { padding: 5px 10px; font-size: 0.75rem; }
-            .breakdown-nav { gap: 8px; }
-            .breakdown-nav button { padding: 8px 16px; font-size: 0.8rem; width: 100%; }
-
-            /* -- Vocab chips -- */
-            .vocab-chip-container { max-height: 40vh; }
-        }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Portrait orientation fixes
-           ══════════════════════════════════════════ */
-        @media (orientation: portrait) and (max-width: 768px) {
-            /* In portrait, camera takes priority, transcript is small */
-            .conversation-layout { flex-direction: column; }
-            .camera-side { flex: 1; }
-            .transcript-side { flex: none; max-height: 25vh; }
-
-            /* Live demo camera should be taller in portrait */
-            .live-demo-camera { aspect-ratio: 3/4; }
-        }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Landscape orientation on phones
-           ══════════════════════════════════════════ */
-        @media (orientation: landscape) and (max-height: 500px) {
-            /* Very short viewport in landscape phone */
-            .app-header { padding: 4px 12px; }
-            .app-logo { font-size: 1.2rem; }
-            .htog-btn { padding: 4px 10px; font-size: 0.65rem; min-height: 36px; }
-
-            .conversation-layout {
-                flex-direction: row;
-                height: calc(100vh - 40px);
-                padding: 4px 8px;
-                gap: 6px;
-            }
-            .camera-side { flex: 2; }
-            .camera-view { min-height: 100px; }
-            .transcript-side {
-                flex: 1;
-                min-width: 180px;
-                max-width: 260px;
-                max-height: unset;
-            }
-            .controls-row { padding: 4px 6px; gap: 6px; }
-            .btn { padding: 6px 14px; font-size: 0.75rem; min-height: 36px; }
-            .status-bar { padding: 4px 8px; font-size: 0.75rem; min-height: 32px; }
-            .camera-topbar { padding: 4px 8px; }
-            .pip-self { width: 100px; height: 75px; }
-
-            /* Home screen in landscape phone */
-            .home-screen { padding: 10px; }
-            .home-title h1 { font-size: 1.3rem; }
-            .scenario-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
-
-            /* Live demo in landscape */
-            #phaseLiveDemo { padding: 8px; height: calc(100vh - 40px); }
-            .live-demo-branding { margin-bottom: 4px; }
-            .live-demo-branding .brand-name { font-size: 1.6rem; }
-            .live-demo-branding .brand-tagline { display: none; }
-            .live-demo-camera { aspect-ratio: 16/9; }
-            .live-demo-caption-box { padding: 10px 14px; }
-            .live-demo-caption-text { font-size: 1rem; }
-
-            /* Breakdown in landscape phone */
-            #phaseBreakdown { padding: 10px; }
-            .breakdown-header { margin-bottom: 12px; }
-            .breakdown-header h2 { font-size: 1.1rem; }
-
-            /* Live captions in landscape */
-            .lc-camera-view { height: 100px; }
-        }
-
-        /* ══════════════════════════════════════════
-           RESPONSIVE — Tablet landscape specific
-           ══════════════════════════════════════════ */
-        @media (min-width: 769px) and (max-width: 1024px) and (orientation: landscape) {
-            .conversation-layout {
-                flex-direction: row;
-                height: calc(100vh - 56px);
-            }
-            .camera-side { flex: 2; }
-            .transcript-side { min-width: 240px; max-width: 300px; max-height: unset; }
-        }
-
-        /* Ensure no horizontal scroll globally */
-        html, body { max-width: 100vw; overflow-x: hidden; }
-    </style>
+    <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="stylesheet" href="/static/css/main.css?v=40">
 </head>
-<body>
+<body data-mode="{{ mode }}" data-method="{{ method }}">
 
+<!-- ══════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════ -->
 <header class="app-header">
-    <div class="app-logo" style="cursor:pointer" onclick="showHomeScreen()">Sign<span>Bridge</span></div>
-    <div style="display:flex;gap:8px;align-items:center">
-        <button class="back-btn" id="headerHomeBtn" onclick="showHomeScreen()" style="display:none">&#x1F3E0; Home</button>
-        <div class="header-toggle" id="headerModeToggle">
-            <button class="htog-btn {{ 'active' if mode == 'demo' }}" id="htogDemo" onclick="setAppMode('demo')" style="--active-color:#f0a050">Training</button>
-            <button class="htog-btn {{ 'active' if mode == 'live' }}" id="htogLive" onclick="setAppMode('live')" style="--active-color:#4caf80">Live</button>
+    <div class="header-row-top">
+        <div class="app-logo" onclick="showHomeScreen()">Sign<span>Bridge</span></div>
+        <div class="header-actions">
+            <span class="header-welcome" id="heroWelcome" style="display:none"></span>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">&#x1F319;</button>
+            <button class="profile-btn" id="profileBtn" onclick="openProfile()" title="Profile">?</button>
         </div>
+    </div>
+    <div class="header-row-toggles">
         <div class="header-toggle" id="headerMethodToggle">
-            <button class="htog-btn {{ 'active' if method == 'sign' }}" id="htogSign" onclick="setMethod('sign')" style="--active-color:#b07cf0">I Sign</button>
-            <button class="htog-btn {{ 'active' if method == 'speak' }}" id="htogSpeak" onclick="setMethod('speak')" style="--active-color:#7cb3f0">I Speak</button>
+            <button class="htog-btn {{ 'active' if method == 'sign' }}" id="htogSign" onclick="setMethod('sign')">I Sign</button>
+            <button class="htog-btn {{ 'active' if method == 'speak' }}" id="htogSpeak" onclick="setMethod('speak')">I Speak</button>
         </div>
     </div>
 </header>
 
 <!-- ══════════════════════════════════════════
-     HOME SCREEN — Scenario Selection
+     PROFILE PANEL (2.12)
      ══════════════════════════════════════════ -->
-<div class="home-screen" id="homeScreen">
-    <div class="home-subtitle" style="margin-top:12px">Choose a scenario to begin communicating</div>
+<div class="profile-panel-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
+    <div class="profile-panel">
+        <div class="profile-header">
+            <h3>Your Profile</h3>
+            <button class="profile-close" onclick="closeProfile()">&#x2715;</button>
+        </div>
 
-    <!-- Training sub-tabs: only shown in demo/training mode -->
-    <div class="training-subtabs" id="trainingSubtabs">
-        <button class="subtab-btn active" id="subtabScripted" onclick="switchTrainingSubTab('scripted')">&#x1F3AC; Scripted Demo</button>
-        <button class="subtab-btn" id="subtabTrainingLiveDemo" onclick="switchTrainingSubTab('live-demo')">&#x1F4F7; Live Demo</button>
-    </div>
-
-    <!-- SCRIPTED DEMO content -->
-    <div id="demoScenarios">
-
-    <div class="home-section-label">Specialized</div>
-    <div class="scenario-grid">
-        <div class="scenario-card featured" onclick="selectScenario('doctor_visit', 'Doctor Visit')">
-            <div class="scenario-icon"><span class="ico">+</span></div>
-            <div class="scenario-info">
-                <h3>Doctor Visit</h3>
-                <p>Medical appointments, describing symptoms, understanding treatment</p>
-                <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+        <div class="profile-avatar-row">
+            <div class="profile-avatar" id="profileAvatar">?</div>
+            <div class="profile-avatar-info">
+                <div class="profile-name-display" id="profileNameDisplay">Guest</div>
+                <div class="profile-joined" id="profileJoined"></div>
             </div>
         </div>
-    </div>
 
-    <div class="home-section-label">General Scenarios</div>
-    <div class="scenario-grid">
-        <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
-            <div class="scenario-icon"><span class="ico">R</span></div>
-            <div class="scenario-info">
-                <h3>Restaurant</h3>
-                <p>Ordering food, asking about the menu, dietary needs</p>
-                <span class="scenario-badge badge-healthcare">Restaurant model</span>
+        <div>
+            <div class="profile-section-label">Settings</div>
+            <div class="profile-field">
+                <label>Display Name</label>
+                <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="30" oninput="saveProfileName()">
+            </div>
+            <div class="profile-field" style="margin-top:10px">
+                <label>Preferred Method</label>
+                <select id="profileMethodPref" onchange="saveProfilePrefs()">
+                    <option value="sign">I Sign</option>
+                    <option value="speak">I Speak</option>
+                </select>
+            </div>
+            <div class="profile-field" style="margin-top:10px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                    <input type="checkbox" id="profileSaveHistory" onchange="saveProfilePrefs()" checked>
+                    Save live conversation history
+                </label>
             </div>
         </div>
-    </div>
 
-    <div class="home-section-label">General Scenarios</div>
-    <div class="scenario-grid">
-        <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
-            <div class="scenario-icon"><span class="ico">S</span></div>
-            <div class="scenario-info">
-                <h3>Shopping</h3>
-                <p>Retail stores, finding items, asking about prices</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Job Interview')">
-            <div class="scenario-icon"><span class="ico">J</span></div>
-            <div class="scenario-info">
-                <h3>Job Interview</h3>
-                <p>Professional conversations, interviews, workplace meetings</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Banking')">
-            <div class="scenario-icon"><span class="ico">B</span></div>
-            <div class="scenario-info">
-                <h3>Banking</h3>
-                <p>Bank visits, account inquiries, financial services</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Emergency')">
-            <div class="scenario-icon"><span class="ico">!</span></div>
-            <div class="scenario-info">
-                <h3>Emergency</h3>
-                <p>Urgent situations, communicating with first responders</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Education')">
-            <div class="scenario-icon"><span class="ico">E</span></div>
-            <div class="scenario-info">
-                <h3>Education</h3>
-                <p>Classroom, parent-teacher conferences, campus interactions</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Travel')">
-            <div class="scenario-icon"><span class="ico">T</span></div>
-            <div class="scenario-info">
-                <h3>Travel</h3>
-                <p>Airport, hotel check-in, directions, transportation</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-        <div class="scenario-card" onclick="selectScenario('generic', 'Government Services')">
-            <div class="scenario-icon"><span class="ico">G</span></div>
-            <div class="scenario-info">
-                <h3>Government Services</h3>
-                <p>DMV, post office, social services, public offices</p>
-                <span class="scenario-badge badge-generic">General model</span>
-            </div>
-        </div>
-    </div>
-
-    </div><!-- /#demoScenarios -->
-
-    <!-- CAPTION VIDEO scenarios (hidden by default) -->
-    <div id="liveCaptionsScenarios" style="display:none">
-
-    <div class="home-section-label">Specialized</div>
-    <div class="scenario-grid">
-        <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('doctor_visit', 'Doctor Visit')">
-            <div class="scenario-icon"><span class="ico">+</span></div>
-            <div class="scenario-info">
-                <h3>Doctor Visit</h3>
-                <p>Upload a signing video — get it back with English captions burned in</p>
-                <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="home-section-label">General Scenarios <span style="color:#444;font-size:0.65rem;margin-left:8px">— coming soon</span></div>
-    <div class="scenario-grid">
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon"><span class="ico">R</span></div>
-            <div class="scenario-info"><h3>Restaurant</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon"><span class="ico">S</span></div>
-            <div class="scenario-info"><h3>Shopping</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon"><span class="ico">J</span></div>
-            <div class="scenario-info"><h3>Job Interview</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-        <div class="scenario-card coming-soon">
-            <div class="scenario-icon"><span class="ico">B</span></div>
-            <div class="scenario-info"><h3>Banking</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-        </div>
-    </div>
-
-    </div><!-- /#liveCaptionsScenarios -->
-
-    <!-- LIVE MODE sub-tabs: only shown in live mode -->
-    <div class="training-subtabs" id="liveSubtabs" style="display:none">
-        <button class="subtab-btn active" id="subtabLiveScenarios" onclick="switchLiveSubTab('scenarios')">&#x1F3AF; Conversations</button>
-        <button class="subtab-btn" id="subtabLiveCaptions" onclick="switchLiveSubTab('live-captions')">&#x1F3AC; Caption Video</button>
-    </div>
-
-    <!-- LIVE SCENARIOS content (same scenario cards, shown in live mode by default) -->
-    <div id="liveScenarios" style="display:none">
-        <div class="mode-toggle-row">
-            <div class="mode-toggle" id="liveModeToggle">
-                <button class="mode-btn active" onclick="setInteractionMode('in-person')">
-                    <span class="mode-icon">&#x1F91D;</span> In-Person
-                </button>
-                <button class="mode-btn" onclick="setInteractionMode('video-call')">
-                    <span class="mode-icon">&#x1F4F9;</span> Video Call
-                </button>
-            </div>
-        </div>
-        <div class="home-section-label">Specialized</div>
-        <div class="scenario-grid">
-            <div class="scenario-card featured" onclick="selectScenario('doctor_visit', 'Doctor Visit')">
-                <div class="scenario-icon"><span class="ico">+</span></div>
-                <div class="scenario-info">
-                    <h3>Doctor Visit</h3>
-                    <p>Medical appointments, describing symptoms, understanding treatment</p>
-                    <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+        <div>
+            <div class="profile-section-label">Practice Stats</div>
+            <div class="profile-stats">
+                <div class="profile-stat-card">
+                    <div class="profile-stat-value" id="profStatAttempts">0</div>
+                    <div class="profile-stat-label">Attempts</div>
                 </div>
-            </div>
-            <div class="scenario-card featured" onclick="selectScenario('restaurant', 'Restaurant')">
-                <div class="scenario-icon">&#x1F37D;</div>
-                <div class="scenario-info"><h3>Restaurant</h3><p>Ordering food, asking about the menu, dietary needs</p><span class="scenario-badge badge-healthcare">Restaurant model</span></div>
-            </div>
-        </div>
-        <div class="home-section-label">General Scenarios</div>
-        <div class="scenario-grid">
-            <div class="scenario-card" onclick="selectScenario('generic', 'Restaurant')">
-                <div class="scenario-icon"><span class="ico">R</span></div>
-                <div class="scenario-info"><h3>Restaurant</h3><p>Ordering food, asking about the menu, dietary needs</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Shopping')">
-                <div class="scenario-icon"><span class="ico">S</span></div>
-                <div class="scenario-info"><h3>Shopping</h3><p>Retail stores, finding items, asking about prices</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Job Interview')">
-                <div class="scenario-icon">&#x1F4BC;</div>
-                <div class="scenario-info"><h3>Job Interview</h3><p>Professional conversations, interviews, workplace meetings</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Banking')">
-                <div class="scenario-icon">&#x1F3E6;</div>
-                <div class="scenario-info"><h3>Banking</h3><p>Bank visits, account inquiries, financial services</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Emergency')">
-                <div class="scenario-icon"><span class="ico">!</span></div>
-                <div class="scenario-info"><h3>Emergency</h3><p>Urgent situations, communicating with first responders</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Education')">
-                <div class="scenario-icon">&#x1F393;</div>
-                <div class="scenario-info"><h3>Education</h3><p>Classroom, parent-teacher conferences, campus interactions</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Travel')">
-                <div class="scenario-icon">&#x2708;</div>
-                <div class="scenario-info"><h3>Travel</h3><p>Airport, hotel check-in, directions, transportation</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-            <div class="scenario-card" onclick="selectScenario('generic', 'Government Services')">
-                <div class="scenario-icon">&#x1F3DB;</div>
-                <div class="scenario-info"><h3>Government Services</h3><p>DMV, post office, social services, public offices</p><span class="scenario-badge badge-generic">General model</span></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CAPTION VIDEO scenarios (live mode) -->
-    <div id="liveCaptionsScenarios" style="display:none">
-        <div class="home-section-label">Specialized</div>
-        <div class="scenario-grid">
-            <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('doctor_visit', 'Doctor Visit')">
-                <div class="scenario-icon">&#x1F3E5;</div>
-                <div class="scenario-info">
-                    <h3>Doctor Visit</h3>
-                    <p>Upload a signing video — get it back with English captions burned in</p>
-                    <span class="scenario-badge badge-healthcare">Doctor Visit model</span>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-value" id="profStatCorrect">0</div>
+                    <div class="profile-stat-label">Correct</div>
                 </div>
-            </div>
-            <div class="scenario-card featured" onclick="selectLiveCaptionsScenario('restaurant', 'Restaurant')">
-                <div class="scenario-icon">&#x1F37D;</div>
-                <div class="scenario-info">
-                    <h3>Restaurant</h3>
-                    <p>Upload a signing video — get it back with English captions burned in</p>
-                    <span class="scenario-badge badge-healthcare">Restaurant model</span>
+                <div class="profile-stat-card">
+                    <div class="profile-stat-value" id="profStatAccuracy">-</div>
+                    <div class="profile-stat-label">Accuracy</div>
                 </div>
             </div>
         </div>
-        <div class="home-section-label">General Scenarios <span style="color:#444;font-size:0.65rem;margin-left:8px">— coming soon</span></div>
-        <div class="scenario-grid">
-            <div class="scenario-card coming-soon">
-                <div class="scenario-icon">&#x1F6D2;</div>
-                <div class="scenario-info"><h3>Shopping</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-            </div>
-            <div class="scenario-card coming-soon">
-                <div class="scenario-icon">&#x1F4BC;</div>
-                <div class="scenario-info"><h3>Job Interview</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
-            </div>
-            <div class="scenario-card coming-soon">
-                <div class="scenario-icon">&#x1F3E6;</div>
-                <div class="scenario-info"><h3>Banking</h3><p>Upload a signing video with captions</p><span class="scenario-badge badge-coming">Coming soon</span></div>
+
+        <div>
+            <div class="profile-section-label">Recent Scenarios</div>
+            <div class="profile-recent-list" id="profileRecentList">
+                <div style="font-size:0.82rem;color:var(--text-muted)">No recent activity</div>
             </div>
         </div>
-    </div>
 
-    <!-- LIVE DEMO tab content (hardcoded camera + caption) -->
-    <div id="liveDemoTab" style="display:none; text-align:center; max-width:600px; margin:0 auto; padding-top:16px;">
-        <div class="scenario-card featured" onclick="startLiveDemo()" style="justify-content:center; cursor:pointer;">
-            <div class="scenario-icon"><span class="ico">V</span></div>
-            <div class="scenario-info" style="text-align:left">
-                <h3>Start Live Demo</h3>
-                <p>Opens camera with real-time closed captioning display</p>
-                <span class="scenario-badge badge-healthcare">Hardcoded demo</span>
-            </div>
+        <div>
+            <div class="profile-section-label">Conversation History</div>
+            <div id="profileHistorySummary" style="font-size:0.82rem;color:var(--text-muted)">No conversations saved yet</div>
+            <button class="btn btn-secondary" id="profileHistoryLink" onclick="closeProfile(); showHistoryPage()" style="display:none; margin-top:8px; font-size:0.78rem; padding:8px 16px;">View All Conversations &rarr;</button>
         </div>
+
+        <button class="profile-clear-btn" onclick="clearProfileData()">Clear All Data</button>
     </div>
-
-</div><!-- /#homeScreen -->
-
-<!-- ══════════════════════════════════════════
-     CAPTION VIDEO SCREEN
-     Upload → pipeline → download
-     ══════════════════════════════════════════ -->
-<div class="live-captions-layout" id="phaseLiveCaptions" style="justify-content:flex-start;overflow-y:auto">
-
-    <div class="lc-topbar">
-        <button class="back-btn" onclick="showHomeScreen()">&#x2190; Back</button>
-        <span id="lcScenarioLabel" style="color:#666;font-size:0.75rem;font-weight:600;letter-spacing:0.5px">CAPTION VIDEO</span>
-    </div>
-
-    <div id="cvUploadZone" style="
-        border: 2px dashed #2e2e4a; border-radius: 14px; padding: 52px 24px;
-        text-align: center; cursor: pointer; transition: border-color 0.2s; background: #0d0d1a;
-    "
-    onclick="document.getElementById('cvFileInput').click()"
-    ondragover="event.preventDefault(); this.style.borderColor='#6c63ff'"
-    ondragleave="this.style.borderColor='#2e2e4a'"
-    ondrop="cvHandleDrop(event)">
-        <div style="font-size:2.5rem;margin-bottom:12px">&#x1F4F9;</div>
-        <div style="font-size:1rem;font-weight:600;color:#c8c8c8;margin-bottom:6px">Drop your ASL video here</div>
-        <div style="font-size:0.78rem;color:#555">or click to browse &nbsp;·&nbsp; MP4, MOV, WebM</div>
-        <input type="file" id="cvFileInput" accept="video/*" style="display:none" onchange="cvHandleFile(this.files[0])">
-    </div>
-
-    <div id="cvProgress" style="display:none; background:#0d0d1a; border:1px solid #1e1e3a; border-radius:12px; padding:20px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <span id="cvFileName" style="font-size:0.85rem;color:#c8b0ff;font-weight:600"></span>
-            <span id="cvProgressPct" style="font-size:0.75rem;color:#666">0%</span>
-        </div>
-        <div style="height:6px;background:#1e1e3a;border-radius:3px;overflow:hidden;margin-bottom:10px">
-            <div id="cvProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6c63ff,#4caf80);border-radius:3px;transition:width 0.4s"></div>
-        </div>
-        <div id="cvStatusMsg" style="font-size:0.8rem;color:#777;font-style:italic">Starting...</div>
-    </div>
-
-    <div id="cvResult" style="display:none; background:#0d0d1a; border:1px solid #1a3a2a; border-radius:12px; padding:20px;">
-        <div style="font-size:0.65rem;color:#4caf80;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px">&#x2714; Captioning Complete</div>
-        <video id="cvResultVideo" controls style="width:100%;border-radius:8px;background:#000;max-height:380px"></video>
-        <div style="display:flex;gap:10px;margin-top:14px">
-            <button class="btn btn-primary" id="cvDownloadBtn" style="background:#4caf80">&#x2B07; Download Video</button>
-            <button class="btn btn-secondary" onclick="cvReset()">Caption Another</button>
-        </div>
-    </div>
-
 </div>
 
 <!-- ══════════════════════════════════════════
-     LIVE DEMO SCREEN — Camera + Hardcoded Caption
+     CAMERA PERMISSION MODAL (1.5)
      ══════════════════════════════════════════ -->
-<div id="phaseLiveDemo">
-    <div class="live-demo-container">
-        <div class="live-demo-topbar">
-            <button class="back-btn" onclick="stopLiveDemo()">&#x2190; Back</button>
-        </div>
-        <div class="live-demo-branding">
-            <div class="brand-name"><span class="brand-sign">Sign</span><span class="brand-bridge">Bridge</span></div>
-            <div class="brand-tagline">Real-time ASL to English Translation</div>
-        </div>
-        <div class="live-demo-camera">
-            <div class="placeholder" id="liveDemoPlaceholder">Starting camera...</div>
-            <video id="liveDemoCameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
-        </div>
-        <div class="live-demo-caption-box">
-            <div class="live-demo-caption-label">Closed Caption</div>
-            <div class="live-demo-caption-text" id="liveDemoCaptionText">Can I have a coffee?</div>
+<div class="camera-modal-overlay" id="cameraPermModal">
+    <div class="camera-modal">
+        <div class="camera-modal-icon">&#x1F4F7;</div>
+        <h3>Camera & Microphone Access</h3>
+        <p>SignBridge needs your camera to recognize sign language gestures, and optionally your microphone to capture the speaker's voice. Your video is processed locally and never stored.</p>
+        <div class="camera-modal-actions">
+            <button class="btn btn-secondary" id="cameraPermSkip">Skip</button>
+            <button class="btn btn-primary" id="cameraPermAllow">Allow Access</button>
         </div>
     </div>
 </div>
 
 <!-- ══════════════════════════════════════════
-     CONVERSATION SCREEN
+     HOME SCREEN (sidebar + content layout)
      ══════════════════════════════════════════ -->
-<div class="conversation-layout" id="phaseConvo" style="display:none">
+<div id="homeScreen" class="home-layout">
+
+    <!-- Sidebar nav (desktop) / Bottom tab bar (mobile) -->
+    <nav class="sidebar" id="sidebarNav">
+        <button class="sidebar-item active" id="navLive" onclick="navigateTo('live')">
+            <span class="sidebar-icon">&#x1F4E1;</span>
+            <span class="sidebar-label">Live</span>
+        </button>
+        <button class="sidebar-item" id="navUpload" onclick="navigateTo('upload')">
+            <span class="sidebar-icon">&#x1F4F9;</span>
+            <span class="sidebar-label">Upload</span>
+        </button>
+        <button class="sidebar-item" id="navDemo" onclick="navigateTo('demo')">
+            <span class="sidebar-icon">&#x1F3AC;</span>
+            <span class="sidebar-label">Demo</span>
+        </button>
+        <button class="sidebar-item" id="navSignBank" onclick="navigateTo('sign-bank')">
+            <span class="sidebar-icon">&#x1F4D6;</span>
+            <span class="sidebar-label">Sign Bank</span>
+        </button>
+        <button class="sidebar-item" id="navProfile" onclick="openProfile()">
+            <span class="sidebar-icon" id="navProfileIcon">&#x1F464;</span>
+            <span class="sidebar-label">Profile</span>
+        </button>
+    </nav>
+
+    <!-- Main content area -->
+    <div class="home-content">
+
+        <!-- Tab intros (consistent format: h2 title + p description) -->
+        <div class="tab-intro" id="heroSection">
+            <h2>Live</h2>
+            <p>Start a real-time conversation using your camera. SignBridge recognizes your signs and translates them into spoken English, enabling seamless communication between deaf and hearing individuals.</p>
+        </div>
+
+        <div class="tab-intro" id="demoIntro" style="display:none">
+            <h2>Demo</h2>
+            <p>Walk through a pre-written conversation between a deaf signer and a hearing person. Follow along step-by-step to see how SignBridge translates signs into spoken English in real time.</p>
+        </div>
+
+        <div class="home-screen">
+
+            <!-- Scenario cards (Training + Live) -->
+            <div id="demoScenarios"></div>
+
+            <div id="liveScenarios" style="display:none">
+                <div class="mode-toggle-row">
+                    <div class="mode-toggle" id="liveModeToggle">
+                        <button class="mode-btn active" onclick="setInteractionMode('in-person')">
+                            <span class="mode-icon">&#x1F91D;</span> In-Person
+                        </button>
+                        <button class="mode-btn" onclick="setInteractionMode('video-call')">
+                            <span class="mode-icon">&#x1F4F9;</span> Video Call
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /.home-screen -->
+
+        <!-- Upload section (shown directly, no scenario cards) -->
+        <div id="uploadScreen" style="display:none;">
+            <div class="tab-intro">
+                <h2>Upload</h2>
+                <p>Upload an ASL signing video and get it back with English captions burned in. Select the domain that best matches the video content.</p>
+            </div>
+
+            <div class="tab-body">
+            <div style="margin-bottom:16px">
+                <label style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px">Domain</label>
+                <select id="uploadDomainSelect" onchange="uploadDomainChanged()" style="
+                    padding:10px 14px; border:1px solid var(--border-light); border-radius:10px;
+                    font-size:0.88rem; background:var(--bg-card); color:var(--text-primary);
+                    width:100%; outline:none;
+                "></select>
+            </div>
+
+            <div id="cvUploadZone" style="
+                border: 2px dashed var(--border-light); border-radius: 14px; padding: 52px 24px;
+                text-align: center; cursor: pointer; transition: border-color 0.2s; background: var(--bg-card);
+            "
+            onclick="document.getElementById('cvFileInput').click()"
+            ondragover="event.preventDefault(); this.style.borderColor='#6c63ff'"
+            ondragleave="this.style.borderColor=''"
+            ondrop="cvHandleDrop(event)">
+                <div style="font-size:2.5rem;margin-bottom:12px">&#x1F4F9;</div>
+                <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:6px">Drop your ASL video here</div>
+                <div style="font-size:0.78rem;color:var(--text-muted)">or click to browse &nbsp;&middot;&nbsp; MP4, MOV, WebM</div>
+                <input type="file" id="cvFileInput" accept="video/*" style="display:none" onchange="cvHandleFile(this.files[0])">
+            </div>
+
+            <div id="cvProgress" style="display:none; background:var(--bg-card); border:1px solid var(--border-light); border-radius:12px; padding:20px; margin-top:14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <span id="cvFileName" style="font-size:0.85rem;color:var(--accent);font-weight:600"></span>
+                    <span id="cvProgressPct" style="font-size:0.75rem;color:var(--text-secondary)">0%</span>
+                </div>
+                <div style="height:6px;background:var(--bg-toggle);border-radius:3px;overflow:hidden;margin-bottom:10px">
+                    <div id="cvProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6c63ff,#4caf80);border-radius:3px;transition:width 0.4s"></div>
+                </div>
+                <div id="cvStatusMsg" style="font-size:0.8rem;color:var(--text-secondary);font-style:italic">Starting...</div>
+            </div>
+
+            <div id="cvResult" style="display:none; background:var(--bg-card); border:1px solid var(--success); border-radius:12px; padding:20px; margin-top:14px;">
+                <div style="font-size:0.65rem;color:var(--success);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px">&#x2714; Captioning Complete</div>
+                <video id="cvResultVideo" controls style="width:100%;border-radius:8px;background:#000;max-height:380px"></video>
+                <div style="display:flex;gap:10px;margin-top:14px">
+                    <button class="btn btn-primary" id="cvDownloadBtn" style="background:var(--success)">&#x2B07; Download Video</button>
+                    <button class="btn btn-secondary" onclick="cvReset()">Caption Another</button>
+                </div>
+            </div>
+            </div><!-- /.tab-body -->
+        </div>
+
+    <!-- ══════════════════════════════════════════
+         SIGN BANK (2.1) — Training mode only
+         ══════════════════════════════════════════ -->
+    <div id="signBankScreen">
+        <div class="tab-intro">
+            <h2>Sign Bank</h2>
+            <p>Explore our reference library of American Sign Language signs. Each sign includes a short video clip demonstrating the correct form. Hover to preview, click to play with controls, or practice with your camera. <strong><span id="sbTotalCount">0</span> signs available.</strong></p>
+        </div>
+
+        <div class="tab-body">
+        <div class="sb-search-row">
+            <input class="sb-search" id="sbSearch" type="text" placeholder="Search signs..." oninput="filterSignBank()">
+            <span class="sb-count" id="sbVisibleCount"></span>
+            <button class="btn btn-secondary" onclick="openCustomPractice()" style="margin-left:auto;padding:8px 14px;font-size:0.78rem" title="Practice any sign from the model vocabulary">&#x1F9EA; Custom Practice</button>
+        </div>
+
+        <!-- Custom practice picker — pick any word from any model vocabulary -->
+        <div id="customPracticePicker" style="display:none;background:var(--bg-card);border:1px solid var(--border-light);border-radius:10px;padding:16px;margin-bottom:14px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div style="font-size:0.85rem;font-weight:600;color:var(--text-primary)">Custom Practice</div>
+                <button onclick="closeCustomPractice()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1rem">&#x2715;</button>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <label style="font-size:0.78rem;color:var(--text-secondary)">Domain:</label>
+                <select id="customPracticeDomain" onchange="loadCustomPracticeVocab()" style="padding:6px 10px;border:1px solid var(--border-light);border-radius:6px;background:var(--bg-card);color:var(--text-primary);font-size:0.82rem"></select>
+                <label style="font-size:0.78rem;color:var(--text-secondary)">Sign:</label>
+                <select id="customPracticeGloss" style="padding:6px 10px;border:1px solid var(--border-light);border-radius:6px;background:var(--bg-card);color:var(--text-primary);font-size:0.82rem;min-width:160px"></select>
+                <button class="btn btn-primary" onclick="startCustomPractice()" style="padding:8px 16px;font-size:0.82rem">Practice This Sign</button>
+            </div>
+        </div>
+
+        <div class="sb-grid" id="sbGrid"></div>
+        <div class="sb-empty" id="sbEmpty" style="display:none">No signs match your search.</div>
+
+        <!-- Practice session overlay (2.6) — opens inline when clicking Practice on a card -->
+        <div id="practiceSession" style="display:none">
+            <div class="prac-topbar">
+                <button class="back-btn" onclick="exitPracticeSession()">&#x2190; Back to Sign Bank</button>
+                <div class="prac-score" id="pracScore"></div>
+            </div>
+
+            <div class="prac-sign-name" id="pracSignName"></div>
+
+            <div class="prac-split">
+                <div class="prac-panel">
+                    <div class="prac-panel-label">Reference</div>
+                    <div class="prac-video-box">
+                        <video id="pracRefVideo" muted playsinline loop controls></video>
+                    </div>
+                    <div class="prac-hint">Study this sign, then record yourself</div>
+                </div>
+
+                <div class="prac-panel">
+                    <div class="prac-panel-label">Your Attempt</div>
+                    <div class="prac-video-box prac-camera-box">
+                        <video id="pracCameraFeed" autoplay muted playsinline webkit-playsinline style="transform:scaleX(-1)"></video>
+                        <div class="prac-camera-placeholder" id="pracCameraPlaceholder">Camera will start when you record</div>
+                        <div class="rec-countdown prac-rec-countdown" id="pracRecCountdown"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prac-controls">
+                <button class="btn btn-primary prac-record-btn" id="pracRecordBtn" onclick="practiceRecord()">
+                    &#x1F534; Record Sign
+                </button>
+            </div>
+
+            <div class="prac-feedback" id="pracFeedback" style="display:none">
+                <div class="prac-feedback-icon" id="pracFeedbackIcon"></div>
+                <div class="prac-feedback-text" id="pracFeedbackText"></div>
+                <div class="prac-feedback-detail" id="pracFeedbackDetail"></div>
+
+                <!-- Diagnostic: what the camera captured + full top-5 with confidence bars -->
+                <div class="prac-diagnostic" id="pracDiagnostic" style="display:none; margin-top:16px;">
+                    <div class="prac-diag-row">
+                        <div class="prac-diag-col">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:8px">
+                                <div class="prac-diag-label" style="margin:0">What was captured</div>
+                                <button class="btn btn-secondary" id="pracVideoModeToggle" onclick="togglePracVideoView()" data-mode="original" style="padding:4px 10px;font-size:0.72rem">Show pose</button>
+                            </div>
+                            <video id="pracCapturedVideo" controls playsinline loop style="width:100%;border-radius:8px;background:#000;max-height:240px"></video>
+                        </div>
+                        <div class="prac-diag-col">
+                            <div class="prac-diag-label">Model predictions</div>
+                            <div id="pracTopK" class="prac-topk"></div>
+                        </div>
+                    </div>
+
+                    <!-- Diagnostic findings — programmatic comparison vs training reference -->
+                    <div class="prac-pose-compare" id="pracPoseCompare" style="display:none; margin-top:16px;">
+                        <!-- Programmatic pose comparison — systemic defects & differences -->
+                        <div id="pracComparisonPanel" style="display:none;margin-top:14px;padding:12px;background:var(--bg-page);border-radius:8px;border:1px solid var(--border-light)">
+                            <div class="prac-diag-label">Diagnostic findings</div>
+                            <div id="pracComparisonIssues"></div>
+                            <details style="margin-top:10px">
+                                <summary style="font-size:0.75rem;color:var(--text-muted);cursor:pointer">Raw metrics</summary>
+                                <pre id="pracComparisonRaw" style="font-size:0.7rem;color:var(--text-secondary);margin-top:6px;max-height:200px;overflow:auto;background:var(--bg-card);padding:8px;border-radius:4px"></pre>
+                            </details>
+                        </div>
+
+                    </div>
+                </div>
+
+                <button class="btn btn-secondary" onclick="practiceRetry()" style="margin-top:12px">Try Again</button>
+            </div>
+        </div>
+
+        </div><!-- /.tab-body -->
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         CONVERSATION HISTORY (2.3)
+         ══════════════════════════════════════════ -->
+    <!-- History page (opened from Profile > View All Conversations) -->
+    <div id="historyScreen" style="display:none">
+        <div style="max-width:700px;margin:0 auto;padding:24px 20px;">
+            <!-- List view -->
+            <div id="historyListView">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+                    <button class="back-btn" onclick="showHomeScreen()">&#x2190; Back</button>
+                    <span style="font-size:0.75rem;color:var(--text-muted)">Live conversations only</span>
+                </div>
+                <h2 style="font-size:1.3rem;font-weight:700;color:var(--text-primary);margin-bottom:16px">Conversation History</h2>
+                <div class="hist-list" id="histListContainer"></div>
+            </div>
+            <!-- Single conversation viewer -->
+            <div id="histViewerView" style="display:none">
+                <div style="display:flex;align-items:center;margin-bottom:16px">
+                    <button class="back-btn" onclick="backToHistoryList()">&#x2190; Back to History</button>
+                </div>
+                <div class="hist-viewer-title" id="histViewerTitle"></div>
+                <div class="hist-viewer-meta" id="histViewerMeta"></div>
+                <div class="hist-viewer-msgs" id="histViewerMsgs"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         LIVE DEMO SCREEN
+         ══════════════════════════════════════════ -->
+    <div id="phaseLiveDemo">
+        <div class="live-demo-container">
+            <div class="live-demo-topbar">
+                <button class="back-btn" onclick="stopLiveDemo()">&#x2190; Back</button>
+            </div>
+            <div class="live-demo-branding">
+                <div class="brand-name"><span class="brand-sign">Sign</span><span class="brand-bridge">Bridge</span></div>
+                <div class="brand-tagline">Real-time ASL to English Translation</div>
+            </div>
+            <div class="live-demo-camera">
+                <div class="placeholder" id="liveDemoPlaceholder">Starting camera...</div>
+                <video id="liveDemoCameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
+            </div>
+            <div class="live-demo-caption-box">
+                <div class="live-demo-caption-label">Closed Caption</div>
+                <div class="live-demo-caption-text" id="liveDemoCaptionText">Can I have a coffee?</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         CONVERSATION SCREEN
+         ══════════════════════════════════════════ -->
+    <div class="conversation-layout" id="phaseConvo" style="display:none">
     <div class="camera-side">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <button class="back-btn" onclick="showHomeScreen()">&#x2190; Back</button>
-            <span id="scenarioLabel" style="color:#666;font-size:0.75rem;font-weight:600;letter-spacing:0.5px"></span>
+            <span id="scenarioLabel" style="color:var(--text-secondary);font-size:0.75rem;font-weight:600;letter-spacing:0.5px"></span>
         </div>
         <div class="vocab-panel" id="vocabPanel" style="display:none">
             <button class="vocab-toggle-btn" id="vocabToggleBtn" onclick="toggleVocabPanel()">
@@ -1628,20 +417,52 @@
         <div class="camera-box">
             <div class="camera-topbar">
                 <span class="camera-title">Live Camera</span>
-                <span class="rec-badge" id="recBadge">● REC</span>
+                <button class="camera-source-btn" id="cameraSourceBtn" onclick="toggleCameraSourcePanel()" title="Switch camera source">&#x1F4F7;</button>
+                <button class="pose-overlay-btn active" id="poseOverlayBtn" onclick="togglePoseOverlay()" title="Toggle pose overlay">&#x1F9B4;</button>
+                <button class="camera-source-btn" id="debugToggleBtn" onclick="toggleDebugPanel()" title="Diagnostics">&#x1F41B;</button>
+                <span class="rec-badge" id="recBadge">&#x25CF; REC</span>
+            </div>
+            <div class="camera-source-panel" id="cameraSourcePanel" style="display:none">
+                <div class="camera-source-option">
+                    <label><input type="radio" name="cameraSource" value="device" checked onchange="selectCameraSource('device')"> Device Camera</label>
+                </div>
+                <div class="camera-source-option">
+                    <label><input type="radio" name="cameraSource" value="wifi" onchange="selectCameraSource('wifi')"> WiFi Camera (IP)</label>
+                </div>
+                <div id="wifiCameraInputRow" style="display:none">
+                    <input type="text" id="wifiCameraUrl" placeholder="http://192.168.1.x:81/stream" value="">
+                    <button class="btn btn-primary" id="wifiConnectBtn" onclick="connectWifiCamera()" style="padding:6px 14px;font-size:0.78rem">Connect</button>
+                </div>
+                <div id="wifiCameraStatus" style="display:none;font-size:0.75rem;margin-top:6px"></div>
             </div>
             <div class="camera-view" id="cameraView">
-                <div class="camera-placeholder" id="cameraPlaceholder" style="color:#222">Camera will start when you begin</div>
+                <div class="camera-placeholder" id="cameraPlaceholder">Camera will start when you begin</div>
                 <video id="cameraFeed" autoplay muted playsinline webkit-playsinline style="display:none"></video>
                 <div class="pip-self" id="pipSelf">
                     <video id="pipFeed" autoplay muted playsinline webkit-playsinline></video>
                     <div class="pip-label" id="pipLabel">You</div>
                 </div>
                 <div class="rec-border" id="recBorder"></div>
+                <div class="rec-countdown" id="recCountdown"></div>
             </div>
             <div class="status-bar" id="statusBar">
                 <span class="prompt">Press "Start" to begin the conversation</span>
             </div>
+        </div>
+
+        <!-- Debug panel — toggle with ?debug=true or the bug icon -->
+        <div class="debug-panel" id="debugPanel" style="display:none">
+            <div class="debug-title">Diagnostics <button onclick="document.getElementById('debugPanel').style.display='none'" style="float:right;background:none;border:none;color:var(--text-muted);cursor:pointer">&times;</button></div>
+            <div class="debug-row"><span>Hands:</span> <span id="dbgHands">-</span></div>
+            <div class="debug-row"><span>Velocity:</span> <span id="dbgVelocity">-</span></div>
+            <div class="debug-row"><span>State:</span> <span id="dbgState">-</span></div>
+            <div class="debug-row"><span>Signs:</span> <span id="dbgSigns">0</span></div>
+            <div class="debug-row"><span>Pose:</span> <span id="dbgPose">-</span></div>
+            <div style="margin-top:8px">
+                <div class="debug-velocity-bar"><div class="debug-velocity-fill" id="dbgVelocityBar"></div><div class="debug-velocity-threshold" id="dbgVelocityThresh"></div></div>
+            </div>
+            <button class="btn btn-secondary" id="btnTestSign" onclick="testSingleSign()" style="margin-top:8px;font-size:0.75rem;padding:6px 12px;width:100%">Test Sign (2.5s timed record)</button>
+            <div id="dbgTestResult" style="display:none;margin-top:6px;font-size:0.75rem"></div>
         </div>
 
         <div class="controls-row">
@@ -1649,6 +470,7 @@
             <button class="btn btn-secondary" id="btnRestart" style="display:none">Restart</button>
             <button class="btn btn-primary" id="btnRecordSign" style="display:none;background:#b07cf0">Record Sign</button>
             <button class="btn btn-primary" id="btnSendMessage" style="display:none;background:#4caf80">Send Message</button>
+            <button class="btn btn-primary" id="btnSpeakSend" style="display:none;background:#7cb3f0">&#x1F399; Send to Signer</button>
             <button id="btnHowItWorks" onclick="showBreakdown()">&#x1F9EA; How does SignBridge work?</button>
         </div>
     </div>
@@ -1665,8 +487,7 @@
 <button class="transcript-toggle show-btn" id="btnShowTranscript" onclick="toggleTranscript()" style="display:none" title="Show transcript">&#x1F4AC;</button>
 
 <!-- ══════════════════════════════════════════
-     BREAKDOWN PHASE — Pipeline explainer
-     Only shown at end of demo mode
+     BREAKDOWN PHASE
      ══════════════════════════════════════════ -->
 <div id="phaseBreakdown">
     <div class="breakdown-header">
@@ -1679,1637 +500,17 @@
         <button onclick="hideBreakdown()">&#x2190; Back to Conversation</button>
         <button class="primary" onclick="showHomeScreen()">&#x21BA; Try Another Scenario</button>
     </div>
-</div>
+    </div><!-- /#phaseBreakdown -->
 
+    </div><!-- /.home-content -->
 
-<script>
-// ══════════════════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════════════════
-let MODE = '{{ mode }}';      // "demo" or "live" — toggled in header
-let METHOD = '{{ method }}'; // "sign" or "speak" — toggled in header
+</div><!-- /#homeScreen -->
 
-// Role labels — demo uses Doctor/Patient, live uses Speaker/Signer
-const SPEAKER_LABEL = MODE === 'demo' ? 'Doctor' : 'Speaker';
-const SIGNER_LABEL = MODE === 'demo' ? 'Patient (ASL → English)' : 'Signer (ASL → English)';
-
-let conversation = null;
-let currentTurn = 0;
-let isPlaying = false;
-let history = []; // conversation history for LLM context
-let cameraStream = null;
-let mediaRecorder = null;
-let recordedChunks = [];
-let selectedDomain = 'doctor_visit'; // default domain for inference API
-let selectedScenario = 'Doctor Visit';
-let interactionMode = 'in-person'; // 'in-person' or 'video-call'
-
-// ══════════════════════════════════════════════════════════════
-// INTERACTION MODE (In-Person vs Video Call)
-// ══════════════════════════════════════════════════════════════
-function setInteractionMode(mode) {
-    interactionMode = mode;
-    const btnInPerson = document.getElementById('btnInPerson');
-    const btnVideoCall = document.getElementById('btnVideoCall');
-    const desc = document.getElementById('modeDescription');
-
-    btnInPerson.classList.toggle('active', mode === 'in-person');
-    btnVideoCall.classList.toggle('active', mode === 'video-call');
-
-    desc.textContent = mode === 'in-person'
-        ? 'Speaker is physically present \u2014 full camera view for signing'
-        : 'Remote speaker via video call \u2014 split screen with PIP self-view';
-}
-
-let headerTogglesLocked = false;
-let transcriptCollapsed = false;
-
-function toggleTranscript() {
-    const panel = document.getElementById('transcriptSide');
-    const showBtn = document.getElementById('btnShowTranscript');
-    const layout = document.getElementById('phaseConvo');
-    transcriptCollapsed = !transcriptCollapsed;
-
-    if (transcriptCollapsed) {
-        panel.classList.add('collapsed');
-        showBtn.style.display = 'flex';
-    } else {
-        panel.classList.remove('collapsed');
-        showBtn.style.display = 'none';
-    }
-}
-
-function setMethod(method) {
-    if (headerTogglesLocked) return;
-    METHOD = method;
-    document.getElementById('htogSign').classList.toggle('active', method === 'sign');
-    document.getElementById('htogSpeak').classList.toggle('active', method === 'speak');
-}
-
-function setAppMode(mode) {
-    if (headerTogglesLocked) return;
-    MODE = mode;
-    document.getElementById('htogDemo').classList.toggle('active', mode === 'demo');
-    document.getElementById('htogLive').classList.toggle('active', mode === 'live');
-    updateSubTabVisibility();
-}
-
-function lockHeaderToggles() {
-    headerTogglesLocked = true;
-    document.querySelectorAll('.htog-btn').forEach(b => b.classList.add('locked'));
-}
-
-function unlockHeaderToggles() {
-    headerTogglesLocked = false;
-    document.querySelectorAll('.htog-btn').forEach(b => b.classList.remove('locked'));
-}
-
-// ══════════════════════════════════════════════════════════════
-// SCENARIO SELECTION
-// ══════════════════════════════════════════════════════════════
-function selectScenario(domain, scenarioName) {
-    selectedDomain = domain;
-    selectedScenario = scenarioName;
-    document.getElementById('homeScreen').style.display = 'none';
-    document.getElementById('phaseConvo').style.display = 'flex';
-    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
-
-    const modeLabel = interactionMode === 'in-person' ? 'In-Person' : 'Video Call';
-    document.getElementById('scenarioLabel').textContent = scenarioName + ' \u2022 ' + modeLabel;
-
-    // Lock header toggles — read-only in scenario screen
-    lockHeaderToggles();
-
-    console.log('[Scenario] Selected:', scenarioName, '| Domain:', domain, '| Mode:', interactionMode, '| Method:', METHOD, '| AppMode:', MODE);
-
-    // Load vocabulary for this domain
-    loadVocabulary(domain);
-}
-
-// ══════════════════════════════════════════════════════════════
-// VOCABULARY PANEL
-// ══════════════════════════════════════════════════════════════
-const WORD_CATEGORIES = {
-    medical: ['allergy','blood','breathe','cough','doctor','headache','medicine','sick','stomach','surgery','temperature'],
-    question: ['how','what','where','name','answer'],
-    action: ['can','eat','drink','feel','give','hear','help','know','play','sit','stand','stop','tell','wait','walk','want','dance','study','change','enjoy','breathe'],
-    time: ['before','morning','night','today','time','year','thursday','birthday','thanksgiving','later','appointment'],
-    descriptor: ['better','fine','full','hot','more','right','tall','wrong','worse','deaf','stress'],
-    general: [] // catch-all
-};
-
-function categorizeWord(word) {
-    for (const [cat, words] of Object.entries(WORD_CATEGORIES)) {
-        if (cat === 'general') continue;
-        if (words.includes(word)) return cat;
-    }
-    return 'general';
-}
-
-let vocabCache = {};
-
-async function loadVocabulary(domain) {
-    const panel = document.getElementById('vocabPanel');
-    const chipsEl = document.getElementById('vocabChips');
-    const countEl = document.getElementById('vocabCount');
-    const toggleBtn = document.getElementById('vocabToggleBtn');
-
-    // Reset state
-    chipsEl.innerHTML = '';
-    chipsEl.classList.remove('open');
-    toggleBtn.classList.remove('open');
-    panel.style.display = 'none';
-
-    // Check cache first
-    if (vocabCache[domain]) {
-        renderVocabulary(vocabCache[domain]);
-        return;
-    }
-
-    try {
-        const resp = await fetch('/api/vocabulary/' + domain);
-        if (!resp.ok) return;
-        const data = await resp.json();
-        vocabCache[domain] = data.glosses;
-        renderVocabulary(data.glosses);
-    } catch (e) {
-        console.warn('[Vocab] Failed to load:', e);
-    }
-}
-
-function renderVocabulary(glosses) {
-    const panel = document.getElementById('vocabPanel');
-    const chipsEl = document.getElementById('vocabChips');
-    const countEl = document.getElementById('vocabCount');
-
-    countEl.textContent = glosses.length;
-    chipsEl.innerHTML = '';
-
-    // Group by category for display order
-    const grouped = { medical: [], question: [], action: [], time: [], descriptor: [], general: [] };
-    for (const word of glosses) {
-        const cat = categorizeWord(word);
-        grouped[cat].push(word);
-    }
-
-    // Render in category order
-    for (const [cat, words] of Object.entries(grouped)) {
-        for (const word of words) {
-            const chip = document.createElement('span');
-            chip.className = 'vocab-chip cat-' + cat;
-            chip.textContent = word;
-            chipsEl.appendChild(chip);
-        }
-    }
-
-    panel.style.display = 'block';
-}
-
-function toggleVocabPanel() {
-    const chipsEl = document.getElementById('vocabChips');
-    const toggleBtn = document.getElementById('vocabToggleBtn');
-    const isOpen = chipsEl.classList.contains('open');
-    chipsEl.classList.toggle('open', !isOpen);
-    toggleBtn.classList.toggle('open', !isOpen);
-}
-
-// ══════════════════════════════════════════════════════════════
-// TRAINING SUB-TABS (Scripted Demo | Live Captions)
-// ══════════════════════════════════════════════════════════════
-let currentTrainingSubTab = 'scripted';
-
-function switchTrainingSubTab(tab) {
-    currentTrainingSubTab = tab;
-    document.getElementById('subtabScripted').classList.toggle('active', tab === 'scripted');
-    document.getElementById('subtabTrainingLiveDemo').classList.toggle('active', tab === 'live-demo');
-    document.getElementById('demoScenarios').style.display = tab === 'scripted' ? 'block' : 'none';
-    document.getElementById('trainingLiveDemoTab').style.display = tab === 'live-demo' ? 'block' : 'none';
-}
-
-// Show/hide sub-tabs based on app mode
-function updateSubTabVisibility() {
-    const trainingTabs = document.getElementById('trainingSubtabs');
-    const liveTabs = document.getElementById('liveSubtabs');
-    const demoScenarios = document.getElementById('demoScenarios');
-    const liveCaptionsScenarios = document.getElementById('liveCaptionsScenarios');
-    const trainingLiveDemoTab = document.getElementById('trainingLiveDemoTab');
-    const liveScenarios = document.getElementById('liveScenarios');
-    const liveDemoTab = document.getElementById('liveDemoTab');
-
-    if (MODE === 'demo') {
-        trainingTabs.style.display = 'flex';
-        liveTabs.style.display = 'none';
-        // Show whichever training sub-tab is active
-        demoScenarios.style.display = currentTrainingSubTab === 'scripted' ? 'block' : 'none';
-        trainingLiveDemoTab.style.display = currentTrainingSubTab === 'live-demo' ? 'block' : 'none';
-        liveCaptionsScenarios.style.display = 'none';
-        liveScenarios.style.display = 'none';
-        liveDemoTab.style.display = 'none';
-    } else {
-        trainingTabs.style.display = 'none';
-        liveTabs.style.display = 'flex';
-        demoScenarios.style.display = 'none';
-        trainingLiveDemoTab.style.display = 'none';
-        liveDemoTab.style.display = 'none';
-        // Show whichever live sub-tab is active
-        liveScenarios.style.display = currentLiveSubTab === 'scenarios' ? 'block' : 'none';
-        liveCaptionsScenarios.style.display = currentLiveSubTab === 'live-captions' ? 'block' : 'none';
-    }
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE SUB-TABS (Scenarios | Live Demo)
-// ══════════════════════════════════════════════════════════════
-let currentLiveSubTab = 'scenarios';
-
-function switchLiveSubTab(tab) {
-    currentLiveSubTab = tab;
-    document.getElementById('subtabLiveScenarios').classList.toggle('active', tab === 'scenarios');
-    document.getElementById('subtabLiveCaptions').classList.toggle('active', tab === 'live-captions');
-    document.getElementById('liveScenarios').style.display = tab === 'scenarios' ? 'block' : 'none';
-    document.getElementById('liveCaptionsScenarios').style.display = tab === 'live-captions' ? 'block' : 'none';
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE DEMO — Camera + Hardcoded Caption
-// ══════════════════════════════════════════════════════════════
-let liveDemoCameraStream = null;
-
-async function startLiveDemo() {
-    document.getElementById('homeScreen').style.display = 'none';
-    document.getElementById('phaseLiveDemo').style.display = 'flex';
-    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
-    lockHeaderToggles();
-
-    // Start camera — simplified constraints for iPad/Safari compatibility
-    const placeholder = document.getElementById('liveDemoPlaceholder');
-    placeholder.textContent = 'Requesting camera access...';
-    try {
-        liveDemoCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        const feed = document.getElementById('liveDemoCameraFeed');
-        feed.srcObject = liveDemoCameraStream;
-        feed.setAttribute('autoplay', '');
-        feed.setAttribute('playsinline', '');
-        feed.setAttribute('muted', '');
-        await feed.play();
-        feed.style.display = 'block';
-        placeholder.style.display = 'none';
-    } catch (e) {
-        placeholder.textContent = 'Camera error: ' + (e.name || '') + ' - ' + (e.message || 'Unknown error');
-        console.error('Camera error:', e);
-    }
-}
-
-function stopLiveDemo() {
-    if (liveDemoCameraStream) {
-        liveDemoCameraStream.getTracks().forEach(t => t.stop());
-        liveDemoCameraStream = null;
-    }
-    const feed = document.getElementById('liveDemoCameraFeed');
-    feed.style.display = 'none';
-    feed.srcObject = null;
-    document.getElementById('liveDemoPlaceholder').style.display = 'flex';
-    document.getElementById('liveDemoPlaceholder').textContent = 'Starting camera...';
-    document.getElementById('phaseLiveDemo').style.display = 'none';
-    showHomeScreen();
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE CAPTIONS — State
-// ══════════════════════════════════════════════════════════════
-let lcCameraStream = null;
-let lcGlossBuffer = [];          // pending glosses waiting to be flushed
-let lcParagraphText = '';        // full accumulated paragraph text
-let lcActive = false;
-let lcSelectedDomain = 'doctor_visit';
-let lcSelectedScenario = 'Doctor Visit';
-let lcHistory = [];              // conversation history for LLM context
-const LC_BUFFER_THRESHOLD = 4;  // flush after N glosses
-
-function selectLiveCaptionsScenario(domain, scenarioName) {
-    lcSelectedDomain = domain;
-    lcSelectedScenario = scenarioName;
-    document.getElementById('homeScreen').style.display = 'none';
-    document.getElementById('phaseLiveCaptions').style.display = 'flex';
-    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
-    document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
-    // Reset state
-    lcGlossBuffer = [];
-    lcParagraphText = '';
-    lcHistory = [];
-    document.getElementById('lcParagraph').innerHTML = '<span style="color:#333">Captions will appear here as you sign...</span>';
-    document.getElementById('lcGlossChips').innerHTML = '';
-    document.getElementById('lcThinking').style.display = 'none';
-    document.getElementById('lcStatusBar').textContent = 'Press "Start" to begin live captioning';
-    document.getElementById('lcBtnStart').style.display = 'inline-flex';
-    document.getElementById('lcBtnStop').style.display = 'none';
-}
-
-async function startLiveCaptions() {
-    lcActive = true;
-    document.getElementById('lcBtnStart').style.display = 'none';
-    document.getElementById('lcBtnStop').style.display = 'inline-flex';
-    document.getElementById('lcStatusBar').innerHTML = '<span style="color:#4caf80">&#x25CF; Listening — sign and record signs below...</span>';
-
-    // Start camera
-    try {
-        lcCameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-            audio: false
-        });
-        const feed = document.getElementById('lcCameraFeed');
-        feed.srcObject = lcCameraStream;
-        feed.style.display = 'block';
-        document.getElementById('lcCameraPlaceholder').style.display = 'none';
-    } catch (e) {
-        document.getElementById('lcCameraPlaceholder').textContent = 'Camera unavailable';
-    }
-
-    // Clear placeholder text if still showing
-    const para = document.getElementById('lcParagraph');
-    if (para.querySelector('span[style]')) para.innerHTML = '';
-}
-
-function stopLiveCaptions() {
-    lcActive = false;
-    if (lcCameraStream) {
-        lcCameraStream.getTracks().forEach(t => t.stop());
-        lcCameraStream = null;
-    }
-    const feed = document.getElementById('lcCameraFeed');
-    feed.style.display = 'none';
-    feed.srcObject = null;
-    document.getElementById('lcCameraPlaceholder').style.display = 'flex';
-    document.getElementById('lcBtnStart').style.display = 'inline-flex';
-    document.getElementById('lcBtnStop').style.display = 'none';
-    document.getElementById('lcStatusBar').textContent = 'Stopped.';
-}
-
-function clearLiveCaptions() {
-    lcGlossBuffer = [];
-    lcParagraphText = '';
-    lcHistory = [];
-    document.getElementById('lcParagraph').innerHTML = '';
-    document.getElementById('lcGlossChips').innerHTML = '';
-    document.getElementById('lcThinking').style.display = 'none';
-}
-
-// Call this whenever a new gloss is detected in live captions mode
-// (will be wired up to the inference pipeline or called manually for now)
-function lcAddGloss(gloss) {
-    if (!lcActive) return;
-    lcGlossBuffer.push(gloss);
-    renderLcBuffer();
-    document.getElementById('lcStatusBar').textContent = `Signs buffered: ${lcGlossBuffer.map(g => g.toUpperCase()).join(' · ')}`;
-    if (lcGlossBuffer.length >= LC_BUFFER_THRESHOLD) {
-        lcFlushBuffer();
-    }
-}
-
-function renderLcBuffer() {
-    const chips = document.getElementById('lcGlossChips');
-    chips.innerHTML = lcGlossBuffer.map(g =>
-        `<span class="lc-gloss-chip">${g.toUpperCase()}</span>`
-    ).join(' ');
-}
-
-async function lcFlushBuffer() {
-    if (lcGlossBuffer.length === 0) return;
-    const glosses = [...lcGlossBuffer];
-    lcGlossBuffer = [];
-    renderLcBuffer();
-
-    const thinking = document.getElementById('lcThinking');
-    thinking.style.display = 'inline';
-
-    let sentence = glosses.join(' ');
-    try {
-        const resp = await fetch('/api/construct-sentence', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ glosses, conversation_history: lcHistory })
-        });
-        const result = await resp.json();
-        if (result.success && result.sentence) sentence = result.sentence.trim();
-    } catch (e) {
-        console.warn('[LiveCaptions] LLM error, using raw glosses:', e);
-    }
-
-    thinking.style.display = 'none';
-
-    // Append to paragraph as a fresh (green) chunk, then fade to normal
-    lcParagraphText += (lcParagraphText ? ' ' : '') + sentence;
-    lcHistory.push({ speaker: 'patient', text: sentence });
-
-    const para = document.getElementById('lcParagraph');
-    const chunk = document.createElement('span');
-    chunk.className = 'lc-chunk fresh';
-    chunk.textContent = (para.innerHTML ? ' ' : '') + sentence;
-    para.appendChild(chunk);
-
-    // Fade the fresh highlight after 2s
-    setTimeout(() => chunk.classList.remove('fresh'), 2000);
-
-    // Auto-scroll
-    const area = document.getElementById('lcParagraph').closest('.lc-caption-area');
-    if (area) area.scrollTop = area.scrollHeight;
-
-    document.getElementById('lcStatusBar').innerHTML = '<span style="color:#4caf80">&#x25CF; Listening — sign and record signs below...</span>';
-}
-
-// ══════════════════════════════════════════════════════════════
-// CAPTION VIDEO — Upload, poll, download
-// ══════════════════════════════════════════════════════════════
-let cvJobId = null;
-let cvPollInterval = null;
-
-function cvHandleDrop(e) {
-    e.preventDefault();
-    document.getElementById('cvUploadZone').style.borderColor = '#2e2e4a';
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('video/')) cvHandleFile(file);
-}
-
-async function cvHandleFile(file) {
-    if (!file) return;
-    cvReset();
-
-    // Show progress area
-    document.getElementById('cvUploadZone').style.display = 'none';
-    document.getElementById('cvProgress').style.display = 'block';
-    document.getElementById('cvFileName').textContent = file.name;
-    document.getElementById('cvProgressPct').textContent = '0%';
-    document.getElementById('cvProgressBar').style.width = '0%';
-    document.getElementById('cvStatusMsg').textContent = 'Uploading...';
-
-    // Upload
-    const form = new FormData();
-    form.append('video', file);
-    let resp;
-    try {
-        resp = await fetch('/api/caption-video', { method: 'POST', body: form });
-    } catch (e) {
-        cvShowError('Upload failed: ' + e.message);
-        return;
-    }
-    const data = await resp.json();
-    if (!data.success) { cvShowError(data.error || 'Upload failed'); return; }
-
-    cvJobId = data.job_id;
-    document.getElementById('cvStatusMsg').textContent = 'Pipeline starting...';
-    document.getElementById('cvProgressBar').style.width = '5%';
-    document.getElementById('cvProgressPct').textContent = '5%';
-
-    // Poll for status
-    cvPollInterval = setInterval(cvPollStatus, 2000);
-}
-
-async function cvPollStatus() {
-    if (!cvJobId) return;
-    try {
-        const resp = await fetch(`/api/caption-video/${cvJobId}`);
-        const job = await resp.json();
-        if (!job.success) return;
-
-        const pct = job.progress || 0;
-        document.getElementById('cvProgressBar').style.width = pct + '%';
-        document.getElementById('cvProgressPct').textContent = pct + '%';
-        document.getElementById('cvStatusMsg').textContent = job.message || '';
-
-        if (job.status === 'done') {
-            clearInterval(cvPollInterval);
-            cvShowResult();
-        } else if (job.status === 'error') {
-            clearInterval(cvPollInterval);
-            cvShowError(job.message || 'Pipeline error');
-        }
-    } catch (e) {
-        console.warn('[CaptionVideo] Poll error:', e);
-    }
-}
-
-function cvShowResult() {
-    document.getElementById('cvProgress').style.display = 'none';
-    document.getElementById('cvResult').style.display = 'block';
-
-    const videoUrl = `/api/caption-video/${cvJobId}/download`;
-    // Show inline preview (fetch as blob so it streams properly)
-    fetch(videoUrl)
-        .then(r => r.blob())
-        .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const vid = document.getElementById('cvResultVideo');
-            vid.src = url;
-
-            // Download button
-            const btn = document.getElementById('cvDownloadBtn');
-            btn.onclick = () => {
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'captioned.mp4';
-                a.click();
-            };
-        });
-}
-
-function cvShowError(msg) {
-    document.getElementById('cvProgress').style.display = 'block';
-    document.getElementById('cvStatusMsg').textContent = '✗ Error: ' + msg;
-    document.getElementById('cvStatusMsg').style.color = '#f07070';
-}
-
-function cvReset() {
-    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
-    cvJobId = null;
-    document.getElementById('cvUploadZone').style.display = 'block';
-    document.getElementById('cvProgress').style.display = 'none';
-    document.getElementById('cvResult').style.display = 'none';
-    document.getElementById('cvStatusMsg').style.color = '';
-    const vid = document.getElementById('cvResultVideo');
-    if (vid.src) { URL.revokeObjectURL(vid.src); vid.src = ''; }
-    document.getElementById('cvFileInput').value = '';
-}
-
-
-function selectLiveCaptionsScenario(domain, scenarioName) {
-    document.getElementById('homeScreen').style.display = 'none';
-    document.getElementById('phaseLiveCaptions').style.display = 'flex';
-    document.getElementById('headerHomeBtn').style.display = 'inline-flex';
-    document.getElementById('lcScenarioLabel').textContent = scenarioName.toUpperCase();
-    cvReset();
-}
-
-function showHomeScreen() {
-    // Stop any ongoing playback immediately
-    isPlaying = false;
-    cancelAllSleeps();
-    if ('speechSynthesis' in window) speechSynthesis.cancel();
-    // Stop any playing sign video
-    if (signVid) { signVid.pause(); signVid.removeAttribute('src'); signVid.style.display = 'none'; }
-    // Stop speech recognition if active
-    if (liveRecognition) { try { liveRecognition.abort(); } catch(e) {} liveRecognition = null; }
-    // Reset and go back to home
-    document.getElementById('headerHomeBtn').style.display = 'none';
-    document.getElementById('homeScreen').style.display = 'block';
-    document.getElementById('phaseConvo').style.display = 'none';
-    document.getElementById('phaseLiveCaptions').style.display = 'none';
-    document.getElementById('phaseLiveDemo').style.display = 'none';
-    // Stop live demo camera if running
-    if (liveDemoCameraStream) {
-        liveDemoCameraStream.getTracks().forEach(t => t.stop());
-        liveDemoCameraStream = null;
-    }
-    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
-    unlockHeaderToggles();
-    updateSubTabVisibility();
-    // Hide vocab panel
-    document.getElementById('vocabPanel').style.display = 'none';
-    document.getElementById('vocabChips').classList.remove('open');
-    document.getElementById('vocabToggleBtn').classList.remove('open');
-    // Restore transcript if collapsed
-    if (transcriptCollapsed) toggleTranscript();
-    btnRestart.click(); // reset conversation state
-}
-
-// DOM
-const btnStart = document.getElementById('btnStart');
-const btnRestart = document.getElementById('btnRestart');
-const transcriptMsgs = document.getElementById('transcriptMsgs');
-const cameraFeed = document.getElementById('cameraFeed');
-const cameraPlaceholder = document.getElementById('cameraPlaceholder');
-const statusBar = document.getElementById('statusBar');
-const recBadge = document.getElementById('recBadge');
-const recBorder = document.getElementById('recBorder');
-const cameraView = document.getElementById('cameraView');
-
-// Sign video overlay element
-const signVid = document.createElement('video');
-signVid.muted = true;
-signVid.playsInline = true;
-signVid.setAttribute('webkit-playsinline', '');
-signVid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:4;background:#0a0a14;display:none;';
-cameraView.appendChild(signVid);
-
-// ══════════════════════════════════════════════════════════════
-// HELPERS
-// ══════════════════════════════════════════════════════════════
-let _sleepTimers = [];
-const sleep = ms => new Promise(r => {
-    const id = setTimeout(r, ms);
-    _sleepTimers.push(id);
-});
-function cancelAllSleeps() {
-    _sleepTimers.forEach(id => clearTimeout(id));
-    _sleepTimers = [];
-}
-
-// Validate LLM sentence — reject if it goes off-script
-function isLLMSentenceValid(llmSentence, glosses, hardcoded) {
-    if (!llmSentence || llmSentence.length === 0 || llmSentence.length > 150) return false;
-
-    const lower = llmSentence.toLowerCase();
-
-    // Must contain at least half the glosses (as words or roots)
-    const glossRoots = {
-        'meet': ['meet', 'meeting'],
-        'doctor': ['doctor', 'dr'],
-        'son': ['son'],
-        'bed': ['bed'],
-        'time': ['time'],
-        'work': ['work', 'works', 'working'],
-        'full': ['full'],
-        'enjoy': ['enjoy', 'enjoys', 'enjoyed'],
-        'go': ['go', 'goes', 'going'],
-        'cook': ['cook', 'cooking', 'cooks'],
-        'chair': ['chair', 'sit', 'sits', 'seat'],
-        'tall': ['tall'],
-        'finish': ['finish', 'finished', 'done'],
-        'what': ['what'],
-        'black': ['black']
-    };
-
-    let matched = 0;
-    for (const g of glosses) {
-        const variants = glossRoots[g] || [g];
-        if (variants.some(v => lower.includes(v))) matched++;
-    }
-
-    // At least half the glosses must appear
-    if (matched < Math.ceil(glosses.length / 2)) return false;
-
-    // Reject if it's way too different from hardcoded (completely wrong topic)
-    // Extract key nouns from hardcoded and check at least one appears
-    const hardcodedWords = hardcoded.toLowerCase().split(/\s+/);
-    const keyWords = hardcodedWords.filter(w => w.length > 3 && !['that', 'this', 'have', 'been', 'with', 'from', 'here', 'will', 'does', 'them', 'their', 'your', 'it\'s', 'he\'s'].includes(w));
-    if (keyWords.length > 0) {
-        const keyMatched = keyWords.some(w => lower.includes(w));
-        if (!keyMatched) return false;
-    }
-
-    // Reject if it asks a question when hardcoded doesn't, or vice versa
-    const llmIsQuestion = llmSentence.includes('?');
-    const hardcodedIsQuestion = hardcoded.includes('?');
-    if (llmIsQuestion !== hardcodedIsQuestion) return false;
-
-    return true;
-}
-
-// ══════════════════════════════════════════════════════════════
-// CAMERA
-// ══════════════════════════════════════════════════════════════
-async function startCamera() {
-    try {
-        // Live+sign needs audio to capture the speaker's voice
-        const needsAudio = (MODE === 'live' && METHOD === 'sign');
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
-            audio: needsAudio
-        });
-
-        const pipSelf = document.getElementById('pipSelf');
-        const pipFeed = document.getElementById('pipFeed');
-        const pipLabel = document.getElementById('pipLabel');
-        const cameraTitle = document.querySelector('.camera-title');
-
-        if (interactionMode === 'in-person') {
-            // In-person: show webcam full-screen in main view (speaker is in the room)
-            cameraFeed.srcObject = cameraStream;
-            cameraFeed.style.display = 'block';
-            cameraPlaceholder.style.display = 'none';
-            pipSelf.style.display = 'none'; // no PIP needed
-            cameraTitle.textContent = 'Your Camera';
-        } else {
-            // Video-call: main view reserved for sign videos / remote feed, PIP shows self
-            cameraFeed.srcObject = cameraStream;
-            cameraPlaceholder.textContent = MODE === 'demo' ? 'Waiting for signer...' : 'Waiting for remote feed...';
-            cameraPlaceholder.style.color = '#555';
-            cameraPlaceholder.style.display = 'block';
-
-            // Set up PIP self-view
-            pipSelf.style.display = 'block';
-            pipLabel.textContent = METHOD === 'speak' ? 'You (Speaker)' : 'You (Signer)';
-            pipFeed.srcObject = cameraStream;
-            pipFeed.onloadedmetadata = () => {
-                pipFeed.play().catch(() => {});
-                console.log('[PIP] Video playing');
-            };
-            console.log('[PIP] Self-view enabled, stream assigned');
-            cameraTitle.textContent = METHOD === 'speak' ? 'Signer View' : 'Speaker View';
-        }
-    } catch (e) {
-        console.error('[Camera] Failed:', e.name, e.message);
-        cameraPlaceholder.style.display = 'block';
-        cameraPlaceholder.style.color = '#ff6666';
-        cameraPlaceholder.textContent = 'Camera blocked — check browser permissions (click lock icon in address bar)';
-    }
-}
-
-function stopCamera() {
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(t => t.stop());
-        cameraStream = null;
-    }
-    const pipSelf = document.getElementById('pipSelf');
-    if (pipSelf) pipSelf.style.display = 'none';
-}
-
-// ══════════════════════════════════════════════════════════════
-// TEXT-TO-SPEECH (for patient sentences)
-// ══════════════════════════════════════════════════════════════
-function speak(text) {
-    return new Promise(resolve => {
-        if (!('speechSynthesis' in window)) { console.log('[TTS] Not supported'); resolve(); return; }
-
-        function doSpeak() {
-            speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.rate = 0.95;
-            u.pitch = 1.3;
-            // Prefer a young male voice
-            const voices = speechSynthesis.getVoices();
-            const preferred = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang) && !/female/i.test(v.name))
-                || voices.find(v => /David|Mark|James|Daniel|Guy/i.test(v.name))
-                || voices.find(v => /en/i.test(v.lang) && !/female|zira|hazel|susan|jenny/i.test(v.name));
-            if (preferred) u.voice = preferred;
-            const timeout = setTimeout(() => { console.log('[TTS] Timeout'); speechSynthesis.cancel(); resolve(); },
-                Math.max(text.split(' ').length * 500, 2500) + 3000);
-            u.onend = () => { clearTimeout(timeout); resolve(); };
-            u.onerror = (e) => { console.log('[TTS] Error:', e); clearTimeout(timeout); resolve(); };
-            speechSynthesis.speak(u);
-            console.log('[TTS] Speaking:', text.substring(0, 40) + '...');
-        }
-
-        // Edge/Chrome sometimes need voices to load first
-        if (speechSynthesis.getVoices().length > 0) {
-            doSpeak();
-        } else {
-            speechSynthesis.onvoiceschanged = () => { doSpeak(); };
-            // Fallback if onvoiceschanged never fires
-            setTimeout(() => { doSpeak(); }, 500);
-        }
-    });
-}
-
-// ══════════════════════════════════════════════════════════════
-// SPEECH RECOGNITION (for doctor's spoken lines)
-// ══════════════════════════════════════════════════════════════
-function listenForSpeech(expectedText) {
-    return new Promise(resolve => {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-        if (!SpeechRecognition) {
-            // Fallback: wait for tap/click (no error message — just clean prompt)
-            const hint = statusBar.querySelector('.script-hint');
-            if (hint) hint.textContent = 'Tap here when done speaking';
-            function onClick() {
-                statusBar.removeEventListener('click', onClick);
-                resolve(expectedText);
-            }
-            statusBar.addEventListener('click', onClick);
-            return;
-        }
-
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.interimResults = true;
-        recognition.continuous = false;
-        recognition.maxAlternatives = 1;
-
-        let finalResult = '';
-        let resolved = false;
-
-        // Safety timeout
-        const timeout = setTimeout(() => {
-            if (!resolved) {
-                resolved = true;
-                recognition.stop();
-                resolve(finalResult || expectedText);
-            }
-        }, 15000);
-
-        recognition.onresult = (event) => {
-            let interim = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-                const transcript = event.results[i][0].transcript;
-                if (event.results[i].isFinal) {
-                    finalResult += transcript;
-                } else {
-                    interim = transcript;
-                }
-            }
-            // Show live speech feedback
-            const display = finalResult || interim;
-            if (display) {
-                const hint = statusBar.querySelector('.script-hint');
-                if (hint) hint.innerHTML = '<span class="listening-indicator"></span>Hearing: "' + display + '"';
-            }
-        };
-
-        recognition.onend = () => {
-            if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                resolve(finalResult || expectedText);
-            }
-        };
-
-        recognition.onerror = () => {
-            if (!resolved) {
-                resolved = true;
-                clearTimeout(timeout);
-                resolve(expectedText);
-            }
-        };
-
-        recognition.start();
-    });
-}
-
-// ══════════════════════════════════════════════════════════════
-// SIGN VIDEO PLAYBACK
-// ══════════════════════════════════════════════════════════════
-function playSignVideo(url) {
-    return new Promise(resolve => {
-        if (!isPlaying) { resolve(false); return; }
-        let done = false;
-        function finish(r) {
-            if (done) return;
-            done = true;
-            signVid.onended = null;
-            signVid.onerror = null;
-            signVid.onloadeddata = null;
-            signVid.onpause = null;
-            clearTimeout(to);
-            resolve(r);
-        }
-
-        signVid.pause();
-        signVid.onended = null;
-        signVid.onerror = null;
-        signVid.onloadeddata = null;
-
-        const to = setTimeout(() => finish(false), 5000);
-        signVid.onpause = () => { if (!isPlaying) finish(false); };
-
-        signVid.onerror = () => finish(false);
-        signVid.onloadedmetadata = () => {
-            // Extend timeout based on actual video duration (+ 3s buffer)
-            clearTimeout(to);
-            const dynamicTimeout = Math.max((signVid.duration || 5) * 1000 + 3000, 5000);
-            const to2 = setTimeout(() => finish(false), dynamicTimeout);
-            // Re-bind finish to clear the new timeout
-            const origFinish = finish;
-            finish = (r) => { clearTimeout(to2); origFinish(r); };
-        };
-        signVid.onloadeddata = () => {
-            signVid.onloadeddata = null;
-            signVid.onended = () => finish(true);
-            signVid.play().catch(() => finish(false));
-        };
-
-        signVid.style.display = 'block';
-        signVid.src = url;
-        signVid.load();
-    });
-}
-
-// ══════════════════════════════════════════════════════════════
-// Init sub-tab visibility on page load
-updateSubTabVisibility();
-
-// ══════════════════════════════════════════════════════════════
-// LOAD DATA (demo mode only)
-// ══════════════════════════════════════════════════════════════
-if (MODE === 'demo') {
-    (async function loadConversation() {
-        const resp = await fetch('/api/conversation');
-        conversation = await resp.json();
-        btnStart.disabled = false;
-    })();
-}
-
-// ══════════════════════════════════════════════════════════════
-// CONVERSATION FLOW — DEMO MODE
-// ══════════════════════════════════════════════════════════════
-btnStart.addEventListener('click', async () => {
-    btnStart.disabled = true;
-    btnRestart.style.display = 'inline-block';
-    history = [];
-
-    // Warm up TTS on user gesture (required by browsers before programmatic speech)
-    if ('speechSynthesis' in window) {
-        const warmup = new SpeechSynthesisUtterance('');
-        warmup.volume = 0;
-        speechSynthesis.speak(warmup);
-    }
-
-    if (MODE === 'live') {
-        await startLiveMode();
-        return;
-    }
-
-    // Demo mode
-    if (!conversation) return;
-    currentTurn = 0;
-    isPlaying = true;
-
-    await startCamera();
-    playNextTurn();
-});
-
-btnRestart.addEventListener('click', () => {
-    currentTurn = 0;
-    history = [];
-    isPlaying = false;
-    transcriptMsgs.innerHTML = '';
-    btnStart.disabled = false;
-    btnRestart.style.display = 'none';
-    recBadge.classList.remove('on');
-    recBorder.classList.remove('on');
-    signVid.style.display = 'none';
-    document.getElementById('btnHowItWorks').style.display = 'none';
-    statusBar.innerHTML = '<span class="prompt">Press "Start" to begin the conversation</span>';
-    stopLiveMode();
-    stopCamera();
-    cameraFeed.style.display = 'none';
-    cameraPlaceholder.style.display = '';
-    cameraPlaceholder.textContent = 'Camera will start when you begin';
-
-    // Hide live mode buttons
-    const btnRecordSign = document.getElementById('btnRecordSign');
-    const btnSendMessage = document.getElementById('btnSendMessage');
-    if (btnRecordSign) btnRecordSign.style.display = 'none';
-    if (btnSendMessage) btnSendMessage.style.display = 'none';
-});
-
-async function playNextTurn() {
-    if (currentTurn >= conversation.turns.length || !isPlaying) {
-        if (isPlaying) {
-            statusBar.innerHTML = '<span class="sentence">Conversation complete!</span>';
-            stopCamera();
-            if (MODE === 'demo') {
-                document.getElementById('btnHowItWorks').style.display = 'inline-block';
-            }
-        }
-        return;
-    }
-
-    const turn = conversation.turns[currentTurn];
-    if (turn.speaker === 'doctor') {
-        await playDoctorTurnDemo(turn);
-    } else {
-        await playPatientTurnDemo(turn);
-    }
-
-    if (!isPlaying) return;
-    currentTurn++;
-    await sleep(600);
-    if (!isPlaying) return;
-    playNextTurn();
-}
-
-// ── Demo: Speaker turn ──
-async function playDoctorTurnDemo(turn) {
-    if (!isPlaying) return;
-    signVid.style.display = 'none';
-
-    // If user is the signer (method=sign), display the speaker's line as text (no TTS)
-    if (METHOD === 'sign') {
-        statusBar.innerHTML = `
-            <div class="doctor-script">
-                <div class="script-label">Speaker says:</div>
-                <div class="script-line">"${turn.text}"</div>
-            </div>`;
-        addMsg('doctor', SPEAKER_LABEL, turn.text);
-        history.push({ speaker: 'doctor', text: turn.text });
-        await sleep(Math.max(turn.text.split(' ').length * 400, 2000));
-        return;
-    }
-
-    // User is the speaker — show teleprompter and listen for speech
-    const hasSpeechRec = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-    const hintText = hasSpeechRec
-        ? '<span class="listening-indicator"></span>Listening...'
-        : 'Tap here when done speaking';
-
-    statusBar.innerHTML = `
-        <div class="doctor-script">
-            <div class="script-label">Read this line aloud:</div>
-            <div class="script-line">"${turn.text}"</div>
-            <div class="script-hint">${hintText}</div>
-        </div>`;
-
-    const recognized = await listenForSpeech(turn.text);
-    const displayText = recognized.trim() || turn.text;
-    addMsg('doctor', SPEAKER_LABEL, displayText);
-    history.push({ speaker: 'doctor', text: turn.text });
-}
-
-// ══════════════════════════════════════════════════════════════
-// LIVE MODE — Free-form conversation
-// ══════════════════════════════════════════════════════════════
-let liveRecognition = null;
-let liveActive = false;
-let liveCollectedGlosses = [];
-let isRecordingSign = false;
-
-async function startLiveMode() {
-    liveActive = true;
-    await startCamera();
-
-    const btnRecordSign = document.getElementById('btnRecordSign');
-    const btnSendMessage = document.getElementById('btnSendMessage');
-
-    if (METHOD === 'sign') {
-        // Signer mode: mic captures doctor's speech, camera captures signs
-        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
-        startContinuousListening();
-
-        // Show sign recording buttons
-        if (btnRecordSign) {
-            btnRecordSign.style.display = 'inline-block';
-            btnRecordSign.onclick = () => toggleSignRecording();
-        }
-        if (btnSendMessage) {
-            btnSendMessage.onclick = () => sendSignMessage();
-        }
-    } else {
-        // Speaker mode: user speaks, waits for signer's signs
-        statusBar.innerHTML = '<span class="prompt">Live mode ready — speak naturally</span>';
-        // TODO: Speaker-side live mode (future)
-    }
-}
-
-function stopLiveMode() {
-    liveActive = false;
-    continuousRecording = false;
-    liveCollectedGlosses = [];
-    isRecordingSign = false;
-    if (liveRecognition) {
-        try { liveRecognition.stop(); } catch(e) {}
-        liveRecognition = null;
-    }
-}
-
-// ── Continuous speech recognition: captures ambient speech from the speaker ──
-function startContinuousListening() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        console.log('[Live] Speech recognition not available');
-        statusBar.innerHTML = '<span class="prompt">Speech recognition not available — speaker text won\'t be captured</span>';
-        return;
-    }
-
-    liveRecognition = new SpeechRecognition();
-    liveRecognition.lang = 'en-US';
-    liveRecognition.interimResults = true;
-    liveRecognition.continuous = true;
-    liveRecognition.maxAlternatives = 1;
-
-    let currentUtterance = '';
-
-    liveRecognition.onresult = (event) => {
-        let interim = '';
-        let finalText = '';
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
-            if (event.results[i].isFinal) {
-                finalText += transcript;
-            } else {
-                interim = transcript;
-            }
-        }
-
-        // Show interim results in status bar (only when not recording a sign)
-        if (!isRecordingSign) {
-            if (interim) {
-                statusBar.innerHTML = `<span class="processing"><span class="listening-indicator"></span>${interim}</span>`;
-            }
-        }
-
-        // When we get a final result, add it to transcript
-        if (finalText.trim()) {
-            const text = finalText.trim();
-            addMsg('doctor', SPEAKER_LABEL, text);
-            history.push({ speaker: 'doctor', text: text });
-            console.log('[Live] Speaker said:', text);
-
-            // Show the text prominently for the signer to read
-            if (!isRecordingSign) {
-                statusBar.innerHTML = `
-                    <div class="doctor-script">
-                        <div class="script-label">Speaker said:</div>
-                        <div class="script-line">"${text}"</div>
-                    </div>`;
-                // After a few seconds, go back to listening state
-                setTimeout(() => {
-                    if (liveActive && !isRecordingSign) {
-                        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
-                    }
-                }, 4000);
-            }
-        }
-    };
-
-    liveRecognition.onend = () => {
-        // Auto-restart if still in live mode
-        if (liveActive) {
-            console.log('[Live] Recognition ended, restarting...');
-            setTimeout(() => {
-                if (liveActive) {
-                    try { liveRecognition.start(); } catch(e) { console.log('[Live] Restart failed:', e); }
-                }
-            }, 300);
-        }
-    };
-
-    liveRecognition.onerror = (e) => {
-        console.log('[Live] Recognition error:', e.error);
-        // "no-speech" is normal — just means silence, it auto-restarts via onend
-        if (e.error === 'aborted') return;
-    };
-
-    try {
-        liveRecognition.start();
-        console.log('[Live] Continuous listening started');
-    } catch(e) {
-        console.error('[Live] Could not start recognition:', e);
-    }
-}
-
-// ── Continuous sign recording: loops record→analyze until user clicks Send ──
-let continuousRecording = false;
-let pendingSend = false; // flag: send glosses after loop exits
-
-async function toggleSignRecording() {
-    const btnRecordSign = document.getElementById('btnRecordSign');
-
-    if (continuousRecording) {
-        // User clicked "Send Message" — signal the loop to stop and send
-        pendingSend = true;
-        continuousRecording = false;
-        btnRecordSign.disabled = true;
-        btnRecordSign.textContent = 'Sending...';
-        return;
-    }
-
-    // Start continuous recording loop
-    continuousRecording = true;
-    pendingSend = false;
-    isRecordingSign = true;
-    btnRecordSign.textContent = 'Send Message ➤';
-    btnRecordSign.style.background = '#4caf80';
-
-    while (continuousRecording && liveActive) {
-        recBadge.classList.add('on');
-        recBorder.classList.add('on');
-
-        const detected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
-        statusBar.innerHTML = '<span class="processing">Recording sign...' +
-            (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
-            '</span>';
-
-        // Record 2.5 seconds
-        const videoBlob = await recordFromCamera(2500);
-
-        if (!continuousRecording) break; // user stopped during recording
-
-        if (!videoBlob) {
-            statusBar.innerHTML = '<span class="processing">No video captured, retrying...</span>';
-            await sleep(500);
-            continue;
-        }
-
-        recBadge.classList.remove('on');
-        recBorder.classList.remove('on');
-        statusBar.innerHTML = '<span class="processing">Analyzing sign...</span>';
-
-        // Send to inference API
-        const formData = new FormData();
-        formData.append('video', videoBlob, 'sign.webm');
-        formData.append('domain', selectedDomain);
-        console.log('[Live] Sending sign with domain:', selectedDomain);
-
-        try {
-            const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
-            const result = await resp.json();
-
-            if (!continuousRecording) break; // user stopped during analysis
-
-            if (result.success) {
-                liveCollectedGlosses.push({
-                    gloss: result.gloss,
-                    confidence: result.confidence,
-                    top_k: result.top_k || []
-                });
-
-                const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
-                statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
-                console.log('[Live] Detected:', result.gloss, '| Domain:', result.domain || selectedDomain);
-            } else {
-                console.log('[Live] Detection failed, continuing...');
-            }
-        } catch (e) {
-            console.error('[Live] Inference error:', e);
-        }
-
-        // Brief pause before next recording cycle
-        if (continuousRecording) await sleep(300);
-    }
-
-    // Loop has exited — cleanup
-    recBadge.classList.remove('on');
-    recBorder.classList.remove('on');
-    isRecordingSign = false;
-
-    // If user clicked "Send Message", send the glosses now
-    if (pendingSend && liveCollectedGlosses.length > 0) {
-        pendingSend = false;
-        await sendSignMessage();
-    } else {
-        // Just stopped without sending
-        btnRecordSign.textContent = 'Record Sign';
-        btnRecordSign.style.background = '#b07cf0';
-        btnRecordSign.disabled = false;
-        if (liveCollectedGlosses.length > 0) {
-            const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
-            statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
-        }
-    }
-}
-
-// ── Send collected glosses → LLM → display sentence ──
-async function sendSignMessage() {
-    if (liveCollectedGlosses.length === 0) return;
-
-    // Stop continuous recording if still active
-    continuousRecording = false;
-    isRecordingSign = false;
-
-    const btnRecordSign = document.getElementById('btnRecordSign');
-    const btnSendMessage = document.getElementById('btnSendMessage');
-    btnRecordSign.disabled = true;
-    if (btnSendMessage) btnSendMessage.disabled = true;
-
-    const rawGlosses = liveCollectedGlosses.map(p => p.gloss).join(' ');
-    statusBar.innerHTML = '<span class="processing">Constructing sentence from: ' + rawGlosses + '...</span>';
-    console.log('[Live] Sending glosses to LLM:', JSON.stringify(liveCollectedGlosses));
-
-    let sentence = rawGlosses; // raw fallback
-    try {
-        const resp = await fetch('/api/construct-sentence-live', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                gloss_predictions: liveCollectedGlosses,
-                conversation_history: history
-            })
-        });
-        const result = await resp.json();
-        console.log('[Live] LLM response:', JSON.stringify(result));
-        if (result.success && result.sentence) {
-            sentence = result.sentence.trim();
-        } else if (result.fallback) {
-            sentence = result.fallback;
-            console.warn('[Live] LLM failed, using fallback:', result.error);
-        } else {
-            console.warn('[Live] LLM returned unexpected response:', JSON.stringify(result));
-        }
-    } catch (e) {
-        console.error('[Live] LLM fetch error, using raw glosses:', e);
-        statusBar.innerHTML = '<span class="processing">LLM unavailable, using raw glosses...</span>';
-        await sleep(500);
-    }
-
-    // Display sentence
-    statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
-    addMsg('patient', SIGNER_LABEL, sentence);
-    history.push({ speaker: 'patient', text: sentence });
-    console.log('[Live] Sent message:', sentence);
-
-    // TTS: in-person always (speaker can hear), video-call only if "I Speak" (speaker has the device)
-    if (interactionMode === 'in-person' || METHOD === 'speak') {
-        await speak(sentence);
-    }
-
-    // Reset for next message
-    liveCollectedGlosses = [];
-    btnRecordSign.disabled = false;
-    btnRecordSign.textContent = 'Record Sign';
-    btnRecordSign.style.background = '#b07cf0';
-    if (btnSendMessage) {
-        btnSendMessage.disabled = false;
-        btnSendMessage.style.display = 'none';
-    }
-
-    // Return to listening state after a pause
-    await sleep(1000);
-    if (liveActive && !isRecordingSign) {
-        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
-    }
-}
-
-// Record video from camera for specified duration
-function recordFromCamera(durationMs) {
-    return new Promise(resolve => {
-        if (!cameraStream) { resolve(null); return; }
-
-        recordedChunks = [];
-        try {
-            mediaRecorder = new MediaRecorder(cameraStream, { mimeType: 'video/webm' });
-        } catch (e) {
-            // Fallback mime type
-            try {
-                mediaRecorder = new MediaRecorder(cameraStream);
-            } catch (e2) {
-                console.error('MediaRecorder not supported:', e2);
-                resolve(null);
-                return;
-            }
-        }
-
-        mediaRecorder.ondataavailable = (e) => {
-            if (e.data.size > 0) recordedChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            resolve(blob.size > 0 ? blob : null);
-        };
-
-        mediaRecorder.start();
-        setTimeout(() => {
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-            }
-        }, durationMs);
-    });
-}
-
-// ── Demo mode: play sign videos → LLM → TTS (original behavior) ──
-async function playPatientTurnDemo(turn) {
-    if (!isPlaying) return;
-    const glosses = turn.glosses;
-    const signs = turn.sign_videos || glosses;
-    const sampleId = turn.sentence_sample;
-
-    recBadge.classList.add('on');
-    recBorder.classList.add('on');
-    statusBar.innerHTML = '<span class="processing">Patient signing...</span>';
-
-    let usedSentenceVideo = false;
-
-    // Try full-sentence video from samples first
-    if (sampleId && isPlaying) {
-        const sampleUrl = `/samples/${sampleId}/original_video.mp4`;
-        console.log('[Demo] Trying sample video:', sampleUrl);
-        const played = await playSignVideo(sampleUrl);
-        if (played) {
-            usedSentenceVideo = true;
-            statusBar.innerHTML = '<span class="gloss">Detected: ' + glosses.map(g => g.toUpperCase()).join(' ') + '</span>';
-        }
-    }
-
-    // Fallback: play individual sign-bank videos
-    if (!usedSentenceVideo && isPlaying) {
-        let accumulated = [];
-        for (let i = 0; i < signs.length && isPlaying; i++) {
-            const played = await playSignVideo(`/sign-bank/${signs[i]}.mp4`);
-            if (!isPlaying) return;
-            if (!played) await sleep(1200);
-            if (!isPlaying) return;
-
-            accumulated.push(signs[i].toUpperCase());
-            statusBar.innerHTML = '<span class="gloss">Detected: ' + accumulated.join(' ') + '</span>';
-            await sleep(250);
-            if (!isPlaying) return;
-        }
-    }
-
-    if (!isPlaying) return;
-    recBadge.classList.remove('on');
-    recBorder.classList.remove('on');
-    signVid.style.display = 'none';
-    await sleep(400);
-    if (!isPlaying) return;
-
-    // Use the pre-written sentence from conversation JSON (no LLM needed in demo)
-    statusBar.innerHTML = '<span class="processing">SignBridge constructing sentence...</span>';
-    await sleep(600);
-    if (!isPlaying) return;
-
-    const sentence = turn.asl_sentence;
-
-    // Show sentence
-    statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
-    addMsg('patient', SIGNER_LABEL, sentence);
-    history.push({ speaker: 'patient', text: sentence });
-
-    // TTS: in-person always (speaker can hear), video-call only if "I Speak" (speaker has the device)
-    if (isPlaying && (interactionMode === 'in-person' || METHOD === 'speak')) {
-        await speak(sentence);
-    }
-    if (!isPlaying) return;
-    await sleep(800);
-}
-
-// ══════════════════════════════════════════════════════════════
-// TRANSCRIPT
-// ══════════════════════════════════════════════════════════════
-function addMsg(type, speaker, text) {
-    const d = document.createElement('div');
-    d.className = 'msg ' + type;
-    d.innerHTML = `<div class="speaker">${speaker}</div><div>${text}</div>`;
-    transcriptMsgs.appendChild(d);
-    transcriptMsgs.scrollTop = transcriptMsgs.scrollHeight;
-}
-
-// ══════════════════════════════════════════════════════════════
-// BREAKDOWN PHASE (demo mode only)
-// ══════════════════════════════════════════════════════════════
-let breakdownData = [];
-let breakdownLoaded = false;
-
-async function loadBreakdownSamples() {
-    if (breakdownLoaded || !conversation || !conversation.breakdown_samples) return;
-    breakdownData = [];
-    for (const sampleId of conversation.breakdown_samples) {
-        try {
-            const resp = await fetch(`/api/samples/${sampleId}`);
-            if (resp.ok) {
-                const meta = await resp.json();
-                breakdownData.push({ sampleId, meta });
-            }
-        } catch (e) {
-            console.warn('[Breakdown] Failed to load sample:', sampleId, e);
-        }
-    }
-    breakdownLoaded = true;
-}
-
-async function showBreakdown() {
-    await loadBreakdownSamples();
-    document.getElementById('phaseConvo').style.display = 'none';
-    document.getElementById('phaseBreakdown').style.display = 'flex';
-    window.scrollTo(0, 0);
-    renderBreakdown();
-}
-
-function hideBreakdown() {
-    document.getElementById('phaseBreakdown').style.display = 'none';
-    document.getElementById('phaseConvo').style.display = 'flex';
-}
-
-function renderBreakdown() {
-    const tabsEl = document.getElementById('breakdownTabs');
-    const sectionsEl = document.getElementById('breakdownSections');
-    tabsEl.innerHTML = '';
-    sectionsEl.innerHTML = '';
-
-    if (breakdownData.length === 0) {
-        sectionsEl.innerHTML = '<p style="color:#888;text-align:center;padding:40px;">No breakdown samples available.</p>';
-        return;
-    }
-
-    breakdownData.forEach((item, idx) => {
-        const segments = (item.meta.precomputed || {}).segments || [];
-        const rawGlosses = segments.map(s => s.top_1).join(' ').toUpperCase() || item.sampleId;
-
-        // Tab
-        const tab = document.createElement('button');
-        tab.className = 'sentence-tab' + (idx === 0 ? ' active' : '');
-        tab.textContent = `Sentence ${idx + 1}: "${rawGlosses}"`;
-        tab.onclick = () => {
-            document.querySelectorAll('.sentence-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.pipeline-section').forEach(s => s.classList.remove('active'));
-            tab.classList.add('active');
-            document.getElementById(`bd-section-${idx}`).classList.add('active');
-        };
-        tabsEl.appendChild(tab);
-
-        // Section
-        const sec = document.createElement('div');
-        sec.className = 'pipeline-section' + (idx === 0 ? ' active' : '');
-        sec.id = `bd-section-${idx}`;
-        sec.innerHTML = buildBreakdownHTML(item);
-        sectionsEl.appendChild(sec);
-    });
-}
-
-function buildBreakdownHTML(item) {
-    const { sampleId, meta } = item;
-    const precomputed = meta.precomputed || {};
-    const segments = precomputed.segments || [];
-    const rawSentence = precomputed.raw_sentence || segments.map(s => s.top_1).join(' ');
-    const llmSentence = precomputed.llm_sentence || meta.reference_sentence || rawSentence;
-    const refSentence = meta.reference_sentence || '';
-
-    let html = '';
-
-    // Step 1: Pose estimation video
-    html += `
-    <div class="pipeline-step">
-        <div class="step-header">
-            <div class="step-number">1</div>
-            <div class="step-title">Pose Estimation — Extracting body keypoints</div>
-        </div>
-        <div class="step-content">
-            <p style="color:#888;margin-bottom:12px;">MediaPipe Holistic extracts 75 keypoints (hands, face, body) from the video, creating a skeletal representation of the signer.</p>
-            <div style="text-align:center;">
-                <video src="/demo-data/samples/${sampleId}/pose_video.mp4"
-                       controls muted playsinline
-                       style="max-width:100%;max-height:280px;border-radius:8px;background:#0d0d1a;"></video>
-            </div>
-        </div>
-    </div>`;
-
-    // Step 2: Segmentation
-    html += `
-    <div class="pipeline-step">
-        <div class="step-header">
-            <div class="step-number">2</div>
-            <div class="step-title">Segmentation — Splitting into ${segments.length} individual signs</div>
-        </div>
-        <div class="step-content">
-            <p style="color:#888;margin-bottom:12px;">SignBridge detects motion boundaries in the pose data to separate the continuous signing into individual sign segments.</p>
-            <div class="segment-grid">`;
-
-    segments.forEach((seg, i) => {
-        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
-        html += `
-                <div class="segment-card">
-                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
-                           muted playsinline loop
-                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
-                    <div class="seg-label">Segment ${i+1}</div>
-                </div>`;
-    });
-
-    html += `</div></div></div>`;
-
-    // Step 3: Sign recognition
-    html += `
-    <div class="pipeline-step">
-        <div class="step-header">
-            <div class="step-number">3</div>
-            <div class="step-title">Sign Recognition — Identifying each sign</div>
-        </div>
-        <div class="step-content">
-            <p style="color:#888;margin-bottom:12px;">Each segment is fed through an ST-GCN model trained on the WLASL dataset. The model outputs confidence scores for each possible sign.</p>
-            <div class="segment-grid">`;
-
-    segments.forEach((seg, i) => {
-        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
-        const top1 = seg.top_1 || 'unknown';
-        const confidence = seg.confidence || 0;
-        const topK = seg.top_k || [{ gloss: top1, confidence }];
-        const pct = Math.round(confidence * 100);
-        const color = pct >= 80 ? '#4caf80' : pct >= 50 ? '#f0a050' : '#ff5555';
-
-        html += `
-                <div class="prediction-card">
-                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
-                           muted playsinline loop
-                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
-                    <div class="pred-info">
-                        <div class="pred-top1" style="color:${color}">${top1.toUpperCase()} — ${pct}%</div>
-                        <div class="confidence-bar"><div class="conf-fill" style="width:${pct}%;background:${color}"></div></div>
-                        <div class="top-k-list">`;
-        topK.forEach(k => {
-            html += `<div class="top-k-item"><span>${k.gloss}</span><span>${Math.round(k.confidence*100)}%</span></div>`;
-        });
-        html += `</div></div></div>`;
-    });
-
-    html += `</div></div></div>`;
-
-    // Step 4: LLM sentence construction
-    html += `
-    <div class="pipeline-step">
-        <div class="step-header">
-            <div class="step-number">4</div>
-            <div class="step-title">LLM Sentence Construction — Building natural English</div>
-        </div>
-        <div class="step-content">
-            <p style="color:#888;margin-bottom:16px;">The recognized glosses are sent to Gemini along with conversation context. The LLM transforms raw ASL glosses into a grammatically correct English sentence.</p>
-            <div class="construction-display">
-                <div class="construct-box raw">
-                    <div class="box-label">Raw Glosses (Model Output)</div>
-                    <div class="box-content">${rawSentence.toUpperCase()}</div>
-                </div>
-                <div class="construct-arrow">&#8594;</div>
-                <div class="construct-box llm">
-                    <div class="box-label">SignBridge Output (Gemini)</div>
-                    <div class="box-content">"${llmSentence}"</div>
-                </div>
-            </div>
-            ${refSentence ? `<p style="color:#555;margin-top:14px;font-size:0.82rem;text-align:center;">Reference: "${refSentence}"</p>` : ''}
-        </div>
-    </div>`;
-
-    return html;
-}
-
-</script>
+<!-- MediaPipe (bundled locally) for real-time sign segmentation + pose overlay -->
+<script src="/static/vendor/mediapipe-hands/hands.js"></script>
+<script src="/static/vendor/mediapipe-pose/pose.js"></script>
+<script src="/static/js/sign_segmenter.js?v=2"></script>
+<script src="/static/js/pose_overlay.js?v=1"></script>
+<script src="/static/js/app.js?v=54"></script>
 </body>
 </html>

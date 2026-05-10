@@ -1,0 +1,10 @@
+{
+  "exclude": [
+    "datasets/augmented_pool",
+    "datasets/wlasl_poses_complete",
+    "kaggle-staging*",
+    "models/kaggle-output",
+    "temp_videos",
+    "venv"
+  ]
+}

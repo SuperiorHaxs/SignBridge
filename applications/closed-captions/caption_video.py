@@ -73,6 +73,20 @@ def _ensure_torch():
 # ── Paths ──────────────────────────────────────────────────────────────
 MODEL_CHECKPOINT = MODELS_DIR / "openhands-modernized" / "production-models" / "wlasl_43_class_50s_model"
 
+# Registry for domain-specific models
+REGISTRY_FILE = MODELS_DIR / "openhands-modernized" / "production-models" / "registry.json"
+
+def _get_model_for_domain(domain=None):
+    """Get model checkpoint path for a domain (falls back to generic)."""
+    if domain and REGISTRY_FILE.exists():
+        registry = json.load(open(REGISTRY_FILE))
+        model_name = registry.get(domain)
+        if model_name:
+            path = MODELS_DIR / "openhands-modernized" / "production-models" / model_name
+            if path.exists():
+                return str(path)
+    return str(MODEL_CHECKPOINT)
+
 VENV_SCRIPTS = Path(sys.executable).parent
 SCRIPTS_SUBDIR = VENV_SCRIPTS / "Scripts"
 
@@ -135,7 +149,7 @@ def segment_video(video_path: str, pose_path: str, output_dir: str):
     return segments, segment_pose_files
 
 
-def run_inference(segment_pose_files: list, checkpoint_path: str = None):
+def run_inference(segment_pose_files: list, checkpoint_path: str = None, domain: str = None):
     """
     Run OpenHands model inference on each segment.
 
@@ -147,7 +161,7 @@ def run_inference(segment_pose_files: list, checkpoint_path: str = None):
     from prepare_demo_sample import convert_pose_to_pickle
 
     if checkpoint_path is None:
-        checkpoint_path = str(MODEL_CHECKPOINT)
+        checkpoint_path = _get_model_for_domain(domain)
 
     print(f"[3/5] Running model inference on {len(segment_pose_files)} segments...")
     model, id_to_gloss, masked_class_ids = load_model_from_checkpoint(checkpoint_path)
@@ -556,7 +570,7 @@ def caption_demo_sample(sample_dir: str, output_path: str = None) -> str:
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════
 
-def caption_video(video_path: str, output_path: str = None) -> str:
+def caption_video(video_path: str, output_path: str = None, domain: str = None) -> str:
     """
     Full pipeline: video → pose → segment → infer → caption → burn.
 
@@ -592,7 +606,7 @@ def caption_video(video_path: str, output_path: str = None) -> str:
         segments, segment_pose_files = segment_video(video_path, pose_path, tmp_dir)
 
         # Step 3: Inference
-        predictions = run_inference(segment_pose_files)
+        predictions = run_inference(segment_pose_files, domain=domain)
 
         # Step 4: Build caption timeline
         caption_events = build_captions(segments, predictions, fps)
@@ -620,13 +634,17 @@ def main():
         "--buffer-size", "-b", type=int, default=3,
         help="Number of signs before LLM sentence (default: 3)"
     )
+    parser.add_argument(
+        "--domain", "-d", default=None,
+        help="Domain name for model selection (e.g. doctor_visit, restaurant)"
+    )
 
     args = parser.parse_args()
 
     global CAPTION_BUFFER_SIZE
     CAPTION_BUFFER_SIZE = args.buffer_size
 
-    caption_video(args.video, args.output)
+    caption_video(args.video, args.output, domain=args.domain)
 
 
 if __name__ == "__main__":

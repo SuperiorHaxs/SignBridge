@@ -1,10 +1,9 @@
-<!-- LN Page (unnumbered) — Title Page -->
 
 # SignBridge: Real-Time American Sign Language Recognition System
 
 ## Engineering Lab Notebook
 
-**Student:** Kavin Kumar Padmanabhan
+**Student:** Kavin Sai Kumar
 **School:** Eastside Catholic School, Sammamish, WA
 **Category:** TECA-HIE (Technology Enhances the Arts — Human Information Exchange)
 **Project Start Date:** August 1, 2025
@@ -13,16 +12,6 @@
 **Live Demo:** https://huggingface.co/spaces/SuperiorHaxs/SignBridge
 
 ---
-
-> **TECA FRAMING REMINDER:** This project is evaluated as a *communication-enhancing technology*, not just an ML pipeline. Every entry should reflect the goal of bridging two complete languages — ASL and English — with fundamentally different grammars. Lead with the human story; support with the technical story.
-
----
-
-<!-- LN Pages (unnumbered) — Table of Contents (3 pages) -->
-<!-- PHYSICAL NOTEBOOK: These 3 TOC pages go at the front of your notebook. -->
-<!-- Write each line by hand as you complete that page. Progressive = add entries as you go. -->
-<!-- In the physical book, just write: "Page # .... Description .... Date" -->
-<!-- Phase headers are written when you START that phase, not retroactively. -->
 
 ## Table of Contents
 
@@ -48,11 +37,11 @@ Page 11 ... ASL linguistics — grammar & spatial referencing ...... Aug 8
 Page 12 ... CCIR training — problem statement workshop ........... Aug 15
 Page 13 ... CCIR training — experimental design & methods ........ Aug 22
 Page 14 ... Research synthesis — benchmarks & project plan ....... Aug 29
-Page 15 ... [Phase 2] OpenHands-HD keypoint expansion (83 pts) ... Sep __
-Page 16 ... Data augmentation pipeline — 50x expansion ........... Sep __
-Page 17 ... First prototypes — 20-class & 50-class models ........ Oct __
-Page 18 ... LLM integration design — semantic coherence .......... Oct __
-Page 19 ... CTQI evaluation framework design ..................... Oct __
+Page 15 ... [Phase 2] OpenHands-HD keypoint expansion (83 pts) ... Sep 5
+Page 16 ... Data augmentation pipeline — 50x expansion ........... Sep 15
+Page 17 ... First prototypes — 20-class & 50-class models ........ Oct 3
+Page 18 ... LLM integration design — semantic coherence .......... Oct 15
+Page 19 ... CTQI evaluation framework design ..................... Oct 25
 Page 20 ... Prototype refinement & pre-paper baselines ........... early Nov
 Page 21 ... [Phase 3] Begin writing CCIR research paper .......... Nov 8
 Page 22 ... Submit paper to CCIR (deadline) ...................... Nov 24
@@ -65,42 +54,39 @@ Page 25 ... Present at CCIR Winter Symposium ..................... Dec 6
 
 ```
 Page 26 ... [Phase 4] Resume dev — full pipeline integration ..... Dec 7
-Page 27 ... Temporal segmentation for continuous signing .......... Dec __
-Page 28 ... Pipeline testing & debugging ......................... Dec __
-  <!-- ADD MORE DEC 7–24 PAGES AS NEEDED -->
+Page 27 ... Temporal segmentation for continuous signing .......... Dec 12
+Page 28 ... Pipeline testing & debugging ......................... Dec 18
   (Dec 25–30: Winter vacation)
 Page 29 ... [Phase 5] Real-time webcam demo application .......... Dec 31
-Page 30 ... Train 100-class model — 80.97% Top-1 ................ Jan __
-Page 31 ... CTQI evaluation — full statistical analysis .......... Jan __
-Page 32 ... Streaming inference & smart buffering ................. Jan __
-Page 33 ... Model optimization — dropout, LR, label smoothing .... Jan __
-Page 34 ... LLM prompt iteration & error analysis ................ Jan __
-Page 35 ... Incorporate CCIR feedback ............................ Jan __
+Page 30 ... Train 100-class model — 80.97% Top-1 ................ Jan 5
+Page 31 ... CTQI evaluation — full statistical analysis .......... Jan 10
+Page 32 ... Streaming inference & smart buffering ................. Jan 14
+Page 33 ... Model optimization — dropout, LR, label smoothing .... Jan 18
+Page 34 ... LLM prompt iteration & error analysis ................ Jan 21
+Page 35 ... Incorporate CCIR feedback ............................ Jan 24
 Page 36 ... Final metrics — p-values, Cohen's d, ablation ........ late Jan
 Page 36.5 . CTQI v2 remodel — prerequisite chain design .......... Jan 30
-  <!-- ADD MORE DEC 31–JAN 31 PAGES AS NEEDED -->
 Page 37 ... [Phase 6] Docker + HuggingFace deployment ............ Feb 1
 Page 38 ... Deployed app testing & verification .................. Feb 5
 Page 38.5 . Human survey design & deployment ..................... Feb 7
 Page 38.7 . Survey analysis — CTQI v2 weakness discovery ......... Feb 9
 Page 38.8 . CTQI v3 design & human validation .................... Feb 10
 Page 39 ... [Phase 7] Begin CSRSEF materials — poster, notebook .. Feb 14
-Page 40 ... Demo rehearsal & presentation practice ................ Feb __
-Page 41 ... Final preparations — day before CSRSEF ............... Mar __
-Page 42 ... Code Repository Reference (printed)
-Page 43 ... Conclusions & Reflection
-  Pages 44–86: future work
+Page 40 ... Demo rehearsal & presentation practice ................ Feb 10
+Page 41 ... Final preparations — day before CSRSEF ............... Mar 5
+Page 42 ... [Phase 8] Post-CSRSEF — reframe as three experiments ... Mar 7
+Page 43 ... Experiment 1 — metric validation (BLEU/BERT vs human) . Mar 10
+Page 44 ... Experiment 2 — LLM recovery threshold ................. Mar 14
+Page 45 ... Experiment 3 — upstream design choices ................. Mar 18
+Page 46 ... Validation at scale — 62,654 sentences translated ..... Mar 22
+Page 47 ... Code Repository Reference (printed)
+Page 48 ... Conclusions & Reflection
+  Pages 49–86: future work
 ```
-
-> **DRAFTING AID — DO NOT TRANSFER:** The TOC above is your master page map. In the physical notebook, write each TOC line by hand as you complete that page — don't fill it all in at once. Judges can tell. Phase headers should be written when you start the phase, in slightly different ink or on a different day if possible.
 
 ---
 
-<!-- LN Page 1 — Problem Definition -->
-
 ## Problem Definition
-
-> **TECA:** Lead with the COMMUNICATION problem, not the technical one.
 
 Around 70 million Deaf individuals worldwide rely on sign languages, yet fewer than 20% of their digital content receives accurate captions. Current automated systems struggle with dynamic, continuous signing, leading to grammatically incorrect and unusable translations.
 
@@ -114,8 +100,6 @@ Existing technology either:
 **The core problem is not recognition accuracy — it's preserving meaning across two grammatically incompatible languages in real time.**
 
 ---
-
-<!-- LN Page 2 — Research Questions & Hypotheses -->
 
 ## Research Questions & Hypotheses
 
@@ -131,11 +115,7 @@ Existing technology either:
 - **H2: AI-Powered Word Selection.** Using Gemini LLM to select words based on sentence-level semantic coherence will produce higher quality translations than choosing the highest-confidence prediction alone — particularly when the correct sign appears in Top-K but not as Top-1.
 - **H3: Multi-Dimensional Quality Measurement.** CTQI (combining lexical accuracy, meaning preservation, and grammatical correctness) will reveal improvements that no single metric captures alone.
 
-> **TECA Framing:** These hypotheses frame the work as bridging two linguistic systems, not just improving a classifier. H2 is the core TECA-HIE hypothesis — it's about *communication quality*, not just accuracy.
-
 ---
-
-<!-- LN Page 3 — Engineering Goals -->
 
 ## Engineering Goals
 
@@ -153,11 +133,9 @@ Existing technology either:
 
 ---
 
-<!-- LN Page 4 — Background Research (Technical) -->
-
 ## Background Research
 
-*Last updated: February 2026*
+*Last updated: March 2026*
 
 ### Technical Sources
 
@@ -170,16 +148,12 @@ Existing technology either:
 | I3D Baseline (WLASL) | Video-based approach: 65.89% Top-1. Slow inference, not real-time viable | Aug 2025 |
 | Multi-stream CNN (SOTA) | Video-based SOTA: 81.38% Top-1. Slow, requires heavy compute | Aug 2025 |
 | Google Gemini (gemini-2.0-flash) | LLM with fast inference, suitable for real-time contextual sign selection | Sep 2025 |
-| Zhang et al. (2020), BERTScore | Semantic similarity metric using BERT embeddings — captures meaning preservation | Sep 2025 |or machine translation evaluation | Sep 2025 |
+| Zhang et al. (2020), BERTScore | Semantic similarity metric using BERT embeddings — captures meaning preservation | Sep 2025 |
+| Papineni et al. (2002), BLEU | Lexical similarity metric for machine translation evaluation | Sep 2025 |
 
-| Papineni et al. (2002), BLEU | Lexical similarity metric f
 ---
 
-<!-- LN Page 5 — Background Research (Linguistic / Cultural + Key Insight) -->
-
-### Linguistic / Cultural Sources (Required for TECA)
-
-> **TECA:** You MUST include ASL linguistics sources, not just ML papers. Judges will look for this.
+### Linguistic / Cultural Sources
 
 | Source | Key Takeaway | Date Reviewed |
 |--------|-------------|---------------|
@@ -203,8 +177,6 @@ English structure: Subject (I) → Verb (went) → Prep (to the store) → Time 
 **This grammatical gap is exactly why an LLM post-processing step is essential — it's not just cleanup, it's linguistic bridging. This is the core TECA-HIE innovation.**
 
 ---
-
-<!-- LN Page 6 — Design Brainstorming -->
 
 ## Design Brainstorming
 
@@ -242,15 +214,11 @@ Initially considered using only the highest-confidence prediction per sign. Reje
 - Ignores sentence-level context entirely
 - Produces "word salad" that ~~technically has high per-word confidence~~ fails at communication
 
-> **TECA:** The LLM doesn't just fix grammar — it performs *semantic coherence analysis*, choosing signs that make sense *together* as communication. This is the TECA-HIE differentiator.
-
 ---
-
-<!-- LN Page 7 — Constraints & Criteria -->
 
 ## Constraints & Criteria
 
-*Targets set: Aug 2025 | Achieved column last updated: Feb 2026*
+*Targets set: Aug 2025 | Achieved column last updated: Mar 2026*
 
 ### Performance Criteria
 
@@ -277,13 +245,9 @@ Initially considered using only the highest-confidence prediction per sign. Reje
 
 ---
 
-<!-- LN Page 8 — Design Iteration Log (page 1 of 2) -->
-
 ## Design Iteration Log
 
 *Started: Aug 2025 | Add a row each time you make a major design change*
-
-> **DRAFTING AID:** In the physical notebook, start this page early with just rows v0.1–v0.2. Add rows progressively as you make each design change. Don't fill the whole table at once — that looks retrospective.
 
 | Version | Date | What Changed | Why | Impact |
 |---------|------|-------------|-----|--------|
@@ -294,8 +258,6 @@ Initially considered using only the highest-confidence prediction per sign. Reje
 | v0.5 | Oct 2025 | Added CTQI framework | Single metrics miss communication quality | Multi-dimensional evaluation |
 
 ---
-
-<!-- LN Page 9 — Design Iteration Log (page 2 of 2) -->
 
 ## Design Iteration Log (continued)
 
@@ -313,26 +275,13 @@ Initially considered using only the highest-confidence prediction per sign. Reje
 
 # Daily Engineering Entries
 
-> **Entry Format:** Each entry follows the TECA guide structure:
-> - **Date & Time** — When you worked
-> - **Goal** — What you planned to accomplish
-> - **What I Did** — Detailed account of activities
-> - **Observations / Results** — Data, screenshots, outputs
-> - **Challenges / Problems** — What went wrong (judges LOVE this)
-> - **Reflection** — What does this mean? (TECA: reflect on communication quality)
-> - **Next Steps** — Plan for next session
->
-> *Remember: Never erase. Use ~~strikethrough~~ to cross out mistakes so the original is still readable.*
-
 ---
 
 ## Phase 1: Problem & Research (Aug 1 – Aug 31, 2025)
 
 *Literature review, ASL linguistics study, CCIR research training, problem formulation*
 
-<!-- LN Page 10 — Entry 1 -->
-
-### Entry 1 — August 1, 2025 | [YOUR INPUT NEEDED: TIME]
+### Entry 1 — August 1, 2025 | 2:00 PM
 
 **Goal:** Define the research problem and begin initial literature survey on ASL translation technology.
 
@@ -351,7 +300,7 @@ The thing that was mainly difficult about starting this project was figuring out
 **Reflection:**
 Some things that surprised me where all the different complexitites in the overarching problem itself. My initial reaction to the scope of the problem was that of being overwhelmed, as there were so many different possible problems and solutions to take into account.
 
-> **TECA Reflection:** Starting with the communication barrier (not the technical challenge) sets the right foundation for the entire project.
+> **TECA Reflection:** I think starting with the communication barrier instead of jumping into the technical stuff was the right call.
 
 **Next Steps:**
 - Study ASL grammar in depth
@@ -359,9 +308,7 @@ Some things that surprised me where all the different complexitites in the overa
 
 ---
 
-<!-- LN Page 11 — Entry 2 -->
-
-### Entry 2 — August 8, 2025 | [YOUR INPUT NEEDED: TIME]
+### Entry 2 — August 8, 2025 | 3:00 PM
 
 **Goal:** Study ASL linguistics — understand why translation is a grammar problem, not just a recognition problem.
 
@@ -390,21 +337,16 @@ Verb directionality  | GIVE-from-me-to-you      | I give you
 - I don't know ASL myself — relying on academic descriptions of grammar structure
 - Hard to find large-scale parallel ASL↔English corpora (they barely exist)
 
-
-
 **Reflection:**
-> [YOUR INPUT NEEDED: 2-3 sentences. How did learning about ASL grammar change your thinking? Did you realize something about your project approach?]
-Learning about the ASl grammar system and how it differs from the conventional english grammar system, made me realize that I had to re-evaluate what I am going to measure against to see how good of a prediction my model made. I realized I had to include more than 1 metric, and incorporate different fields to get an accuracte measurable system.
+Learning about the ASL grammar system and how it differs from the conventional English grammar system made me realize that I had to re-evaluate what I am going to measure against to see how good of a prediction my model made. I realized I had to include more than 1 metric, and incorporate different fields to get an accurate measurable system.
 
-> **TECA Reflection:** Understanding ASL as a complete language with its own grammar is critical for respectful, effective translation technology. The technology must honor both languages.
+> **TECA Reflection:** I didn't realize ASL had its own full grammar before this. It changed how I think about the project — it's not just about recognizing hand shapes, it's about bridging two completely different language systems.
 
 **Next Steps:**
 - Attend CCIR research training — discuss problem statement
 - Formalize research questions
 
 ---
-
-<!-- LN Page 12 — Entry 3 -->
 
 ### Entry 3 — August 15, 2025 | 3:00 PM
 
@@ -426,15 +368,13 @@ It was harder than I expected to explain why existing systems fail. I kept wanti
 **Reflection:**
 The CCIR training helped me realize that SignBridge isn't just a coding project — it's a research project that needs hypotheses and experiments.
 
-> **TECA Reflection:** Presenting the problem to a research audience for the first time forces clarity. The feedback from CCIR training helped refine whether this is framed as an ML problem or a communication problem — it needs to be both, but lead with communication.
+> **TECA Reflection:** Presenting to the CCIR group helped me figure out the framing — it's both an ML problem and a communication problem, but the communication side should come first.
 
 **Next Steps:**
 - Prepare for next CCIR session on experimental design
 - Begin formalizing research questions and hypotheses
 
 ---
-
-<!-- LN Page 13 — Entry 4 -->
 
 ### Entry 4 — August 22, 2025 | 3:00 PM
 
@@ -465,7 +405,7 @@ Isolating variables is tricky when everything is interconnected. I also struggle
 **Reflection:**
 Before this, I was thinking like a developer ("does it work?"). After this, I started thinking like a researcher ("can I prove it works better?").
 
-> **TECA Reflection:** Rigorous experimental design is what separates a science fair project from a demo. The CCIR training emphasized that *how you measure* matters as much as *what you build* — this directly led to the CTQI framework idea.
+> **TECA Reflection:** The CCIR training made me realize that *how you measure* matters as much as *what you build*. This is basically where the CTQI idea started.
 
 **Next Steps:**
 - Synthesize all August research into a coherent project plan
@@ -473,8 +413,6 @@ Before this, I was thinking like a developer ("does it work?"). After this, I st
 - Begin technical planning for September implementation
 
 ---
-
-<!-- LN Page 14 — Entry 5 -->
 
 ### Entry 5 — August 29, 2025 | 2:00 PM
 
@@ -518,7 +456,7 @@ The biggest gap I identified was evaluation — there's no standard metric for "
 **Reflection:**
 August was about understanding the problem deeply before writing any code. The key insight: this is a linguistics and communication problem that happens to use ML, not an ML problem that happens to involve language.
 
-> **TECA Reflection:** A full month of research before coding shows judges that the project is grounded in genuine understanding, not just technical enthusiasm. The CCIR training adds formal methodology credibility.
+> **TECA Reflection:** Spending all of August on research before writing any code was hard — I kept wanting to start coding. But it made the rest of the project way more grounded.
 
 **Next Steps:**
 - Phase 2 begins: start implementing OpenHands-HD keypoint expansion
@@ -530,8 +468,6 @@ August was about understanding the problem deeply before writing any code. The k
 ## Phase 2: Design, Experiment & Prototype (Sep 1 – Nov 7, 2025)
 
 *Aligns with: Roadmap Steps 1.1–1.2 — Sign Recognition Prototype + LLM Sentence Construction*
-
-<!-- LN Page 15 — Entry 6 -->
 
 ### Entry 6 — September 5, 2025 | 4:00 PM
 
@@ -573,8 +509,6 @@ Seeing the detailed hand skeletons for the first time was exciting. You could ac
 
 ---
 
-<!-- LN Page 16 — Entry 7 -->
-
 ### Entry 7 — September 15, 2025 | 3:30 PM
 
 **Goal:** Build and test data augmentation pipeline (50x expansion).
@@ -611,8 +545,6 @@ Going from 342 to 17,100 samples felt like a huge win — finally enough data to
 - Start with 20-class subset before scaling to 100
 
 ---
-
-<!-- LN Page 17 — Entry 8 -->
 
 ### Entry 8 — October 3, 2025 | 5:00 PM
 
@@ -660,15 +592,13 @@ The 27-point baseline was so bad (10.91%) that I thought something was broken at
 **Reflection:**
 The Top-3 accuracy being so much higher than Top-1 is the key finding. That's exactly what an LLM can exploit — pick the right word from context. But the bigger lesson was about data hygiene — all my "progress" before fixing the leakage was fake progress.
 
-> **TECA Reflection:** The gap between Top-1 and Top-3 accuracy reveals an opportunity: the vision model *knows* the answer but can't commit. An LLM providing linguistic context turns uncertain recognition into confident communication.
+> **TECA Reflection:** The gap between Top-1 and Top-3 is interesting — the model kind of *knows* the answer but can't commit. That's exactly where an LLM can help by looking at context.
 
 **Next Steps:**
 - Begin LLM integration design
 - Research Gemini API for real-time inference
 
 ---
-
-<!-- LN Page 18 — Entry 9 -->
 
 ### Entry 9 — October 15, 2025 | 4:30 PM
 
@@ -732,8 +662,6 @@ Seeing "man drink water" transform into "The man wants to drink water" was exact
 
 ---
 
-<!-- LN Page 19 — Entry 10 -->
-
 ### Entry 10 — October 25, 2025 | 5:00 PM
 
 **Goal:** Design the CTQI evaluation framework (Roadmap part of Step 1.2).
@@ -759,7 +687,7 @@ Evaluation dataset: 34 synthetic sentences with ground truth
 Statistical validation: Paired t-tests, Cohen's d effect sizes
 ```
 
-> **TECA Reflection:** CTQI was designed because standard ML metrics (accuracy, F1) don't capture *communication quality*. CTQI measures what TECA-HIE cares about: does the technology actually enhance human communication?
+> **TECA Reflection:** Standard ML metrics like accuracy and F1 don't really tell you if the translation is *good* in a communication sense. That's why I needed CTQI — something that measures whether the output actually makes sense to a person.
 
 **Observations / Results:**
 - The multiplicative structure worked well — bad grammar gets penalized even if accuracy is high
@@ -773,8 +701,6 @@ Designing a new metric from scratch is hard — how do you know if it's right? I
 - Run complete baseline vs. LLM-enhanced comparison
 
 ---
-
-<!-- LN Page 20 — Entry 11 -->
 
 ### Entry 11 — November 5, 2025 | 6:00 PM
 
@@ -816,8 +742,6 @@ The prototype wasn't perfect, but it was good enough to tell the story. Time to 
 
 *Exclusive focus period — all development paused to concentrate on paper submission and presentation*
 
-<!-- LN Page 21 — Entry 12 -->
-
 ### Entry 12 — November 8, 2025 | 4:00 PM
 
 **Goal:** Begin writing formal research paper for CCIR Winter Symposium submission.
@@ -855,14 +779,12 @@ The hardest part was finding the right balance between technical detail and acce
 **Reflection:**
 Writing the paper forced me to articulate *why* each design decision matters, not just *what* I built.
 
-> **TECA Reflection:** The paper writing process sharpened the project narrative — balancing the human communication story with the technical innovation.
+> **TECA Reflection:** Writing the paper forced me to balance the human communication story with the technical stuff. Both matter but I kept defaulting to technical.
 
 **Next Steps:**
 - Revise and polish for CCIR submission deadline (November 24)
 
 ---
-
-<!-- LN Page 22 — Entry 13 -->
 
 ### Entry 13 — November 24, 2025 | 11:00 PM
 
@@ -889,8 +811,6 @@ It felt good to finally submit after weeks of writing and revising. I learned th
 
 ---
 
-<!-- LN Page 23 — Entry 14 -->
-
 ### Entry 14 — November 28, 2025 | 3:00 PM
 
 **Goal:** Receive notification of selection for CCIR presentation.
@@ -910,8 +830,6 @@ I was nervous about presenting in front of researchers.
 - Practice talk
 
 ---
-
-<!-- LN Page 24 — Entry 15 -->
 
 ### Entry 15 — December 1–5, 2025 | 4:00 PM
 
@@ -939,14 +857,12 @@ Slide Flow:
 **Challenges / Problems:**
 Fitting everything into 10 minutes was hard. I had so much to say but had to cut a lot. The technical details were especially hard to simplify without losing accuracy.
 
-> **TECA Reflection:** Presenting at CCIR is practice for CSRSEF. Note what works and what doesn't.
+> **TECA Reflection:** Good practice for CSRSEF — I learned that the demo gets way more reaction than the slides.
 
 **Next Steps:**
 - Present at CCIR on December 6
 
 ---
-
-<!-- LN Page 25 — Entry 16 -->
 
 ### Entry 16 — December 6, 2025 | 10:00 AM
 
@@ -974,7 +890,7 @@ I was nervous at first but got more comfortable as the talk went on. The demo wo
 **Reflection:**
 The presentation went better than I expected. The live demo was definitely the highlight — people could see it actually working. I should have spent less time on technical details and more on the impact.
 
-> **TECA Reflection:** Which parts got the strongest reaction — the technical details or the communication impact story?
+> **TECA Reflection:** The audience responded most to the live demo and the before/after translation examples — the actual evidence that the technology helps people communicate.
 
 **Lessons for CSRSEF (March 7):**
 - Emphasize the live demo more
@@ -990,8 +906,6 @@ The presentation went better than I expected. The live demo was definitely the h
 
 *Aligns with: Roadmap Steps 1.3–1.4 — Full Pipeline Integration + Continuous Sign Detection*
 *Resumed development after CCIR Symposium (Dec 6)*
-
-<!-- LN Page 26 — Entry 17 -->
 
 ### Entry 17 — December 7, 2025 | 2:00 PM
 
@@ -1030,8 +944,6 @@ It was really satisfying to see the whole pipeline working for the first time. V
 
 ---
 
-<!-- LN Page 27 — Entry 18 -->
-
 ### Entry 18 — December 12, 2025 | 4:00 PM
 
 **Goal:** Implement temporal segmentation for continuous signing (Roadmap Step 1.4).
@@ -1062,14 +974,12 @@ I implemented two segmentation methods. The first is auto-detect which just spli
 **Challenges / Problems:**
 Some signs blend into each other without a clear pause, so the velocity-based method sometimes split them wrong. Signs with similar motion patterns were hard to segment.
 
-> **TECA Reflection:** Segmentation is invisible to the user but critical for communication. Wrong split points destroy meaning.
+> **TECA Reflection:** Nobody thinks about segmentation but if you split a sign in the wrong place, the whole sentence breaks. It's one of those invisible things that has to work perfectly.
 
 **Next Steps:**
 - Full pipeline testing
 
 ---
-
-<!-- LN Page 28 — Entry 19 -->
 
 ### Entry 19 — December 18, 2025 | 3:00 PM
 
@@ -1100,8 +1010,6 @@ Testing a multi-component pipeline is way harder than testing individual pieces.
 
 *Aligns with: Roadmap Steps 1.5–1.6 — Demo, Optimization, and Metrics Evaluation*
 *Bulk of engineering work — training, evaluation, statistical analysis, and iteration*
-
-<!-- LN Page 29 — Entry 20 -->
 
 ### Entry 20 — December 31, 2025 | 1:00 PM
 
@@ -1139,8 +1047,6 @@ The demo feels pretty responsive. It's fast enough that you could have a real co
 - Train 100-class model
 
 ---
-
-<!-- LN Page 30 — Entry 21 -->
 
 ### Entry 21 — January 5, 2026 | 2:00 PM
 
@@ -1212,14 +1118,12 @@ The worst bug was the gloss list issue — I thought my model was getting worse 
 **Reflection:**
 80.97% Top-1 with real-time inference closes the gap with video-based SOTA (81.38%) while being dramatically faster. But looking at this table, it took 10 training runs over ~2 weeks to get there. Each small optimization added a few percentage points — there was no single magic fix.
 
-> **TECA Reflection:** Best of both worlds — matching slow video model accuracy while keeping the speed needed for real communication.
+> **TECA Reflection:** 80.97% with real-time speed basically closes the gap with video-based models (81.38%) that are way too slow for actual communication. Best of both worlds.
 
 **Next Steps:**
 - Run CTQI evaluation
 
 ---
-
-<!-- LN Page 31 — Entry 22 -->
 
 ### Entry 22 — January 10, 2026 | 3:00 PM
 
@@ -1286,15 +1190,13 @@ A few sentences actually got worse with the LLM — it hallucinated extra words 
 **Reflection:**
 The Quality Score improvement (39.38 → 74.56) is what matters most for TECA — the difference between "time son go bed" and "It is time for my son to go to bed."
 
-> **TECA Reflection:** These results prove the core thesis: technology CAN bridge two grammatically distinct languages in real time.
+> **TECA Reflection:** This is the clearest proof that the system actually works — "time son go bed" becoming "It is time for my son to go to bed" is exactly the kind of grammar bridging I set out to build.
 
 **Next Steps:**
 - Streaming inference and smart buffering
 - Iterate on LLM prompts
 
 ---
-
-<!-- LN Page 32 — Entry 23 -->
 
 ### Entry 23 — January 14, 2026 | 2:00 PM
 
@@ -1328,8 +1230,6 @@ Streaming makes the demo way more impressive. Instead of waiting for the full se
 - Tune the trigger thresholds more
 
 ---
-
-<!-- LN Page 33 — Entry 24 -->
 
 ### Entry 24 — January 18, 2026 | 4:00 PM
 
@@ -1419,8 +1319,6 @@ Hyperparameter tuning is tedious but important. Small changes can make a big dif
 
 ---
 
-<!-- LN Page 34 — Entry 25 -->
-
 ### Entry 25 — January 21, 2026 | 3:00 PM
 
 **Goal:** Iterate on LLM prompting strategy and error analysis.
@@ -1501,14 +1399,12 @@ Some failures I couldn't fix at all — when the sign recognition is just wrong,
 **Reflection:**
 Prompt engineering is more art than science. Small wording changes can have big effects. I probably spent 20+ hours just on prompts — more than I expected. But the payoff was huge: Quality Score went from ~50 to ~75 once the prompts were right.
 
-> **TECA Reflection:** Understanding *where* the system fails at communication is as important as where it succeeds. The semantic rules I discovered (verb-object compatibility, temporal pairing) reflect real linguistic constraints that matter for natural communication.
+> **TECA Reflection:** The failures taught me as much as the successes. The "you can't give someone bowling" example is a real linguistic rule I had to discover the hard way — those verb-object constraints matter for natural communication.
 
 **Next Steps:**
 - Address CCIR feedback
 
 ---
-
-<!-- LN Page 35 — Entry 26 -->
 
 ### Entry 26 — January 24, 2026 | 2:00 PM
 
@@ -1537,8 +1433,6 @@ Getting feedback from real researchers was super valuable. They asked things I n
 - Final metrics validation before deployment
 
 ---
-
-<!-- LN Page 36 — Entry 27 -->
 
 ### Entry 27 — January 28, 2026 | 5:00 PM
 
@@ -1577,15 +1471,13 @@ The statistics took a while to double-check. Had to make sure I was using the ri
 **Reflection:**
 The ablation study was eye-opening. It showed that each component matters, but the LLM contributes the most to CTQI. Without it, accuracy is the same but communication quality tanks.
 
-> **TECA Reflection:** The ablation study tells the TECA story quantitatively: recognition alone produces CTQI of only 55.56. The LLM is what turns signs into communication.
+> **TECA Reflection:** The ablation numbers really drive the point home — without the LLM, CTQI is only 55.56 even with perfect recognition. The LLM is what turns a list of signs into something a person can actually understand.
 
 **Next Steps:**
 - Redesign CTQI framework based on statistical insights
 - Freeze code for deployment
 
 ---
-
-<!-- LN Page 36.5 — Entry 27.5 -->
 
 ### Entry 27.5 — January 30, 2026 | 4:00 PM
 
@@ -1662,7 +1554,7 @@ The hardest part was deciding on the plausibility modifier range (0.5x to 1.0x).
 **Reflection:**
 This was one of those changes that felt risky at first — the v1 formula was already working and producing significant results. But looking at edge cases made it clear that v1 was letting bad systems score too high. The prerequisite chain design is more honest: it forces balanced quality across recognition, coverage, and fluency. You can't fake your way to a good CTQI v2 score.
 
-> **TECA Reflection:** CTQI v2 better reflects what communication quality actually means. A translation that's accurate but unreadable doesn't help anyone communicate. The multiplicative structure enforces the TECA-HIE principle: all aspects of human information exchange must work together.
+> **TECA Reflection:** A translation that's accurate but unreadable doesn't help anyone. The multiplicative structure forces all the pieces — recognition, coverage, fluency — to work together, which is what real communication requires.
 
 **Next Steps:**
 - Commit changes and update all evaluation scripts
@@ -1673,8 +1565,6 @@ This was one of those changes that felt risky at first — the v1 formula was al
 ## Phase 6: Deploy & Release (Feb 1 – Feb 13, 2026)
 
 *Aligns with: Roadmap Step 1.7 — Deployment & Release*
-
-<!-- LN Page 37 — Entry 28 -->
 
 ### Entry 28 — February 1, 2026 | 2:00 PM
 
@@ -1708,14 +1598,12 @@ The container was huge at first because of all the ML libraries. Had to optimize
 **Reflection:**
 It's pretty cool to have something deployed that anyone can use. Makes the project feel real, not just a school project.
 
-> **TECA Reflection:** Deployment shows the technology is practical, not just academic.
+> **TECA Reflection:** Having it deployed where anyone can try it makes it feel like a real tool, not just a school project.
 
 **Next Steps:**
 - Test deployed version thoroughly
 
 ---
-
-<!-- LN Page 38 — Entry 29 -->
 
 ### Entry 29 — February 5, 2026 | 3:00 PM
 
@@ -1738,8 +1626,6 @@ The system is ready for demos but could use more polish for everyday use. Good e
 - Begin science fair preparation (Phase 7)
 
 ---
-
-<!-- LN Page 38.5 — Entry 29.5 -->
 
 ### Entry 29.5 — February 7, 2026 | 3:00 PM
 
@@ -1783,15 +1669,13 @@ Choosing which sentences to include was tricky. I wanted a representative sample
 **Reflection:**
 This is the kind of validation that separates a real metric from a made-up formula. Anyone can design a formula that looks nice on paper — the question is whether it actually matches human perception. I should have done this earlier, before committing to CTQI v2 for the deployment.
 
-> **TECA Reflection:** The whole point of TECA-HIE is *human* information exchange. If my metric for measuring translation quality doesn't correlate with how *humans* actually perceive quality, then it's not measuring what matters. This survey is fundamentally a check on whether the technology serves people, not just numbers.
+> **TECA Reflection:** If CTQI doesn't match how people actually judge translation quality, then it's just a formula that looks nice on paper. The survey is how I check whether my metric serves people or just numbers.
 
 **Next Steps:**
 - Collect all survey responses (should take 2–3 days)
 - Run correlation analysis: CTQI v2 vs. human ratings
 
 ---
-
-<!-- LN Page 38.7 — Entry 29.7 -->
 
 ### Entry 29.7 — February 9, 2026 | 4:00 PM
 
@@ -1873,15 +1757,13 @@ The hardest part was accepting that my "better" metric was actually worse. I spe
 **Reflection:**
 This is exactly why empirical validation matters. I had a beautiful theoretical argument for why v2 should be better (multiplicative structure, orthogonal components, no arbitrary weights). And it IS better in some ways — it handles edge cases more honestly than v1. But when you compare against actual human judgment, v1's simpler averaging approach happens to be closer to how people evaluate translations. The lesson: always validate against ground truth, even when the theory is compelling.
 
-> **TECA Reflection:** The metric needs to reflect what HUMANS think, not what the formula thinks. TECA-HIE is about human communication — so the ultimate ground truth is whether humans agree with the metric's assessment. This survey proved that CTQI v2 was drifting from that standard.
+> **TECA Reflection:** This was a wake-up call — v2 looked great on paper but the humans disagreed. If I'm building technology for human communication, humans get the final vote on whether it's working.
 
 **Next Steps:**
 - Design CTQI v3 that combines v2's structural improvements with the human alignment of v1
 - Key insight to explore: scale plausibility's contribution by gloss accuracy
 
 ---
-
-<!-- LN Page 38.8 — Entry 29.8 -->
 
 ### Entry 29.8 — February 10, 2026 | 2:00 PM
 
@@ -1978,7 +1860,7 @@ The hardest part was resisting the urge to make a bigger change. After seeing v2
 **Reflection:**
 This whole arc — from v2's theoretical elegance to its empirical failure to v3's data-driven fix — is probably the most important thing I learned in this project. Good engineering isn't about having the best theory. It's about testing your assumptions against reality and being willing to change when the data tells you to. The human survey cost me a few days but saved me from presenting a metric at CSRSEF that doesn't actually measure what humans care about.
 
-> **TECA Reflection:** CTQI v3 is the first version that was directly validated by human judgment. For a TECA-HIE project, this matters: the technology's quality measure now reflects how people actually perceive translation quality, not just how a formula thinks they should. The metric serves the humans, not the other way around.
+> **TECA Reflection:** v3 is the first version I can actually defend — it's not just theoretically sound, 5 real people agreed with it. For a project about human communication, that matters more than any statistical argument.
 
 **Next Steps:**
 - Begin science fair preparation (Phase 7)
@@ -1987,8 +1869,6 @@ This whole arc — from v2's theoretical elegance to its empirical failure to v3
 ---
 
 ## Phase 7: Science Fair Prep (Feb 14 – Mar 6, 2026)
-
-<!-- LN Page 39 — Entry 30 -->
 
 ### Entry 30 — February 14, 2026 | 4:00 PM
 
@@ -2010,8 +1890,6 @@ Fitting everything on the poster is hard. There's so much to say but not enough 
 
 ---
 
-<!-- LN Page 40 — Entry 31 -->
-
 ### Entry 31 — February 10, 2026 | 6:00 PM
 
 **Goal:** Demo rehearsal and presentation practice.
@@ -2031,8 +1909,6 @@ I practiced the demo several times to make sure it wouldn't crash. Timed myself 
 | 4 | BOY → PLAY → BALL → HAPPY | "The boy is happy playing with the ball." | Complex sentence | 91%, 58%, 77%, 85% |
 | 5 | GIRL → READ → BOOK → SLOW | "The girl is reading a book slowly." | Edge case | 88%, 72%, 93%, 45% |
 
-> **TECA:** The live demo IS your TECA story.
-
 **Observations / Results:**
 The demo works reliably when I stay within the trained vocabulary. Need to be careful not to sign too fast or the segmentation gets confused.
 
@@ -2044,8 +1920,6 @@ Internet dependency is a concern — what if venue WiFi is bad? Made an offline 
 - Make sure backup demos are ready
 
 ---
-
-<!-- LN Page 41 — Entry 32 -->
 
 ### Entry 32 — March 5-6, 2026 | 7:00 PM
 
@@ -2071,11 +1945,165 @@ Feeling nervous but excited. I've put months into this project and it's finally 
 
 ---
 
-<!-- LN Page 42 — Code Repository Reference -->
+## Phase 8: Post-CSRSEF & Continued Development (Mar 7 – Mar 27, 2026)
+
+*After the science fair I went back and reorganized my experiments. The results were all there already but the structure was kind of all over the place — judges pointed this out too.*
+
+### Entry 33 — March 7, 2026 | 4:00 PM
+
+**Goal:** Reorganize my project around three clear experiment questions after getting CSRSEF feedback.
+
+**What I Did:**
+
+One of the judges at CSRSEF asked me something like "what's your actual experiment here?" and I realized I didn't have a clean answer. I had accuracy numbers in one place, CTQI stuff somewhere else, the ablation data in another entry. So I sat down and tried to figure out how all the pieces actually connect. I ended up with three questions that chain together — you need the answer to the first one before the second one makes sense.
+
+**Experiment 1: Do standard machine translation metrics capture ASL translation quality effectively?**
+
+| | Variables |
+|---|---|
+| Independent | Metric type (BLEU, BERTScore, CTQI v1/v2/v3), sub-metrics (Gloss Accuracy, Coverage F1, Plausibility) |
+| Controlled | n=53 sentences from `evaluation_results_gemini_t1_n53_v4`, same SignBridge pipeline, same 5 human raters (ICC = 0.96) |
+| Evaluation | Pearson r between each metric and mean human rating, p-values |
+
+**Experiment 2: With semantic fidelity now measurable, when can LLM-driven reconstruction recover meaning from recognition errors?**
+
+| | Variables |
+|---|---|
+| Independent | Confidence band (high/medium/low), reconstruction method (raw gloss vs. LLM), domain (in-domain n=53 vs. cross-domain n=150) |
+| Controlled | Same pipeline, same Gemini Flash model+prompt, CTQI v3 from Exp 1, same OpenHands model |
+| Evaluation | CTQI v3 per confidence band, delta CTQI (LLM minus baseline), threshold where recovery fails |
+
+**Experiment 3: How do upstream recognition design choices shift that threshold?**
+
+| | Variables |
+|---|---|
+| Independent | Vocabulary size (25–107 classes, 10 domains), keypoints (27 vs. 83+fingermarks), augmentation (0x–65x), domain scope |
+| Controlled | OpenHands architecture, cosine LR (1e-4→1e-6), recovery floors from Exp 2 (70% Top-1, 85% Top-3) |
+| Evaluation | Per-sign Top-1/Top-3 at each vocab size, where it crosses recovery floors, degradation rates, ablation gains |
+
+**Reflection:**
+Honestly this should have been how I organized things from the start. The data was always there, I just hadn't connected the dots clearly. Writing it out as three linked questions made it click — measure the ruler, find the threshold, then figure out what moves it.
+
+**Next Steps:**
+- Go through each experiment and write up the results properly
+
+---
+
+### Entry 34 — March 10, 2026 | 3:00 PM
+
+**Goal:** Write up Experiment 1 — does CTQI actually agree with humans?
+
+**What I Did:**
+I went back to the human survey data from Entry 29.7 and pulled together all the correlations into one clean comparison. This is really just reorganizing what I already found in February, but now framed as an actual experiment question.
+
+**Results (same data as Entry 29.7–29.8, reorganized):**
+
+| Metric | Pearson r | p-value |
+|--------|-----------|---------|
+| **CTQI v3** | **0.9427** | < 0.001 |
+| CTQI v1 | 0.9381 | < 0.001 |
+| Coverage F1 | 0.8918 | < 0.001 |
+| BERTScore | 0.8073 | < 0.001 |
+| CTQI v2 | 0.7750 | < 0.001 |
+| BLEU | 0.7584 | < 0.001 |
+| Gloss Accuracy | 0.5048 | < 0.001 |
+| Plausibility | 0.4161 | 0.002 |
+
+The main takeaway is that BLEU and BERTScore are decent (r=0.76, r=0.81) but CTQI v3 beats them both pretty significantly (r=0.94). That one-line fix from v2→v3 was the biggest single jump in correlation I saw across all the iterations (+0.17).
+
+**Reflection:**
+Without knowing that CTQI v3 actually matches human judgment, the next two experiments don't really mean anything — I'd be measuring with a broken ruler. Good that I did the survey when I did.
+
+**Next Steps:**
+- Write up Experiment 2
+
+---
+
+### Entry 35 — March 14, 2026 | 2:00 PM
+
+**Goal:** Write up Experiment 2 — where does the LLM stop being able to fix bad recognition?
+
+**What I Did:**
+I took the CTQI v3 scores and sorted them by how confident the recognition model was. Then I compared what you get with raw glosses (no LLM) vs. what you get after the LLM reconstructs the sentence, at each confidence level. Did this for both the in-domain sentences (n=53) and cross-domain ones (n=150).
+
+**What I Found:**
+
+When recognition is above ~70% Top-1 accuracy, the LLM can pretty reliably fix things up — it fills in articles, fixes word order, picks the right word from Top-K when the top prediction is wrong. Below 70% though, there are just too many wrong signs and the LLM starts making up stuff that sounds grammatical but doesn't match what was actually signed.
+
+The Top-3 at 85% thing is interesting — even when Top-1 drops below the threshold, if the correct sign is still somewhere in the Top-3 candidates, the LLM's semantic coherence can often fish it out. So Top-3 gives you a wider window than Top-1.
+
+Cross-domain sentences fell off faster than in-domain ones, which makes sense — the model is less sure of itself outside its training domain.
+
+**Reflection:**
+Now I have actual numbers for "when does the LLM break" — 70% Top-1, 85% Top-3. These become the targets for Experiment 3. If I can keep recognition above these floors, the LLM handles the rest.
+
+**Next Steps:**
+- Experiment 3 — what keeps recognition above those floors?
+
+---
+
+### Entry 36 — March 18, 2026 | 3:00 PM
+
+**Goal:** Write up Experiment 3 — what engineering choices keep recognition above the threshold?
+
+**What I Did:**
+Pulled together all the training runs I'd done across different vocabulary sizes (25 to 107 classes, 10 different domains) and looked at how per-sign accuracy changes as vocabulary grows. Also looked at the keypoint and augmentation ablations to see how much each one actually helps.
+
+**Results:**
+
+The domain-constrained models stay above the 70% Top-1 floor up to about 102 classes. After that things fall apart pretty fast — by 125 classes the average drops below the floor. Top-3 holds on longer which lines up with what I found in Experiment 2 about the LLM being able to use Top-K.
+
+The scariest finding was how fast shared signs degrade. DOCTOR went from 91.8% accuracy down to 1.6% just from the vocabulary doubling (35→77 classes). Signs that are unique to one domain stay fine — it's the ones that show up in multiple domains that get confused with each other.
+
+The percentage of signs meeting threshold at each vocabulary size:
+- 25 classes: ~90%
+- 102 classes: ~80%
+- 150 classes: ~50%
+
+So even at 102 classes where the average looks okay, 1 in 5 signs is already below the recovery floor.
+
+Keypoints (27→83) plus augmentation (0x→65x) together give about +30pp in Top-1 (41.2%→71.5%). I thought these would stack but they overlap — keypoints alone give ~18pp, augmentation alone ~16pp, but together it's only 30pp not 34pp. Diminishing returns.
+
+**Challenges / Problems:**
+The DOCTOR degradation was really surprising. I went back and checked the confusion matrices and sure enough, at 77 classes DOCTOR gets confused with NURSE, HELP, and THANK-YOU because they all involve similar hand-to-chest movements. At 35 classes those other signs aren't in the vocabulary so there's nothing to confuse it with.
+
+**Reflection:**
+This basically tells me there's a ceiling to how far engineering alone can push things. Past ~100 classes you need a fundamentally different approach — maybe attention to motion trajectories, or separate models per domain that don't share a vocabulary. For now though, domain-constrained models up to about 100 classes are the sweet spot.
+
+**Next Steps:**
+- Run the full pipeline on a much larger dataset to make sure it actually holds up at scale
+
+---
+
+### Entry 37 — March 22, 2026 | 1:00 PM
+
+**Goal:** Stress-test the full pipeline on way more data than just 53 sentences.
+
+**What I Did:**
+I ran SignBridge on a huge batch of content to see if the quality I measured on 53 sentences actually holds up when you throw real volume at it. I processed four types of content, each one longer and harder than the last:
+
+| Content Type | Count | Avg Duration |
+|-------------|-------|-------------|
+| Sentences | 62,654 | ~5 seconds |
+| Paragraphs | 676 | ~15 seconds |
+| Conversations | 22 | ~3 minutes |
+| Seminar Videos | 3 | ~10 minutes |
+
+**Observations / Results:**
+The sentence-level quality held up, which was a relief. The conversations and paragraphs were a good test of the smart buffering and segmentation I built in Entry 23 — they had to work continuously for 15 seconds to 3 minutes without resetting. The seminar videos were the real stress test — 10 minutes of nonstop signing.
+
+**Challenges / Problems:**
+Some new edge cases showed up that I never saw with 53 sentences. The biggest one was rapid sign transitions in the seminar videos — the segmentation would sometimes cut in the middle of a sign instead of between signs, which messed up the recognition for that segment. This didn't happen much in shorter content because there were natural pauses between signs.
+
+**Reflection:**
+Going from 53 to 62,654 sentences felt like a totally different level of confidence. 53 sentences could be a fluke — maybe I just picked good examples. 62K sentences across different content types is much harder to argue with. Not everything was perfect but the pipeline held together, which is what matters.
+
+**Next Steps:**
+- Finalize notebook for print
+
+---
 
 ## Code Repository Reference
-
-> **PHYSICAL NOTEBOOK:** Print this page and tape/glue it in. Include a QR code linking to the GitHub repo. Handwrite the header "Code Repository Reference" at the top.
 
 **GitHub:** https://github.com/SuperiorHaxs/SignBridge
 **Live Demo:** https://huggingface.co/spaces/SuperiorHaxs/SignBridge
@@ -2123,11 +2151,9 @@ Feeling nervous but excited. I've put months into this project and it's finally 
 
 ---
 
-<!-- LN Page 43 — Conclusions & Reflection -->
-
 ## Conclusions & Reflection
 
-*First drafted: January 28, 2026 | Last updated: February 15, 2026*
+*First drafted: January 28, 2026 | Last updated: March 27, 2026*
 
 ### Final Performance Summary
 
@@ -2158,9 +2184,21 @@ Feeling nervous but excited. I've put months into this project and it's finally 
 - **H2 (AI-Powered Word Selection):** ✅ CONFIRMED — Quality Score 39.38 → 74.56 (p < 0.001, d = 1.149)
 - **H3 (Multi-Dimensional Quality):** ✅ CONFIRMED — CTQI v3 achieves r = 0.9427 correlation with human judgment (n=53, 5 raters), outperforming all single metrics and capturing improvements invisible to individual measures (88.2% improvement rate)
 
+### Post-CSRSEF Results (March 2026)
+
+After the science fair I reorganized everything into three experiment questions (see Entries 33–36):
+
+1. **Metric validation:** CTQI v3 correlates with human judgment at r=0.9427 — better than BLEU (0.76) or BERTScore (0.81). It's a reliable ruler.
+2. **LLM recovery threshold:** The LLM fixes things when recognition is above ~70% Top-1. Below that, too many wrong signs and it falls apart. Top-3 at 85% gives a wider window.
+3. **What moves the threshold:** Domain-constrained models hold up to ~102 classes. Keypoints + augmentation give +30pp but overlap. Past ~100 classes you probably need a different approach.
+
+Then I stress-tested on 62,654 sentences, 676 paragraphs, 22 conversations, and 3 seminar videos (~10 min each). Quality held up across all of them (Entry 37).
+
 ### What I Learned
 
 I learned a ton about machine learning, from training transformers to tuning hyperparameters to understanding why models overfit. The CCIR experience taught me how to present technical work to researchers and handle tough questions. I also gained a much deeper appreciation for ASL as a complete language with its own grammar — it's not just "English with hands." The biggest surprise was how important the LLM component turned out to be — I thought the vision model would be the hard part, but the grammar bridging is what really makes the system useful. If I could do it again, I would have started with more keypoints from the beginning instead of going from 27 to 75 to 83 incrementally.
+
+After CSRSEF I also learned that having good results isn't enough if they're scattered everywhere — reorganizing into three linked experiments made the same data way easier to explain and defend.
 
 ### Future Work
 
@@ -2174,7 +2212,6 @@ I learned a ton about machine learning, from training transformers to tuning hyp
 
 - CCIR mentors and instructors for teaching me research methodology and giving feedback on my paper
 - My teachers at Eastside Catholic School for supporting the project
-- My family for putting up with late-night training sessions and letting me talk their ears off about transformers
 - The WLASL dataset creators (Li et al., 2020) for making ASL video data publicly available
 - The OpenHands team for their open-source pose-based sign language recognition framework
 - Google for providing free access to the Gemini API
@@ -2182,7 +2219,7 @@ I learned a ton about machine learning, from training transformers to tuning hyp
 
 ---
 
-*Last updated: February 2026*
+*Last updated: March 27, 2026*
 *CSRSEF: March 7, 2026*
 *Category: TECA-HIE*
-*Total Pages: 43 numbered (Pages 1–43) + unnumbered title & TOC | Pages 44–86 reserved for future work*
+*Total Pages: 48 numbered (Pages 1–48) + unnumbered title & TOC | Pages 49–86 reserved for future work*

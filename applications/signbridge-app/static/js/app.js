@@ -1,0 +1,3777 @@
+// ══════════════════════════════════════════════════════════════
+// SignBridge — Main Application JavaScript
+// ══════════════════════════════════════════════════════════════
+
+// ── State (must be first — other modules reference these) ────
+let MODE = document.body.dataset.mode || 'demo';
+let METHOD = document.body.dataset.method || 'speak';
+let conversation = null;
+let currentTurn = 0;
+let isPlaying = false;
+let history = [];
+let cameraStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let selectedDomain = 'doctor_visit';
+let selectedScenario = 'Doctor Visit';
+let interactionMode = 'in-person';
+let currentTrainingSubTab = 'scripted';
+let currentLiveSubTab = 'scenarios';
+let currentNav = 'live';
+
+// ── Feature flags ──
+// Set to true to convert spoken English to ASL glosses + play sign bank videos.
+// Set to false for speech-to-text only (deaf users read English directly).
+const SPEAK_MODE_TRANSLATE_TO_ASL = false;
+
+// ── External camera state ──
+let externalCameraUrl = null;       // MJPEG URL (null = use device camera)
+let externalCameraImg = null;       // <img> element loading MJPEG stream
+let externalCameraCanvas = null;    // hidden canvas for frame capture
+let externalCameraInterval = null;  // setInterval handle for canvas draw loop
+
+const SPEAKER_LABEL = MODE === 'demo' ? 'Doctor' : 'Speaker';
+const SIGNER_LABEL = MODE === 'demo' ? 'Patient (ASL \u2192 English)' : 'Signer (ASL \u2192 English)';
+
+// ── Toast Notification System (1.6) ──────────────────────────
+const toastContainer = document.createElement('div');
+toastContainer.className = 'toast-container';
+document.body.appendChild(toastContainer);
+
+function showToast(message, type = 'info', duration = 4000) {
+    const icons = { error: '\u26A0\uFE0F', success: '\u2705', info: '\u2139\uFE0F', warn: '\u26A0\uFE0F' };
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-msg">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">\u2715</button>
+    `;
+    toastContainer.appendChild(toast);
+    setTimeout(() => {
+        toast.classList.add('toast-exit');
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
+
+// ── Theme Toggle (1.9) ──────────────────────────────────────
+function initTheme() {
+    const saved = localStorage.getItem('signbridge-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+    updateThemeIcon();
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    if (next === 'light') {
+        document.documentElement.removeAttribute('data-theme');
+    } else {
+        document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    localStorage.setItem('signbridge-theme', next);
+    updateThemeIcon();
+}
+
+function updateThemeIcon() {
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    btn.textContent = isDark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    btn.title = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+}
+
+initTheme();
+
+// ── Hash-based routing (1.11) ────────────────────────────────
+function pushRoute(route) {
+    if (window.location.hash !== '#' + route) {
+        window.history.pushState(null, '', '#' + route);
+    }
+}
+
+window.addEventListener('popstate', () => {
+    const hash = window.location.hash.replace('#', '');
+    if (!hash || hash === 'home') {
+        showHomeScreen(true); // skipPush = true to avoid loop
+    }
+});
+
+// ── Camera Source Selector (WI-2) ────────────────────────────
+function toggleCameraSourcePanel() {
+    const panel = document.getElementById('cameraSourcePanel');
+    const showing = panel.style.display === 'none';
+    panel.style.display = showing ? 'block' : 'none';
+
+    // If external camera is active, reflect that in the radio buttons
+    if (showing && externalCameraUrl) {
+        const wifiRadio = document.querySelector('input[name="cameraSource"][value="wifi"]');
+        if (wifiRadio) wifiRadio.checked = true;
+        selectCameraSource('wifi');
+    }
+}
+
+function selectCameraSource(type) {
+    const wifiRow = document.getElementById('wifiCameraInputRow');
+    if (type === 'wifi') {
+        wifiRow.style.display = 'flex';
+        // Pre-fill: kiosk param > localStorage > current external URL > empty
+        const urlInput = document.getElementById('wifiCameraUrl');
+        if (!urlInput.value) {
+            const defaultUrl = KIOSK_PARAMS.get('camera')
+                || localStorage.getItem('signbridge-wifi-camera-url')
+                || (externalCameraUrl || '');
+            urlInput.value = defaultUrl;
+        }
+    } else {
+        wifiRow.style.display = 'none';
+        // Switch back to device camera
+        if (externalCameraUrl) {
+            externalCameraUrl = null;
+            stopExternalCamera();
+            document.getElementById('wifiCameraStatus').style.display = 'none';
+            document.querySelector('.camera-title').textContent = 'Your Camera';
+            // Restart with device camera if live
+            if (liveActive) {
+                stopCamera();
+                startCamera();
+            }
+        }
+    }
+}
+
+async function connectWifiCamera() {
+    const urlInput = document.getElementById('wifiCameraUrl');
+    const statusEl = document.getElementById('wifiCameraStatus');
+    const connectBtn = document.getElementById('wifiConnectBtn');
+    const url = urlInput.value.trim();
+
+    if (!url) {
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#ff6666';
+        statusEl.textContent = 'Enter a camera URL';
+        return;
+    }
+
+    connectBtn.disabled = true;
+    connectBtn.textContent = 'Connecting...';
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--text-muted)';
+    statusEl.textContent = 'Connecting to camera...';
+
+    try {
+        // Stop current camera
+        stopCamera();
+        if (signSegmenter) signSegmenter.stop();
+
+        externalCameraUrl = url;
+        localStorage.setItem('signbridge-wifi-camera-url', url);
+
+        await startCamera();
+
+        statusEl.style.color = '#4caf80';
+        statusEl.textContent = 'Connected';
+        document.getElementById('cameraSourcePanel').style.display = 'none';
+
+        // Restart segmenter if live mode was active
+        if (liveActive && signSegmenter && cameraStream) {
+            continuousRecording = true;
+            isRecordingSign = true;
+            signSegmenter.start(cameraStream);
+            statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+        }
+    } catch (e) {
+        statusEl.style.color = '#ff6666';
+        statusEl.textContent = 'Failed: ' + e.message;
+        externalCameraUrl = null;
+    }
+
+    connectBtn.disabled = false;
+    connectBtn.textContent = 'Connect';
+}
+
+// ── Kiosk Mode (WI-3) ───────────────────────────────────────
+const KIOSK_PARAMS = new URLSearchParams(window.location.search);
+const IS_KIOSK = KIOSK_PARAMS.get('kiosk') === 'true';
+let kioskIdleTimer = null;
+const KIOSK_IDLE_TIMEOUT = 30000; // 30 seconds
+
+if (IS_KIOSK) {
+    document.body.classList.add('kiosk-mode');
+    // Pre-configure from URL params
+    const kioskCamera = KIOSK_PARAMS.get('camera');
+    const kioskDomain = KIOSK_PARAMS.get('domain');
+    if (kioskCamera) externalCameraUrl = kioskCamera;
+    if (kioskDomain) selectedDomain = kioskDomain;
+}
+
+function kioskResetIdleTimer() {
+    if (!IS_KIOSK) return;
+    if (kioskIdleTimer) clearTimeout(kioskIdleTimer);
+    kioskIdleTimer = setTimeout(() => {
+        kioskShowTapToStart();
+    }, KIOSK_IDLE_TIMEOUT);
+}
+
+function kioskShowTapToStart() {
+    // Stop everything
+    stopLiveMode();
+    stopCamera();
+    history = [];
+    const msgs = document.getElementById('transcriptMsgs');
+    if (msgs) msgs.innerHTML = '';
+
+    // Show overlay
+    let overlay = document.getElementById('kioskTapOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'kioskTapOverlay';
+        overlay.className = 'kiosk-tap-overlay';
+        overlay.innerHTML = '<h1>SignBridge</h1><p>Tap anywhere to start a conversation</p>';
+        overlay.onclick = () => kioskStart();
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+}
+
+async function kioskStart() {
+    const overlay = document.getElementById('kioskTapOverlay');
+    if (overlay) overlay.style.display = 'none';
+
+    // Jump straight into conversation
+    navigateTo('live');
+    // Give DOM a moment to update
+    await sleep(100);
+    const btnStart = document.getElementById('btnStart');
+    if (btnStart) btnStart.click();
+    kioskResetIdleTimer();
+}
+
+// ── Mode Switch Float Button (WI-4) ─��───────────────────────
+function createModeSwitchButton() {
+    const existing = document.getElementById('modeSwitchFloat');
+    if (existing) existing.remove();
+
+    const btn = document.createElement('button');
+    btn.id = 'modeSwitchFloat';
+    btn.className = 'mode-switch-float';
+    updateModeSwitchButton(btn);
+    btn.onclick = () => switchSignSpeakMode();
+
+    const cameraBox = document.querySelector('.camera-box');
+    if (cameraBox) cameraBox.appendChild(btn);
+}
+
+function updateModeSwitchButton(btn) {
+    btn = btn || document.getElementById('modeSwitchFloat');
+    if (!btn) return;
+    if (METHOD === 'sign') {
+        btn.textContent = 'Switch to Speak';
+        btn.style.background = '#7cb3f0';
+    } else {
+        btn.textContent = 'Switch to Sign';
+        btn.style.background = '#b07cf0';
+    }
+}
+
+async function switchSignSpeakMode() {
+    const newMethod = METHOD === 'sign' ? 'speak' : 'sign';
+
+    // Stop current mode
+    if (signSegmenter) signSegmenter.stop();
+    continuousRecording = false;
+    isRecordingSign = false;
+    if (liveRecognition) {
+        try { liveRecognition.stop(); } catch(e) {}
+        liveRecognition = null;
+    }
+
+    METHOD = newMethod;
+
+    // Update header toggles
+    const htogSign = document.getElementById('htogSign');
+    const htogSpeak = document.getElementById('htogSpeak');
+    if (htogSign) htogSign.classList.toggle('active', METHOD === 'sign');
+    if (htogSpeak) htogSpeak.classList.toggle('active', METHOD === 'speak');
+
+    updateModeSwitchButton();
+
+    // Restart the appropriate mode
+    if (METHOD === 'sign') {
+        const seg = await ensureSegmenter();
+        seg.clearGlosses();
+        liveCollectedGlosses = [];
+        continuousRecording = true;
+        isRecordingSign = true;
+        if (cameraStream) seg.start(cameraStream);
+        statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+        // No speech recognition in sign mode — avoids background noise interruptions
+    } else {
+        const speakHint = SPEAK_MODE_TRANSLATE_TO_ASL
+            ? 'Speak naturally \u2014 your words will be converted to ASL glosses'
+            : 'Speak naturally \u2014 your words will appear as text for the signer';
+        statusBar.innerHTML = `<span class="prompt"><span class="listening-indicator"></span>${speakHint}</span>`;
+        startContinuousListeningForSpeaker();
+    }
+
+    // Hide/show relevant buttons
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+    const btnSpeakSend = document.getElementById('btnSpeakSend');
+    if (btnRecordSign) btnRecordSign.style.display = 'none';
+    if (btnSendMessage) btnSendMessage.style.display = 'none';
+    if (btnSpeakSend) btnSpeakSend.style.display = METHOD === 'speak' ? 'inline-block' : 'none';
+
+    showToast(`Switched to ${METHOD === 'sign' ? 'Sign' : 'Speak'} mode`, 'info', 2000);
+    kioskResetIdleTimer();
+}
+
+// ── Debug Panel ──────────────────────────────────────────────
+const DEBUG_ENABLED = new URLSearchParams(window.location.search).get('debug') === 'true';
+
+function toggleDebugPanel() {
+    const panel = document.getElementById('debugPanel');
+    if (!panel) return;
+    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateDebugPanel(data) {
+    const panel = document.getElementById('debugPanel');
+    if (!panel || panel.style.display === 'none') return;
+
+    if (data.hands !== undefined) {
+        const el = document.getElementById('dbgHands');
+        el.textContent = data.hands > 0 ? `${data.hands} detected` : 'none';
+        el.style.color = data.hands > 0 ? '#4caf80' : '#ff6666';
+    }
+    if (data.velocity !== undefined) {
+        document.getElementById('dbgVelocity').textContent = data.velocity.toFixed(4);
+        // Velocity bar (scale: 0-0.05 range mapped to 0-100%)
+        const pct = Math.min(100, (data.velocity / 0.05) * 100);
+        document.getElementById('dbgVelocityBar').style.width = pct + '%';
+        document.getElementById('dbgVelocityBar').style.background =
+            data.velocity > 0.012 ? '#4caf80' : '#888';
+    }
+    if (data.state !== undefined) {
+        const el = document.getElementById('dbgState');
+        el.textContent = data.state;
+        const colors = { idle: '#888', signing: '#4caf80', analyzing: '#6c8cff', no_hands: '#ff6666' };
+        el.style.color = colors[data.state] || '#888';
+    }
+    if (data.signs !== undefined) {
+        document.getElementById('dbgSigns').textContent = data.signs;
+    }
+    if (data.pose !== undefined) {
+        const el = document.getElementById('dbgPose');
+        el.textContent = data.pose ? 'tracking' : 'no body';
+        el.style.color = data.pose ? '#4caf80' : '#888';
+    }
+}
+
+// Set threshold marker position
+function initDebugThreshold() {
+    const thresh = document.getElementById('dbgVelocityThresh');
+    if (thresh) {
+        // 0.012 threshold on 0-0.05 scale = 24%
+        thresh.style.left = '24%';
+    }
+}
+
+// Test single sign — bypasses segmenter, records 2.5s, sends to backend
+async function testSingleSign() {
+    const btn = document.getElementById('btnTestSign');
+    const resultEl = document.getElementById('dbgTestResult');
+    if (!cameraStream) {
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = '<span style="color:#ff6666">No camera stream</span>';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Recording 2.5s...';
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = '<span style="color:var(--text-muted)">Recording...</span>';
+
+    // Record 2.5 seconds
+    const blob = await recordFromCamera(2500);
+
+    if (!blob) {
+        resultEl.innerHTML = '<span style="color:#ff6666">No video captured</span>';
+        btn.disabled = false;
+        btn.textContent = 'Test Sign (2.5s timed record)';
+        return;
+    }
+
+    btn.textContent = 'Analyzing...';
+    resultEl.innerHTML = `<span style="color:var(--text-muted)">Sending ${(blob.size / 1024).toFixed(0)}KB to backend...</span>`;
+
+    try {
+        const formData = new FormData();
+        formData.append('video', blob, 'test.webm');
+        formData.append('domain', selectedDomain);
+
+        const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
+        const result = await resp.json();
+
+        if (result.success) {
+            const topK = (result.top_k || []).slice(0, 3).map(k =>
+                `${k.gloss} (${(k.confidence * 100).toFixed(1)}%)`
+            ).join(', ');
+            resultEl.innerHTML = `<span style="color:#4caf80;font-weight:600">${result.gloss}</span> ` +
+                `<span style="color:var(--text-muted)">${(result.confidence * 100).toFixed(1)}%</span>` +
+                (topK ? `<br><span style="color:var(--text-muted)">Top 3: ${topK}</span>` : '');
+        } else {
+            resultEl.innerHTML = `<span style="color:#ff6666">Error: ${result.error}</span>`;
+        }
+    } catch (e) {
+        resultEl.innerHTML = `<span style="color:#ff6666">Failed: ${e.message}</span>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Test Sign (2.5s timed record)';
+}
+
+if (DEBUG_ENABLED) {
+    setTimeout(() => {
+        const panel = document.getElementById('debugPanel');
+        if (panel) panel.style.display = 'block';
+        initDebugThreshold();
+    }, 500);
+}
+
+// ── Camera Permission Modal (1.5) ────────────────────────────
+async function requestCameraWithPrompt(needsAudio) {
+    const overlay = document.getElementById('cameraPermModal');
+    return new Promise((resolve) => {
+        overlay.classList.add('visible');
+        const allowBtn = document.getElementById('cameraPermAllow');
+        const skipBtn = document.getElementById('cameraPermSkip');
+
+        function cleanup() {
+            overlay.classList.remove('visible');
+            allowBtn.removeEventListener('click', onAllow);
+            skipBtn.removeEventListener('click', onSkip);
+        }
+
+        async function onAllow() {
+            cleanup();
+            try {
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                const isPortrait = window.innerHeight > window.innerWidth;
+                // Request portrait-shaped video on mobile portrait to match device orientation
+                const video = (isMobile && isPortrait)
+                    ? { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9/16 } }
+                    : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
+                const constraints = { video, audio: !!needsAudio };
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                resolve(stream);
+            } catch (e) {
+                showToast('Camera access denied. Check browser permissions (lock icon in address bar).', 'error', 6000);
+                resolve(null);
+            }
+        }
+
+        function onSkip() {
+            cleanup();
+            resolve(null);
+        }
+
+        allowBtn.addEventListener('click', onAllow);
+        skipBtn.addEventListener('click', onSkip);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// USER PROFILE (2.12) — localStorage-based personalization
+// ══════════════════════════════════════════════════════════════
+const PROFILE_KEY = 'signbridge-profile';
+
+function loadProfile() {
+    try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return {
+        name: '',
+        method: 'speak',
+        saveHistory: true,
+        joinedDate: new Date().toISOString().split('T')[0],
+        practiceStats: {},   // { gloss: { attempts, correct } }
+        recentScenarios: [], // [{ domain, label, timestamp }]
+        conversations: [],   // saved live conversation transcripts
+    };
+}
+
+function saveProfile(profile) {
+    try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch (e) {
+        console.warn('[Profile] Could not save:', e);
+    }
+}
+
+function initProfile() {
+    const profile = loadProfile();
+
+    // Set profile button avatar
+    const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
+    const btn = document.getElementById('profileBtn');
+    if (btn) btn.textContent = initial;
+
+    // Apply saved method preference
+    if (profile.method) {
+        METHOD = profile.method;
+        const htogSign = document.getElementById('htogSign');
+        const htogSpeak = document.getElementById('htogSpeak');
+        if (htogSign) htogSign.classList.toggle('active', profile.method === 'sign');
+        if (htogSpeak) htogSpeak.classList.toggle('active', profile.method === 'speak');
+    }
+
+    // Show welcome message
+    const welcomeEl = document.getElementById('heroWelcome');
+    if (welcomeEl && profile.name) {
+        welcomeEl.textContent = `Welcome back, ${profile.name}`;
+        welcomeEl.style.display = 'inline';
+    }
+}
+
+function openProfile() {
+    const profile = loadProfile();
+    const overlay = document.getElementById('profileOverlay');
+    overlay.classList.add('visible');
+
+    // Populate fields
+    document.getElementById('profileNameInput').value = profile.name || '';
+    document.getElementById('profileMethodPref').value = profile.method || 'speak';
+    document.getElementById('profileSaveHistory').checked = profile.saveHistory !== false;
+
+    // Avatar
+    const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
+    document.getElementById('profileAvatar').textContent = initial;
+    document.getElementById('profileNameDisplay').textContent = profile.name || 'Guest';
+    document.getElementById('profileJoined').textContent = profile.joinedDate
+        ? `Joined ${profile.joinedDate}` : '';
+
+    // Practice stats
+    const stats = profile.practiceStats || {};
+    let totalAttempts = 0, totalCorrect = 0;
+    for (const gloss in stats) {
+        totalAttempts += stats[gloss].attempts || 0;
+        totalCorrect += stats[gloss].correct || 0;
+    }
+    document.getElementById('profStatAttempts').textContent = totalAttempts;
+    document.getElementById('profStatCorrect').textContent = totalCorrect;
+    document.getElementById('profStatAccuracy').textContent = totalAttempts > 0
+        ? Math.round(totalCorrect / totalAttempts * 100) + '%' : '-';
+
+    // Recent scenarios
+    renderRecentScenarios(profile);
+
+    // Conversation history (inside profile)
+    renderProfileHistory(profile);
+}
+
+function closeProfile() {
+    document.getElementById('profileOverlay').classList.remove('visible');
+}
+
+function saveProfileName() {
+    const profile = loadProfile();
+    const name = document.getElementById('profileNameInput').value.trim();
+    profile.name = name;
+    saveProfile(profile);
+
+    // Update UI
+    const initial = name ? name.charAt(0).toUpperCase() : '?';
+    document.getElementById('profileBtn').textContent = initial;
+    document.getElementById('profileAvatar').textContent = initial;
+    document.getElementById('profileNameDisplay').textContent = name || 'Guest';
+
+    const welcomeEl = document.getElementById('heroWelcome');
+    if (welcomeEl) {
+        if (name) {
+            welcomeEl.textContent = `Welcome back, ${name}`;
+            welcomeEl.style.display = 'inline';
+        } else {
+            welcomeEl.style.display = 'none';
+        }
+    }
+}
+
+function saveProfilePrefs() {
+    const profile = loadProfile();
+    profile.method = document.getElementById('profileMethodPref').value;
+    profile.saveHistory = document.getElementById('profileSaveHistory').checked;
+    saveProfile(profile);
+
+    // Apply immediately
+    setMethod(profile.method);
+}
+
+function recordRecentScenario(domain, label) {
+    const profile = loadProfile();
+    // Remove duplicate if exists
+    profile.recentScenarios = (profile.recentScenarios || []).filter(s => s.domain !== domain);
+    // Add to front
+    profile.recentScenarios.unshift({
+        domain,
+        label,
+        timestamp: new Date().toISOString(),
+    });
+    // Keep only last 5
+    profile.recentScenarios = profile.recentScenarios.slice(0, 5);
+    saveProfile(profile);
+}
+
+function renderRecentScenarios(profile) {
+    const list = document.getElementById('profileRecentList');
+    const recents = profile.recentScenarios || [];
+    if (recents.length === 0) {
+        list.innerHTML = '<div style="font-size:0.82rem;color:var(--text-muted)">No recent activity</div>';
+        return;
+    }
+
+    list.innerHTML = '';
+    recents.forEach(item => {
+        // Get icon from registry if loaded
+        let icon = '?';
+        if (registryData && registryData.domains && registryData.domains[item.domain]) {
+            icon = registryData.domains[item.domain].icon;
+        }
+        const timeAgo = formatTimeAgo(item.timestamp);
+        const el = document.createElement('div');
+        el.className = 'profile-recent-item';
+        el.innerHTML = `
+            <div class="profile-recent-icon">${icon}</div>
+            <span class="profile-recent-label">${item.label}</span>
+            <span class="profile-recent-time">${timeAgo}</span>
+        `;
+        el.onclick = () => {
+            closeProfile();
+            selectScenario(item.domain, item.label);
+        };
+        list.appendChild(el);
+    });
+}
+
+function formatTimeAgo(isoStr) {
+    const diff = Date.now() - new Date(isoStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + 'm ago';
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + 'h ago';
+    const days = Math.floor(hrs / 24);
+    return days + 'd ago';
+}
+
+function renderProfileHistory(profile) {
+    const summary = document.getElementById('profileHistorySummary');
+    const link = document.getElementById('profileHistoryLink');
+    const convs = profile.conversations || [];
+
+    if (convs.length === 0) {
+        summary.textContent = 'No conversations saved yet';
+        link.style.display = 'none';
+    } else {
+        summary.textContent = `${convs.length} conversation${convs.length !== 1 ? 's' : ''} saved`;
+        link.style.display = 'inline-block';
+    }
+}
+
+function showHistoryPage() {
+    hideHomeContent();
+    document.getElementById('historyScreen').style.display = 'block';
+    lockHeaderToggles();
+
+    // Show list view, hide viewer
+    document.getElementById('historyListView').style.display = 'block';
+    document.getElementById('histViewerView').style.display = 'none';
+
+    renderHistoryList();
+}
+
+function renderHistoryList() {
+    const profile = loadProfile();
+    const convs = profile.conversations || [];
+    const container = document.getElementById('histListContainer');
+
+    if (convs.length === 0) {
+        container.innerHTML = '<div class="hist-empty">No conversations saved yet. Live conversations are saved automatically.</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+    convs.forEach((conv, idx) => {
+        let icon = '?';
+        if (registryData && registryData.domains && registryData.domains[conv.domain]) {
+            icon = registryData.domains[conv.domain].icon;
+        }
+
+        const date = new Date(conv.timestamp);
+        const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const msgCount = conv.messages.length;
+        const preview = conv.messages.find(m => m.speaker === 'patient' || m.speaker === 'doctor');
+        const previewText = preview ? preview.text : '';
+
+        const card = document.createElement('div');
+        card.className = 'hist-card';
+        card.innerHTML = `
+            <div class="hist-card-icon">${icon}</div>
+            <div class="hist-card-info">
+                <div class="hist-card-title">${conv.scenario}</div>
+                <div class="hist-card-meta">
+                    <span>${dateStr} ${timeStr}</span>
+                    <span>${msgCount} messages</span>
+                </div>
+                <div class="hist-card-preview">${previewText}</div>
+            </div>
+            <div class="hist-card-actions">
+                <button class="hist-delete-btn" title="Delete" onclick="event.stopPropagation(); deleteConversation(${idx})">&#x1F5D1;</button>
+            </div>
+        `;
+        card.addEventListener('click', () => viewConversation(idx));
+        container.appendChild(card);
+    });
+}
+
+function viewConversation(idx) {
+    const profile = loadProfile();
+    const conv = (profile.conversations || [])[idx];
+    if (!conv) return;
+
+    document.getElementById('historyListView').style.display = 'none';
+    document.getElementById('histViewerView').style.display = 'block';
+
+    const date = new Date(conv.timestamp);
+    const dateStr = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const methodLabel = conv.method === 'sign' ? 'I Sign' : 'I Speak';
+
+    document.getElementById('histViewerTitle').textContent = conv.scenario;
+    document.getElementById('histViewerMeta').textContent = `${methodLabel} \u00B7 ${dateStr} at ${timeStr} \u00B7 ${conv.messages.length} messages`;
+
+    const msgsEl = document.getElementById('histViewerMsgs');
+    msgsEl.innerHTML = '';
+
+    conv.messages.forEach(msg => {
+        const type = (msg.speaker === 'doctor' || msg.speaker === 'Speaker') ? 'doctor' : 'patient';
+        const speakerLabel = type === 'doctor' ? 'Speaker' : 'Signer';
+        const d = document.createElement('div');
+        d.className = 'msg ' + type;
+        d.innerHTML = `<div class="speaker">${speakerLabel}</div><div>${msg.text}</div>`;
+        msgsEl.appendChild(d);
+    });
+}
+
+function backToHistoryList() {
+    document.getElementById('histViewerView').style.display = 'none';
+    document.getElementById('historyListView').style.display = 'block';
+}
+
+function deleteConversation(idx) {
+    const profile = loadProfile();
+    if (!profile.conversations) return;
+    profile.conversations.splice(idx, 1);
+    saveProfile(profile);
+    renderHistoryList();
+    showToast('Conversation deleted', 'info');
+}
+
+// Practice stats persistence
+function recordPracticeResult(gloss, correct) {
+    const profile = loadProfile();
+    if (!profile.practiceStats) profile.practiceStats = {};
+    if (!profile.practiceStats[gloss]) {
+        profile.practiceStats[gloss] = { attempts: 0, correct: 0 };
+    }
+    profile.practiceStats[gloss].attempts++;
+    if (correct) profile.practiceStats[gloss].correct++;
+    saveProfile(profile);
+}
+
+function clearProfileData() {
+    if (!confirm('Clear all your SignBridge data? This will reset your name, practice stats, and recent scenarios.')) return;
+    localStorage.removeItem(PROFILE_KEY);
+    document.getElementById('profileBtn').textContent = '?';
+    document.getElementById('heroWelcome').style.display = 'none';
+    closeProfile();
+    showToast('Profile data cleared', 'info');
+}
+
+// Init on page load
+initProfile();
+
+// ══════════════════════════════════════════════════════════════
+// CONVERSATION HISTORY (2.3)
+// ══════════════════════════════════════════════════════════════
+const MAX_SAVED_CONVERSATIONS = 20;
+
+function saveConversation() {
+    // Only save if there's actual content
+    if (history.length === 0) return;
+
+    const profile = loadProfile();
+    if (!profile.conversations) profile.conversations = [];
+
+    const conv = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        domain: selectedDomain,
+        scenario: selectedScenario,
+        mode: MODE,
+        method: METHOD,
+        messages: history.map(m => ({ ...m })),
+        timestamp: new Date().toISOString(),
+    };
+
+    // Don't save duplicates (same messages as last saved)
+    const last = profile.conversations[0];
+    if (last && last.messages.length === conv.messages.length && last.domain === conv.domain) {
+        const lastTexts = last.messages.map(m => m.text).join('|');
+        const newTexts = conv.messages.map(m => m.text).join('|');
+        if (lastTexts === newTexts) return; // duplicate
+    }
+
+    profile.conversations.unshift(conv);
+    // Cap storage
+    profile.conversations = profile.conversations.slice(0, MAX_SAVED_CONVERSATIONS);
+    saveProfile(profile);
+    console.log('[History] Saved conversation:', conv.scenario, conv.messages.length, 'messages');
+}
+
+function closeHistoryViewer() {
+    const histScreen = document.getElementById('historyScreen');
+    if (histScreen) histScreen.style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// REGISTRY — Single source of truth for domains
+// ══════════════════════════════════════════════════════════════
+let registryData = null;
+
+async function loadRegistry() {
+    try {
+        console.log('[Registry] Fetching /api/registry...');
+        const resp = await fetch('/api/registry');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        registryData = await resp.json();
+        console.log('[Registry] Loaded', Object.keys(registryData.domains || {}).length, 'domains');
+        renderAllScenarioGrids();
+        // Re-apply current nav state so the right section is visible
+        navigateTo(currentNav);
+        console.log('[Registry] Scenarios rendered');
+    } catch (e) {
+        console.error('[Registry] Failed to load:', e);
+        showToast('Could not load domain registry', 'error');
+        // Render a fallback so the page isn't empty
+        const demoEl = document.getElementById('demoScenarios');
+        if (demoEl) demoEl.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:20px;">Could not load scenarios. Please refresh the page.</p>';
+    }
+}
+
+const STATUS_BADGES = {
+    ready:    { label: 'Ready', class: 'badge-healthcare' },
+    training: { label: 'Training', class: 'badge-training' },
+    upcoming: { label: 'Coming soon', class: 'badge-coming' },
+};
+
+function buildScenarioCard(domainKey, entry, { onclick, isFirst = false, captionMode = false, compact = false } = {}) {
+    const isReady = entry.status === 'ready';
+    const badge = STATUS_BADGES[entry.status] || STATUS_BADGES.upcoming;
+    const description = captionMode
+        ? 'Upload a signing video \u2014 get it back with English captions burned in'
+        : entry.description;
+
+    const card = document.createElement('div');
+    card.className = 'scenario-card' + (isReady ? (compact ? '' : ' featured') : ' coming-soon');
+    if (isReady && onclick) {
+        card.onclick = onclick;
+    }
+    card.innerHTML = `
+        <div class="scenario-icon"><span class="ico">${entry.icon}</span></div>
+        <div class="scenario-info">
+            <h3>${entry.label}</h3>
+            <p>${description}</p>
+            <span class="scenario-badge ${badge.class}">${isReady ? entry.label + ' model' : badge.label}</span>
+            ${isFirst && isReady ? '<span class="scenario-badge badge-start-here">Start here</span>' : ''}
+        </div>
+    `;
+    return card;
+}
+
+function renderAllScenarioGrids() {
+    if (!registryData || !registryData.domains) return;
+    const domains = registryData.domains;
+    const entries = Object.entries(domains);
+
+    const readyDomains = entries.filter(([, e]) => e.status === 'ready');
+    const otherDomains = entries.filter(([, e]) => e.status !== 'ready');
+
+    // ── Demo scenarios (only those with demo_available) ──
+    const demoEl = document.getElementById('demoScenarios');
+    demoEl.innerHTML = '';
+    demoEl.classList.add('live-card-style');
+    const demoReady = entries.filter(([, e]) => e.demo_available);
+    const demoOther = entries.filter(([, e]) => !e.demo_available);
+
+    if (demoReady.length > 0) {
+        demoEl.appendChild(makeLabel('Scripted Demos'));
+        const readyGrid = makeGrid();
+        demoReady.forEach(([key, entry], i) => {
+            readyGrid.appendChild(buildScenarioCard(key, entry, {
+                onclick: () => selectScenario(key, entry.label),
+                isFirst: i === 0,
+                compact: true,
+            }));
+        });
+        demoEl.appendChild(readyGrid);
+    }
+    if (demoOther.length > 0) {
+        demoEl.appendChild(makeLabel('More Demos Coming Soon'));
+        const otherGrid = makeGrid();
+        demoOther.forEach(([key, entry]) => {
+            otherGrid.appendChild(buildScenarioCard(key, entry, { compact: true }));
+        });
+        demoEl.appendChild(otherGrid);
+    }
+
+    // ── Live scenarios (compact card style) ──
+    const liveEl = document.getElementById('liveScenarios');
+    liveEl.classList.add('live-card-style');
+    const existingGrids = liveEl.querySelectorAll('.home-section-label, .scenario-grid');
+    existingGrids.forEach(el => el.remove());
+
+    if (readyDomains.length > 0) {
+        liveEl.appendChild(makeLabel('Specialized'));
+        const liveReadyGrid = makeGrid();
+        readyDomains.forEach(([key, entry]) => {
+            liveReadyGrid.appendChild(buildScenarioCard(key, entry, {
+                onclick: () => selectScenario(key, entry.label),
+                compact: true,
+            }));
+        });
+        liveEl.appendChild(liveReadyGrid);
+    }
+    if (otherDomains.length > 0) {
+        liveEl.appendChild(makeLabel('More Scenarios'));
+        const liveOtherGrid = makeGrid();
+        otherDomains.forEach(([key, entry]) => {
+            liveOtherGrid.appendChild(buildScenarioCard(key, entry, { compact: true }));
+        });
+        liveEl.appendChild(liveOtherGrid);
+    }
+
+    // ── Upload domain dropdown ──
+    const uploadSelect = document.getElementById('uploadDomainSelect');
+    if (uploadSelect) {
+        uploadSelect.innerHTML = '';
+        readyDomains.forEach(([key, entry]) => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = entry.label;
+            uploadSelect.appendChild(opt);
+        });
+    }
+}
+
+function makeLabel(text) {
+    const el = document.createElement('div');
+    el.className = 'home-section-label';
+    el.textContent = text;
+    return el;
+}
+
+function makeGrid() {
+    const el = document.createElement('div');
+    el.className = 'scenario-grid';
+    return el;
+}
+
+// Load registry on page load
+loadRegistry();
+
+// ══════════════════════════════════════════════════════════════
+// INTERACTION MODE / HEADER TOGGLES
+// ══════════════════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════════════════
+// INTERACTION MODE (In-Person vs Video Call)
+// ══════════════════════════════════════════════════════════════
+function setInteractionMode(mode) {
+    interactionMode = mode;
+    // Update all toggle buttons with this mode
+    document.querySelectorAll('#liveModeToggle .mode-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(
+            mode === 'in-person' ? 'in-person' : 'video'
+        ));
+    });
+}
+
+let headerTogglesLocked = false;
+let transcriptCollapsed = false;
+
+function toggleTranscript() {
+    const panel = document.getElementById('transcriptSide');
+    const showBtn = document.getElementById('btnShowTranscript');
+    transcriptCollapsed = !transcriptCollapsed;
+
+    if (transcriptCollapsed) {
+        panel.classList.add('collapsed');
+        showBtn.style.display = 'flex';
+    } else {
+        panel.classList.remove('collapsed');
+        showBtn.style.display = 'none';
+    }
+}
+
+function setMethod(method) {
+    if (headerTogglesLocked) return;
+    METHOD = method;
+    document.getElementById('htogSign').classList.toggle('active', method === 'sign');
+    document.getElementById('htogSpeak').classList.toggle('active', method === 'speak');
+}
+
+function lockHeaderToggles() {
+    headerTogglesLocked = true;
+    document.querySelectorAll('.htog-btn').forEach(b => b.classList.add('locked'));
+}
+
+function unlockHeaderToggles() {
+    headerTogglesLocked = false;
+    document.querySelectorAll('.htog-btn').forEach(b => b.classList.remove('locked'));
+}
+
+// ══════════════════════════════════════════════════════════════
+// SCENARIO SELECTION
+// ══════════════════════════════════════════════════════════════
+function hideHomeContent() {
+    ['heroSection', 'demoIntro', 'demoScenarios', 'liveScenarios', 'signBankScreen', 'uploadScreen', 'historyScreen'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    const hs = document.querySelector('.home-screen');
+    if (hs) hs.style.display = 'none';
+}
+
+function selectScenario(domain, scenarioName) {
+    selectedDomain = domain;
+    selectedScenario = scenarioName;
+    if (MODE === 'live') recordRecentScenario(domain, scenarioName);
+    hideHomeContent();
+    document.getElementById('phaseConvo').style.display = 'flex';
+
+    const modeLabel = interactionMode === 'in-person' ? 'In-Person' : 'Video Call';
+    document.getElementById('scenarioLabel').textContent = scenarioName + ' \u2022 ' + modeLabel;
+
+    lockHeaderToggles();
+    pushRoute('conversation/' + domain);
+
+    console.log('[Scenario] Selected:', scenarioName, '| Domain:', domain, '| Mode:', interactionMode, '| Method:', METHOD, '| AppMode:', MODE);
+
+    loadVocabulary(domain);
+}
+
+// ══════════════════════════════════════════════════════════════
+// VOCABULARY PANEL
+// ══════════════════════════════════════════════════════════════
+const WORD_CATEGORIES = {
+    medical: ['allergy','blood','breathe','cough','doctor','headache','medicine','sick','stomach','surgery','temperature'],
+    question: ['how','what','where','name','answer'],
+    action: ['can','eat','drink','feel','give','hear','help','know','play','sit','stand','stop','tell','wait','walk','want','dance','study','change','enjoy','breathe'],
+    time: ['before','morning','night','today','time','year','thursday','birthday','thanksgiving','later','appointment'],
+    descriptor: ['better','fine','full','hot','more','right','tall','wrong','worse','deaf','stress'],
+    general: []
+};
+
+function categorizeWord(word) {
+    for (const [cat, words] of Object.entries(WORD_CATEGORIES)) {
+        if (cat === 'general') continue;
+        if (words.includes(word)) return cat;
+    }
+    return 'general';
+}
+
+let vocabCache = {};
+
+async function loadVocabulary(domain) {
+    const panel = document.getElementById('vocabPanel');
+    const chipsEl = document.getElementById('vocabChips');
+    const countEl = document.getElementById('vocabCount');
+    const toggleBtn = document.getElementById('vocabToggleBtn');
+
+    chipsEl.innerHTML = '';
+    chipsEl.classList.remove('open');
+    toggleBtn.classList.remove('open');
+    panel.style.display = 'none';
+
+    if (vocabCache[domain]) {
+        renderVocabulary(vocabCache[domain]);
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/vocabulary/' + domain);
+        if (!resp.ok) {
+            showToast('Could not load vocabulary for this domain', 'warn');
+            return;
+        }
+        const data = await resp.json();
+        vocabCache[domain] = data.glosses;
+        renderVocabulary(data.glosses);
+    } catch (e) {
+        showToast('Failed to load vocabulary', 'error');
+        console.warn('[Vocab] Failed to load:', e);
+    }
+}
+
+function renderVocabulary(glosses) {
+    const panel = document.getElementById('vocabPanel');
+    const chipsEl = document.getElementById('vocabChips');
+    const countEl = document.getElementById('vocabCount');
+
+    countEl.textContent = glosses.length;
+    chipsEl.innerHTML = '';
+
+    const grouped = { medical: [], question: [], action: [], time: [], descriptor: [], general: [] };
+    for (const word of glosses) {
+        const cat = categorizeWord(word);
+        grouped[cat].push(word);
+    }
+
+    for (const [cat, words] of Object.entries(grouped)) {
+        for (const word of words) {
+            const chip = document.createElement('span');
+            chip.className = 'vocab-chip cat-' + cat;
+            chip.textContent = word;
+            chipsEl.appendChild(chip);
+        }
+    }
+
+    panel.style.display = 'block';
+    // Start collapsed — user can expand if needed
+    chipsEl.classList.remove('open');
+    document.getElementById('vocabToggleBtn').classList.remove('open');
+}
+
+function toggleVocabPanel() {
+    const chipsEl = document.getElementById('vocabChips');
+    const toggleBtn = document.getElementById('vocabToggleBtn');
+    const isOpen = chipsEl.classList.contains('open');
+    chipsEl.classList.toggle('open', !isOpen);
+    toggleBtn.classList.toggle('open', !isOpen);
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIGN BANK (2.1) — Training mode reference library
+// ══════════════════════════════════════════════════════════════
+let signBankData = null; // cached sign bank data
+let signBankLoaded = false;
+
+function getSbDomainMeta(domainKey) {
+    // Pull icon from registry if available, fall back to defaults
+    const entry = registryData && registryData.domains && registryData.domains[domainKey];
+    const icon = entry ? entry.icon : (domainKey === 'generic' ? 'G' : '?');
+    return {
+        icon,
+        color: 'var(--accent)',
+        bg: 'rgba(196,135,42,0.1)',
+    };
+}
+
+async function loadSignBank() {
+    if (signBankLoaded) return;
+    try {
+        const resp = await fetch('/api/sign-bank');
+        if (!resp.ok) throw new Error('Failed to load');
+        const data = await resp.json();
+        signBankData = data;
+        signBankLoaded = true;
+        renderSignBank(data);
+    } catch (e) {
+        showToast('Could not load Sign Bank', 'error');
+        console.error('[SignBank] Load error:', e);
+    }
+}
+
+function renderSignBank(data) {
+    const container = document.getElementById('sbGrid');
+    const totalEl = document.getElementById('sbTotalCount');
+    const visibleEl = document.getElementById('sbVisibleCount');
+    const emptyEl = document.getElementById('sbEmpty');
+
+    totalEl.textContent = data.count;
+    container.innerHTML = '';
+
+    if (data.count === 0) {
+        emptyEl.style.display = 'block';
+        visibleEl.textContent = '';
+        return;
+    }
+
+    emptyEl.style.display = 'none';
+    visibleEl.textContent = data.count + ' shown';
+
+    data.groups.forEach(group => {
+        const meta = getSbDomainMeta(group.domain);
+
+        const section = document.createElement('div');
+        section.className = 'sb-group';
+        section.dataset.domain = group.domain;
+
+        const header = document.createElement('div');
+        header.className = 'sb-group-header';
+        header.innerHTML = `
+            <span class="sb-group-icon" style="background:${meta.bg};color:${meta.color}">${meta.icon}</span>
+            <span class="sb-group-label">${group.label}</span>
+            <span class="sb-group-count">${group.signs.length} sign${group.signs.length !== 1 ? 's' : ''}</span>
+        `;
+        section.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'sb-group-grid';
+
+        group.signs.forEach(sign => {
+            const card = document.createElement('div');
+            card.className = 'sb-card';
+            card.dataset.gloss = sign.gloss.toLowerCase();
+            card.innerHTML = `
+                <div class="sb-card-video">
+                    <video src="${sign.video_url}" muted playsinline loop preload="metadata"></video>
+                    <div class="sb-play-hint">\u25B6</div>
+                </div>
+                <div class="sb-card-label">
+                    <span class="sb-card-gloss">${sign.gloss.toUpperCase()}</span>
+                </div>
+                <div class="sb-card-actions">
+                    <button class="sb-practice-btn" title="Practice this sign">&#x270B; Practice</button>
+                </div>
+            `;
+
+            const video = card.querySelector('video');
+            const videoBox = card.querySelector('.sb-card-video');
+            videoBox.addEventListener('mouseenter', () => { video.play().catch(() => {}); });
+            videoBox.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+            videoBox.addEventListener('click', () => {
+                if (video.controls) {
+                    video.controls = false;
+                    video.muted = true;
+                } else {
+                    video.controls = true;
+                    video.muted = false;
+                    video.currentTime = 0;
+                    video.play().catch(() => {});
+                }
+            });
+
+            card.querySelector('.sb-practice-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                startPracticeSession({ ...sign, domain: group.domain });
+            });
+
+            grid.appendChild(card);
+        });
+
+        section.appendChild(grid);
+        container.appendChild(section);
+    });
+}
+
+function filterSignBank() {
+    if (!signBankData) return;
+    const query = document.getElementById('sbSearch').value.toLowerCase().trim();
+    const container = document.getElementById('sbGrid');
+    const visibleEl = document.getElementById('sbVisibleCount');
+    const emptyEl = document.getElementById('sbEmpty');
+
+    let visible = 0;
+
+    container.querySelectorAll('.sb-group').forEach(group => {
+        const cards = group.querySelectorAll('.sb-card');
+        let groupVisible = 0;
+        cards.forEach(card => {
+            const match = !query || card.dataset.gloss.includes(query);
+            card.style.display = match ? '' : 'none';
+            if (match) { visible++; groupVisible++; }
+        });
+        group.style.display = groupVisible === 0 ? 'none' : '';
+        const countEl = group.querySelector('.sb-group-count');
+        if (countEl && query) {
+            countEl.textContent = groupVisible + ' shown';
+        } else if (countEl) {
+            const total = cards.length;
+            countEl.textContent = total + ' sign' + (total !== 1 ? 's' : '');
+        }
+    });
+
+    visibleEl.textContent = query ? visible + ' of ' + signBankData.count : signBankData.count + ' shown';
+    emptyEl.style.display = visible === 0 ? 'block' : 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// PRACTICE MODE (2.6) — Record yourself and get AI feedback
+// ══════════════════════════════════════════════════════════════
+let practiceSign = null;       // { gloss, video_url, domain }
+
+function _renderPracComparison(comp) {
+    const panel = document.getElementById('pracComparisonPanel');
+    if (!panel) return;
+
+    if (!comp || comp.error) {
+        panel.style.display = comp && comp.error ? 'block' : 'none';
+        if (comp && comp.error) {
+            document.getElementById('pracComparisonIssues').innerHTML =
+                `<div style="color:#f07070;font-size:0.82rem">Comparison failed: ${comp.error}</div>`;
+        }
+        return;
+    }
+
+    panel.style.display = 'block';
+    const issuesEl = document.getElementById('pracComparisonIssues');
+    const rawEl = document.getElementById('pracComparisonRaw');
+    issuesEl.innerHTML = '';
+
+    const severityColors = {
+        error: '#f07070',
+        warn: '#f0a050',
+        info: 'var(--text-secondary)',
+        ok: '#4caf80',
+    };
+    const severityIcons = { error: '\u274C', warn: '\u26A0\uFE0F', info: '\u2139\uFE0F', ok: '\u2705' };
+
+    const issues = comp.issues || [];
+    const severity = comp.severity || [];
+    for (let i = 0; i < issues.length; i++) {
+        const sev = severity[i] || 'info';
+        const row = document.createElement('div');
+        row.style.cssText = `font-size:0.82rem;margin:4px 0;padding:4px 8px;border-left:3px solid ${severityColors[sev]};color:var(--text-primary)`;
+        row.innerHTML = `<span style="margin-right:6px">${severityIcons[sev]}</span>${issues[i]}`;
+        issuesEl.appendChild(row);
+    }
+
+    // Raw metrics — everything except the issues list for clean debugging
+    const raw = { ...comp };
+    delete raw.issues;
+    delete raw.severity;
+    rawEl.textContent = JSON.stringify(raw, null, 2);
+}
+
+// Toggle the "What was captured" video between the raw recording and a
+// server-rendered pose-only stick-figure video. The pose video is rendered
+// lazily on first toggle (visualize_pose.exe + ffmpeg), then cached on disk
+// and as a blob URL for the rest of this diagnose session.
+async function togglePracVideoView() {
+    const btn = document.getElementById('pracVideoModeToggle');
+    const videoEl = document.getElementById('pracCapturedVideo');
+    if (!btn || !videoEl) return;
+
+    const mode = btn.dataset.mode || 'original';
+    if (mode === 'original') {
+        // Switching to pose
+        if (!videoEl._sampleId) {
+            showToast('No saved sample to render', 'error');
+            return;
+        }
+        if (!videoEl._poseUrl) {
+            const wasPlaying = !videoEl.paused;
+            videoEl.pause();
+            const orig = btn.textContent;
+            btn.textContent = 'Generating...';
+            btn.disabled = true;
+            try {
+                const r = await fetch(`/api/practice-pose-video/${videoEl._sampleId}`);
+                if (!r.ok) {
+                    let msg = `HTTP ${r.status}`;
+                    try { const j = await r.json(); if (j && j.error) msg = j.error; } catch {}
+                    throw new Error(msg);
+                }
+                const blob = await r.blob();
+                videoEl._poseUrl = URL.createObjectURL(blob);
+            } catch (e) {
+                console.error('[Practice] Pose video render failed:', e);
+                showToast('Pose render failed: ' + e.message, 'error');
+                btn.textContent = orig;
+                btn.disabled = false;
+                if (wasPlaying) videoEl.play().catch(() => {});
+                return;
+            }
+            btn.disabled = false;
+        }
+        videoEl.src = videoEl._poseUrl;
+        videoEl.play().catch(() => {});
+        btn.textContent = 'Show original';
+        btn.dataset.mode = 'pose';
+    } else {
+        // Switching back to original
+        if (videoEl._origUrl) {
+            videoEl.src = videoEl._origUrl;
+            videoEl.play().catch(() => {});
+        }
+        btn.textContent = 'Show pose';
+        btn.dataset.mode = 'original';
+    }
+}
+
+let practiceCameraStream = null;
+let practiceStats = { correct: 0, attempts: 0 };
+
+async function startPracticeSession(sign) {
+    practiceSign = sign;
+    practiceStats = { correct: 0, attempts: 0 };
+
+    // Hide the sign bank browse UI, show the practice session inline
+    const hero = document.querySelector('.sb-hero');
+    if (hero) hero.style.display = 'none';
+    const searchRow = document.querySelector('.sb-search-row');
+    if (searchRow) searchRow.style.display = 'none';
+    const picker = document.getElementById('customPracticePicker');
+    if (picker) picker.style.display = 'none';
+    document.getElementById('sbGrid').style.display = 'none';
+    document.getElementById('sbEmpty').style.display = 'none';
+    document.getElementById('practiceSession').style.display = 'block';
+    document.getElementById('pracSignName').textContent = sign.gloss.toUpperCase();
+    updatePracticeScore();
+
+    // Set up reference video (may not exist for all signs — graceful fallback)
+    const refVid = document.getElementById('pracRefVideo');
+    const refPanel = refVid.closest('.prac-panel');
+    if (sign.video_url) {
+        refVid.style.display = 'block';
+        refVid.src = sign.video_url;
+        refVid.play().catch(() => {});
+        if (refPanel) {
+            refPanel.style.display = '';
+            const msg = refPanel.querySelector('.prac-no-ref');
+            if (msg) msg.remove();
+        }
+    } else {
+        refVid.style.display = 'none';
+        refVid.src = '';
+        if (refPanel) {
+            // Hide the entire reference panel when no video — gives camera full width
+            const isMobile = window.matchMedia('(max-width: 640px)').matches;
+            if (isMobile) {
+                refPanel.style.display = 'none';
+            } else {
+                refPanel.style.display = '';
+                let msg = refPanel.querySelector('.prac-no-ref');
+                if (!msg) {
+                    msg = document.createElement('div');
+                    msg.className = 'prac-no-ref';
+                    msg.style.cssText = 'padding:40px 20px;text-align:center;color:var(--text-muted);font-size:0.85rem;background:var(--bg-page);border-radius:8px;';
+                    msg.innerHTML = `<div style="font-size:2rem;margin-bottom:8px">\uD83D\uDCD6</div>No reference video yet.<br>Sign <strong>${sign.gloss.toUpperCase()}</strong> based on what you know.`;
+                    const videoBox = refPanel.querySelector('.prac-video-box');
+                    if (videoBox) videoBox.appendChild(msg);
+                }
+            }
+        }
+    }
+
+    // Reset feedback
+    document.getElementById('pracFeedback').style.display = 'none';
+    document.getElementById('pracRecordBtn').disabled = false;
+    document.getElementById('pracRecordBtn').innerHTML = '&#x1F534; Record Sign';
+
+    // Start camera
+    const placeholder = document.getElementById('pracCameraPlaceholder');
+    const feed = document.getElementById('pracCameraFeed');
+    try {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isPortrait = window.innerHeight > window.innerWidth;
+        const videoConstraint = (isMobile && isPortrait)
+            ? { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9/16 } }
+            : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
+        practiceCameraStream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraint,
+            audio: false,
+        });
+        feed.srcObject = practiceCameraStream;
+        feed.style.display = 'block';
+        placeholder.style.display = 'none';
+        // Adapt practice camera box to native video aspect — but only on desktop/tablet.
+        // On mobile phones, CSS handles portrait (9/16) with object-fit: cover.
+        const applyPracAspect = () => {
+            if (!feed.videoWidth) return;
+            const isMobilePhone = window.matchMedia('(max-width: 640px)').matches;
+            const box = feed.closest('.prac-video-box') || feed.closest('.prac-camera-box') || feed.parentElement;
+            if (!box) return;
+            if (isMobilePhone) {
+                // Let CSS rule. Clear any inline overrides.
+                box.style.aspectRatio = '';
+                box.style.maxHeight = '';
+            } else {
+                box.style.aspectRatio = `${feed.videoWidth} / ${feed.videoHeight}`;
+                box.style.maxHeight = '';
+            }
+        };
+        feed.addEventListener('loadedmetadata', applyPracAspect);
+        if (feed.videoWidth) applyPracAspect();
+    } catch (e) {
+        placeholder.textContent = 'Camera access needed for practice';
+        placeholder.style.display = 'flex';
+        feed.style.display = 'none';
+        showToast('Camera access denied — practice mode needs your camera', 'error');
+    }
+}
+
+// ── Custom Practice: pick any sign from any model vocabulary ──
+async function openCustomPractice() {
+    const picker = document.getElementById('customPracticePicker');
+    picker.style.display = 'block';
+
+    const domainSelect = document.getElementById('customPracticeDomain');
+    if (domainSelect.options.length === 0) {
+        try {
+            const resp = await fetch('/api/registry');
+            const registry = await resp.json();
+            const domains = registry.domains || {};
+            Object.entries(domains).forEach(([key, entry]) => {
+                if (entry.model_dir) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.textContent = entry.label || key;
+                    if (key === selectedDomain) opt.selected = true;
+                    domainSelect.appendChild(opt);
+                }
+            });
+        } catch (e) {
+            showToast('Could not load domains', 'error');
+            return;
+        }
+    }
+    await loadCustomPracticeVocab();
+}
+
+function closeCustomPractice() {
+    document.getElementById('customPracticePicker').style.display = 'none';
+}
+
+async function loadCustomPracticeVocab() {
+    const domain = document.getElementById('customPracticeDomain').value;
+    const glossSelect = document.getElementById('customPracticeGloss');
+    glossSelect.innerHTML = '<option>Loading...</option>';
+    try {
+        const resp = await fetch(`/api/vocabulary/${domain}`);
+        const data = await resp.json();
+        glossSelect.innerHTML = '';
+        (data.glosses || []).forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = g;
+            glossSelect.appendChild(opt);
+        });
+    } catch (e) {
+        glossSelect.innerHTML = '<option>Failed to load</option>';
+    }
+}
+
+function startCustomPractice() {
+    const domain = document.getElementById('customPracticeDomain').value;
+    const gloss = document.getElementById('customPracticeGloss').value;
+    if (!gloss) return;
+
+    // Check if we have a sign bank video for this gloss (optional)
+    const videoUrl = `/sign-bank/${gloss.toLowerCase()}.mp4`;
+    // Test if video exists by trying to fetch it
+    fetch(videoUrl, { method: 'HEAD' }).then(resp => {
+        const sign = {
+            gloss: gloss,
+            video_url: resp.ok ? videoUrl : null,
+            domain: domain,
+        };
+        closeCustomPractice();
+        startPracticeSession(sign);
+    }).catch(() => {
+        startPracticeSession({ gloss, video_url: null, domain });
+    });
+}
+
+function exitPracticeSession() {
+    // Stop camera
+    if (practiceCameraStream) {
+        practiceCameraStream.getTracks().forEach(t => t.stop());
+        practiceCameraStream = null;
+    }
+    const feed = document.getElementById('pracCameraFeed');
+    feed.srcObject = null;
+    feed.style.display = 'none';
+    document.getElementById('pracCameraPlaceholder').style.display = 'flex';
+    document.getElementById('pracCameraPlaceholder').textContent = 'Camera will start when you record';
+
+    // Stop reference video
+    const refVid = document.getElementById('pracRefVideo');
+    refVid.pause();
+    refVid.removeAttribute('src');
+
+    document.getElementById('practiceSession').style.display = 'none';
+    // Restore sign bank browse UI
+    const hero = document.querySelector('.sb-hero');
+    if (hero) hero.style.display = '';
+    const searchRow = document.querySelector('.sb-search-row');
+    if (searchRow) searchRow.style.display = '';
+    document.getElementById('sbGrid').style.display = '';
+    practiceSign = null;
+}
+
+function updatePracticeScore() {
+    const el = document.getElementById('pracScore');
+    if (practiceStats.attempts === 0) {
+        el.textContent = 'No attempts yet';
+    } else {
+        el.textContent = `${practiceStats.correct} / ${practiceStats.attempts} correct`;
+    }
+}
+
+async function practiceRecord() {
+    if (!practiceCameraStream || !practiceSign) return;
+
+    const btn = document.getElementById('pracRecordBtn');
+    const feedback = document.getElementById('pracFeedback');
+    feedback.style.display = 'none';
+
+    btn.disabled = true;
+
+    // Full-screen overlay for unmistakable pre-record countdown and recording indicator
+    let overlay = document.getElementById('pracBigCountdown');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'pracBigCountdown';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;color:#fff;';
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+
+    const countdownEl = document.getElementById('pracRecCountdown');
+    const prepSeconds = 3;
+    for (let s = prepSeconds; s > 0; s--) {
+        if (!practiceCameraStream) { overlay.style.display = 'none'; return; }
+        overlay.innerHTML = `
+            <div style="font-size:8rem;font-weight:900;color:#ffd700;text-shadow:0 4px 20px rgba(0,0,0,0.6)">${s}</div>
+            <div style="font-size:1.2rem;margin-top:12px">Get ready to sign</div>
+        `;
+        btn.innerHTML = `Get ready... ${s}`;
+        await sleep(1000);
+    }
+    overlay.innerHTML = `
+        <div style="font-size:6rem;font-weight:900;color:#4caf80;text-shadow:0 4px 20px rgba(0,0,0,0.6)">\u25CF REC</div>
+        <div style="font-size:1.5rem;margin-top:12px">Sign NOW</div>
+    `;
+    btn.innerHTML = '<span class="spinner"></span> Recording...';
+
+    // Live recording — the overlay stays to make recording state VERY obvious on mobile
+    const recordDuration = 3000;  // 3 seconds to give full sign time
+    const countdownStart = Date.now();
+    const countdownInterval = setInterval(() => {
+        const remaining = Math.max(0, recordDuration - (Date.now() - countdownStart));
+        if (remaining > 0) {
+            overlay.innerHTML = `
+                <div style="font-size:6rem;font-weight:900;color:#ff4040;text-shadow:0 4px 20px rgba(0,0,0,0.6);animation:pulse 0.5s infinite alternate">\u25CF REC</div>
+                <div style="font-size:3rem;font-weight:700;margin-top:8px">${(remaining / 1000).toFixed(1)}s</div>
+            `;
+            countdownEl.classList.add('on');
+            countdownEl.innerHTML = `<span class="rec-dot"></span> ${(remaining / 1000).toFixed(1)}s`;
+        } else {
+            countdownEl.classList.remove('on');
+        }
+    }, 100);
+
+    // Record
+    const videoBlob = await practiceRecordCamera(recordDuration);
+    clearInterval(countdownInterval);
+    countdownEl.classList.remove('on');
+    if (overlay) overlay.style.display = 'none';
+
+    if (!videoBlob) {
+        btn.disabled = false;
+        btn.innerHTML = '&#x1F534; Record Sign';
+        showToast('Recording failed — try again', 'error');
+        return;
+    }
+
+    btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+
+    // Send to diagnostic endpoint — returns predictions + user pose + reference pose
+    const formData = new FormData();
+    formData.append('video', videoBlob, 'practice.webm');
+    formData.append('domain', practiceSign.domain === 'other' ? 'generic' : practiceSign.domain);
+    formData.append('target', practiceSign.gloss);
+
+    try {
+        const resp = await fetch('/api/practice-diagnose', { method: 'POST', body: formData });
+        let result;
+        try {
+            result = await resp.json();
+        } catch (parseErr) {
+            const text = await resp.text().catch(() => '');
+            showPracticeFeedback('incorrect',
+                'Server error',
+                `Server returned status ${resp.status}. ${text.substring(0, 200)}`
+            );
+            showToast(`Server error (${resp.status})`, 'error');
+            updatePracticeScore();
+            btn.disabled = false;
+            btn.innerHTML = '&#x1F534; Record Sign';
+            return;
+        }
+
+        practiceStats.attempts++;
+
+        if (result.success) {
+            const predicted = result.gloss.toLowerCase();
+            const expected = practiceSign.gloss.toLowerCase();
+            const confidence = Math.round((result.confidence || 0) * 100);
+
+            const topKGlosses = (result.top_k || []).map(k => k.gloss.toLowerCase());
+            const isExactMatch = predicted === expected;
+            const isInTopK = topKGlosses.includes(expected);
+
+            const diag = {
+                videoBlob: videoBlob,
+                sampleId: result.sample_id || null,
+                topK: result.top_k || [{ gloss: result.gloss, confidence: result.confidence }],
+                expected: expected,
+                userPose: result.user_pose,
+                userFrames: result.user_frames,
+                referencePose: result.reference_pose,
+                referenceFrames: result.reference_frames,
+                comparison: result.comparison,
+            };
+
+            if (isExactMatch) {
+                practiceStats.correct++;
+                recordPracticeResult(expected, true);
+                showPracticeFeedback('correct',
+                    'Correct!',
+                    `The AI recognized "${predicted.toUpperCase()}" with ${confidence}% confidence.`,
+                    diag
+                );
+            } else if (isInTopK) {
+                recordPracticeResult(expected, false);
+                const rank = topKGlosses.indexOf(expected) + 1;
+                showPracticeFeedback('close-match',
+                    'Close!',
+                    `The AI's top prediction was "${predicted.toUpperCase()}" (${confidence}%), but "${expected.toUpperCase()}" was #${rank} in the top predictions.`,
+                    diag
+                );
+            } else {
+                recordPracticeResult(expected, false);
+                showPracticeFeedback('incorrect',
+                    'Not quite \u2014 try again',
+                    `The AI saw "${predicted.toUpperCase()}" (${confidence}%) instead of "${expected.toUpperCase()}". Watch the captured video to see what was recorded.`,
+                    diag
+                );
+            }
+        } else {
+            showPracticeFeedback('incorrect',
+                'Could not analyze',
+                result.error || 'The sign could not be recognized. Make sure you are well-lit and centered in frame.',
+                { videoBlob: videoBlob, topK: [], expected: practiceSign.gloss.toLowerCase() }
+            );
+        }
+    } catch (e) {
+        console.error('[Practice] Error:', e);
+        showPracticeFeedback('incorrect',
+            'Processing error',
+            e.message || 'Something went wrong. Check the browser console and Flask server logs for details.'
+        );
+        showToast('Sign processing failed \u2014 check server logs', 'error');
+    }
+
+    updatePracticeScore();
+    btn.disabled = false;
+    btn.innerHTML = '&#x1F534; Record Sign';
+}
+
+function showPracticeFeedback(type, title, detail, diagnostic) {
+    const el = document.getElementById('pracFeedback');
+    const icons = { correct: '\u2705', incorrect: '\u274C', 'close-match': '\uD83E\uDD14' };
+    el.className = 'prac-feedback ' + type;
+    document.getElementById('pracFeedbackIcon').textContent = icons[type] || '';
+    document.getElementById('pracFeedbackText').textContent = title;
+    document.getElementById('pracFeedbackDetail').textContent = detail;
+
+    // Diagnostic panel: captured video + top-5 bars (helps debug segmentation vs. recognition)
+    const diagEl = document.getElementById('pracDiagnostic');
+    if (diagnostic && diagnostic.videoBlob) {
+        const videoEl = document.getElementById('pracCapturedVideo');
+        // Revoke any URLs from previous diagnose so we don't leak.
+        if (videoEl._origUrl) URL.revokeObjectURL(videoEl._origUrl);
+        if (videoEl._poseUrl) URL.revokeObjectURL(videoEl._poseUrl);
+        videoEl._origUrl = URL.createObjectURL(diagnostic.videoBlob);
+        videoEl._poseUrl = null;                       // lazy-fetched on first toggle
+        videoEl._sampleId = diagnostic.sampleId || null;
+        videoEl.src = videoEl._origUrl;
+        videoEl.play().catch(() => {});
+
+        // Reset toggle button to "Show pose" (original is always the initial view).
+        const toggleBtn = document.getElementById('pracVideoModeToggle');
+        if (toggleBtn) {
+            toggleBtn.textContent = 'Show pose';
+            toggleBtn.dataset.mode = 'original';
+            toggleBtn.disabled = !videoEl._sampleId;   // grey out if no server-side sample
+        }
+
+        const topKEl = document.getElementById('pracTopK');
+        topKEl.innerHTML = '';
+        const topK = diagnostic.topK || [];
+        const expected = (diagnostic.expected || '').toLowerCase();
+        topK.slice(0, 5).forEach((item, i) => {
+            const conf = Math.round((item.confidence || 0) * 100);
+            const isTarget = item.gloss.toLowerCase() === expected;
+            const row = document.createElement('div');
+            row.className = 'prac-topk-row' + (isTarget ? ' target' : '');
+            row.innerHTML = `
+                <span class="prac-topk-rank">${i + 1}.</span>
+                <span class="prac-topk-gloss">${item.gloss.toUpperCase()}${isTarget ? ' \u2190 your target' : ''}</span>
+                <span class="prac-topk-bar"><span class="prac-topk-fill" style="width:${conf}%"></span></span>
+                <span class="prac-topk-pct">${conf}%</span>
+            `;
+            topKEl.appendChild(row);
+        });
+        diagEl.style.display = 'block';
+
+        // Programmatic diagnostic findings (pose video player removed)
+        const compareEl = document.getElementById('pracPoseCompare');
+        if (diagnostic.comparison) {
+            compareEl.style.display = 'block';
+
+
+            _renderPracComparison(diagnostic.comparison);
+        } else {
+            compareEl.style.display = 'none';
+        }
+    } else {
+        diagEl.style.display = 'none';
+    }
+
+    el.style.display = 'block';
+}
+
+function practiceRetry() {
+    document.getElementById('pracFeedback').style.display = 'none';
+    // Restart the reference video
+    const refVid = document.getElementById('pracRefVideo');
+    refVid.currentTime = 0;
+    refVid.play().catch(() => {});
+}
+
+function practiceRecordCamera(durationMs) {
+    return new Promise(resolve => {
+        if (!practiceCameraStream) { resolve(null); return; }
+        let chunks = [];
+        let recorder;
+        try {
+            recorder = new MediaRecorder(practiceCameraStream, { mimeType: 'video/webm' });
+        } catch (e) {
+            try { recorder = new MediaRecorder(practiceCameraStream); } catch (e2) { resolve(null); return; }
+        }
+        recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+        recorder.onstop = () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            resolve(blob.size > 0 ? blob : null);
+        };
+        recorder.start();
+        setTimeout(() => {
+            if (recorder.state === 'recording') recorder.stop();
+        }, durationMs);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIDEBAR NAVIGATION — flat: Sign Bank, Demo, Live, Upload, Profile
+// ══════════════════════════════════════════════════════════════
+function navigateTo(section) {
+    currentNav = section;
+
+    // Set MODE based on which section we're in
+    if (section === 'demo') MODE = 'demo';
+    else if (section === 'live') MODE = 'live';
+
+    // Update sidebar active state
+    document.querySelectorAll('.sidebar-item').forEach(btn => btn.classList.remove('active'));
+    const navIds = {
+        'sign-bank': 'navSignBank',
+        demo: 'navDemo',
+        live: 'navLive',
+        upload: 'navUpload',
+    };
+    const activeBtn = document.getElementById(navIds[section]);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    // Hide all content sections (including secondary screens)
+    const sectionIds = ['demoScenarios', 'liveScenarios', 'signBankScreen', 'uploadScreen', 'historyScreen',
+                        'phaseConvo', 'phaseLiveDemo', 'phaseBreakdown', 'vocabPanel'];
+    sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+
+    // Show hero on live tab (default landing), demo intro on demo tab
+    const heroSection = document.getElementById('heroSection');
+    if (heroSection) heroSection.style.display = section === 'live' ? '' : 'none';
+    const demoIntro = document.getElementById('demoIntro');
+    if (demoIntro) demoIntro.style.display = section === 'demo' ? '' : 'none';
+
+    // Show home-screen wrapper (for padding) on content tabs that use it
+    const homeScreen = document.querySelector('.home-screen');
+    if (homeScreen) homeScreen.style.display = (section === 'demo' || section === 'live') ? '' : 'none';
+
+    if (section === 'demo') {
+        const el = document.getElementById('demoScenarios'); if (el) el.style.display = 'block';
+    } else if (section === 'live') {
+        const el = document.getElementById('liveScenarios'); if (el) el.style.display = 'block';
+    } else if (section === 'sign-bank') {
+        const el = document.getElementById('signBankScreen'); if (el) el.style.display = 'block';
+        if (!signBankLoaded) loadSignBank();
+    } else if (section === 'upload') {
+        const el = document.getElementById('uploadScreen'); if (el) el.style.display = 'block';
+    }
+
+    // Clean up practice camera if leaving sign bank
+    if (section !== 'sign-bank' && practiceCameraStream) {
+        exitPracticeSession();
+    }
+}
+
+// Legacy aliases for compatibility
+function updateSubTabVisibility() {
+    navigateTo(currentNav);
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE DEMO -- Camera + Hardcoded Caption
+// ══════════════════════════════════════════════════════════════
+let liveDemoCameraStream = null;
+
+async function startLiveDemo() {
+    hideHomeContent();
+    document.getElementById('phaseLiveDemo').style.display = 'flex';
+    lockHeaderToggles();
+    pushRoute('live-demo');
+
+    const placeholder = document.getElementById('liveDemoPlaceholder');
+    placeholder.textContent = 'Requesting camera access...';
+    try {
+        liveDemoCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const feed = document.getElementById('liveDemoCameraFeed');
+        feed.srcObject = liveDemoCameraStream;
+        feed.setAttribute('autoplay', '');
+        feed.setAttribute('playsinline', '');
+        feed.setAttribute('muted', '');
+        await feed.play();
+        feed.style.display = 'block';
+        placeholder.style.display = 'none';
+    } catch (e) {
+        placeholder.textContent = 'Camera error: ' + (e.name || '') + ' - ' + (e.message || 'Unknown error');
+        showToast('Could not access camera: ' + (e.message || 'Unknown error'), 'error');
+    }
+}
+
+function stopLiveDemo() {
+    if (liveDemoCameraStream) {
+        liveDemoCameraStream.getTracks().forEach(t => t.stop());
+        liveDemoCameraStream = null;
+    }
+    const feed = document.getElementById('liveDemoCameraFeed');
+    feed.style.display = 'none';
+    feed.srcObject = null;
+    document.getElementById('liveDemoPlaceholder').style.display = 'flex';
+    document.getElementById('liveDemoPlaceholder').textContent = 'Starting camera...';
+    document.getElementById('phaseLiveDemo').style.display = 'none';
+    showHomeScreen();
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE CAPTIONS -- State
+// ══════════════════════════════════════════════════════════════
+let lcCameraStream = null;
+let lcGlossBuffer = [];
+let lcParagraphText = '';
+let lcActive = false;
+let lcSelectedDomain = 'doctor_visit';
+let lcSelectedScenario = 'Doctor Visit';
+let lcHistory = [];
+const LC_BUFFER_THRESHOLD = 4;
+
+function uploadDomainChanged() {
+    const select = document.getElementById('uploadDomainSelect');
+    if (select) {
+        lcSelectedDomain = select.value;
+        lcSelectedScenario = select.options[select.selectedIndex].textContent;
+    }
+}
+
+// Legacy compat — no longer used since upload is inline with dropdown
+function selectLiveCaptionsScenario(domain, scenarioName) {
+    lcSelectedDomain = domain;
+    lcSelectedScenario = scenarioName;
+    navigateTo('upload');
+}
+
+// ══════════════════════════════════════════════════════════════
+// CAPTION VIDEO -- Upload, poll, download
+// ══════════════════════════════════════════════════════════════
+let cvJobId = null;
+let cvPollInterval = null;
+
+function cvHandleDrop(e) {
+    e.preventDefault();
+    document.getElementById('cvUploadZone').style.borderColor = '#d0c4b0';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) cvHandleFile(file);
+}
+
+async function cvHandleFile(file) {
+    if (!file) return;
+    cvReset();
+
+    document.getElementById('cvUploadZone').style.display = 'none';
+    document.getElementById('cvProgress').style.display = 'block';
+    document.getElementById('cvFileName').textContent = file.name;
+    document.getElementById('cvProgressPct').textContent = '0%';
+    document.getElementById('cvProgressBar').style.width = '0%';
+    document.getElementById('cvStatusMsg').textContent = 'Uploading...';
+
+    const form = new FormData();
+    form.append('video', file);
+    let resp;
+    try {
+        resp = await fetch('/api/caption-video', { method: 'POST', body: form });
+    } catch (e) {
+        cvShowError('Upload failed: ' + e.message);
+        showToast('Video upload failed', 'error');
+        return;
+    }
+    const data = await resp.json();
+    if (!data.success) { cvShowError(data.error || 'Upload failed'); return; }
+
+    cvJobId = data.job_id;
+    document.getElementById('cvStatusMsg').textContent = 'Pipeline starting...';
+    document.getElementById('cvProgressBar').style.width = '5%';
+    document.getElementById('cvProgressPct').textContent = '5%';
+
+    cvPollInterval = setInterval(cvPollStatus, 2000);
+}
+
+async function cvPollStatus() {
+    if (!cvJobId) return;
+    try {
+        const resp = await fetch(`/api/caption-video/${cvJobId}`);
+        const job = await resp.json();
+        if (!job.success) return;
+
+        const pct = job.progress || 0;
+        document.getElementById('cvProgressBar').style.width = pct + '%';
+        document.getElementById('cvProgressPct').textContent = pct + '%';
+        document.getElementById('cvStatusMsg').textContent = job.message || '';
+
+        if (job.status === 'done') {
+            clearInterval(cvPollInterval);
+            cvShowResult();
+            showToast('Video captioning complete!', 'success');
+        } else if (job.status === 'error') {
+            clearInterval(cvPollInterval);
+            cvShowError(job.message || 'Pipeline error');
+            showToast('Captioning pipeline error', 'error');
+        }
+    } catch (e) {
+        console.warn('[CaptionVideo] Poll error:', e);
+    }
+}
+
+function cvShowResult() {
+    document.getElementById('cvProgress').style.display = 'none';
+    document.getElementById('cvResult').style.display = 'block';
+
+    const videoUrl = `/api/caption-video/${cvJobId}/download`;
+    fetch(videoUrl)
+        .then(r => r.blob())
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const vid = document.getElementById('cvResultVideo');
+            vid.src = url;
+
+            const btn = document.getElementById('cvDownloadBtn');
+            btn.onclick = () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'captioned.mp4';
+                a.click();
+            };
+        });
+}
+
+function cvShowError(msg) {
+    document.getElementById('cvProgress').style.display = 'block';
+    document.getElementById('cvStatusMsg').textContent = '\u2717 Error: ' + msg;
+    document.getElementById('cvStatusMsg').style.color = '#f07070';
+}
+
+function cvReset() {
+    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
+    cvJobId = null;
+    document.getElementById('cvUploadZone').style.display = 'block';
+    document.getElementById('cvProgress').style.display = 'none';
+    document.getElementById('cvResult').style.display = 'none';
+    document.getElementById('cvStatusMsg').style.color = '';
+    const vid = document.getElementById('cvResultVideo');
+    if (vid.src) { URL.revokeObjectURL(vid.src); vid.src = ''; }
+    document.getElementById('cvFileInput').value = '';
+}
+
+function showHomeScreen(skipPush) {
+    // Auto-save conversation (live mode only, if enabled)
+    if (history.length > 0 && MODE === 'live') {
+        const profile = loadProfile();
+        if (profile.saveHistory !== false) {
+            saveConversation();
+        }
+    }
+    isPlaying = false;
+    cancelAllSleeps();
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    if (signVid) { signVid.pause(); signVid.removeAttribute('src'); signVid.style.display = 'none'; }
+    if (liveRecognition) { try { liveRecognition.abort(); } catch(e) {} liveRecognition = null; }
+
+    // Hide all secondary screens
+    document.getElementById('phaseConvo').style.display = 'none';
+    document.getElementById('phaseLiveDemo').style.display = 'none';
+    document.getElementById('phaseBreakdown').style.display = 'none';
+    document.getElementById('historyScreen').style.display = 'none';
+
+    // Restore home content via current tab
+    const hs = document.querySelector('.home-screen');
+    if (hs) hs.style.display = '';
+
+    if (liveDemoCameraStream) {
+        liveDemoCameraStream.getTracks().forEach(t => t.stop());
+        liveDemoCameraStream = null;
+    }
+    // Clean up practice camera if active
+    if (practiceCameraStream) {
+        practiceCameraStream.getTracks().forEach(t => t.stop());
+        practiceCameraStream = null;
+    }
+    if (cvPollInterval) { clearInterval(cvPollInterval); cvPollInterval = null; }
+    unlockHeaderToggles();
+    updateSubTabVisibility();
+    document.getElementById('vocabPanel').style.display = 'none';
+    document.getElementById('vocabChips').classList.remove('open');
+    document.getElementById('vocabToggleBtn').classList.remove('open');
+    if (transcriptCollapsed) toggleTranscript();
+    btnRestart.click();
+
+    if (!skipPush) pushRoute('home');
+}
+
+// DOM
+const btnStart = document.getElementById('btnStart');
+const btnRestart = document.getElementById('btnRestart');
+const transcriptMsgs = document.getElementById('transcriptMsgs');
+const cameraFeed = document.getElementById('cameraFeed');
+const cameraPlaceholder = document.getElementById('cameraPlaceholder');
+const statusBar = document.getElementById('statusBar');
+const recBadge = document.getElementById('recBadge');
+const recBorder = document.getElementById('recBorder');
+const cameraView = document.getElementById('cameraView');
+
+// Sign video overlay element
+const signVid = document.createElement('video');
+signVid.muted = true;
+signVid.playsInline = true;
+signVid.setAttribute('webkit-playsinline', '');
+signVid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:4;background:#0a0a14;display:none;';
+cameraView.appendChild(signVid);
+
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+let _sleepTimers = [];
+const sleep = ms => new Promise(r => {
+    const id = setTimeout(r, ms);
+    _sleepTimers.push(id);
+});
+function cancelAllSleeps() {
+    _sleepTimers.forEach(id => clearTimeout(id));
+    _sleepTimers = [];
+}
+
+function isLLMSentenceValid(llmSentence, glosses, hardcoded) {
+    if (!llmSentence || llmSentence.length === 0 || llmSentence.length > 150) return false;
+
+    const lower = llmSentence.toLowerCase();
+
+    const glossRoots = {
+        'meet': ['meet', 'meeting'],
+        'doctor': ['doctor', 'dr'],
+        'son': ['son'],
+        'bed': ['bed'],
+        'time': ['time'],
+        'work': ['work', 'works', 'working'],
+        'full': ['full'],
+        'enjoy': ['enjoy', 'enjoys', 'enjoyed'],
+        'go': ['go', 'goes', 'going'],
+        'cook': ['cook', 'cooking', 'cooks'],
+        'chair': ['chair', 'sit', 'sits', 'seat'],
+        'tall': ['tall'],
+        'finish': ['finish', 'finished', 'done'],
+        'what': ['what'],
+        'black': ['black']
+    };
+
+    let matched = 0;
+    for (const g of glosses) {
+        const variants = glossRoots[g] || [g];
+        if (variants.some(v => lower.includes(v))) matched++;
+    }
+
+    if (matched < Math.ceil(glosses.length / 2)) return false;
+
+    const hardcodedWords = hardcoded.toLowerCase().split(/\s+/);
+    const keyWords = hardcodedWords.filter(w => w.length > 3 && !['that', 'this', 'have', 'been', 'with', 'from', 'here', 'will', 'does', 'them', 'their', 'your', "it's", "he's"].includes(w));
+    if (keyWords.length > 0) {
+        const keyMatched = keyWords.some(w => lower.includes(w));
+        if (!keyMatched) return false;
+    }
+
+    const llmIsQuestion = llmSentence.includes('?');
+    const hardcodedIsQuestion = hardcoded.includes('?');
+    if (llmIsQuestion !== hardcodedIsQuestion) return false;
+
+    return true;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CAMERA (with 1.5 permission modal)
+// ══════════════════════════════════════════════════════════════
+
+// Adapt the camera-view container's aspect ratio to match the actual video's
+// native resolution. Makes portrait video (iPhone vertical) show tall, and
+// landscape video (laptop/iPad horizontal) show wide, so hands stay in frame.
+// Re-apply aspect when orientation/window size changes (phone rotation)
+window.addEventListener('resize', () => {
+    const cf = document.getElementById('cameraFeed');
+    if (cf && cf.videoWidth) _applyCameraAspect(cf);
+});
+
+function _applyCameraAspect(videoEl) {
+    if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) return;
+    const view = videoEl.closest('.camera-view');
+    if (!view) return;
+    const isMobilePhone = window.matchMedia('(max-width: 640px)').matches;
+    if (isMobilePhone) {
+        // On phones, force portrait 9:16 regardless of what the camera delivers.
+        // object-fit: cover on the video will fill the box, cropping sides.
+        view.style.aspectRatio = '9 / 16';
+        view.style.maxHeight = '65vh';
+        view.style.minHeight = '';
+        // Override object-fit to cover for mobile so the video fills the box
+        videoEl.style.objectFit = 'cover';
+    } else {
+        view.style.aspectRatio = `${videoEl.videoWidth} / ${videoEl.videoHeight}`;
+        view.style.maxHeight = '';
+        view.style.minHeight = '';
+        videoEl.style.objectFit = '';
+    }
+    console.log(`[Camera] View set to ${view.style.aspectRatio}, video native=${videoEl.videoWidth}x${videoEl.videoHeight}`);
+}
+
+async function startCamera() {
+    try {
+        if (externalCameraUrl) {
+            // ── External camera (MJPEG via canvas bridge) ──
+            await startExternalCamera(externalCameraUrl);
+        } else {
+            // ── Local device camera ──
+            const needsAudio = (MODE === 'live' && METHOD === 'sign');
+            cameraStream = await requestCameraWithPrompt(needsAudio);
+
+            if (!cameraStream) {
+                cameraPlaceholder.style.display = 'block';
+                cameraPlaceholder.style.color = '#ff6666';
+                cameraPlaceholder.textContent = 'Camera access was denied or skipped';
+                return;
+            }
+        }
+
+        const pipSelf = document.getElementById('pipSelf');
+        const pipFeed = document.getElementById('pipFeed');
+        const pipLabel = document.getElementById('pipLabel');
+        const cameraTitle = document.querySelector('.camera-title');
+
+        if (interactionMode === 'in-person') {
+            cameraFeed.srcObject = cameraStream;
+            cameraFeed.style.display = 'block';
+            cameraPlaceholder.style.display = 'none';
+            pipSelf.style.display = 'none';
+            cameraTitle.textContent = externalCameraUrl ? 'WiFi Camera' : 'Your Camera';
+            // Adapt camera-view container to the actual video aspect (portrait vs landscape)
+            const applyAspect = () => _applyCameraAspect(cameraFeed);
+            cameraFeed.removeEventListener('loadedmetadata', cameraFeed._aspectHandler || (() => {}));
+            cameraFeed._aspectHandler = applyAspect;
+            cameraFeed.addEventListener('loadedmetadata', applyAspect);
+            if (cameraFeed.videoWidth) applyAspect();
+        } else {
+            cameraFeed.srcObject = cameraStream;
+            cameraPlaceholder.textContent = MODE === 'demo' ? 'Waiting for signer...' : 'Waiting for remote feed...';
+            cameraPlaceholder.style.color = '#555';
+            cameraPlaceholder.style.display = 'block';
+
+            pipSelf.style.display = 'block';
+            pipLabel.textContent = METHOD === 'speak' ? 'You (Speaker)' : 'You (Signer)';
+            pipFeed.srcObject = cameraStream;
+            pipFeed.onloadedmetadata = () => {
+                pipFeed.play().catch(() => {});
+            };
+            cameraTitle.textContent = METHOD === 'speak' ? 'Signer View' : 'Speaker View';
+        }
+    } catch (e) {
+        console.error('[Camera] Failed:', e.name, e.message);
+        cameraPlaceholder.style.display = 'block';
+        cameraPlaceholder.style.color = '#ff6666';
+        cameraPlaceholder.textContent = 'Camera failed \u2014 ' + (e.message || 'check connection');
+        showToast('Camera failed: ' + (e.message || 'Unknown error'), 'error');
+    }
+}
+
+// ── Canvas bridge: MJPEG stream → MediaStream ──
+async function startExternalCamera(mjpegUrl) {
+    stopExternalCamera(); // clean up any previous
+
+    // Still acquire mic for speech-to-text
+    try {
+        const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        // Keep audio tracks available for speech recognition
+        // (Web Speech API uses system mic independently, but this ensures permission is granted)
+        audioStream.getTracks(); // just hold reference
+    } catch (e) {
+        console.warn('[Camera] Mic access denied — speech-to-text may not work:', e.message);
+    }
+
+    // Route through Flask proxy to avoid mixed-content (HTTPS page → HTTP camera)
+    const proxyUrl = '/api/camera-proxy?url=' + encodeURIComponent(mjpegUrl);
+
+    return new Promise((resolve, reject) => {
+        externalCameraImg = new Image();
+        externalCameraImg.crossOrigin = 'anonymous';
+
+        externalCameraCanvas = document.createElement('canvas');
+        const ctx = externalCameraCanvas.getContext('2d');
+        let dimensionsSet = false;
+
+        externalCameraImg.onload = () => {
+            if (!dimensionsSet) {
+                // Set canvas to match camera resolution
+                externalCameraCanvas.width = externalCameraImg.naturalWidth || 640;
+                externalCameraCanvas.height = externalCameraImg.naturalHeight || 480;
+                dimensionsSet = true;
+
+                // Start draw loop at ~15fps
+                externalCameraInterval = setInterval(() => {
+                    if (externalCameraImg && externalCameraImg.complete) {
+                        ctx.drawImage(externalCameraImg, 0, 0);
+                    }
+                }, 67);
+
+                // Capture canvas as MediaStream
+                cameraStream = externalCameraCanvas.captureStream(15);
+                console.log(`[Camera] External camera connected: ${mjpegUrl} (${externalCameraCanvas.width}x${externalCameraCanvas.height})`);
+                resolve();
+            }
+        };
+
+        externalCameraImg.onerror = () => {
+            reject(new Error('Could not connect to camera at ' + mjpegUrl));
+        };
+
+        // Timeout if camera doesn't respond in 8 seconds
+        setTimeout(() => {
+            if (!dimensionsSet) {
+                reject(new Error('Camera connection timed out'));
+            }
+        }, 8000);
+
+        externalCameraImg.src = proxyUrl;
+    });
+}
+
+function stopExternalCamera() {
+    if (externalCameraInterval) {
+        clearInterval(externalCameraInterval);
+        externalCameraInterval = null;
+    }
+    if (externalCameraImg) {
+        externalCameraImg.src = '';
+        externalCameraImg = null;
+    }
+    externalCameraCanvas = null;
+}
+
+function stopCamera() {
+    stopExternalCamera();
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+    }
+    const pipSelf = document.getElementById('pipSelf');
+    if (pipSelf) pipSelf.style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// TEXT-TO-SPEECH
+// ══════════════════════════════════════════════════════════════
+function speak(text) {
+    return new Promise(resolve => {
+        if (!('speechSynthesis' in window)) { resolve(); return; }
+
+        function doSpeak() {
+            speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = 0.95;
+            u.pitch = 1.3;
+            const voices = speechSynthesis.getVoices();
+            const preferred = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang) && !/female/i.test(v.name))
+                || voices.find(v => /David|Mark|James|Daniel|Guy/i.test(v.name))
+                || voices.find(v => /en/i.test(v.lang) && !/female|zira|hazel|susan|jenny/i.test(v.name));
+            if (preferred) u.voice = preferred;
+            const timeout = setTimeout(() => { speechSynthesis.cancel(); resolve(); },
+                Math.max(text.split(' ').length * 500, 2500) + 3000);
+            u.onend = () => { clearTimeout(timeout); resolve(); };
+            u.onerror = () => { clearTimeout(timeout); resolve(); };
+            speechSynthesis.speak(u);
+        }
+
+        if (speechSynthesis.getVoices().length > 0) {
+            doSpeak();
+        } else {
+            speechSynthesis.onvoiceschanged = () => { doSpeak(); };
+            setTimeout(() => { doSpeak(); }, 500);
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SPEECH RECOGNITION
+// ══════════════════════════════════════════════════════════════
+function listenForSpeech(expectedText) {
+    return new Promise(resolve => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            const hint = statusBar.querySelector('.script-hint');
+            if (hint) hint.textContent = 'Tap here when done speaking';
+            function onClick() {
+                statusBar.removeEventListener('click', onClick);
+                resolve(expectedText);
+            }
+            statusBar.addEventListener('click', onClick);
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        let finalResult = '';
+        let resolved = false;
+
+        const timeout = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                recognition.stop();
+                resolve(finalResult || expectedText);
+            }
+        }, 15000);
+
+        recognition.onresult = (event) => {
+            let interim = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalResult += transcript;
+                } else {
+                    interim = transcript;
+                }
+            }
+            const display = finalResult || interim;
+            if (display) {
+                const hint = statusBar.querySelector('.script-hint');
+                if (hint) hint.innerHTML = '<span class="listening-indicator"></span>Hearing: "' + display + '"';
+            }
+        };
+
+        recognition.onend = () => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                resolve(finalResult || expectedText);
+            }
+        };
+
+        recognition.onerror = () => {
+            if (!resolved) {
+                resolved = true;
+                clearTimeout(timeout);
+                resolve(expectedText);
+            }
+        };
+
+        recognition.start();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIGN VIDEO PLAYBACK
+// ══════════════════════════════════════════════════════════════
+function playSignVideo(url) {
+    return new Promise(resolve => {
+        if (!isPlaying && !liveActive) { resolve(false); return; }
+        let done = false;
+        function finish(r) {
+            if (done) return;
+            done = true;
+            signVid.onended = null;
+            signVid.onerror = null;
+            signVid.onloadeddata = null;
+            signVid.onpause = null;
+            clearTimeout(to);
+            resolve(r);
+        }
+
+        signVid.pause();
+        signVid.onended = null;
+        signVid.onerror = null;
+        signVid.onloadeddata = null;
+
+        const to = setTimeout(() => finish(false), 5000);
+        signVid.onpause = () => { if (!isPlaying && !liveActive) finish(false); };
+
+        signVid.onerror = () => finish(false);
+        signVid.onloadedmetadata = () => {
+            clearTimeout(to);
+            const dynamicTimeout = Math.max((signVid.duration || 5) * 1000 + 3000, 5000);
+            const to2 = setTimeout(() => finish(false), dynamicTimeout);
+            const origFinish = finish;
+            finish = (r) => { clearTimeout(to2); origFinish(r); };
+        };
+        signVid.onloadeddata = () => {
+            signVid.onloadeddata = null;
+            signVid.onended = () => finish(true);
+            signVid.play().catch(() => finish(false));
+        };
+
+        signVid.style.display = 'block';
+        signVid.src = url;
+        signVid.load();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// Init sub-tab visibility on page load
+updateSubTabVisibility();
+
+// ══════════════════════════════════════════════════════════════
+// LOAD DATA (always load demo conversation so it's ready when needed)
+// ══════════════════════════════════════════════════════════════
+(async function loadConversation() {
+    try {
+        const resp = await fetch('/api/conversation');
+        conversation = await resp.json();
+        btnStart.disabled = false;
+    } catch (e) {
+        console.warn('[Demo] Could not load conversation data:', e);
+    }
+})();
+
+// ══════════════════════════════════════════════════════════════
+// CONVERSATION FLOW -- DEMO MODE
+// ══════════════════════════════════════════════════════════════
+btnStart.addEventListener('click', async () => {
+    btnStart.disabled = true;
+    btnRestart.style.display = 'inline-block';
+    history = [];
+
+    if ('speechSynthesis' in window) {
+        const warmup = new SpeechSynthesisUtterance('');
+        warmup.volume = 0;
+        speechSynthesis.speak(warmup);
+    }
+
+    if (MODE === 'live') {
+        await startLiveMode();
+        return;
+    }
+
+    if (!conversation) return;
+    currentTurn = 0;
+    isPlaying = true;
+
+    await startCamera();
+    playNextTurn();
+});
+
+btnRestart.addEventListener('click', () => {
+    currentTurn = 0;
+    history = [];
+    isPlaying = false;
+    transcriptMsgs.innerHTML = '';
+    btnStart.disabled = false;
+    btnRestart.style.display = 'none';
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    signVid.style.display = 'none';
+    document.getElementById('btnHowItWorks').style.display = 'none';
+    statusBar.innerHTML = '<span class="prompt">Press "Start" to begin the conversation</span>';
+    stopLiveMode();
+    stopCamera();
+    cameraFeed.style.display = 'none';
+    cameraPlaceholder.style.display = '';
+    cameraPlaceholder.textContent = 'Camera will start when you begin';
+
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+    if (btnRecordSign) btnRecordSign.style.display = 'none';
+    if (btnSendMessage) btnSendMessage.style.display = 'none';
+    const btnSpeakSend = document.getElementById('btnSpeakSend');
+    if (btnSpeakSend) btnSpeakSend.style.display = 'none';
+
+    // Reset countdown
+    const countdown = document.getElementById('recCountdown');
+    if (countdown) countdown.classList.remove('on');
+});
+
+async function playNextTurn() {
+    if (currentTurn >= conversation.turns.length || !isPlaying) {
+        if (isPlaying) {
+            statusBar.innerHTML = '<span class="sentence">Conversation complete!</span>';
+            stopCamera();
+            if (MODE === 'demo') {
+                document.getElementById('btnHowItWorks').style.display = 'inline-block';
+            }
+        }
+        return;
+    }
+
+    const turn = conversation.turns[currentTurn];
+    if (turn.speaker === 'doctor') {
+        await playDoctorTurnDemo(turn);
+    } else {
+        await playPatientTurnDemo(turn);
+    }
+
+    if (!isPlaying) return;
+    currentTurn++;
+    await sleep(600);
+    if (!isPlaying) return;
+    playNextTurn();
+}
+
+async function playDoctorTurnDemo(turn) {
+    if (!isPlaying) return;
+    signVid.style.display = 'none';
+
+    if (METHOD === 'sign') {
+        statusBar.innerHTML = `
+            <div class="doctor-script">
+                <div class="script-label">Speaker says:</div>
+                <div class="script-line">"${turn.text}"</div>
+            </div>`;
+        addMsg('doctor', SPEAKER_LABEL, turn.text);
+        history.push({ speaker: 'doctor', text: turn.text });
+        await sleep(Math.max(turn.text.split(' ').length * 400, 2000));
+        return;
+    }
+
+    const hasSpeechRec = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const hintText = hasSpeechRec
+        ? '<span class="listening-indicator"></span>Listening...'
+        : 'Tap here when done speaking';
+
+    statusBar.innerHTML = `
+        <div class="doctor-script">
+            <div class="script-label">Read this line aloud:</div>
+            <div class="script-line">"${turn.text}"</div>
+            <div class="script-hint">${hintText}</div>
+        </div>`;
+
+    const recognized = await listenForSpeech(turn.text);
+    const displayText = recognized.trim() || turn.text;
+    addMsg('doctor', SPEAKER_LABEL, displayText);
+    history.push({ speaker: 'doctor', text: turn.text });
+}
+
+// ══════════════════════════════════════════════════════════════
+// LIVE MODE -- Free-form conversation
+// ══════════════════════════════════════════════════════════════
+let liveRecognition = null;
+let liveActive = false;
+let liveCollectedGlosses = [];
+let isRecordingSign = false;
+let signSegmenter = null;  // Phase 1+2: real-time sign segmenter
+let poseOverlay = null;    // Real-time skeleton overlay
+
+async function startLiveMode() {
+    liveActive = true;
+    await startCamera();
+
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+
+    if (METHOD === 'sign') {
+        // Manual tap-to-record: tap to start recording a sign, tap to stop
+        // Much more reliable than auto-segmentation for now
+        liveCollectedGlosses = [];
+
+        if (btnRecordSign) {
+            btnRecordSign.style.display = 'inline-block';
+            btnRecordSign.textContent = 'Record Signs';
+            btnRecordSign.style.background = '#b07cf0';
+            btnRecordSign.onclick = () => tapToSign();
+        }
+        if (btnSendMessage) {
+            btnSendMessage.style.display = 'none';
+            btnSendMessage.textContent = 'Send Now \u27A4';
+            btnSendMessage.style.background = '#4caf80';
+            btnSendMessage.onclick = () => sendSignMessage();
+        }
+
+        statusBar.innerHTML = '<span class="processing">Tap "Record Signs" \u2014 sign your message for 10 seconds</span>';
+
+        // Start segmenter in track-only mode (hand landmarks for pose overlay, no recording)
+        try {
+            const seg = await ensureSegmenter();
+            if (cameraStream) {
+                seg.start(cameraStream, true);  // trackOnly=true
+                console.log('[Live] Segmenter started (track-only for hand overlay)');
+            }
+        } catch (e) {
+            console.warn('[Live] Segmenter init failed:', e.message);
+        }
+    } else {
+        // Speaker mode
+        const speakHint = SPEAK_MODE_TRANSLATE_TO_ASL
+            ? 'Speak naturally \u2014 your words will be converted to ASL glosses'
+            : 'Speak naturally \u2014 your words will appear as text for the signer';
+        statusBar.innerHTML = `<span class="prompt"><span class="listening-indicator"></span>${speakHint}</span>`;
+        startContinuousListeningForSpeaker();
+
+        const btnSpeakSend = document.getElementById('btnSpeakSend');
+        if (btnSpeakSend) {
+            btnSpeakSend.style.display = 'inline-block';
+            btnSpeakSend.onclick = () => sendSpeakerMessage();
+        }
+    }
+
+    // Mode switch button removed — was covering the camera view
+    kioskResetIdleTimer();
+}
+
+function stopLiveMode() {
+    liveActive = false;
+    continuousRecording = false;
+    liveCollectedGlosses = [];
+    isRecordingSign = false;
+    speakerBuffer = '';
+    if (signSegmenter) {
+        signSegmenter.stop();
+    }
+    if (poseOverlay) {
+        poseOverlay.stop();
+    }
+    if (liveRecognition) {
+        try { liveRecognition.stop(); } catch(e) {}
+        liveRecognition = null;
+    }
+    const btnSpeakSend = document.getElementById('btnSpeakSend');
+    if (btnSpeakSend) btnSpeakSend.style.display = 'none';
+}
+
+// ── Speaker mode: speech recognition → English → ASL glosses ──
+let speakerBuffer = '';
+
+function startContinuousListeningForSpeaker() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        statusBar.innerHTML = '<span class="prompt">Speech recognition not available in this browser</span>';
+        showToast('Speech recognition not available', 'warn');
+        return;
+    }
+
+    liveRecognition = new SpeechRecognition();
+    liveRecognition.lang = 'en-US';
+    liveRecognition.interimResults = true;
+    liveRecognition.continuous = true;
+    liveRecognition.maxAlternatives = 1;
+
+    liveRecognition.onresult = (event) => {
+        let interim = '';
+        let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalText += transcript;
+            } else {
+                interim = transcript;
+            }
+        }
+
+        // Show what the user is saying in real time
+        const displayText = speakerBuffer + (speakerBuffer ? ' ' : '') + (finalText || interim);
+        if (displayText.trim()) {
+            statusBar.innerHTML = `<span class="processing"><span class="listening-indicator"></span>${displayText}</span>`;
+        }
+
+        if (finalText.trim()) {
+            speakerBuffer += (speakerBuffer ? ' ' : '') + finalText.trim();
+            // Show "Send to Signer" button prominently
+            const btnSpeakSend = document.getElementById('btnSpeakSend');
+            if (btnSpeakSend) btnSpeakSend.style.display = 'inline-block';
+        }
+    };
+
+    liveRecognition.onend = () => {
+        if (liveActive) {
+            setTimeout(() => {
+                if (liveActive) {
+                    try { liveRecognition.start(); } catch(e) {}
+                }
+            }, 300);
+        }
+    };
+
+    liveRecognition.onerror = (e) => {
+        if (e.error === 'aborted') return;
+    };
+
+    try {
+        liveRecognition.start();
+    } catch(e) {
+        console.error('[Speaker] Could not start recognition:', e);
+    }
+}
+
+async function sendSpeakerMessage() {
+    kioskResetIdleTimer();
+    if (!speakerBuffer.trim()) {
+        showToast('Say something first, then click Send', 'info');
+        return;
+    }
+
+    const text = speakerBuffer.trim();
+    speakerBuffer = '';
+
+    const btnSpeakSend = document.getElementById('btnSpeakSend');
+    btnSpeakSend.disabled = true;
+
+    // Add speaker's message to transcript
+    addMsg('doctor', 'Speaker', text);
+    history.push({ speaker: 'doctor', text });
+
+    if (SPEAK_MODE_TRANSLATE_TO_ASL) {
+        // Full ASL translation: English → glosses → sign bank videos
+        btnSpeakSend.innerHTML = '<span class="spinner"></span> Converting...';
+        statusBar.innerHTML = '<span class="processing">Converting to ASL glosses... <span class="spinner"></span></span>';
+
+        try {
+            const resp = await fetch('/api/english-to-glosses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text,
+                    domain: selectedDomain,
+                    conversation_history: history,
+                }),
+            });
+
+            if (!resp.ok) {
+                const errText = await resp.text().catch(() => '');
+                throw new Error(`Server ${resp.status}: ${errText.substring(0, 200)}`);
+            }
+
+            const result = await resp.json();
+
+            if (result.success && result.glosses.length > 0) {
+                const glosses = result.glosses;
+                const videos = result.sign_videos || {};
+
+                statusBar.innerHTML = `<span class="gloss">ASL: ${glosses.join(' ')}</span>`;
+                addMsg('patient', 'ASL Translation', glosses.join(' '));
+                history.push({ speaker: 'patient', text: glosses.join(' ') });
+
+                for (const gloss of glosses) {
+                    const videoUrl = videos[gloss];
+                    if (videoUrl && liveActive) {
+                        await playSignVideo(videoUrl);
+                        if (!liveActive) break;
+                        signVid.style.display = 'none';
+                        await sleep(200);
+                    }
+                }
+            } else {
+                statusBar.innerHTML = '<span class="sentence">Could not convert \u2014 no matching glosses found</span>';
+                showToast(result.error || 'No glosses found for this sentence', 'warn');
+            }
+        } catch (e) {
+            console.error('[Speaker] Error:', e);
+            statusBar.innerHTML = '<span class="sentence">Error converting to ASL</span>';
+            showToast('Failed to convert: ' + (e.message || 'check server logs'), 'error');
+        }
+    } else {
+        // Speech-to-text only: deaf user reads English directly
+        btnSpeakSend.innerHTML = '<span class="spinner"></span> Sending...';
+        statusBar.innerHTML = `<span class="sentence">${text}</span>`;
+    }
+
+    btnSpeakSend.disabled = false;
+    btnSpeakSend.innerHTML = '&#x1F399; Send to Signer';
+
+    await sleep(2000);
+    if (liveActive) {
+        const hint = SPEAK_MODE_TRANSLATE_TO_ASL
+            ? 'Speak naturally \u2014 your words will be converted to ASL glosses'
+            : 'Speak naturally \u2014 your words will appear as text for the signer';
+        statusBar.innerHTML = `<span class="prompt"><span class="listening-indicator"></span>${hint}</span>`;
+    }
+}
+
+// ── Signer mode: continuous speech recognition for ambient speaker capture ──
+function startContinuousListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        statusBar.innerHTML = '<span class="prompt">Speech recognition not available \u2014 speaker text won\'t be captured</span>';
+        showToast('Speech recognition not available in this browser', 'warn');
+        return;
+    }
+
+    liveRecognition = new SpeechRecognition();
+    liveRecognition.lang = 'en-US';
+    liveRecognition.interimResults = true;
+    liveRecognition.continuous = true;
+    liveRecognition.maxAlternatives = 1;
+
+    liveRecognition.onresult = (event) => {
+        let interim = '';
+        let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalText += transcript;
+            } else {
+                interim = transcript;
+            }
+        }
+
+        if (!isRecordingSign) {
+            if (interim) {
+                statusBar.innerHTML = `<span class="processing"><span class="listening-indicator"></span>${interim}</span>`;
+            }
+        }
+
+        if (finalText.trim()) {
+            const text = finalText.trim();
+            addMsg('doctor', SPEAKER_LABEL, text);
+            history.push({ speaker: 'doctor', text: text });
+
+            if (!isRecordingSign) {
+                statusBar.innerHTML = `
+                    <div class="doctor-script">
+                        <div class="script-label">Speaker said:</div>
+                        <div class="script-line">"${text}"</div>
+                    </div>`;
+                setTimeout(() => {
+                    if (liveActive && !isRecordingSign) {
+                        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
+                    }
+                }, 4000);
+            }
+        }
+    };
+
+    liveRecognition.onend = () => {
+        if (liveActive) {
+            setTimeout(() => {
+                if (liveActive) {
+                    try { liveRecognition.start(); } catch(e) {}
+                }
+            }, 300);
+        }
+    };
+
+    liveRecognition.onerror = (e) => {
+        if (e.error === 'aborted') return;
+    };
+
+    try {
+        liveRecognition.start();
+    } catch(e) {
+        console.error('[Live] Could not start recognition:', e);
+    }
+}
+
+// ── Recording with segmentation (Phase 1+2) ──
+let continuousRecording = false;
+let pendingSend = false;
+let recCountdownInterval = null;
+
+function updateRecCountdown(remaining) {
+    const el = document.getElementById('recCountdown');
+    if (!el) return;
+    if (remaining > 0) {
+        el.classList.add('on');
+        el.innerHTML = `<span class="rec-dot"></span> ${(remaining / 1000).toFixed(1)}s`;
+    } else {
+        el.classList.remove('on');
+    }
+}
+
+// Initialize the sign segmenter (called once when first needed)
+async function ensureSegmenter() {
+    if (signSegmenter) return signSegmenter;
+
+    signSegmenter = new SignSegmenter({
+        restVelocityThreshold: 0.012,
+        minSignDurationMs: 400,
+        maxSignDurationMs: 4000,
+        restDurationMs: 300,
+        slidingWindowMs: 2500,
+        confidenceThreshold: 0.15,
+        deduplicateConsecutive: true,
+        autoSendDelayMs: 3000,
+    });
+
+    const videoEl = document.getElementById('cameraFeed');
+    await signSegmenter.init(videoEl);
+
+    // Wire up: when a sign is captured, send to inference API
+    signSegmenter.onSignCaptured = async (videoBlob, metadata) => {
+        const formData = new FormData();
+        formData.append('video', videoBlob, 'sign.webm');
+        formData.append('domain', selectedDomain);
+
+        try {
+            const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
+            const result = await resp.json();
+            if (result.success) {
+                console.log(`[Segmenter] Detected: ${result.gloss} (${(result.confidence * 100).toFixed(1)}%) ${metadata.isFallback ? '[fallback]' : ''} dur=${metadata.durationMs}ms`);
+            }
+            return result;
+        } catch (e) {
+            console.error('[Segmenter] Inference error:', e);
+            showToast('Sign inference failed \u2014 is the inference API running?', 'error');
+            return null;
+        }
+    };
+
+    // Wire up: state changes update the UI
+    signSegmenter.onStateChange = (state, info) => {
+        if (!liveActive) return;
+
+        const glosses = signSegmenter.getCollectedGlosses();
+        const detected = glosses.map(p => p.gloss.toUpperCase()).join(' ');
+        const btnSendMessage = document.getElementById('btnSendMessage');
+
+        updateDebugPanel({ state, signs: glosses.length });
+
+        // Show/hide Send Now button based on whether we have glosses
+        if (btnSendMessage) {
+            btnSendMessage.style.display = glosses.length > 0 ? 'inline-block' : 'none';
+        }
+
+        switch (state) {
+            case 'signing':
+                recBadge.classList.add('on');
+                recBorder.classList.add('on');
+                statusBar.innerHTML = '<span class="processing">Signing...' +
+                    (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
+                    '</span>';
+                break;
+            case 'analyzing':
+                recBadge.classList.remove('on');
+                statusBar.innerHTML = '<span class="processing">Analyzing sign... <span class="spinner"></span>' +
+                    (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
+                    '</span>';
+                break;
+            case 'idle':
+                recBadge.classList.remove('on');
+                recBorder.classList.remove('on');
+                if (detected) {
+                    statusBar.innerHTML = `<span class="gloss">Signs: ${detected}</span> <span class="processing" style="font-size:0.75em">\u2014 keep signing or wait to auto-send...</span>`;
+                } else {
+                    statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+                }
+                break;
+            case 'no_hands':
+                recBadge.classList.remove('on');
+                recBorder.classList.remove('on');
+                statusBar.innerHTML = '<span class="processing" style="color:#ff9800">Hands not detected \u2014 make sure your hands are visible and well-lit</span>';
+                break;
+        }
+
+        // Sync collected glosses to the shared state
+        liveCollectedGlosses = signSegmenter.getCollectedGlosses();
+    };
+
+    // Wire up: auto-send after prolonged idle with glosses
+    signSegmenter.onReadyToSend = async (glosses) => {
+        if (!liveActive || glosses.length === 0) return;
+        console.log(`[Segmenter] Auto-sending ${glosses.length} glosses`);
+        liveCollectedGlosses = glosses;
+        await sendSignMessage();
+
+        // After sending, restart segmenter for next turn
+        if (liveActive && signSegmenter) {
+            signSegmenter.clearGlosses();
+            liveCollectedGlosses = [];
+            continuousRecording = true;
+            isRecordingSign = true;
+            signSegmenter.start(cameraStream, true);  // trackOnly — tapToSign handles recording
+            statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+        }
+    };
+
+    // Wire up: forward hand landmarks to pose overlay
+    signSegmenter.onHandLandmarks = (landmarks) => {
+        if (poseOverlay) poseOverlay.updateHandLandmarks(landmarks);
+        updateDebugPanel({ hands: landmarks.length });
+    };
+
+    signSegmenter.onVelocityUpdate = (velocity) => {
+        updateDebugPanel({ velocity });
+    };
+
+    // Initialize pose overlay (upper body + hands skeleton)
+    if (window.Pose && !poseOverlay) {
+        try {
+            const savedPref = localStorage.getItem('signbridge-pose-overlay');
+            const initiallyVisible = savedPref !== '0'; // default on
+            poseOverlay = new PoseOverlay({ visible: initiallyVisible });
+            await poseOverlay.init(videoEl);
+            poseOverlay.start();
+            const btn = document.getElementById('poseOverlayBtn');
+            if (btn) btn.classList.toggle('active', initiallyVisible);
+            console.log('[PoseOverlay] Started (visible:', initiallyVisible, ')');
+        } catch (e) {
+            console.warn('[PoseOverlay] Failed to init:', e.message);
+            poseOverlay = null;
+        }
+    }
+
+    return signSegmenter;
+}
+
+function togglePoseOverlay() {
+    if (!poseOverlay) return false;
+    const visible = poseOverlay.toggle();
+    const btn = document.getElementById('poseOverlayBtn');
+    if (btn) {
+        btn.classList.toggle('active', visible);
+        btn.title = visible ? 'Hide pose overlay' : 'Show pose overlay';
+    }
+    localStorage.setItem('signbridge-pose-overlay', visible ? '1' : '0');
+    return visible;
+}
+
+// ── Continuous sign capture via HybridSegmenter ──
+// User taps Record, signs naturally for N seconds, server auto-segments and
+// returns multiple gloss predictions per chunk.
+let signingActive = false;
+const CHUNK_RECORD_DURATION = 8000;   // seconds per chunk sent to server
+const SENTENCE_EVERY_N = 3;
+
+async function tapToSign() {
+    const btnRecordSign = document.getElementById('btnRecordSign');
+    const btnSendMessage = document.getElementById('btnSendMessage');
+
+    if (signingActive) {
+        signingActive = false;
+        btnRecordSign.textContent = 'Stopping...';
+        return;
+    }
+
+    signingActive = true;
+    liveCollectedGlosses = [];
+    btnRecordSign.textContent = 'Stop Signing';
+    btnRecordSign.style.background = '#e74c3c';
+    if (btnSendMessage) btnSendMessage.style.display = 'none';
+
+    let glossesSinceLastSentence = 0;
+
+    while (signingActive && liveActive) {
+        const detected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+
+        recBadge.classList.add('on');
+        recBorder.classList.add('on');
+        statusBar.innerHTML = (detected
+            ? `<span class="gloss">${detected}</span> <span class="processing" style="font-size:0.8em">\u2014 sign freely (${CHUNK_RECORD_DURATION/1000}s chunks auto-segmented)</span>`
+            : `<span class="processing">Sign freely \u2014 server auto-detects each sign every ${CHUNK_RECORD_DURATION/1000}s</span>`);
+
+        const blob = await recordFromCamera(CHUNK_RECORD_DURATION);
+        recBadge.classList.remove('on');
+        recBorder.classList.remove('on');
+        if (!signingActive || !blob) break;
+
+        statusBar.innerHTML = (detected
+            ? `<span class="gloss">${detected}</span> <span class="processing" style="font-size:0.8em"><span class="spinner"></span> segmenting + recognizing...</span>`
+            : '<span class="processing">Segmenting + recognizing... <span class="spinner"></span></span>');
+
+        try {
+            const formData = new FormData();
+            formData.append('video', blob, 'chunk.webm');
+            formData.append('domain', selectedDomain);
+
+            const resp = await fetch('/api/process-signing-clip', { method: 'POST', body: formData });
+            const result = await resp.json();
+            // Always update the UI with results (even if user hit Stop while we were processing)
+
+            if (result.success && result.glosses && result.glosses.length > 0) {
+                for (const g of result.glosses) {
+                    if (!g.confident) continue;   // skip unclear predictions per Stage 5
+                    const isDup = liveCollectedGlosses.length > 0 &&
+                        liveCollectedGlosses[liveCollectedGlosses.length - 1].gloss.toLowerCase() === g.gloss.toLowerCase();
+                    if (isDup) continue;
+                    liveCollectedGlosses.push({
+                        gloss: g.gloss,
+                        confidence: g.confidence,
+                        top_k: g.top_k || []
+                    });
+                    glossesSinceLastSentence++;
+                }
+                const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+                statusBar.innerHTML = `<span class="gloss" style="font-size:1.1em">${allDetected || '(no confident signs in chunk)'}</span>`;
+
+                // Auto-construct sentence every N confident glosses
+                if (glossesSinceLastSentence >= SENTENCE_EVERY_N) {
+                    glossesSinceLastSentence = 0;
+                    statusBar.innerHTML = `<span class="gloss">${allDetected}</span> <span class="processing"><span class="spinner"></span></span>`;
+                    try {
+                        const sentResp = await fetch('/api/construct-sentence-live', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                gloss_predictions: liveCollectedGlosses,
+                                conversation_history: history
+                            })
+                        });
+                        const sentResult = await sentResp.json();
+                        if (sentResult.success && sentResult.sentence) {
+                            const sentence = sentResult.sentence.trim();
+                            statusBar.innerHTML = `<span class="sentence">${sentence}</span>`;
+                            addMsg('patient', SIGNER_LABEL, sentence);
+                            history.push({ speaker: 'patient', text: sentence });
+                            if (interactionMode === 'in-person' || METHOD === 'speak') {
+                                await speak(sentence);
+                            }
+                            liveCollectedGlosses = [];
+                        }
+                    } catch (e) {
+                        console.error('[ChunkMode] LLM error:', e);
+                    }
+                }
+            } else if (result.success) {
+                statusBar.innerHTML = (detected
+                    ? `<span class="gloss">${detected}</span> <span class="processing" style="font-size:0.8em" style="color:#ff9800">no signs detected in last chunk</span>`
+                    : '<span class="processing" style="color:#ff9800">No signs detected \u2014 sign more clearly</span>');
+            } else {
+                statusBar.innerHTML = `<span class="processing" style="color:#ff6666">${result.error || 'Processing failed'}</span>`;
+            }
+        } catch (e) {
+            console.error('[ChunkMode] Error:', e);
+            if (signingActive) {
+                showToast('Processing failed \u2014 is the inference API running?', 'error');
+                break;
+            }
+        }
+
+        if (signingActive) await sleep(300);
+    }
+
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    signingActive = false;
+    btnRecordSign.textContent = 'Record Signs';
+    btnRecordSign.style.background = '#b07cf0';
+    btnRecordSign.disabled = false;
+
+    if (liveCollectedGlosses.length > 0) {
+        const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+        statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
+        if (btnSendMessage) btnSendMessage.style.display = 'inline-block';
+    } else {
+        statusBar.innerHTML = '<span class="processing">Tap "Record Signs" to start signing</span>';
+    }
+    kioskResetIdleTimer();
+}
+
+// toggleSignRecording is kept for legacy fallback mode only
+async function toggleSignRecording() {
+    await toggleSignRecordingLegacy();
+}
+
+async function sendSignMessage() {
+    if (liveCollectedGlosses.length === 0) return;
+    kioskResetIdleTimer();
+
+    // Pause segmenter during send
+    if (signSegmenter) signSegmenter.stop();
+    continuousRecording = false;
+    isRecordingSign = false;
+
+    const btnSendMessage = document.getElementById('btnSendMessage');
+    if (btnSendMessage) {
+        btnSendMessage.disabled = true;
+        btnSendMessage.textContent = 'Sending...';
+    }
+
+    statusBar.innerHTML = '<span class="processing">Constructing sentence... <span class="spinner"></span></span>';
+
+    let sentence = liveCollectedGlosses.map(p => p.gloss).join(' ');
+    try {
+        const resp = await fetch('/api/construct-sentence-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gloss_predictions: liveCollectedGlosses,
+                conversation_history: history
+            })
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) {
+            sentence = result.sentence.trim();
+        } else if (result.fallback) {
+            sentence = result.fallback;
+        }
+    } catch (e) {
+        console.error('[Live] LLM fetch error:', e);
+        showToast('LLM unavailable, using raw glosses', 'warn');
+        await sleep(500);
+    }
+
+    statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
+    addMsg('patient', SIGNER_LABEL, sentence);
+    history.push({ speaker: 'patient', text: sentence });
+
+    if (interactionMode === 'in-person' || METHOD === 'speak') {
+        await speak(sentence);
+    }
+
+    // Reset glosses
+    liveCollectedGlosses = [];
+    if (signSegmenter) signSegmenter.clearGlosses();
+
+    // Reset Send button
+    if (btnSendMessage) {
+        btnSendMessage.disabled = false;
+        btnSendMessage.textContent = 'Send Now \u27A4';
+        btnSendMessage.style.display = 'none';
+    }
+
+    // Brief pause then listen for speaker, then auto-restart segmenter
+    await sleep(1500);
+    if (liveActive) {
+        statusBar.innerHTML = '<span class="prompt"><span class="listening-indicator"></span>Listening for speaker...</span>';
+        // After a moment, re-enable signing detection
+        await sleep(2000);
+        if (liveActive) {
+            statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+            continuousRecording = true;
+            isRecordingSign = true;
+            if (signSegmenter && cameraStream) {
+                signSegmenter.start(cameraStream);
+            }
+        }
+    }
+}
+
+// Legacy timed recording — fallback if MediaPipe fails to load
+async function toggleSignRecordingLegacy() {
+    const btnRecordSign = document.getElementById('btnRecordSign');
+
+    continuousRecording = true;
+    pendingSend = false;
+    isRecordingSign = true;
+
+    while (continuousRecording && liveActive) {
+        recBadge.classList.add('on');
+        recBorder.classList.add('on');
+
+        const detected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+        statusBar.innerHTML = '<span class="processing">Recording sign...' +
+            (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
+            '</span>';
+
+        const recordDuration = 2500;
+        let countdownStart = Date.now();
+        recCountdownInterval = setInterval(() => {
+            const elapsed = Date.now() - countdownStart;
+            updateRecCountdown(Math.max(0, recordDuration - elapsed));
+        }, 100);
+
+        const videoBlob = await recordFromCamera(recordDuration);
+        clearInterval(recCountdownInterval);
+        updateRecCountdown(0);
+
+        if (!continuousRecording) break;
+
+        if (!videoBlob) {
+            statusBar.innerHTML = '<span class="processing">No video captured, retrying...</span>';
+            await sleep(500);
+            continue;
+        }
+
+        recBadge.classList.remove('on');
+        recBorder.classList.remove('on');
+        statusBar.innerHTML = '<span class="processing">Analyzing sign... <span class="spinner"></span></span>';
+
+        const formData = new FormData();
+        formData.append('video', videoBlob, 'sign.webm');
+        formData.append('domain', selectedDomain);
+
+        try {
+            const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
+            const result = await resp.json();
+
+            if (!continuousRecording) break;
+
+            if (result.success && result.confidence >= 0.15) {
+                const isDuplicate = liveCollectedGlosses.length > 0 &&
+                    liveCollectedGlosses[liveCollectedGlosses.length - 1].gloss.toLowerCase() === result.gloss.toLowerCase();
+
+                if (!isDuplicate) {
+                    liveCollectedGlosses.push({
+                        gloss: result.gloss,
+                        confidence: result.confidence,
+                        top_k: result.top_k || []
+                    });
+                    const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+                    statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
+                }
+            }
+        } catch (e) {
+            console.error('[Live] Inference error:', e);
+            showToast('Sign inference failed \u2014 is the inference API running?', 'error');
+        }
+
+        if (continuousRecording) await sleep(300);
+    }
+
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    isRecordingSign = false;
+
+    if (pendingSend && liveCollectedGlosses.length > 0) {
+        pendingSend = false;
+        await sendSignMessage();
+    } else {
+        btnRecordSign.textContent = 'Record Sign';
+        btnRecordSign.style.background = '#b07cf0';
+        btnRecordSign.disabled = false;
+        if (liveCollectedGlosses.length > 0) {
+            const allDetected = liveCollectedGlosses.map(p => p.gloss.toUpperCase()).join(' ');
+            statusBar.innerHTML = `<span class="gloss">Signs: ${allDetected}</span>`;
+        }
+    }
+}
+
+function recordFromCamera(durationMs) {
+    return new Promise(resolve => {
+        if (!cameraStream) { resolve(null); return; }
+
+        recordedChunks = [];
+        try {
+            mediaRecorder = new MediaRecorder(cameraStream, { mimeType: 'video/webm' });
+        } catch (e) {
+            try {
+                mediaRecorder = new MediaRecorder(cameraStream);
+            } catch (e2) {
+                resolve(null);
+                return;
+            }
+        }
+
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            resolve(blob.size > 0 ? blob : null);
+        };
+
+        mediaRecorder.start();
+        setTimeout(() => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        }, durationMs);
+    });
+}
+
+// ── Demo mode: play sign videos ──
+async function playPatientTurnDemo(turn) {
+    if (!isPlaying) return;
+    const glosses = turn.glosses;
+    const signs = turn.sign_videos || glosses;
+    const sampleId = turn.sentence_sample;
+
+    recBadge.classList.add('on');
+    recBorder.classList.add('on');
+    statusBar.innerHTML = '<span class="processing">Patient signing...</span>';
+
+    let usedSentenceVideo = false;
+
+    if (sampleId && isPlaying) {
+        const sampleUrl = `/samples/${sampleId}/original_video.mp4`;
+        const played = await playSignVideo(sampleUrl);
+        if (played) {
+            usedSentenceVideo = true;
+            statusBar.innerHTML = '<span class="gloss">Detected: ' + glosses.map(g => g.toUpperCase()).join(' ') + '</span>';
+        }
+    }
+
+    if (!usedSentenceVideo && isPlaying) {
+        let accumulated = [];
+        for (let i = 0; i < signs.length && isPlaying; i++) {
+            const played = await playSignVideo(`/sign-bank/${signs[i]}.mp4`);
+            if (!isPlaying) return;
+            if (!played) await sleep(1200);
+            if (!isPlaying) return;
+
+            accumulated.push(signs[i].toUpperCase());
+            statusBar.innerHTML = '<span class="gloss">Detected: ' + accumulated.join(' ') + '</span>';
+            await sleep(250);
+            if (!isPlaying) return;
+        }
+    }
+
+    if (!isPlaying) return;
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    signVid.style.display = 'none';
+    await sleep(400);
+    if (!isPlaying) return;
+
+    statusBar.innerHTML = '<span class="processing">SignBridge constructing sentence... <span class="spinner"></span></span>';
+    await sleep(600);
+    if (!isPlaying) return;
+
+    const sentence = turn.asl_sentence;
+
+    statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
+    addMsg('patient', SIGNER_LABEL, sentence);
+    history.push({ speaker: 'patient', text: sentence });
+
+    if (isPlaying && (interactionMode === 'in-person' || METHOD === 'speak')) {
+        await speak(sentence);
+    }
+    if (!isPlaying) return;
+    await sleep(800);
+}
+
+// ══════════════════════════════════════════════════════════════
+// TRANSCRIPT (1.7 — with timestamps)
+// ══════════════════════════════════════════════════════════════
+function addMsg(type, speaker, text) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + type;
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    d.innerHTML = `<div class="speaker">${speaker}<span class="msg-timestamp">${timeStr}</span></div><div>${text}</div>`;
+    transcriptMsgs.appendChild(d);
+    transcriptMsgs.scrollTop = transcriptMsgs.scrollHeight;
+}
+
+// ══════════════════════════════════════════════════════════════
+// BREAKDOWN PHASE (1.12 — accessible independently)
+// ══════════════════════════════════════════════════════════════
+let breakdownData = [];
+let breakdownLoaded = false;
+
+async function loadBreakdownSamples() {
+    if (breakdownLoaded) return;
+    // Try from conversation data first, then from a known list
+    const sampleIds = (conversation && conversation.breakdown_samples) ? conversation.breakdown_samples : [];
+    if (sampleIds.length === 0) {
+        showToast('No breakdown samples available yet. Complete a demo conversation first.', 'info');
+        return;
+    }
+    breakdownData = [];
+    for (const sampleId of sampleIds) {
+        try {
+            const resp = await fetch(`/api/samples/${sampleId}`);
+            if (resp.ok) {
+                const meta = await resp.json();
+                breakdownData.push({ sampleId, meta });
+            }
+        } catch (e) {
+            console.warn('[Breakdown] Failed to load sample:', sampleId, e);
+        }
+    }
+    breakdownLoaded = true;
+}
+
+async function showBreakdown() {
+    await loadBreakdownSamples();
+    document.getElementById('phaseConvo').style.display = 'none';
+    hideHomeContent();
+    document.getElementById('phaseBreakdown').style.display = 'flex';
+    lockHeaderToggles();
+    window.scrollTo(0, 0);
+    pushRoute('breakdown');
+    renderBreakdown();
+}
+
+function hideBreakdown() {
+    document.getElementById('phaseBreakdown').style.display = 'none';
+    document.getElementById('phaseConvo').style.display = 'flex';
+}
+
+function renderBreakdown() {
+    const tabsEl = document.getElementById('breakdownTabs');
+    const sectionsEl = document.getElementById('breakdownSections');
+    tabsEl.innerHTML = '';
+    sectionsEl.innerHTML = '';
+
+    if (breakdownData.length === 0) {
+        sectionsEl.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px;">No breakdown samples available. Complete a demo conversation to see the pipeline breakdown.</p>';
+        return;
+    }
+
+    breakdownData.forEach((item, idx) => {
+        const segments = (item.meta.precomputed || {}).segments || [];
+        const rawGlosses = segments.map(s => s.top_1).join(' ').toUpperCase() || item.sampleId;
+
+        const tab = document.createElement('button');
+        tab.className = 'sentence-tab' + (idx === 0 ? ' active' : '');
+        tab.textContent = `Sentence ${idx + 1}: "${rawGlosses}"`;
+        tab.onclick = () => {
+            document.querySelectorAll('.sentence-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.pipeline-section').forEach(s => s.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById(`bd-section-${idx}`).classList.add('active');
+        };
+        tabsEl.appendChild(tab);
+
+        const sec = document.createElement('div');
+        sec.className = 'pipeline-section' + (idx === 0 ? ' active' : '');
+        sec.id = `bd-section-${idx}`;
+        sec.innerHTML = buildBreakdownHTML(item);
+        sectionsEl.appendChild(sec);
+    });
+}
+
+function buildBreakdownHTML(item) {
+    const { sampleId, meta } = item;
+    const precomputed = meta.precomputed || {};
+    const segments = precomputed.segments || [];
+    const rawSentence = precomputed.raw_sentence || segments.map(s => s.top_1).join(' ');
+    const llmSentence = precomputed.llm_sentence || meta.reference_sentence || rawSentence;
+    const refSentence = meta.reference_sentence || '';
+
+    let html = '';
+
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">1</div>
+            <div class="step-title">Pose Estimation \u2014 Extracting body keypoints</div>
+        </div>
+        <div class="step-content">
+            <p style="color:var(--text-secondary);margin-bottom:12px;">MediaPipe Holistic extracts 75 keypoints (hands, face, body) from the video, creating a skeletal representation of the signer.</p>
+            <div style="text-align:center;">
+                <video src="/demo-data/samples/${sampleId}/pose_video.mp4"
+                       controls muted playsinline
+                       style="max-width:100%;max-height:280px;border-radius:8px;background:#fff;"></video>
+            </div>
+        </div>
+    </div>`;
+
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">2</div>
+            <div class="step-title">Segmentation \u2014 Splitting into ${segments.length} individual signs</div>
+        </div>
+        <div class="step-content">
+            <p style="color:var(--text-secondary);margin-bottom:12px;">SignBridge detects motion boundaries in the pose data to separate the continuous signing into individual sign segments.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        html += `
+                <div class="segment-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="seg-label">Segment ${i+1}</div>
+                </div>`;
+    });
+
+    html += `</div></div></div>`;
+
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">3</div>
+            <div class="step-title">Sign Recognition \u2014 Identifying each sign</div>
+        </div>
+        <div class="step-content">
+            <p style="color:var(--text-secondary);margin-bottom:12px;">Each segment is fed through an ST-GCN model trained on the WLASL dataset. The model outputs confidence scores for each possible sign.</p>
+            <div class="segment-grid">`;
+
+    segments.forEach((seg, i) => {
+        const videoFile = seg.video_file || `segments/segment_${String(i+1).padStart(3,'0')}.mp4`;
+        const top1 = seg.top_1 || 'unknown';
+        const confidence = seg.confidence || 0;
+        const topK = seg.top_k || [{ gloss: top1, confidence }];
+        const pct = Math.round(confidence * 100);
+        const color = pct >= 80 ? '#4caf80' : pct >= 50 ? '#f0a050' : '#ff5555';
+
+        html += `
+                <div class="prediction-card">
+                    <video src="/demo-data/samples/${sampleId}/${videoFile}"
+                           muted playsinline loop
+                           onmouseenter="this.play()" onmouseleave="this.pause();this.currentTime=0"></video>
+                    <div class="pred-info">
+                        <div class="pred-top1" style="color:${color}">${top1.toUpperCase()} \u2014 ${pct}%</div>
+                        <div class="confidence-bar"><div class="conf-fill" style="width:${pct}%;background:${color}"></div></div>
+                        <div class="top-k-list">`;
+        topK.forEach(k => {
+            html += `<div class="top-k-item"><span>${k.gloss}</span><span>${Math.round(k.confidence*100)}%</span></div>`;
+        });
+        html += `</div></div></div>`;
+    });
+
+    html += `</div></div></div>`;
+
+    html += `
+    <div class="pipeline-step">
+        <div class="step-header">
+            <div class="step-number">4</div>
+            <div class="step-title">LLM Sentence Construction \u2014 Building natural English</div>
+        </div>
+        <div class="step-content">
+            <p style="color:var(--text-secondary);margin-bottom:16px;">The recognized glosses are sent to Gemini along with conversation context. The LLM transforms raw ASL glosses into a grammatically correct English sentence.</p>
+            <div class="construction-display">
+                <div class="construct-box raw">
+                    <div class="box-label">Raw Glosses (Model Output)</div>
+                    <div class="box-content">${rawSentence.toUpperCase()}</div>
+                </div>
+                <div class="construct-arrow">\u2192</div>
+                <div class="construct-box llm">
+                    <div class="box-label">SignBridge Output (Gemini)</div>
+                    <div class="box-content">"${llmSentence}"</div>
+                </div>
+            </div>
+            ${refSentence ? `<p style="color:var(--text-secondary);margin-top:14px;font-size:0.82rem;text-align:center;">Reference: "${refSentence}"</p>` : ''}
+        </div>
+    </div>`;
+
+    return html;
+}
+
+// ── Kiosk auto-start ──
+if (IS_KIOSK) {
+    // Auto-start after a brief delay for page to settle
+    setTimeout(() => kioskShowTapToStart(), 500);
+}
