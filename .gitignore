@@ -104,15 +104,9 @@ archive/
 # User-specific configuration (contains local paths)
 config/settings.json
 
-# Claude Code workspace files
-.claude/*.lnk
-
 # Synthetic evaluation temporary results
 project-utilities/synthetic_evaluation/evaluation_results/
 config/settings.json.backup.*
-
-# Claude Code local settings
-.claude/settings.local.json
 
 # Evaluation results (generated output)
 evaluation_results/
@@ -146,17 +140,28 @@ applications/show-and-tell/saved-sessions/
 # Training models and artifacts
 models/training-scripts/models/
 models/training-scripts/distinct_glosses_v2.json
-models/openhands-modernized/production-models/*/class_index_mapping.json
-# Re-include production model class mappings (must come after the wildcard ignore above)
-!models/openhands-modernized/production-models/wlasl_43_class_50s_model/class_index_mapping.json
-!models/openhands-modernized/production-models/wlasl_77_class_model/class_index_mapping.json
 
 # Incremental training artifacts
 project-utilities/training_utils/incremental_training/*.json
 
 # Kaggle staging and output directories
 kaggle-staging/
+kaggle-staging-*/
 kaggle-output/
+
+# Local training caches (multi-GB, do not commit)
+project-utilities/agentic-training/
+
+# Practice capture samples
+practice_samples/
+*.webm
+
+# Local Claude Code workspace
+.claude/
+.setup_done
+
+# Generated lab notebook export
+SignBridge_Lab_Notebook.html
 
 # Junk files
 nul
