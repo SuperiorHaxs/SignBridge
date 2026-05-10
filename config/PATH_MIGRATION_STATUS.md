@@ -26,9 +26,9 @@
 - ⏭️ `dataset-utilities/conversion/pose_to_pickle_converter.py` - Utility script
 - ⏭️ `dataset-utilities/conversion/video_to_pose_extraction.py` - Utility script
 - ⏭️ `dataset-utilities/visualization/create_augmented_visualization.py` - Utility script
-- ⏭️ `dataset-utilities/test_data_shapes.py` - Test utility
+- ⏭️ `dataset-utilities/misc/test_data_shapes.py` - Test utility
 - ⏭️ `dataset-utilities/dataset-splitting/verify_split_integrity.py` - Verification utility
-- ⏭️ `dataset-utilities/generate_class_mapping.py` - Utility script
+- ⏭️ `dataset-utilities/misc/generate_class_mapping.py` - Utility script
 
 ### Project Utilities
 - ⏭️ `project-utilities/sentence_to_pickle.py` - Utility script

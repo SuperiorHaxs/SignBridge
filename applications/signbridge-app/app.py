@@ -30,6 +30,8 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 APPLICATIONS_DIR = PROJECT_ROOT / "applications"
 PROJECT_UTILITIES_DIR = PROJECT_ROOT / "project-utilities"
 MODELS_DIR = PROJECT_ROOT / "models"
+APP_DIR = Path(__file__).resolve().parent
+PRACTICE_SAMPLES_DIR = APP_DIR / "practice_samples"
 
 # Add paths for imports
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
@@ -1745,7 +1747,7 @@ def practice_diagnose():
         # Persist the diagnostic session to disk for offline analysis
         sample_ts = None
         try:
-            samples_dir = PROJECT_ROOT / "practice_samples"
+            samples_dir = PRACTICE_SAMPLES_DIR
             samples_dir.mkdir(exist_ok=True)
             import time as _t
             ts = int(_t.time() * 1000)
@@ -1769,7 +1771,7 @@ def practice_diagnose():
                     'reference_source': reference_source,
                     'comparison': comparison,
                 }, f)
-            print(f"[Diagnose] Saved sample: practice_samples/{sample_path.name}")
+            print(f"[Diagnose] Saved sample: {sample_path.relative_to(PROJECT_ROOT).as_posix()}")
 
             # Also persist the original recording bytes so the pose-video toggle
             # can re-render them on demand without a re-upload from the client.
@@ -1778,6 +1780,37 @@ def practice_diagnose():
                 vf.write(video_bytes)
         except Exception as e:
             print(f"[Diagnose] Failed to save sample: {e}")
+
+        # Cap diagnostic history at the most recent N sessions (across all file
+        # types: .pkl, .webm, .pose, .pose.mp4). Each session shares a unix-ms
+        # timestamp prefix; we keep the newest MAX_PRACTICE_SAMPLES timestamps
+        # and delete every file belonging to older ones.
+        try:
+            samples_dir = PRACTICE_SAMPLES_DIR
+            if samples_dir.is_dir():
+                MAX_PRACTICE_SAMPLES = 10
+                timestamps = sorted({
+                    int(p.name.split('_', 1)[0])
+                    for p in samples_dir.iterdir()
+                    if p.is_file() and p.name and p.name[0].isdigit() and '_' in p.name
+                }, reverse=True)
+                stale = set(timestamps[MAX_PRACTICE_SAMPLES:])
+                if stale:
+                    removed = 0
+                    for p in samples_dir.iterdir():
+                        if not p.is_file():
+                            continue
+                        try:
+                            ts_prefix = int(p.name.split('_', 1)[0])
+                        except (ValueError, IndexError):
+                            continue
+                        if ts_prefix in stale:
+                            p.unlink(missing_ok=True)
+                            removed += 1
+                    if removed:
+                        print(f"[Diagnose] Pruned {removed} files from {len(stale)} old practice sessions")
+        except Exception as e:
+            print(f"[Diagnose] Sample cleanup failed: {e}")
 
         return jsonify({
             "success": True,
@@ -1818,7 +1851,7 @@ def practice_pose_video(sample_id):
     The first call for a given sample renders the cached .pose.mp4; subsequent
     calls return the cache directly.
     """
-    samples_dir = PROJECT_ROOT / "practice_samples"
+    samples_dir = PRACTICE_SAMPLES_DIR
     if not samples_dir.is_dir():
         return jsonify({"success": False, "error": "No practice samples directory"}), 404
 

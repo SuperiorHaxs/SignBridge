@@ -19,7 +19,7 @@ Usage:
     --dataset PATH            Path to synthetic dataset JSON (default: ../../datasets/synthetic_sentences/synthetic_gloss_to_sentence_llm_dataset_50_glosses.json)
     --checkpoint PATH         Path to model checkpoint directory
     --no-llm                  Disable LLM sentence construction (use simple gloss joining)
-    --output-dir PATH         Output directory for results (default: ./evaluation_results)
+    --output-dir PATH         Output directory for results (default: ./test-results/evaluation_results)
     --limit N                 Limit evaluation to first N entries (default: all)
     --num-glosses N           Number of glosses in model (default: 50)
     --skip-existing           Skip entries that already have results
@@ -97,7 +97,7 @@ class SyntheticDatasetEvaluator:
         dataset_path,
         checkpoint_path=None,
         use_llm=True,
-        output_dir="./evaluation_results",
+        output_dir="./test-results/evaluation_results",
         num_glosses=50,
         skip_existing=False,
         keep_poses=False,

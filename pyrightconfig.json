@@ -2,8 +2,8 @@
   "exclude": [
     "datasets/augmented_pool",
     "datasets/wlasl_poses_complete",
-    "kaggle-staging*",
-    "models/kaggle-output",
+    "kaggle-training/staging*",
+    "kaggle-training/output",
     "temp_videos",
     "venv"
   ]

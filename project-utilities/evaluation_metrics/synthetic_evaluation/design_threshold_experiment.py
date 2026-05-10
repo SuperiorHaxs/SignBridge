@@ -32,7 +32,7 @@ from collections import defaultdict
 # ─── Paths ───
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent
-EVAL_RESULTS = SCRIPT_DIR / "evaluation_results_gemini_t1_n53_v4" / "evaluation_results.json"
+EVAL_RESULTS = SCRIPT_DIR / "test-results" / "evaluation_results_gemini_t1_n53_v4" / "evaluation_results.json"
 EXISTING_DATASET = PROJECT_ROOT / "datasets" / "synthetic_sentences" / "synthetic_gloss_to_sentence_llm_dataset_43_glosses_50.json"
 VAL_MANIFEST = PROJECT_ROOT / "datasets" / "augmented_pool" / "splits" / "43_classes" / "val_manifest.json"
 PRODUCTION_MODEL_DIR = PROJECT_ROOT / "models" / "openhands-modernized" / "production-models" / "wlasl_43_class_50s_model"

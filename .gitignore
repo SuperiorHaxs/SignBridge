@@ -52,7 +52,7 @@ venv.bak/
 *.pickle
 *.ckpt
 checkpoints/
-models/wlasl_*_class_model/
+models/test_models/wlasl_*_class_model/
 models/checkpoints/
 models/training-outputs/
 models/openhands-modernized/bin/
@@ -104,15 +104,14 @@ archive/
 # User-specific configuration (contains local paths)
 config/settings.json
 
-# Synthetic evaluation temporary results
-project-utilities/synthetic_evaluation/evaluation_results/
+# Backup config files
 config/settings.json.backup.*
 
-# Evaluation results (generated output)
+# Evaluation results (generated output, now under synthetic_evaluation/test-results/)
 evaluation_results/
-project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results/
-project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results_*/
-!project-utilities/evaluation_metrics/synthetic_evaluation/evaluation_results_latest/
+project-utilities/evaluation_metrics/synthetic_evaluation/test-results/evaluation_results/
+project-utilities/evaluation_metrics/synthetic_evaluation/test-results/evaluation_results_*/
+!project-utilities/evaluation_metrics/synthetic_evaluation/test-results/evaluation_results_latest/
 
 # Application output files
 applications/closed-captions/detected_glosses.txt
@@ -144,16 +143,16 @@ models/training-scripts/distinct_glosses_v2.json
 # Incremental training artifacts
 project-utilities/training_utils/incremental_training/*.json
 
-# Kaggle staging and output directories
-kaggle-staging/
-kaggle-staging-*/
-kaggle-output/
+# Kaggle training artifacts (under kaggle-training/)
+kaggle-training/staging/
+kaggle-training/staging-*/
+kaggle-training/output/
 
 # Local training caches (multi-GB, do not commit)
 project-utilities/agentic-training/
 
 # Practice capture samples
-practice_samples/
+applications/signbridge-app/practice_samples/
 *.webm
 
 # Local Claude Code workspace
@@ -161,7 +160,7 @@ practice_samples/
 .setup_done
 
 # Generated lab notebook export
-SignBridge_Lab_Notebook.html
+research_artifacts/notes/SignBridge_Lab_Notebook.html
 
 # Junk files
 nul

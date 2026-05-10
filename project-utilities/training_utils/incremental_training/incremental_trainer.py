@@ -15,7 +15,7 @@ Iterate until convergence (most classes are stable high-accuracy).
 
 Usage:
     python incremental_trainer.py --model-dir <path> --num-classes 43 --target 100
-    python incremental_trainer.py -m ./models/wlasl_43_class_model -n 43 -T 100 --threshold 70
+    python incremental_trainer.py -m ./models/test_models/wlasl_43_class_model -n 43 -T 100 --threshold 70
 
 Output:
     - accuracy_report.json: Per-class accuracy analysis

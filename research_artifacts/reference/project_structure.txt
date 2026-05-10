@@ -1,0 +1,350 @@
+================================================================================
+                    SignBridge (asl-v1) — Project Structure
+================================================================================
+
+SignBridge is an end-to-end ASL-to-English translation system that captures
+American Sign Language video, extracts skeletal pose landmarks, classifies
+individual signs using transformer-based models, and assembles predicted
+glosses into natural English sentences via an LLM pipeline.
+
+The codebase spans data preparation, model training, inference APIs, and
+multiple client applications (web, mobile, captioning).
+
+================================================================================
+  ROOT FILES
+================================================================================
+
+  README.md                       Project overview and setup instructions
+  SETUP.md                        Detailed environment setup guide
+  requirements.txt                Python dependencies
+  setup.py                        Package installer
+  Dockerfile                      Container build for deployment
+  research_artifacts/notes/SignBridge_Lab_Notebook.md            Research lab notebook (full project log)
+  research_artifacts/notes/SignBridge_Lab_Notebook_Condensed.md  Condensed lab notebook
+  research_artifacts/notes/project_work_log.md                   Development work log
+
+================================================================================
+  TOP-LEVEL DIRECTORIES
+================================================================================
+
+asl-v1/
+├── applications/               End-user applications and demos
+├── config/                     Global configuration (paths, settings)
+├── datasets/                   Training/evaluation data (poses, pickles, splits)
+├── dataset-utilities/          Data preparation and augmentation pipeline
+├── models/                     Model architectures, checkpoints, training scripts
+├── project-utilities/          Shared infrastructure (APIs, LLM, evaluation, etc.)
+├── research_artifacts/            Conference submissions and research notes
+├── docs/                       Documentation and images
+└── venv/                       Python virtual environment (not tracked)
+
+================================================================================
+  applications/ — End-User Applications
+================================================================================
+
+  Applications that consume the trained models for real-time or offline
+  ASL-to-English translation.
+
+  applications/
+  ├── predict_sentence.py           Core sentence prediction pipeline
+  │                                 (pose → segment → classify → LLM → English)
+  │
+  ├── signbridge-app/               Primary web application (Flask)
+  │   ├── app.py                    Flask server with inference API endpoints
+  │   ├── templates/index.html      Single-page app (training + live modes)
+  │   └── demo-data/                Scripted conversation data for demos
+  │
+  ├── show-and-tell/                Earlier demo app with sign-bank videos
+  │   ├── caption_service/          Video captioning microservice
+  │   ├── sign-bank/                Pre-recorded ASL video clips per gloss
+  │   └── saved-sessions/           Archived demo session recordings
+  │
+  ├── closed-captions/              Standalone closed-captioning application
+  │
+  ├── mobile-asl-app/               Mobile app (React Native / Expo)
+  │   ├── screens/                  ConversationScreen, SignerScreen, ListenerScreen
+  │   ├── components/               CaptionDisplay, ConnectionStatus
+  │   ├── services/                 API and WebSocket client services
+  │   └── server/                   Python backend (mobile_backend.py)
+  │
+  └── mobile-pwa/                   Progressive web app for mobile browsers
+
+================================================================================
+  models/ — Model Architectures and Checkpoints
+================================================================================
+
+  All model definitions, training scripts, and saved production checkpoints.
+
+  models/
+  ├── openhands-modernized/                    Primary model architecture
+  │   ├── src/
+  │   │   ├── openhands_modernized.py          Transformer model definition
+  │   │   │                                    (SLRModel with CLS token pooling,
+  │   │   │                                     positional embeddings, multi-head
+  │   │   │                                     self-attention)
+  │   │   └── util/
+  │   │       └── openhands_modernized_inference.py   Inference-time wrapper
+  │   │
+  │   └── production-models/                   Trained model checkpoints
+  │       ├── registry.json                    Domain → model mapping
+  │       ├── wlasl_43_class_50s_model/        General-purpose (43 signs)
+  │       ├── wlasl_45_class_doctor_visit_model/   Doctor visit domain (45 signs)
+  │       ├── wlasl_60_class_restaurant_model/     Restaurant domain (60 signs)
+  │       ├── wlasl_38_class_healthcare_model/     Healthcare domain (38 signs)
+  │       ├── wlasl_77_class_model/            Extended vocabulary (77 signs)
+  │       ├── wlasl_100_class_model/           100-class model
+  │       └── wlasl_20_class_model/            Compact model (20 signs)
+  │
+  ├── training-scripts/
+  │   ├── train_asl.py              Main training loop (supports tiny/small/large
+  │   │                             model sizes, augmentation, early stopping,
+  │   │                             label smoothing, warmup schedules)
+  │   └── training_pre_processing_setup.py    Data loading and preprocessing
+  │
+  ├── CNN-LSTM/                     Legacy CNN-LSTM architecture (deprecated)
+  └── Transformer/                  Legacy standalone transformer (deprecated)
+
+================================================================================
+  kaggle-training/ — Kaggle Training Workflow (consolidated)
+================================================================================
+
+  Everything related to running training jobs on Kaggle and managing their
+  inputs/outputs lives here.
+
+  kaggle-training/
+  ├── scripts/                      Prep + sync scripts (gitignored data NOT included)
+  │   ├── prepare_upload.py             Stage WLASL pickle/splits for upload
+  │   ├── sync_to_kaggle.py             Push staged content to Kaggle datasets
+  │   ├── kaggle_scaling_experiment.py  Automated sweep runner (runs on Kaggle)
+  │   ├── prepare_domain_kaggle.py      Stage domain data for Kaggle
+  │   ├── prepare_kaggle_upload.py      Generic upload prep
+  │   └── prepare_restaurant_kaggle.py  Restaurant-specific staging
+  │
+  ├── staging/                      Local upload-staging (gitignored, multi-GB)
+  ├── staging-{domain}/             Per-domain upload-staging (gitignored)
+  │
+  ├── output/                       Downloaded training outputs (gitignored)
+  │   ├── sweep_n20/                Scaling sweep results (small model)
+  │   └── sweep_n20_medium/         Scaling sweep results (medium model)
+  │
+  ├── snapshots/                    Tracked snapshots from specific runs
+  │   └── run-38/                   38-class run (config + 77-class checkpoint)
+  │
+  └── wlasl_kaggle/                 Trained kaggle model artifacts (LFS-tracked)
+      ├── vocab.json
+      └── bin/                      pytorch_model.bin, pytorch_model_1.bin
+
+================================================================================
+  dataset-utilities/ — Data Preparation Pipeline
+================================================================================
+
+  Tools for building, augmenting, splitting, and analyzing the training data.
+
+  dataset-utilities/
+  ├── landmarks-extraction/         MediaPipe pose extraction from video
+  │   ├── __init__.py               Main extraction pipeline (video → 576 keypoints)
+  │   ├── landmark_config.py        Keypoint indices and normalization config
+  │   └── finger_features.py        Derived finger features (angles, distances,
+  │                                 spread, curl — 48 additional features)
+  │
+  ├── augmentation/                 Data augmentation for training robustness
+  │   └── augmentation_config.py    Spatial jitter, temporal resampling,
+  │                                 rotation, speed perturbation configs
+  │
+  ├── dataset-splitting/            Train/val/test split generation
+  │                                 (signer-aware stratified splitting)
+  │
+  ├── categorization/               Signer analysis and video inventory
+  │   ├── find_signer_videos.py     Find best signer for a model's vocabulary
+  │   ├── signer_11_all_signs.json  Signer 11 inventory (1505 signs)
+  │   └── signer_12_all_signs.json  Signer 12 inventory (1327 signs)
+  │
+  ├── concatenation/                Video concatenation for synthetic narratives
+  │   ├── concatenate_paragraph.py  Build multi-sentence ASL paragraph videos
+  │   ├── concatenate_signs.py      Concatenate individual sign clips
+  │   └── overlay_captions.py       Burn predicted glosses/sentences onto video
+  │
+  ├── scaling-experiment/           Vocabulary scaling experiments
+  │   └── run_scaling_experiment.py       Local scaling pipeline driver
+  │                                       (Kaggle-side scripts now live under
+  │                                        kaggle-training/scripts/)
+  │
+  ├── sentence-construction/        ASL sentence/paragraph generation
+  │   ├── generate_doctor_sentences.py     Doctor-visit sentence generator
+  │   └── data/                            Generated sentence datasets (csv, json)
+  │
+  ├── domain-gloss-lists/           Curated gloss lists per domain
+  ├── conversion/                   Format converters (video ↔ pose ↔ pickle)
+  ├── visualization/                Pose visualization tools
+  ├── original-video-crawler/       WLASL video downloader
+  └── misc/                         One-off utility scripts
+
+================================================================================
+  project-utilities/ — Shared Infrastructure
+================================================================================
+
+  Cross-cutting concerns: inference serving, LLM integration, evaluation
+  metrics, and training utilities.
+
+  project-utilities/
+  ├── inference_api/                REST API for real-time sign classification
+  │                                 (loads model, accepts pose data, returns
+  │                                  top-k predictions with confidence scores)
+  │
+  ├── llm_interface/                LLM integration for gloss → English
+  │   ├── __init__.py               Provider factory (OpenAI, Gemini, Ollama)
+  │   ├── providers/                Individual LLM provider implementations
+  │   └── prompts/                  Prompt templates
+  │       ├── llm_prompt_topk_self_critique.txt   Self-critique prompt for
+  │       │                                       top-k disambiguation
+  │       └── (other prompt variants)
+  │
+  ├── evaluation_metrics/           Model and pipeline quality assessment
+  │   ├── synthetic_evaluation/     End-to-end evaluation on synthetic data
+  │   │   ├── profile_model_signs.py    Per-sign accuracy profiling
+  │   │   ├── profiles/                 Saved sign profile results
+  │   │   └── evaluation_results/       CTQI scores, narrative results
+  │   ├── charts/                   Evaluation visualization
+  │   └── research_charts/          Publication-quality figures
+  │
+  ├── segmentation/                 Sign boundary detection in continuous video
+  │                                 (motion-based and time-based segmenters)
+  │
+  ├── pose_utils/                   Pose data manipulation utilities
+  │
+  ├── training_utils/               Training support tools
+  │   ├── confusion_analysis/       Model confusion pair diagnosis
+  │   │   ├── diagnose_confused_pairs.py    Identify systematic confusions
+  │   │   ├── eval_confusion.py             Confusion matrix evaluation
+  │   │   └── test_velocity_for_confusion.py  Velocity feature analysis
+  │   ├── domain_training/          Domain-specific training orchestration
+  │   └── incremental_training/     Incremental/transfer learning support
+  │
+  ├── kaggle/                       Kaggle dataset sync and upload tools
+  └── misc/                         Miscellaneous project utilities
+
+================================================================================
+  datasets/ — Training and Evaluation Data
+================================================================================
+
+  datasets/
+  ├── augmented_pool/               Augmented training data
+  │   ├── pickle/                   Serialized pose tensors (per-sign .pkl files)
+  │   ├── pose/                     Raw .pose files
+  │   └── splits/                   Train/val/test manifest files per domain
+  │
+  ├── domain-specific/              Domain configuration files
+  │   │
+  │   │   Each domain JSON defines a curated vocabulary of 35 domain-specific
+  │   │   signs plus 25 common signs (60 total classes). Domains with trained
+  │   │   production models are marked with [MODEL]. Others use the general
+  │   │   43-class model until specialized training is completed.
+  │   │
+  │   ├── common_words.json         25 shared signs across all domains
+  │   │                             BAD, BUT, DAY, EVENING, GOODBYE, HELLO,
+  │   │                             HIS, HOUR, HOW, MY, NOW, PLEASE, SIX,
+  │   │                             SUNDAY, THEIR, THEY, TOMORROW, WHAT, WHEN,
+  │   │                             WHERE, WHICH, WHO, WHY, YESTERDAY, YOUR
+  │   │
+  │   │   ── Specialized Domains (trained models in production) ──
+  │   │
+  │   ├── doctor_visit.json         [MODEL] 35 domain + 25 common = 60 classes
+  │   │                             Medical: ALLERGY, ARM, BLOOD, BODY, BONE,
+  │   │                             BREATHE, EYE, HEADACHE, HEARING AID, HEART,
+  │   │                             HOSPITAL, NECK, PAIN, PREGNANT, RECOVER,
+  │   │                             SHOULDER, SICK, STOMACH, THERMOMETER, etc.
+  │   │                             Model: wlasl_45_class_doctor_visit_model
+  │   │
+  │   ├── restaurant.json           [MODEL] 35 domain + 25 common = 60 classes
+  │   │                             Food/Dining: APPLE, BANANA, BITTER, BREAKFAST,
+  │   │                             BUTTER, CHICKEN, CHOCOLATE, COFFEE, COLD,
+  │   │                             DELICIOUS, DOLLAR, DRINK, EAT, FISH, FULL,
+  │   │                             HUNGRY, LUNCH, MILK, ORDER, PAY, PLATE,
+  │   │                             SALAD, SANDWICH, SAUCE, SUGAR, TABLE, etc.
+  │   │                             Model: wlasl_60_class_restaurant_model
+  │   │
+  │   │   ── General Domains (vocabulary defined, not yet trained) ──
+  │   │
+  │   ├── banking.json              35 domain signs — BALANCE, BANK, CALCULATE,
+  │   │                             CENT, CHEAP, COST, DEBT, DEPOSIT, DOLLAR,
+  │   │                             EXPENSIVE, FINANCE, INSURANCE, INVEST, etc.
+  │   │
+  │   ├── education.json            35 domain signs — BOOK, CLASSROOM, COACH,
+  │   │                             COMPUTER, DEGREE, DIPLOMA, ENGLISH, EXPLAIN,
+  │   │                             GRADUATION, HOMEWORK, LEARN, LIBRARY, etc.
+  │   │
+  │   ├── emergency.json            35 domain signs — ACCIDENT, ALARM, BLOOD,
+  │   │                             BREATHE, CALL, DANGER, EARTHQUAKE, EMERGENCY,
+  │   │                             FAMILY, FIRE, HELP, HOSPITAL, HURT, etc.
+  │   │
+  │   ├── job_interview.json        35 domain signs — BOSS, BUSINESS, COMPANY,
+  │   │                             COMPUTER, DEGREE, EDUCATION, EXPERIENCE,
+  │   │                             GOAL, INTERVIEW, MANAGER, OFFICE, RESUME, etc.
+  │   │
+  │   ├── shopping.json             35 domain signs — BEAUTIFUL, BELT, BIG,
+  │   │                             BLUE, CHEAP, CLOTHES, COLOR, CUSTOMER,
+  │   │                             DISCOUNT, DOLLAR, DRESS, EXPENSIVE, etc.
+  │   │
+  │   ├── travel.json               35 domain signs — AFRICA, AMERICA, ARRIVE,
+  │   │                             BACKPACK, BUS, CAMP, CHINA, COUNTRY, EAST,
+  │   │                             EUROPE, FLY, FOREST, GERMANY, HOTEL, etc.
+  │   │
+  │   ├── government_services.json  35 domain signs — ARMY, AUTHORITY, BIRTH,
+  │   │                             CERTIFICATE, CONGRESS, CONSTITUTION,
+  │   │                             DEMOCRAT, FEDERAL, GUILTY, LAW, etc.
+  │   │
+  │   └── experiments/              Scaling experiment configurations
+  │
+  ├── wlasl_poses_complete/         Full WLASL dataset (pose-extracted)
+  │   ├── pose_files/               Raw pose files
+  │   ├── pose_files_by_gloss/      Organized by gloss name
+  │   ├── pickle_files/             Pre-processed pickle tensors
+  │   ├── splits/                   Standard train/val/test splits
+  │   └── dataset_splits/           Alternative split configurations
+  │
+  └── synthetic_sentences/          Synthetic sentence evaluation data
+
+================================================================================
+  config/ — Global Configuration
+================================================================================
+
+  config/
+  ├── paths.py                  Centralized path resolution (local vs Kaggle)
+  ├── settings.json             Runtime settings
+  └── requirements.txt          Kaggle-specific requirements
+
+================================================================================
+  research_artifacts/ — Academic Publications
+================================================================================
+
+  research_artifacts/
+  ├── 2025 CCIR Winter Symposium/   First conference paper
+  ├── 2026 WA CSRSEF/              Science fair submission
+  └── notes/                        Research notes and drafts
+
+================================================================================
+  PIPELINE OVERVIEW (data flow)
+================================================================================
+
+  1. VIDEO CAPTURE        Camera/file → raw video frames
+                          (applications/signbridge-app or mobile-asl-app)
+
+  2. POSE EXTRACTION      Video → 576 MediaPipe keypoints per frame
+                          (dataset-utilities/landmarks-extraction/)
+
+  3. FEATURE ENGINEERING  576 keypoints → 279+ features
+                          (83-point subset + finger features + spatial features)
+
+  4. SEGMENTATION         Continuous pose stream → individual sign segments
+                          (project-utilities/segmentation/)
+
+  5. CLASSIFICATION       Each segment → top-k gloss predictions
+                          (models/openhands-modernized/ transformer)
+
+  6. SENTENCE ASSEMBLY    Ordered glosses → natural English via LLM
+                          (project-utilities/llm_interface/)
+
+  7. PRESENTATION         Captions displayed in real-time or burned onto video
+                          (applications/signbridge-app, overlay_captions.py)
+
+================================================================================

@@ -32,7 +32,7 @@ CTQI v3 (Human-Validated Formula):
 - Human correlation: r=0.9427 (highest among all formulas tested)
 """
 
-from .metrics import (
+from .scripts.metrics import (
     # Core metric functions
     calculate_gloss_accuracy,
     calculate_perfect_translation_rate,
@@ -62,7 +62,7 @@ from .metrics import (
     NLTK_AVAILABLE,
 )
 
-from .ctqi_v2 import (
+from .scripts.ctqi_v2 import (
     # CTQI v2 - Prerequisite Chain
     calculate_ctqi_v2,
     calculate_coverage_v2,

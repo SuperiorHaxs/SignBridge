@@ -52,6 +52,7 @@ CONFIG_DIR = PROJECT_ROOT / "config"
 sys.path.insert(0, str(APPLICATIONS_DIR))
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "llm_interface"))
+sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "segmentation"))
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "synthetic_evaluation"))
 # OpenHands paths - src first (for openhands_modernized module), then util (for inference)
 OPENHANDS_SRC = MODELS_DIR / "openhands-modernized" / "src"

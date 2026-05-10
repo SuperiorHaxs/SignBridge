@@ -15,7 +15,7 @@ import sys
 if len(sys.argv) > 1:
     DATA_DIR = Path(sys.argv[1])
 else:
-    DATA_DIR = Path(__file__).parent / "evaluation_results_gemini_t1_n53_v4"
+    DATA_DIR = Path(__file__).parent / "test-results" / "evaluation_results_gemini_t1_n53_v4"
 
 with open(DATA_DIR / "evaluation_results.json") as f:
     data = json.load(f)

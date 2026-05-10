@@ -114,7 +114,7 @@ OpenHands-HD achieves 80.97% Top-1 accuracy on WLASL-100, surpassing the origina
 | **OpenHands-HD (Ours)** | WLASL-100 | Pose + Transformer | 83 | **80.97%** | **91.62%** | Real-time |
 
 <p align="center">
-  <img src="docs/images/chart_model_accuracy.png" alt="Model accuracy comparison" width="600"/>
+  <img src="research_artifacts/images/chart_model_accuracy.png" alt="Model accuracy comparison" width="600"/>
 </p>
 
 ### End-to-End Sentence-Level Translation
@@ -131,11 +131,11 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 | **CTQI v2 (introduced by SignBridge)** | **55.56** | **78.16** | **+22.60** | **p < 0.001** |
 
 <p align="center">
-  <img src="docs/images/chart_llm_comparison.png" alt="Baseline vs LLM comparison" width="600"/>
+  <img src="research_artifacts/images/chart_llm_comparison.png" alt="Baseline vs LLM comparison" width="600"/>
 </p>
 
 <p align="center">
-  <img src="docs/images/chart_ctqi_distribution.png" alt="CTQI score distribution and improvement" width="700"/>
+  <img src="research_artifacts/images/chart_ctqi_distribution.png" alt="CTQI score distribution and improvement" width="700"/>
 </p>
 
 ### Demo: Full Pipeline Examples
@@ -143,15 +143,15 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 **Example 1:** "The man wants to drink water."
 
 <p align="center">
-  <img src="docs/images/pose_man.gif" alt="Sign: MAN" width="160"/>
-  <img src="docs/images/pose_drink.gif" alt="Sign: DRINK" width="160"/>
-  <img src="docs/images/pose_water.gif" alt="Sign: WATER" width="160"/>
+  <img src="research_artifacts/images/pose_man.gif" alt="Sign: MAN" width="160"/>
+  <img src="research_artifacts/images/pose_drink.gif" alt="Sign: DRINK" width="160"/>
+  <img src="research_artifacts/images/pose_water.gif" alt="Sign: WATER" width="160"/>
 </p>
 
 <p align="center"><em>Isolated sign recognition: MAN (40%) → DRINK (54%) → WATER (64%)</em></p>
 
 <p align="center">
-  <img src="docs/images/pose_skeleton_sentence.gif" alt="Full sentence: man drink water" width="300"/>
+  <img src="research_artifacts/images/pose_skeleton_sentence.gif" alt="Full sentence: man drink water" width="300"/>
 </p>
 
 <p align="center"><em>LLM sentence construction → <strong>"The man wants to drink water."</strong></em></p>
@@ -159,16 +159,16 @@ For overall translation quality, the Quality Score (a reference-free grammatical
 **Example 2:** "It is time for my son to go to bed."
 
 <p align="center">
-  <img src="docs/images/pose_time.gif" alt="Sign: TIME" width="160"/>
-  <img src="docs/images/pose_son.gif" alt="Sign: SON" width="160"/>
-  <img src="docs/images/pose_go.gif" alt="Sign: GO" width="160"/>
-  <img src="docs/images/pose_bed.gif" alt="Sign: BED" width="160"/>
+  <img src="research_artifacts/images/pose_time.gif" alt="Sign: TIME" width="160"/>
+  <img src="research_artifacts/images/pose_son.gif" alt="Sign: SON" width="160"/>
+  <img src="research_artifacts/images/pose_go.gif" alt="Sign: GO" width="160"/>
+  <img src="research_artifacts/images/pose_bed.gif" alt="Sign: BED" width="160"/>
 </p>
 
 <p align="center"><em>Isolated sign recognition: TIME (87%) → SON (97%) → GO (57%) → BED (98%)</em></p>
 
 <p align="center">
-  <img src="docs/images/pose_sentence_demo.gif" alt="Full sentence: time son go bed" width="300"/>
+  <img src="research_artifacts/images/pose_sentence_demo.gif" alt="Full sentence: time son go bed" width="300"/>
 </p>
 
 <p align="center"><em>LLM sentence construction → <strong>"It is time for my son to go to bed."</strong></em></p>
