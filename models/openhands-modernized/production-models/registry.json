@@ -1,6 +1,90 @@
 {
-  "generic": "wlasl_43_class_50s_model",
-  "healthcare": "wlasl_38_class_healthcare_model",
-  "doctor_visit": "wlasl_45_class_doctor_visit_model",
-  "restaurant": "wlasl_60_class_restaurant_model"
+  "domains": {
+    "emergency": {
+      "label": "Emergency",
+      "description": "Urgent situations, communicating with first responders",
+      "icon": "\ud83d\udea8",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_emergency_model"
+    },
+    "doctor_visit": {
+      "label": "Doctor Visit",
+      "description": "Medical appointments, describing symptoms, understanding treatment",
+      "icon": "\ud83c\udfe5",
+      "status": "ready",
+      "demo_available": true,
+      "model_dir": "wlasl_116_doctor_visit_model"
+    },
+    "restaurant": {
+      "label": "Restaurant",
+      "description": "Ordering food, asking about the menu, dietary needs",
+      "icon": "\ud83c\udf7d\ufe0f",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_restaurant_model"
+    },
+    "education": {
+      "label": "Education",
+      "description": "Classroom, parent-teacher conferences, campus interactions",
+      "icon": "\ud83c\udf93",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_97_education_model"
+    },
+    "travel": {
+      "label": "Travel",
+      "description": "Airport, hotel check-in, directions, transportation",
+      "icon": "\u2708\ufe0f",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_50_travel_model"
+    },
+    "shopping": {
+      "label": "Shopping",
+      "description": "Retail stores, finding items, asking about prices",
+      "icon": "\ud83d\udecd\ufe0f",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_shopping_model"
+    },
+    "job_interview": {
+      "label": "Job Interview",
+      "description": "Professional conversations, interviews, workplace meetings",
+      "icon": "\ud83d\udcbc",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_job_interview_model"
+    },
+    "government_services": {
+      "label": "Government Services",
+      "description": "DMV, post office, social services, public offices",
+      "icon": "\ud83c\udfe6",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_government_services_model"
+    },
+    "banking": {
+      "label": "Banking",
+      "description": "Bank visits, account inquiries, financial services",
+      "icon": "\ud83d\udcb3",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_banking_model"
+    },
+    "common_words": {
+      "label": "Common Words",
+      "description": "Everyday vocabulary for general communication",
+      "icon": "\ud83d\udcac",
+      "status": "ready",
+      "demo_available": false,
+      "model_dir": "wlasl_116_common_words_model"
+    }
+  },
+  "common_model": {
+    "description": "Shared common vocabulary model \u00e2\u20ac\u201d runs alongside every domain model at inference",
+    "model_dir": "wlasl_50_common_words_model",
+    "status": "ready"
+  },
+  "fallback_model": "wlasl_43_class_50s_model"
 }

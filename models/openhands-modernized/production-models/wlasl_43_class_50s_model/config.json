@@ -13,5 +13,9 @@
   "dropout_prob": 0.3,
   "layer_norm_eps": 1e-12,
   "vocab_size": 43,
-  "use_cls_token": true
+  "use_cls_token": true,
+  "use_motion_features": false,
+  "motion_features": 0,
+  "use_spatial_features": false,
+  "spatial_features": 0
 }
