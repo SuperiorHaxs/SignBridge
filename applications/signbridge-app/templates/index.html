@@ -278,7 +278,16 @@
                 <div class="prac-score" id="pracScore"></div>
             </div>
 
-            <div class="prac-sign-name" id="pracSignName"></div>
+            <!-- Word + domain selector replaces the static sign name so the
+                 user can switch what they're practicing without exiting. -->
+            <div class="prac-word-selector">
+                <span class="prac-sel-label">Practicing:</span>
+                <select id="pracWordSelect" onchange="switchPracticeWord(this.value)"></select>
+                <span class="prac-sel-label">in</span>
+                <select id="pracDomainSelect" onchange="switchPracticeDomain(this.value)"></select>
+            </div>
+            <!-- Hidden mirror for legacy code that referenced pracSignName -->
+            <div class="prac-sign-name" id="pracSignName" style="display:none"></div>
 
             <div class="prac-split">
                 <div class="prac-panel">
@@ -295,6 +304,12 @@
                         <video id="pracCameraFeed" autoplay muted playsinline webkit-playsinline style="transform:scaleX(-1)"></video>
                         <div class="prac-camera-placeholder" id="pracCameraPlaceholder">Camera will start when you record</div>
                         <div class="rec-countdown prac-rec-countdown" id="pracRecCountdown"></div>
+                        <!-- Live AI activity indicator (top-left) -->
+                        <div class="prac-status-badge" id="pracStatusBadge">
+                            <span class="prac-sparkle">&#x2728;</span><span id="pracStatusText">Recognizing</span>
+                        </div>
+                        <!-- Per-attempt prediction badge (top-right) -->
+                        <div class="prac-prediction-badge" id="pracPredictionBadge" style="display:none"></div>
                     </div>
                 </div>
             </div>
@@ -417,12 +432,13 @@
         <div class="camera-box">
             <div class="camera-topbar">
                 <span class="camera-title">Live Camera</span>
-                <button class="camera-source-btn" id="cameraSourceBtn" onclick="toggleCameraSourcePanel()" title="Switch camera source">&#x1F4F7;</button>
-                <button class="pose-overlay-btn active" id="poseOverlayBtn" onclick="togglePoseOverlay()" title="Toggle pose overlay">&#x1F9B4;</button>
+                <button class="camera-source-btn" id="settingsBtn" onclick="toggleSettings()" title="Camera and zone settings">&#x2699;&#xFE0F;</button>
                 <button class="camera-source-btn" id="debugToggleBtn" onclick="toggleDebugPanel()" title="Diagnostics">&#x1F41B;</button>
+                <button class="pose-overlay-btn active" id="poseOverlayBtn" onclick="togglePoseOverlay()" title="Toggle pose overlay" style="display:none">&#x1F9B4;</button>
                 <span class="rec-badge" id="recBadge">&#x25CF; REC</span>
             </div>
-            <div class="camera-source-panel" id="cameraSourcePanel" style="display:none">
+            <div class="camera-source-panel" id="settingsPanel" style="display:none">
+                <div style="font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:6px">Camera source</div>
                 <div class="camera-source-option">
                     <label><input type="radio" name="cameraSource" value="device" checked onchange="selectCameraSource('device')"> Device Camera</label>
                 </div>
@@ -434,6 +450,20 @@
                     <button class="btn btn-primary" id="wifiConnectBtn" onclick="connectWifiCamera()" style="padding:6px 14px;font-size:0.78rem">Connect</button>
                 </div>
                 <div id="wifiCameraStatus" style="display:none;font-size:0.75rem;margin-top:6px"></div>
+
+                <hr style="border:0;border-top:1px solid var(--border-light);margin:12px 0 8px">
+                <div style="font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:6px">Signing zone</div>
+                <label style="display:block;font-size:0.78rem;margin:6px 0;color:var(--text-muted)">
+                    Top: <span id="streamZoneTopLabel" style="font-family:ui-monospace,Consolas,monospace;color:#34d399">0%</span>
+                    <input type="range" id="streamZoneTop" min="0" max="80" value="0" oninput="updateStreamZone()" style="width:100%">
+                </label>
+                <label style="display:block;font-size:0.78rem;margin:6px 0;color:var(--text-muted)">
+                    Bottom: <span id="streamZoneBottomLabel" style="font-family:ui-monospace,Consolas,monospace;color:#34d399">90%</span>
+                    <input type="range" id="streamZoneBottom" min="20" max="100" value="90" oninput="updateStreamZone()" style="width:100%">
+                </label>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+                    Motion outside this band is ignored.
+                </div>
             </div>
             <div class="camera-view" id="cameraView">
                 <div class="camera-placeholder" id="cameraPlaceholder">Camera will start when you begin</div>
@@ -444,26 +474,32 @@
                 </div>
                 <div class="rec-border" id="recBorder"></div>
                 <div class="rec-countdown" id="recCountdown"></div>
+                <!-- Signing-zone line (streaming mode) — shows the bottom of
+                     the active motion-detection zone so the user knows where
+                     to keep their hands. -->
+                <div class="live-zone-line live-zone-line-top" id="liveZoneLineTop" style="display:none"></div>
+                <div class="live-zone-line live-zone-line-bottom" id="liveZoneLineBottom" style="top:90%"></div>
+                <!-- Live closed-caption overlay (streaming mode) -->
+                <div class="live-caption" id="liveCaption" style="display:none"></div>
+                <!-- Diagnostics: scrollable gloss list, overlays camera right
+                     side. Hidden until the bug icon toggles it. -->
+                <div class="debug-panel" id="debugPanel" style="display:none">
+                    <div class="debug-title">Detected glosses
+                        <button onclick="document.getElementById('debugPanel').style.display='none'" style="float:right;background:none;border:none;color:var(--text-muted);cursor:pointer">&times;</button>
+                    </div>
+                    <div id="glossListPanel" class="gloss-list">
+                        <div class="gloss-list-empty">No glosses detected yet</div>
+                    </div>
+                </div>
             </div>
             <div class="status-bar" id="statusBar">
                 <span class="prompt">Press "Start" to begin the conversation</span>
             </div>
         </div>
 
-        <!-- Debug panel — toggle with ?debug=true or the bug icon -->
-        <div class="debug-panel" id="debugPanel" style="display:none">
-            <div class="debug-title">Diagnostics <button onclick="document.getElementById('debugPanel').style.display='none'" style="float:right;background:none;border:none;color:var(--text-muted);cursor:pointer">&times;</button></div>
-            <div class="debug-row"><span>Hands:</span> <span id="dbgHands">-</span></div>
-            <div class="debug-row"><span>Velocity:</span> <span id="dbgVelocity">-</span></div>
-            <div class="debug-row"><span>State:</span> <span id="dbgState">-</span></div>
-            <div class="debug-row"><span>Signs:</span> <span id="dbgSigns">0</span></div>
-            <div class="debug-row"><span>Pose:</span> <span id="dbgPose">-</span></div>
-            <div style="margin-top:8px">
-                <div class="debug-velocity-bar"><div class="debug-velocity-fill" id="dbgVelocityBar"></div><div class="debug-velocity-threshold" id="dbgVelocityThresh"></div></div>
-            </div>
-            <button class="btn btn-secondary" id="btnTestSign" onclick="testSingleSign()" style="margin-top:8px;font-size:0.75rem;padding:6px 12px;width:100%">Test Sign (2.5s timed record)</button>
-            <div id="dbgTestResult" style="display:none;margin-top:6px;font-size:0.75rem"></div>
-        </div>
+        <!-- Diagnostics panel moved inside cameraView so it can overlay the
+             right side without resizing the camera. -->
+
 
         <div class="controls-row">
             <button class="btn btn-primary" id="btnStart">Start Conversation</button>
@@ -511,6 +547,7 @@
 <script src="/static/vendor/mediapipe-pose/pose.js"></script>
 <script src="/static/js/sign_segmenter.js?v=2"></script>
 <script src="/static/js/pose_overlay.js?v=1"></script>
-<script src="/static/js/app.js?v=54"></script>
+<script src="/static/js/streaming_live.js?v=13"></script>
+<script src="/static/js/app.js?v=88"></script>
 </body>
 </html>

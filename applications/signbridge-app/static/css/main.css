@@ -452,6 +452,227 @@ body {
 }
 .rec-border.on { display: block; }
 
+/* ── Signing-zone line (streaming mode) ──
+ * Thin orange line drawn over the camera at the configured zone_top /
+ * zone_bottom positions. Motion outside the band is ignored by the server-
+ * side motion gate. Bottom line gets a small "signing area" label so the
+ * user knows what it represents. */
+.live-zone-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: rgba(245, 158, 11, 0.7);
+    pointer-events: none;
+    z-index: 5;
+    transition: top 0.15s ease;
+}
+.live-zone-line-bottom::after {
+    content: 'signing area ↑';
+    position: absolute;
+    right: 6px;
+    top: -18px;
+    font-size: 10px;
+    font-family: ui-monospace, Consolas, monospace;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(245, 158, 11, 0.85);
+    padding: 1px 6px;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+.live-zone-line-top::after {
+    content: 'signing area ↓';
+    position: absolute;
+    right: 6px;
+    bottom: -18px;
+    font-size: 10px;
+    font-family: ui-monospace, Consolas, monospace;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(245, 158, 11, 0.85);
+    padding: 1px 6px;
+    border-radius: 2px;
+    white-space: nowrap;
+}
+
+/* Feedback panel below the camera is retired -- the corner prediction badge
+ * on the camera is now the single result surface. Keep the element in the DOM
+ * for any latent references but never show it. */
+#pracFeedback { display: none !important; }
+#customPracticePicker { display: none !important; }
+
+/* ── Sign Bank practice mode badges (streaming-pipeline UI) ── */
+/* Prediction badge on the top-right of the practice camera. Green if the
+ * model's top-1 matches the target sign, red otherwise. Stays visible until
+ * the next attempt. */
+.prac-prediction-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 8;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    font-family: ui-monospace, Consolas, monospace;
+    letter-spacing: 0.04em;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+    pointer-events: none;
+}
+.prac-prediction-badge.match { background: rgba(52, 211, 153, 0.94); color: #06280f; }
+.prac-prediction-badge.miss  { background: rgba(248, 113, 113, 0.94); color: #350a0a; }
+
+/* Status badge on the top-left of the practice camera. Rotating sparkle while
+ * the streaming pipeline is alive (listening / signing / recognizing). */
+.prac-status-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 8;
+    padding: 5px 11px;
+    border-radius: 4px;
+    background: rgba(20, 25, 32, 0.85);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    pointer-events: none;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.prac-status-badge .prac-sparkle {
+    display: inline-block;
+    animation: sparkleSpin 3s linear infinite;
+}
+
+/* Word + domain selector that replaces the static prac-sign-name. Lets the
+ * user switch which sign they're practicing without leaving the screen. */
+.prac-word-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 6px 0 14px;
+}
+.prac-word-selector .prac-sel-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.prac-word-selector select {
+    padding: 6px 28px 6px 12px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: var(--bg-card);
+    color: var(--accent);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.prac-word-selector select:focus { outline: 2px solid var(--accent); }
+
+/* ── Live closed-caption overlay (streaming mode) ──
+ * Anchored to the bottom of the camera view, sits on top of the video feed.
+ * Updates in place each time the LLM rewrites the rolling sentence — like
+ * TV closed-captioning. */
+.live-caption {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+    z-index: 6;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: center;
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+    pointer-events: none;
+    transition: opacity 180ms ease, background 180ms ease;
+    /* counteract the .camera-view > video mirror so caption text reads normally */
+    transform: scaleX(1);
+}
+.live-caption.updating {
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0.8;
+}
+.live-caption .ctqi-good {
+    color: #34d399;
+    font-weight: 700;
+    margin-left: 0.6em;
+}
+.live-caption .ctqi-bad {
+    color: #f87171;
+    font-weight: 700;
+    margin-left: 0.6em;
+}
+.live-caption .ctqi-missing {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    margin-left: 0.6em;
+    font-style: italic;
+}
+.live-caption .ctqi-edited {
+    color: rgba(180, 200, 255, 0.85);
+    font-weight: 600;
+    margin-left: 0.6em;
+    font-style: italic;
+}
+
+/* Inline action chips next to a low/missing CTQI score (regenerate, edit).
+ * Parent .live-caption has pointer-events: none for the camera image; these
+ * children opt back in so they're clickable. */
+.live-caption .caption-action {
+    display: inline-block;
+    margin-left: 0.45em;
+    cursor: pointer;
+    user-select: none;
+    pointer-events: auto;
+    opacity: 0.85;
+    font-size: 1em;
+    transition: opacity 0.15s, transform 0.15s;
+    padding: 0 4px;
+}
+.live-caption .caption-action:hover {
+    opacity: 1;
+    transform: scale(1.18);
+}
+.live-caption .caption-action.caption-action-disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: auto;   /* keep tooltip visible */
+}
+.live-caption .caption-action.caption-action-disabled:hover {
+    opacity: 0.3;
+    transform: none;
+}
+
+/* Inline edit form (replaces sentence text temporarily when Edit clicked). */
+.live-caption .caption-edit-input {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 1em;
+    font-weight: 500;
+    min-width: 60%;
+    pointer-events: auto;
+}
+@media (max-width: 768px) {
+    .live-caption { font-size: 0.95rem; padding: 8px 10px; bottom: 8px; }
+}
+@media (max-width: 480px) {
+    .live-caption { font-size: 0.85rem; padding: 6px 8px; }
+}
+
 /* ── Recording countdown overlay (1.10) ── */
 .rec-countdown {
     display: none;
@@ -528,7 +749,27 @@ body {
 .status-bar .gloss { color: var(--text-primary); font-family: 'SF Mono', monospace; font-weight: 600; letter-spacing: 1px; }
 .status-bar .sentence { color: #2d7a2d; font-weight: 500; }
 .status-bar .prompt { color: var(--text-dimmed); font-style: italic; }
-.status-bar .processing { color: var(--accent); animation: pulse 1s infinite; }
+.status-bar .processing {
+    color: var(--accent);
+    font-weight: 600;
+    /* No flicker by default -- the old pulse 1s drop-to-0.4 made the text
+     * unreadable. Active AI states use the .ai variant below for a subtler
+     * highlight + sparkle, the .spinner element next to the text is the
+     * actual motion cue. */
+}
+.status-bar .processing.ai {
+    color: var(--accent);
+    font-weight: 700;
+    animation: pulseSubtle 2s ease-in-out infinite;
+}
+.status-bar .processing.ai .ai-sparkle {
+    display: inline-block;
+    margin-right: 4px;
+    /* Slow rotation gives a gentle "AI is thinking" cue without strobing. */
+    animation: sparkleSpin 3s linear infinite;
+}
+@keyframes pulseSubtle  { 0%,100%{opacity:1} 50%{opacity:0.85} }
+@keyframes sparkleSpin  { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
 .status-bar .doctor-script {
     display: flex;
     flex-direction: column;
@@ -2518,8 +2759,66 @@ html, body { max-width: 100vw; overflow-x: hidden; }
    Debug Panel
    ══════════════════════════════════════════ */
 .debug-panel {
-    background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 10px;
-    padding: 10px 12px; margin: 0 0 8px 0; font-size: 0.75rem; font-family: monospace;
+    /* Overlay on the right side of the camera view (streaming mode).
+     * Positioned absolutely so it never resizes the camera capture area;
+     * the camera image is still fully visible behind the semi-transparent
+     * panel, just partially obscured on the right. */
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    bottom: 60px;       /* leave room for the live-caption overlay below */
+    width: 240px;
+    z-index: 7;
+    background: rgba(20, 25, 32, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    /* The mirror transform on the video element doesn't propagate here
+     * (we're a sibling, not a child of <video>), so text reads normally. */
+}
+.debug-panel .debug-title {
+    flex-shrink: 0;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.78rem;
+    margin-bottom: 6px;
+}
+.debug-panel .debug-title button { color: rgba(255,255,255,0.6) !important; }
+.debug-panel .gloss-list  { flex: 1; max-height: none; }
+
+/* Light-on-dark text for the gloss list since the panel sits on a dark
+ * semi-transparent backdrop over the camera. Without these overrides the
+ * inherited light-theme colors (dark grays) are invisible. */
+.debug-panel .gloss-list-empty { color: rgba(255, 255, 255, 0.5); }
+.debug-panel .gloss-row        { border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.debug-panel .gloss-row:first-child { background: rgba(76, 175, 128, 0.15); }
+.debug-panel .gloss-row .gloss-main { color: #ffffff; }
+.debug-panel .gloss-row .gloss-conf { color: #34d399; }
+.debug-panel .gloss-row .gloss-alts { color: rgba(255, 255, 255, 0.45); }
+
+/* Low-confidence (below 35% gate) rows: dim everything and add an inline
+ * "below threshold" tag so the user understands why this didn't reach the
+ * LLM. The row is still visible — silent drops were confusing. */
+.debug-panel .gloss-row.unconfident { opacity: 0.55; }
+.debug-panel .gloss-row.unconfident .gloss-main { font-weight: 500; font-style: italic; }
+.debug-panel .gloss-row.unconfident .gloss-conf { color: #f59e0b; }
+.debug-panel .gloss-row .gloss-low-tag {
+    color: #f59e0b;
+    font-size: 0.6rem;
+    font-style: italic;
+    margin-left: 4px;
+}
+@media (max-width: 768px) {
+    .debug-panel { width: 200px; bottom: 50px; font-size: 0.7rem; }
+}
+@media (max-width: 480px) {
+    .debug-panel { width: 160px; bottom: 40px; }
 }
 .debug-title { font-weight: 700; margin-bottom: 6px; color: var(--text-primary); font-size: 0.8rem; }
 .debug-row { display: flex; justify-content: space-between; padding: 2px 0; color: var(--text-secondary); }
@@ -2532,4 +2831,49 @@ html, body { max-width: 100vw; overflow-x: hidden; }
 }
 .debug-velocity-threshold {
     position: absolute; top: -2px; height: 12px; width: 2px; background: #ff6666; border-radius: 1px;
+}
+
+/* Scrollable gloss list inside the diagnostics panel (streaming mode).
+ * Replaces the old hands/velocity/state rows. One row per detected gloss,
+ * newest first. Top-1 prominent; alternates dimmer/smaller. */
+.gloss-list {
+    max-height: 320px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px 0;
+}
+.gloss-list-empty {
+    color: var(--text-dimmed);
+    font-style: italic;
+    font-size: 0.75rem;
+    padding: 6px 4px;
+}
+.gloss-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 4px 4px 4px 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    line-height: 1.25;
+}
+.gloss-row:first-child {
+    background: rgba(76, 175, 128, 0.07);
+}
+.gloss-row .gloss-main {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+.gloss-row .gloss-conf {
+    color: var(--accent);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+.gloss-row .gloss-alts {
+    color: var(--text-dimmed);
+    font-size: 0.65rem;
+    font-weight: 400;
+    margin-left: auto;
+    text-align: right;
 }

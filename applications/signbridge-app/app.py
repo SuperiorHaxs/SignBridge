@@ -61,18 +61,25 @@ _holistic_lock = threading.Lock()
 
 
 def _get_holistic():
-    """Get or create persistent MediaPipe Holistic instance."""
+    """Get or create persistent MediaPipe Holistic instance.
+
+    model_complexity is the single biggest knob for per-frame cost but
+    accuracy regresses meaningfully at 0 (subtle finger/hand-shape signs
+    drop to low confidence). Default is 1 (the previous working value);
+    expose as an env var so future experimentation is one restart away.
+    """
     global _holistic_instance
     if not MEDIAPIPE_AVAILABLE:
         return None
     with _holistic_lock:
         if _holistic_instance is None:
-            print("[MediaPipe] Initializing Holistic model...")
+            complexity = int(os.environ.get('SIGNBRIDGE_HOLISTIC_COMPLEXITY', '1'))
+            print(f"[MediaPipe] Initializing Holistic model (complexity={complexity})...")
             mp_holistic = mp.solutions.holistic
             _holistic_instance = mp_holistic.Holistic(
                 min_detection_confidence=0.3,
                 min_tracking_confidence=0.3,
-                model_complexity=1,
+                model_complexity=complexity,
             )
             print("[MediaPipe] Holistic model ready")
         return _holistic_instance
@@ -886,6 +893,12 @@ def _predict_from_poses(pose_array, domain="doctor_visit"):
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 
+# WebSocket support for streaming-live mode (step 1: transport only)
+from flask_sock import Sock
+sock = Sock(app)
+# Allow large binary frames (320x240 JPEG @ q=0.6 is well under 50KB; 256KB is plenty)
+app.config['SOCK_SERVER_OPTIONS'] = {'max_message_size': 262144}
+
 # pose-format CLI binaries (same venv as Python). Used by the optional
 # /api/practice-pose-video endpoint to render the user's clip into a
 # pose-only video for the sign bank toggle.
@@ -968,6 +981,86 @@ def _load_llm_prompt():
         return LLM_PROMPT_PATH.read_text(encoding='utf-8')
     return None
 
+
+def _domain_context(domain):
+    """
+    Resolve a domain key to its human-readable label, description, and the
+    full word list the corresponding model can predict. Used to inject
+    domain-aware context into the LLM prompt so it interprets glosses with
+    the right semantic prior.
+    """
+    registry = _load_registry()
+    entry = registry.get("domains", {}).get(domain, {}) if registry else {}
+    label = entry.get("label") or domain or "general"
+    description = entry.get("description") or ""
+
+    # Vocabulary = classes the model can actually predict for this domain.
+    # class_index_mapping.json lists ALL classes the model was trained on;
+    # masked_classes.json lists IDs that are masked out at inference time
+    # (the model literally cannot output them for this domain). Including
+    # masked classes in the prompt would mislead the LLM into expecting
+    # words that can never appear in top-K.
+    vocab = []
+    model_dir = entry.get("model_dir") or (registry.get("fallback_model") if registry else None)
+    if model_dir:
+        model_path = MODELS_DIR / "openhands-modernized" / "production-models" / model_dir
+        class_file = model_path / "class_index_mapping.json"
+        mask_file  = model_path / "masked_classes.json"
+        if class_file.exists():
+            try:
+                with open(class_file, 'r', encoding='utf-8') as f:
+                    mapping = json.load(f)
+                masked_ids = set()
+                if mask_file.exists():
+                    try:
+                        with open(mask_file, 'r', encoding='utf-8') as mf:
+                            raw_mask = json.load(mf)
+                        # masked_classes.json is typically a list of int IDs;
+                        # tolerate both list-of-int and list-of-str forms.
+                        masked_ids = {str(x) for x in raw_mask}
+                    except Exception as e:
+                        print(f"[Domain] Failed to load masked classes for {domain}: {e}")
+                # mapping is {"0": "ABDOMEN", "1": "ACCIDENT", ...}
+                vocab = sorted({
+                    v for k, v in mapping.items()
+                    if isinstance(v, str) and str(k) not in masked_ids
+                })
+                if masked_ids:
+                    print(f"[Domain] {domain}: {len(vocab)} active vocab "
+                          f"(after masking {len(masked_ids)} classes)")
+            except Exception as e:
+                print(f"[Domain] Failed to load vocab for {domain}: {e}")
+    return {"label": label, "description": description, "vocabulary": vocab}
+
+
+def _build_domain_section(domain):
+    """Render the {domain_section} block for the LLM prompt, or '' if unknown."""
+    ctx = _domain_context(domain)
+    if not ctx["label"]:
+        return ""
+    parts = [
+        "═══════════════════════════════════════",
+        "DOMAIN CONTEXT",
+        "═══════════════════════════════════════",
+        f"Domain: {ctx['label']}",
+    ]
+    if ctx["description"]:
+        parts.append(f"Description: {ctx['description']}")
+    if ctx["vocabulary"]:
+        parts.append(
+            "Vocabulary the signer is likely to use (the model can only predict "
+            "from this list — out-of-domain words will not appear):"
+        )
+        # Wrap to ~10 words per line for readability.
+        words = ctx["vocabulary"]
+        for i in range(0, len(words), 10):
+            parts.append("  " + ", ".join(words[i:i + 10]))
+    parts.append(
+        "Interpret the signed predictions as a conversation in this domain. "
+        "Use it as semantic prior when choosing among top-K alternates."
+    )
+    return "\n".join(parts)
+
 # ============================================================================
 # ROUTES — Pages
 # ============================================================================
@@ -975,6 +1068,407 @@ def _load_llm_prompt():
 @app.route("/")
 def index():
     return render_template("index.html", mode=APP_MODE, method=APP_METHOD)
+
+
+# ============================================================================
+# STREAMING LIVE MODE — Step 2: motion gate + segmentation
+# ----------------------------------------------------------------------------
+# Frames arrive as JPEG bytes over /ws/live-stream. A per-connection
+# StreamingSession runs the closed-captions motion detector + segmentation
+# state machine and emits motion / segment_start / segment_end events. No
+# pose extraction or model inference yet — that's wired in step 3.
+#
+# The standalone /ws-test page subscribes to those events and renders a
+# motion bar, signing indicator, and a segment log so the algorithm can be
+# verified before any model is in the loop.
+# ============================================================================
+
+from streaming_session import StreamingSession
+
+
+@app.route("/ws-test")
+def ws_test():
+    """Standalone page for verifying the streaming-live segmentation."""
+    return render_template("ws_test.html")
+
+
+@sock.route("/ws/practice-stream")
+def ws_practice_stream(ws):
+    """
+    Practice WebSocket — same StreamingSession + motion gate as /ws/live-stream
+    but tailored for Sign Bank practice:
+      - Start message includes `target_gloss` (what the user is trying to sign).
+      - When a segment closes, runs pose+inference and emits a `practice_result`
+        event with top-K and a target-match flag.
+      - Phase 2 will add pose comparison vs training reference + captured-video
+        playback (saved server-side, served via /api/practice-clips/<id>).
+    """
+    import time as _time
+    import threading as _threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    print("[WS] /ws/practice-stream connected")
+    send_lock = _threading.Lock()
+
+    def send(payload):
+        with send_lock:
+            try:
+                ws.send(json.dumps(payload))
+            except Exception as e:
+                print(f"[WS-Practice] send failed: {e}")
+
+    session = StreamingSession(send_json=send)
+    state = {"domain": "emergency", "target": ""}
+    inference_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ws-practice")
+
+    def run_practice(segment_id, frames):
+        try:
+            send({"type": "inference_start", "segment_id": segment_id, "frames": len(frames)})
+            t0 = _time.time()
+            target = min(len(frames), 90)
+            full_pose = _extract_poses(frames, target_frames=target)
+            if full_pose is None or len(full_pose) == 0:
+                send({"type": "practice_error", "segment_id": segment_id, "msg": "no pose detected"})
+                return
+            full_pose = _reject_outlier_landmarks(full_pose)
+            full_pose = _smooth_missing_landmarks(full_pose)
+            trimmed, ts_idx, te_idx, trim_info = _trim_to_motion_window(full_pose)
+            t1 = _time.time()
+
+            # Same loosened gate as live: drop only no_motion_detected.
+            if trim_info.get('reason') == 'no_motion_detected':
+                send({"type": "practice_error", "segment_id": segment_id,
+                      "msg": "no hand motion in segment"})
+                return
+            if trimmed is None or len(trimmed) == 0:
+                send({"type": "practice_error", "segment_id": segment_id,
+                      "msg": "trim left no frames"})
+                return
+
+            prediction, refine_info = _predict_with_handedness_aware_refinement(
+                trimmed, domain=state["domain"]
+            )
+            prediction = _apply_confidence_gate(prediction)
+            t2 = _time.time()
+
+            target = state["target"].strip().upper()
+            predicted = (prediction.get("gloss") or "").strip().upper()
+            top_k = prediction.get("top_k_predictions", [])[:5]
+            top_k_upper = [(p.get("gloss") or "").strip().upper() for p in top_k]
+            match_top1 = bool(target) and (predicted == target)
+            match_top_k = bool(target) and (target in top_k_upper)
+
+            print(f"[WS-Practice] segment {segment_id}: {len(frames)}fr -> "
+                  f"trim={len(trimmed)} ({trim_info.get('reason','?')}) | "
+                  f"target={target} predicted={predicted} ({prediction.get('confidence',0)*100:.0f}%) "
+                  f"top1_match={match_top1} topk_match={match_top_k} | "
+                  f"pose={t1-t0:.2f}s infer={t2-t1:.2f}s")
+
+            send({
+                "type": "practice_result",
+                "segment_id": segment_id,
+                "gloss": prediction.get("gloss", "?"),
+                "confidence": prediction.get("confidence", 0),
+                "confident": prediction.get("confident", True),
+                "status": prediction.get("status", "ok"),
+                "top_k": top_k,
+                "target": target,
+                "match_top1": match_top1,
+                "match_top_k": match_top_k,
+                "frames_in": len(frames),
+                "frames_after_trim": len(trimmed),
+                "trim_reason": trim_info.get("reason", "?"),
+                "pose_ms": int((t1 - t0) * 1000),
+                "infer_ms": int((t2 - t1) * 1000),
+                "total_ms": int((t2 - t0) * 1000),
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            send({"type": "practice_error", "segment_id": segment_id, "msg": str(e)})
+
+    session.dispatch_segment = lambda seg_id, frames: inference_executor.submit(
+        run_practice, seg_id, frames
+    )
+
+    bytes_total = 0
+    window_start = _time.time()
+    window_count = 0
+    window_bytes = 0
+
+    try:
+        while True:
+            msg = ws.receive(timeout=30)
+            if msg is None:
+                break
+            now = _time.time()
+            if isinstance(msg, (bytes, bytearray)):
+                bytes_total += len(msg)
+                window_count += 1
+                window_bytes += len(msg)
+                session.on_frame(msg)
+                if now - window_start >= 1.0:
+                    fps = window_count / (now - window_start)
+                    kbps = (window_bytes / 1024.0) / (now - window_start)
+                    send({"type": "stats", "recv_fps": round(fps, 1), "recv_kbps": round(kbps, 1),
+                          "total_frames": session.frame_count, "total_bytes": bytes_total})
+                    window_start = now; window_count = 0; window_bytes = 0
+            else:
+                try:
+                    payload = json.loads(msg)
+                except (ValueError, TypeError):
+                    payload = {"raw": str(msg)}
+                kind = payload.get("type") if isinstance(payload, dict) else None
+                print(f"[WS-Practice] control: {payload}")
+                if kind in ("start", "tune") and isinstance(payload, dict):
+                    overrides = {k: payload.get(k) for k in (
+                        "motion_threshold", "motion_threshold_continue",
+                        "cooldown_frames", "min_sign_frames",
+                        "sign_debounce_s", "post_segment_quiet_s",
+                        "zone_top", "zone_bottom",
+                        "require_hand_present", "fps",
+                    )}
+                    session.reconfigure(**overrides)
+                    if payload.get("domain"): state["domain"] = str(payload["domain"])
+                    if payload.get("target_gloss") is not None:
+                        state["target"] = str(payload["target_gloss"])
+                    if kind == "start":
+                        session.reset()
+                elif kind == "reset":
+                    session.reset()
+                elif kind == "ping":
+                    # Client keep-alive (sent during pause). Acknowledge so the
+                    # 30s receive timeout doesn't close a paused-but-alive WS.
+                    send({"type": "pong"})
+                    continue
+                elif kind == "stop":
+                    send({"type": "ack-control", "echo": payload})
+                    break
+                send({"type": "ack-control", "echo": payload, "config": session.cfg, "target": state["target"]})
+    except Exception as e:
+        print(f"[WS-Practice] connection ended: {type(e).__name__}: {e}")
+    finally:
+        inference_executor.shutdown(wait=False, cancel_futures=True)
+        print(f"[WS-Practice] disconnected after {session.frame_count} frames, "
+              f"{bytes_total/1024:.0f} KB, {session.segment_id} segments")
+
+
+@sock.route("/ws/live-stream")
+def ws_live_stream(ws):
+    """
+    Streaming-live WebSocket. Step 3: motion gate + segmentation + inference.
+
+    Protocol:
+      Client -> server (binary): one JPEG frame per message
+      Client -> server (text):   {"type": "start", "fps": 15, ...tuning..., "domain": "..."}
+                                 {"type": "tune", ...same keys...}   live re-tuning
+                                 {"type": "reset"}                   clear state
+                                 {"type": "stop"}                    close connection
+
+      Server -> client (text):   {"type": "motion",          score, active, signing, frame, segment_frames, threshold}
+                                 {"type": "segment_start",   segment_id, frame, ts}
+                                 {"type": "segment_end",     segment_id, frames, duration_ms,
+                                                             accepted, rejected_reason?}
+                                 {"type": "segment_suppressed", reason, ...}
+                                 {"type": "inference_start", segment_id, frames}
+                                 {"type": "gloss",           segment_id, gloss, confidence, top_k,
+                                                             confident, status, pose_ms, infer_ms, total_ms,
+                                                             frames_in, frames_after_trim}
+                                 {"type": "gloss_error",     segment_id, msg}
+                                 {"type": "stats",           recv_fps, recv_kbps, total_frames, total_bytes}
+                                 {"type": "ack-control",     echo}
+                                 {"type": "error",           where, msg}
+    """
+    import time as _time
+    import threading as _threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    print("[WS] /ws/live-stream connected")
+    send_lock = _threading.Lock()
+
+    def send(payload):
+        # Single ws.send call site — protects against concurrent sends from the
+        # inference worker thread vs the main receive loop.
+        with send_lock:
+            try:
+                ws.send(json.dumps(payload))
+            except Exception as e:
+                print(f"[WS] send failed: {e}")
+
+    session = StreamingSession(send_json=send)
+
+    # Per-session inference executor. max_workers=1 keeps inference strictly
+    # sequential within a session (the model is GIL-bound and one segment at a
+    # time matches signing cadence). The segmentation loop never blocks because
+    # dispatch_segment just submits and returns.
+    domain_holder = {"domain": "emergency"}
+    inference_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ws-infer")
+
+    def run_inference(segment_id, frames):
+        """Pose-extract + infer for one segment. Runs on the executor thread."""
+        try:
+            send({
+                "type": "inference_start",
+                "segment_id": segment_id,
+                "frames": len(frames),
+            })
+            t0 = _time.time()
+
+            # Keep variable-length sequence — no fixed 25-frame downsample.
+            # Cap at 90 (6 seconds at 15fps) just so a runaway segment can't
+            # blow up MediaPipe; real signs are well under this.
+            target = min(len(frames), 90)
+            full_pose = _extract_poses(frames, target_frames=target)
+            if full_pose is None or len(full_pose) == 0:
+                send({"type": "gloss_error", "segment_id": segment_id,
+                      "msg": "no pose detected"})
+                return
+
+            full_pose = _reject_outlier_landmarks(full_pose)
+            full_pose = _smooth_missing_landmarks(full_pose)
+            trimmed, ts_idx, te_idx, trim_info = _trim_to_motion_window(full_pose)
+            t1 = _time.time()
+
+            if trimmed is None or len(trimmed) == 0:
+                send({"type": "gloss_error", "segment_id": segment_id,
+                      "msg": "motion-window trim left no frames"})
+                return
+
+            # Reject only the truly unambiguous failure case from the trim:
+            # `no_motion_detected` means the pose data has zero motion above
+            # the velocity threshold -- there is literally no hand movement
+            # in the segment, so the input is just incidental pixel noise.
+            #
+            # We *do not* reject `window_too_small` or `too_short` -- those
+            # legitimately fire on real but quick signs (e.g. BATHROOM's
+            # brief B-handshape shake), and rejecting them was suppressing
+            # legitimate fast signs. The 35% confidence gate further down
+            # is the safety net for any noise that slips through here.
+            _trim_reason = trim_info.get('reason')
+            if _trim_reason == 'no_motion_detected':
+                print(f"[WS] segment {segment_id}: rejected (trim reason={_trim_reason}, "
+                      f"{len(full_pose)} input frames -- no hand motion in pose data)")
+                send({
+                    "type": "gloss_error",
+                    "segment_id": segment_id,
+                    "msg": f"no hand motion in segment (trim={_trim_reason})",
+                })
+                return
+
+            prediction, refine_info = _predict_with_handedness_aware_refinement(
+                trimmed, domain=domain_holder["domain"]
+            )
+            prediction = _apply_confidence_gate(prediction)
+            t2 = _time.time()
+
+            print(f"[WS] segment {segment_id}: {len(frames)}fr -> {len(full_pose)}poses "
+                  f"-> trim[{ts_idx}:{te_idx}]={len(trimmed)} ({trim_info.get('reason','?')}) | "
+                  f"pose={t1-t0:.2f}s infer={t2-t1:.2f}s | "
+                  f"{prediction.get('gloss','?')} ({prediction.get('confidence',0)*100:.0f}%)")
+
+            send({
+                "type": "gloss",
+                "segment_id": segment_id,
+                "gloss": prediction.get("gloss", "?"),
+                "confidence": prediction.get("confidence", 0),
+                "confident": prediction.get("confident", True),
+                "status": prediction.get("status", "ok"),
+                "top_k": prediction.get("top_k_predictions", [])[:5],
+                "frames_in": len(frames),
+                "frames_after_trim": len(trimmed),
+                "trim_reason": trim_info.get("reason", "?"),
+                "pose_ms": int((t1 - t0) * 1000),
+                "infer_ms": int((t2 - t1) * 1000),
+                "total_ms": int((t2 - t0) * 1000),
+                "refined": refine_info.get("refined", False),
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            send({"type": "gloss_error", "segment_id": segment_id, "msg": str(e)})
+
+    # Hook the segmenter to the inference executor. The session calls this from
+    # the same thread that handles incoming frames; we want it to return fast,
+    # so just submit() and let the executor run inference asynchronously.
+    session.dispatch_segment = lambda seg_id, frames: inference_executor.submit(
+        run_inference, seg_id, frames
+    )
+
+    bytes_total = 0
+    window_start = _time.time()
+    window_count = 0
+    window_bytes = 0
+
+    try:
+        while True:
+            msg = ws.receive(timeout=30)
+            if msg is None:
+                break
+
+            now = _time.time()
+
+            if isinstance(msg, (bytes, bytearray)):
+                bytes_total += len(msg)
+                window_count += 1
+                window_bytes += len(msg)
+                session.on_frame(msg)
+
+                if now - window_start >= 1.0:
+                    fps = window_count / (now - window_start)
+                    kbps = (window_bytes / 1024.0) / (now - window_start)
+                    send({
+                        "type": "stats",
+                        "recv_fps": round(fps, 1),
+                        "recv_kbps": round(kbps, 1),
+                        "total_frames": session.frame_count,
+                        "total_bytes": bytes_total,
+                    })
+                    print(f"[WS] {fps:.1f} fps, {kbps:.1f} KB/s "
+                          f"(total {session.frame_count} frames, "
+                          f"{bytes_total/1024:.0f} KB, segments {session.segment_id})")
+                    window_start = now
+                    window_count = 0
+                    window_bytes = 0
+            else:
+                try:
+                    payload = json.loads(msg)
+                except (ValueError, TypeError):
+                    payload = {"raw": str(msg)}
+                kind = payload.get("type") if isinstance(payload, dict) else None
+                print(f"[WS] control: {payload}")
+
+                if kind in ("start", "tune") and isinstance(payload, dict):
+                    overrides = {k: payload.get(k) for k in (
+                        "motion_threshold", "motion_threshold_continue",
+                        "cooldown_frames", "min_sign_frames",
+                        "sign_debounce_s", "post_segment_quiet_s",
+                        "zone_top", "zone_bottom",
+                        "require_hand_present", "fps",
+                    )}
+                    session.reconfigure(**overrides)
+                    if "domain" in payload and payload["domain"]:
+                        domain_holder["domain"] = str(payload["domain"])
+                    if kind == "start":
+                        session.reset()
+                elif kind == "reset":
+                    session.reset()
+                elif kind == "ping":
+                    # Client keep-alive (sent during pause). Acknowledge so the
+                    # 30s receive timeout doesn't close a paused-but-alive WS.
+                    send({"type": "pong"})
+                    continue
+                elif kind == "stop":
+                    send({"type": "ack-control", "echo": payload})
+                    break
+
+                send({"type": "ack-control", "echo": payload, "config": session.cfg})
+
+    except Exception as e:
+        print(f"[WS] connection ended: {type(e).__name__}: {e}")
+    finally:
+        inference_executor.shutdown(wait=False, cancel_futures=True)
+        print(f"[WS] disconnected after {session.frame_count} frames, "
+              f"{bytes_total/1024:.0f} KB total, {session.segment_id} segments")
 
 
 # ============================================================================
@@ -1309,6 +1803,26 @@ ASL glosses:"""
 # ============================================================================
 # ROUTES — Live Mode API
 # ============================================================================
+
+@app.route("/api/warm-model", methods=["POST"])
+def warm_model():
+    """Pre-load the inference model and MediaPipe Holistic for the given
+    domain so the first real segment doesn't pay the cold-start cost
+    (model loading + MediaPipe initialization typically takes 4-8s).
+    Fire-and-forget from the client when the user enters the conversation
+    window for a scenario."""
+    try:
+        data = request.get_json(silent=True) or {}
+        domain = data.get("domain") or "emergency"
+        if MEDIAPIPE_AVAILABLE:
+            _get_holistic()
+        _get_direct_model(domain)
+        return jsonify({"success": True, "domain": domain})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route("/api/process-sign", methods=["POST"])
 def process_sign():
@@ -2073,6 +2587,20 @@ def construct_sentence_live():
         data = request.get_json()
         gloss_predictions = data.get("gloss_predictions", [])
         conversation_history = data.get("conversation_history", [])
+        # Running-caption mode: the client supplies its prior caption for this
+        # utterance and ONLY the new glosses since that caption was generated.
+        # The LLM extends rather than rebuilds. Empty/missing means "first call
+        # of a new utterance, build from scratch".
+        running_caption = (data.get("running_caption") or "").strip()
+        # Regenerate hint: when the user clicked the Regenerate (🔄) icon on a
+        # low-quality caption, the client sends the previous output here so the
+        # LLM is told to try a different interpretation. Triggers the FRESH path
+        # (running_caption is sent empty alongside) -- the previous attempt is
+        # the *rejected* answer, not the prior caption to extend.
+        previous_attempt = (data.get("previous_attempt") or "").strip()
+        # Domain key (e.g. "emergency", "doctor_visit"). Fed to the prompt
+        # so the LLM has the right semantic prior + vocabulary scope.
+        domain = (data.get("domain") or "emergency").strip()
 
         if not gloss_predictions:
             return jsonify({"success": False, "error": "No gloss predictions"}), 400
@@ -2102,13 +2630,71 @@ def construct_sentence_live():
                     f"  Option 1: '{pred['gloss']}' (confidence: {conf:.1f}%)"
                 )
         gloss_details = "\n".join(gloss_details_lines)
-        print(f"[Live LLM] Input to LLM:\n{gloss_details}")
+        if running_caption:
+            print(f"[Live LLM] EXTEND mode. Prior caption: \"{running_caption}\"")
+            print(f"[Live LLM] NEW glosses ({len(gloss_predictions)}):\n{gloss_details}")
+        else:
+            print(f"[Live LLM] FRESH start. Glosses ({len(gloss_predictions)}):\n{gloss_details}")
+
+        # Build the running-caption section (extend mode marker).
+        if running_caption:
+            running_section = (
+                f"Running caption (you generated this earlier for the current "
+                f"utterance — extend or refine it with the new signs below):\n"
+                f"    \"{running_caption}\""
+            )
+        else:
+            running_section = ""
+
+        # Build the regenerate section. When set, the user rejected our prior
+        # attempt; we instruct the LLM to produce a meaningfully different
+        # interpretation rather than recreating the same output.
+        if previous_attempt:
+            regenerate_section = (
+                "═══════════════════════════════════════\n"
+                "REGENERATE MODE — IMPORTANT\n"
+                "═══════════════════════════════════════\n"
+                f"Your previous attempt for these signs was:\n"
+                f"    \"{previous_attempt}\"\n"
+                "The user rejected it as low quality. You MUST produce a "
+                "MEANINGFULLY DIFFERENT sentence — not paraphrasing, not "
+                "synonyms of the same words.\n"
+                "\n"
+                "ACTIVELY EXPLORE THE TOP-2 AND TOP-3 ALTERNATES:\n"
+                "- For each position, the Option 2 and Option 3 entries below "
+                "  are real possibilities — the model wasn't sure. Try them.\n"
+                "- The Option 1 word does NOT need to be in your output. If it "
+                "  doesn't fit, swap it for an Option 2 or Option 3 word that "
+                "  forms a more sensible sentence with the other positions.\n"
+                "- It is OK to use a 0.5%-confidence alternate if it produces "
+                "  a coherent sentence; the previous run already failed with "
+                "  the top-1 picks.\n"
+                "\n"
+                "ALSO TRY A DIFFERENT SYNTACTIC STRUCTURE:\n"
+                "- If your previous attempt was a declarative, try imperative.\n"
+                "- If your previous attempt used the topic as subject, try the\n"
+                "  comment as subject (or vice versa).\n"
+                "- Consider a fragment / interjection if the data warrants it.\n"
+                "\n"
+                "DO NOT repeat the previous wording or its near-synonyms. If "
+                "no different coherent sentence is achievable, output a shorter "
+                "fragment that uses fewer (but coherent) words and set "
+                "low_confidence: true."
+            )
+        else:
+            regenerate_section = ""
+
+        # Domain context section (label + description + vocabulary).
+        domain_section = _build_domain_section(domain)
 
         # Try loading the prompt template
         prompt_template = _load_llm_prompt()
         if prompt_template:
             context_section = f"Conversation context:\n{context_str}"
             prompt = prompt_template.replace("{context_section}", context_section)
+            prompt = prompt.replace("{running_caption_section}", running_section)
+            prompt = prompt.replace("{regenerate_hint_section}", regenerate_section)
+            prompt = prompt.replace("{domain_section}", domain_section)
             prompt = prompt.replace("{gloss_details}", gloss_details)
         else:
             # Fallback to inline prompt
@@ -2143,11 +2729,24 @@ English sentence:"""
             generated = '\n'.join(lines).strip()
 
         sentence = generated  # fallback
+        plausibility_overall = None
+        parsed_json = None
         try:
             # Fix double braces that LLM sometimes outputs from template patterns
             fixed = generated.replace('{{', '{').replace('}}', '}')
-            parsed = json.loads(fixed)
-            sentence = parsed.get("sentence", parsed.get("revised_sentence", generated))
+            parsed_json = json.loads(fixed)
+            sentence = parsed_json.get("sentence", parsed_json.get("revised_sentence", generated))
+
+            # Extract the LLM's self-critique plausibility (3 sub-scores).
+            # Geometric mean matches the prompt's stated "overall" semantics
+            # and is more conservative than arithmetic mean for live CTQI.
+            pl = parsed_json.get("plausibility")
+            if isinstance(pl, dict):
+                g = float(pl.get("grammatical", 0) or 0)
+                s = float(pl.get("semantic", 0) or 0)
+                n = float(pl.get("naturalness", 0) or 0)
+                if g > 0 and s > 0 and n > 0:
+                    plausibility_overall = (g * s * n) ** (1.0 / 3.0)
         except (json.JSONDecodeError, TypeError):
             # Plain text response
             if sentence.startswith('"') and sentence.endswith('"'):
@@ -2158,9 +2757,24 @@ English sentence:"""
             if m:
                 sentence = m.group(1)
 
-        print(f"[Live LLM] Glosses: {[p['gloss'] for p in gloss_predictions]} -> {sentence}")
+        if plausibility_overall is not None:
+            print(f"[Live LLM] Glosses: {[p['gloss'] for p in gloss_predictions]} -> {sentence}  [P={plausibility_overall:.1f}]")
+        else:
+            # Help diagnose missing plausibility — log what we got back from the LLM
+            # so we can see whether the schema was violated.
+            if isinstance(parsed_json, dict):
+                print(f"[Live LLM] Glosses: {[p['gloss'] for p in gloss_predictions]} -> {sentence}  [P=missing; JSON keys={list(parsed_json.keys())}]")
+            else:
+                print(f"[Live LLM] Glosses: {[p['gloss'] for p in gloss_predictions]} -> {sentence}  [P=missing; non-JSON response]")
+                print(f"[Live LLM] Raw response (first 300 chars): {generated[:300]!r}")
 
-        return jsonify({"success": True, "sentence": sentence})
+        return jsonify({
+            "success": True,
+            "sentence": sentence,
+            # Plausibility (0-100) from the LLM's self-critique. Client uses
+            # this with avg gloss confidence to compute a live CTQI estimate.
+            "plausibility": plausibility_overall,
+        })
 
     except Exception as e:
         import traceback
@@ -2330,10 +2944,22 @@ def camera_proxy():
                 or hostname.startswith('10.') or hostname.startswith('172.'))):
             return jsonify({"error": "Only local network cameras allowed"}), 403
 
+    # Open the upstream GET first so we can copy its real Content-Type (which
+    # carries the multipart boundary param). HEAD doesn't work on esp-http-server
+    # since the firmware only registers GET handlers -- it returns 404+text/html,
+    # which would then poison the proxy response and break the browser <img>.
+    try:
+        upstream = http_requests.get(url, stream=True, timeout=10)
+    except http_requests.RequestException as e:
+        print(f"[CameraProxy] Upstream connect failed: {e}")
+        return jsonify({"error": f"Upstream camera unreachable: {e}"}), 502
+
+    content_type = upstream.headers.get('Content-Type',
+                                        'multipart/x-mixed-replace; boundary=frame')
+
     def stream_mjpeg():
         try:
-            resp = http_requests.get(url, stream=True, timeout=10)
-            for chunk in resp.iter_content(chunk_size=4096):
+            for chunk in upstream.iter_content(chunk_size=4096):
                 if not chunk:
                     break
                 yield chunk
@@ -2341,15 +2967,18 @@ def camera_proxy():
             print(f"[CameraProxy] Stream ended: {e}")
         except Exception as e:
             print(f"[CameraProxy] Unexpected error: {e}")
+        finally:
+            try:
+                upstream.close()
+            except Exception:
+                pass
 
-    try:
-        # Peek at the content type from the camera
-        head_resp = http_requests.head(url, timeout=5)
-        content_type = head_resp.headers.get('Content-Type', 'multipart/x-mixed-replace')
-    except Exception:
-        content_type = 'multipart/x-mixed-replace'
-
-    return Response(stream_mjpeg(), content_type=content_type)
+    resp = Response(stream_mjpeg(), content_type=content_type)
+    # The <img crossOrigin='anonymous'> in the page forces CORS checks even on
+    # same-origin loads; make the response explicitly cross-origin-safe.
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    resp.headers['Cache-Control'] = 'no-store'
+    return resp
 
 
 # ============================================================================

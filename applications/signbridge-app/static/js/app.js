@@ -30,8 +30,10 @@ let externalCameraImg = null;       // <img> element loading MJPEG stream
 let externalCameraCanvas = null;    // hidden canvas for frame capture
 let externalCameraInterval = null;  // setInterval handle for canvas draw loop
 
-const SPEAKER_LABEL = MODE === 'demo' ? 'Doctor' : 'Speaker';
-const SIGNER_LABEL = MODE === 'demo' ? 'Patient (ASL \u2192 English)' : 'Signer (ASL \u2192 English)';
+// Generic labels regardless of demo/live mode so transcript reads naturally
+// across any scenario (medical, emergency, banking, etc.).
+const SPEAKER_LABEL = 'Speaker';
+const SIGNER_LABEL  = 'Signer (ASL \u2192 English)';
 
 // ── Toast Notification System (1.6) ──────────────────────────
 const toastContainer = document.createElement('div');
@@ -99,19 +101,26 @@ window.addEventListener('popstate', () => {
     }
 });
 
-// ── Camera Source Selector (WI-2) ────────────────────────────
-function toggleCameraSourcePanel() {
-    const panel = document.getElementById('cameraSourcePanel');
-    const showing = panel.style.display === 'none';
+// ── Unified settings panel (camera source + signing zone) ────────────────
+function toggleSettings() {
+    const panel = document.getElementById('settingsPanel');
+    if (!panel) return;
+    const showing = panel.style.display === 'none' || !panel.style.display;
     panel.style.display = showing ? 'block' : 'none';
 
-    // If external camera is active, reflect that in the radio buttons
+    // If external camera is active, reflect that in the radio buttons when
+    // opening (so the user lands on the right state).
     if (showing && externalCameraUrl) {
         const wifiRadio = document.querySelector('input[name="cameraSource"][value="wifi"]');
         if (wifiRadio) wifiRadio.checked = true;
         selectCameraSource('wifi');
     }
 }
+
+// Legacy names — kept as thin aliases so any other code that still references
+// them keeps working. Both forward to the unified panel.
+function toggleCameraSourcePanel() { toggleSettings(); }
+function toggleStreamSettings()     { toggleSettings(); }
 
 function selectCameraSource(type) {
     const wifiRow = document.getElementById('wifiCameraInputRow');
@@ -133,6 +142,20 @@ function selectCameraSource(type) {
             stopExternalCamera();
             document.getElementById('wifiCameraStatus').style.display = 'none';
             document.querySelector('.camera-title').textContent = 'Your Camera';
+            // Restore device-camera strict defaults (tighter motion thresholds,
+            // narrower zone that excludes desk/lap noise).
+            if (signSegmenter && typeof signSegmenter.tune === 'function') {
+                signSegmenter.tune({
+                    motion_threshold: 325000,
+                    motion_threshold_continue: 120000,
+                    zone_top: 0.0,
+                    zone_bottom: 0.9,
+                });
+            }
+            // Reset digital zoom; device cam has narrower FOV natively.
+            if (signSegmenter && typeof signSegmenter.setZoom === 'function') {
+                signSegmenter.setZoom(1.0);
+            }
             // Restart with device camera if live
             if (liveActive) {
                 stopCamera();
@@ -162,24 +185,84 @@ async function connectWifiCamera() {
     statusEl.textContent = 'Connecting to camera...';
 
     try {
-        // Stop current camera
+        // Swap the underlying camera, but DON'T tear down signSegmenter --
+        // the WS streamer reads from cameraFeed.videoEl, which keeps its
+        // identity across the swap; only its srcObject changes. Calling
+        // signSegmenter.stop() here closes the WS and kills the frame loop,
+        // and StreamingLiveMode.start() is a no-op (compat shim), so the
+        // streamer never recovers and the server never sees a single frame.
         stopCamera();
-        if (signSegmenter) signSegmenter.stop();
 
         externalCameraUrl = url;
         localStorage.setItem('signbridge-wifi-camera-url', url);
 
         await startCamera();
 
+        // Clear server-side segmenter state so any half-open segment from
+        // the previous camera doesn't bleed into the WiFi feed. Also turn
+        // OFF the hand-presence gate: at QVGA + quality=25 the ESP32 stream
+        // is too blocky for MediaPipe Hands to find a hand, so the gate
+        // silently suppresses every motion event. The motion + zone gate
+        // alone is sufficient for WiFi-cam framing (camera is mounted, not
+        // handheld, so chair-scrape false positives are rare).
+        // Clear server-side segmenter state so any half-open segment from
+        // the previous camera doesn't bleed into the WiFi feed.
+        if (signSegmenter && signSegmenter._ws &&
+            signSegmenter._ws.readyState === WebSocket.OPEN) {
+            try { signSegmenter._ws.send(JSON.stringify({ type: 'reset' })); } catch (_) {}
+        }
+        // WiFi-cam tuning for the VGA/lanyard setup:
+        //
+        //   motion_threshold 325k -> 220k, continue 120k -> 80k
+        //     Halfway between the QVGA-low (150k/50k) and device-cam strict
+        //     (325k/120k) defaults. VGA-q=15 pumps more pixel-noise than the
+        //     old QVGA-q=12, so we don't need to drop as low to clear real
+        //     signing, but still below device-camera baseline since hands at
+        //     3-5 ft are smaller than at desk-camera distance.
+        //
+        //   require_hand_present stays true (server default)
+        //     With VGA + 480x360 client capture, MediaPipe Hands sees ~80px
+        //     hands at conversational distance -- enough for reliable detection.
+        //     The gate is back to being useful (chair-scrape, face-turn).
+        //     If it ever starts suppressing real signing again, drop confidence
+        //     server-side or set require_hand_present: false here.
+        if (signSegmenter && typeof signSegmenter.tune === 'function') {
+            signSegmenter.tune({
+                motion_threshold: 220000,
+                motion_threshold_continue: 80000,
+                // Open the zone for lanyard framing. The default zone_bottom=0.9
+                // excludes the bottom 10% (desk/lap noise for laptop cams), but
+                // on a lanyard pointing up, the signer's hands at chest height
+                // sit in that bottom strip and never register motion. Push
+                // zone_bottom to 1.0 and keep zone_top at 0; the user can
+                // narrow either side via the UI sliders if face-triggers or
+                // sky-triggers become a problem.
+                zone_top: 0.0,
+                zone_bottom: 1.0,
+            });
+        }
+        // Match laptop-cam framing. ESP32 OV2640 has ~75deg horizontal FOV
+        // vs the laptop cam's ~60deg, so at equal distance the signer
+        // looks ~30% smaller in frame -- which means smaller hands for
+        // MediaPipe even with VGA source. 1.3x digital zoom recovers the
+        // tighter framing without losing resolution (still downsampling
+        // into 480x360 target). Tune live via signSegmenter.setZoom(N).
+        if (signSegmenter && typeof signSegmenter.setZoom === 'function') {
+            signSegmenter.setZoom(1.3);
+        }
+
         statusEl.style.color = '#4caf80';
         statusEl.textContent = 'Connected';
-        document.getElementById('cameraSourcePanel').style.display = 'none';
+        // The settings popup that contains the camera-source + zone controls
+        // used to be id="cameraSourcePanel". Was renamed to settingsPanel when
+        // we merged the two panels into one. Tolerate either for safety.
+        const _settingsPanel = document.getElementById('settingsPanel')
+                            || document.getElementById('cameraSourcePanel');
+        if (_settingsPanel) _settingsPanel.style.display = 'none';
 
-        // Restart segmenter if live mode was active
-        if (liveActive && signSegmenter && cameraStream) {
+        if (liveActive) {
             continuousRecording = true;
             isRecordingSign = true;
-            signSegmenter.start(cameraStream);
             statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
         }
     } catch (e) {
@@ -337,37 +420,42 @@ function toggleDebugPanel() {
     panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
 }
 
-function updateDebugPanel(data) {
-    const panel = document.getElementById('debugPanel');
-    if (!panel || panel.style.display === 'none') return;
+// Old wrist-velocity diagnostics removed -- the streaming pipeline doesn't
+// produce those signals. Kept as a no-op so existing call sites (in the
+// retired SignSegmenter path) don't throw if they ever execute.
+function updateDebugPanel(_data) { /* no-op in streaming mode */ }
 
-    if (data.hands !== undefined) {
-        const el = document.getElementById('dbgHands');
-        el.textContent = data.hands > 0 ? `${data.hands} detected` : 'none';
-        el.style.color = data.hands > 0 ? '#4caf80' : '#ff6666';
-    }
-    if (data.velocity !== undefined) {
-        document.getElementById('dbgVelocity').textContent = data.velocity.toFixed(4);
-        // Velocity bar (scale: 0-0.05 range mapped to 0-100%)
-        const pct = Math.min(100, (data.velocity / 0.05) * 100);
-        document.getElementById('dbgVelocityBar').style.width = pct + '%';
-        document.getElementById('dbgVelocityBar').style.background =
-            data.velocity > 0.012 ? '#4caf80' : '#888';
-    }
-    if (data.state !== undefined) {
-        const el = document.getElementById('dbgState');
-        el.textContent = data.state;
-        const colors = { idle: '#888', signing: '#4caf80', analyzing: '#6c8cff', no_hands: '#ff6666' };
-        el.style.color = colors[data.state] || '#888';
-    }
-    if (data.signs !== undefined) {
-        document.getElementById('dbgSigns').textContent = data.signs;
-    }
-    if (data.pose !== undefined) {
-        const el = document.getElementById('dbgPose');
-        el.textContent = data.pose ? 'tracking' : 'no body';
-        el.style.color = data.pose ? '#4caf80' : '#888';
-    }
+// Append a gloss row to the scrollable diagnostics list. Newest first.
+// Top-1 prominent (gloss + confidence); alts smaller and dimmer.
+// Low-confidence rows (below the model's confidence gate) are rendered
+// dimmed + flagged so the user can see what was detected but knows it
+// didn't make it into the LLM buffer.
+function _appendGlossRow(pred) {
+    const panel = document.getElementById('glossListPanel');
+    if (!panel) return;
+    const empty = panel.querySelector('.gloss-list-empty');
+    if (empty) empty.remove();
+
+    const isConfident = pred.confident !== false;
+    const row = document.createElement('div');
+    row.className = 'gloss-row' + (isConfident ? '' : ' unconfident');
+    const conf = Math.round((pred.confidence || 0) * 100);
+    const alts = (pred.top_k || []).slice(1, 3)
+        .map(t => (t.gloss || '').toUpperCase())
+        .filter(Boolean);
+    const lowTag = isConfident ? '' : '<span class="gloss-low-tag">below threshold — not sent</span>';
+    row.innerHTML =
+        `<span class="gloss-main">${(pred.gloss || '').toUpperCase()}</span>` +
+        `<span class="gloss-conf">${conf}%</span>` +
+        lowTag +
+        (alts.length ? `<span class="gloss-alts">${alts.join(' · ')}</span>` : '');
+    panel.insertBefore(row, panel.firstChild);
+}
+
+function _clearGlossRows() {
+    const panel = document.getElementById('glossListPanel');
+    if (!panel) return;
+    panel.innerHTML = '<div class="gloss-list-empty">No glosses detected yet</div>';
 }
 
 // Set threshold marker position
@@ -460,10 +548,12 @@ async function requestCameraWithPrompt(needsAudio) {
             try {
                 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
                 const isPortrait = window.innerHeight > window.innerWidth;
-                // Request portrait-shaped video on mobile portrait to match device orientation
+                // Desktop: 640x480 matches /ws-test exactly so the camera framing/zoom
+                // the user verified in testing carries forward unchanged into the live
+                // streaming mode. Mobile portrait keeps its vertical aspect.
                 const video = (isMobile && isPortrait)
                     ? { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9/16 } }
-                    : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
+                    : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } };
                 const constraints = { video, audio: !!needsAudio };
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 resolve(stream);
@@ -1072,6 +1162,30 @@ function selectScenario(domain, scenarioName) {
     console.log('[Scenario] Selected:', scenarioName, '| Domain:', domain, '| Mode:', interactionMode, '| Method:', METHOD, '| AppMode:', MODE);
 
     loadVocabulary(domain);
+
+    // Model warmup. Block Start Conversation until the OpenHands model +
+    // MediaPipe Holistic are loaded server-side -- otherwise the user can
+    // click Start before the inference path is ready, hit Send, and stall
+    // on a 5-10s cold start. While warming, the button shows "Loading model".
+    if (MODE === 'live' && METHOD === 'sign') {
+        const origLabel = btnStart.dataset.armed === '1' ? 'Restart' : 'Start Conversation';
+        btnStart.disabled = true;
+        btnStart.textContent = 'Loading model...';
+        fetch('/api/warm-model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain }),
+        }).then(r => r.json()).then(j => {
+            console.log('[Warmup]', j.success ? `model for "${j.domain}" ready` : 'failed: ' + j.error);
+        }).catch(e => console.warn('[Warmup] fetch failed:', e.message)).finally(() => {
+            // Re-enable -- only if the user is still on this scenario and
+            // hasn't already navigated away or clicked into the conversation.
+            if (selectedDomain === domain) {
+                btnStart.disabled = false;
+                btnStart.textContent = origLabel;
+            }
+        });
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -1434,6 +1548,17 @@ async function startPracticeSession(sign) {
     document.getElementById('pracSignName').textContent = sign.gloss.toUpperCase();
     updatePracticeScore();
 
+    // Populate the on-screen word + domain selectors so the user can switch
+    // signs without leaving the practice screen.
+    _populatePracticeDomainSelector();
+    _populatePracticeWordSelector(sign.domain || 'emergency');
+
+    // Reset prediction badge from any prior session.
+    const _predBadge = document.getElementById('pracPredictionBadge');
+    if (_predBadge) { _predBadge.style.display = 'none'; _predBadge.className = 'prac-prediction-badge'; }
+    const _statusBadge = document.getElementById('pracStatusBadge');
+    if (_statusBadge) _statusBadge.style.display = 'none';
+
     // Set up reference video (may not exist for all signs — graceful fallback)
     const refVid = document.getElementById('pracRefVideo');
     const refPanel = refVid.closest('.prac-panel');
@@ -1480,9 +1605,11 @@ async function startPracticeSession(sign) {
     try {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const isPortrait = window.innerHeight > window.innerWidth;
+        // Desktop: 640x480 matches /ws-test + live-mode streaming pipeline so
+        // framing/zoom carry forward unchanged.
         const videoConstraint = (isMobile && isPortrait)
             ? { facingMode: 'user', width: { ideal: 720 }, height: { ideal: 1280 }, aspectRatio: { ideal: 9/16 } }
-            : { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } };
+            : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } };
         practiceCameraStream = await navigator.mediaDevices.getUserMedia({
             video: videoConstraint,
             audio: false,
@@ -1516,8 +1643,49 @@ async function startPracticeSession(sign) {
     }
 }
 
-// ── Custom Practice: pick any sign from any model vocabulary ──
+// ── Custom Practice: jump straight to the signing page ──
+// The standalone picker is no longer needed; the signing screen has inline
+// word + domain selectors. We just pick a sensible default sign here and
+// hand off to startPracticeSession; the user can switch from there.
 async function openCustomPractice() {
+    // Default: emergency / first word in that vocab, with localStorage
+    // memory of the user's last domain so we don't reset on every click.
+    let domain = 'emergency';
+    try {
+        const saved = localStorage.getItem('signbridge.lastPracticeDomain');
+        if (saved) domain = saved;
+    } catch (_) {}
+
+    let firstGloss = '';
+    try {
+        const resp = await fetch(`/api/vocabulary/${domain}`);
+        const data = await resp.json();
+        const glosses = (data.glosses || []).slice().sort();
+        firstGloss = glosses[0] || '';
+    } catch (e) {
+        showToast('Could not load vocabulary', 'error');
+        return;
+    }
+    if (!firstGloss) {
+        showToast('No glosses available for ' + domain, 'error');
+        return;
+    }
+
+    // See if a reference video exists; not required.
+    const videoUrl = `/sign-bank/${firstGloss.toLowerCase()}.mp4`;
+    let video_url = null;
+    try {
+        const resp = await fetch(videoUrl, { method: 'HEAD' });
+        if (resp.ok) video_url = videoUrl;
+    } catch (_) {}
+
+    _practiceLaunchedFromPicker = false;   // picker is gone; back returns to grid
+    await startPracticeSession({ gloss: firstGloss, video_url, domain });
+}
+
+// Legacy picker still exists in the DOM but is never opened from the new flow.
+// Keep these stubs so any latent reference doesn't throw.
+async function _legacy_openCustomPractice() {
     const picker = document.getElementById('customPracticePicker');
     picker.style.display = 'block';
 
@@ -1567,14 +1735,19 @@ async function loadCustomPracticeVocab() {
     }
 }
 
+// Tracks whether the current practice session was launched from the
+// Custom Practice picker. If yes, the Back button reopens the picker
+// instead of returning all the way to the Sign Bank grid.
+let _practiceLaunchedFromPicker = false;
+
 function startCustomPractice() {
     const domain = document.getElementById('customPracticeDomain').value;
     const gloss = document.getElementById('customPracticeGloss').value;
     if (!gloss) return;
+    _practiceLaunchedFromPicker = true;
 
     // Check if we have a sign bank video for this gloss (optional)
     const videoUrl = `/sign-bank/${gloss.toLowerCase()}.mp4`;
-    // Test if video exists by trying to fetch it
     fetch(videoUrl, { method: 'HEAD' }).then(resp => {
         const sign = {
             gloss: gloss,
@@ -1584,11 +1757,125 @@ function startCustomPractice() {
         closeCustomPractice();
         startPracticeSession(sign);
     }).catch(() => {
+        closeCustomPractice();
         startPracticeSession({ gloss, video_url: null, domain });
     });
 }
 
+// ── On-screen word + domain switcher (inside the practice session) ──────────
+async function _populatePracticeDomainSelector() {
+    const sel = document.getElementById('pracDomainSelect');
+    if (!sel) return;
+    try {
+        const resp = await fetch('/api/registry');
+        const registry = await resp.json();
+        sel.innerHTML = '';
+        Object.entries(registry.domains || {}).forEach(([key, entry]) => {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = entry.label || key;
+            if (practiceSign && key === practiceSign.domain) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    } catch (e) { /* leave empty if registry fetch fails */ }
+}
+
+async function _populatePracticeWordSelector(domain) {
+    const sel = document.getElementById('pracWordSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option>Loading...</option>';
+    try {
+        const resp = await fetch(`/api/vocabulary/${domain}`);
+        const data = await resp.json();
+        const glosses = (data.glosses || []).slice().sort();
+        sel.innerHTML = '';
+        glosses.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = (g || '').toUpperCase();
+            if (practiceSign && g.toLowerCase() === (practiceSign.gloss || '').toLowerCase()) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        });
+    } catch (e) {
+        sel.innerHTML = '<option>Failed to load</option>';
+    }
+}
+
+async function switchPracticeWord(newGloss) {
+    if (!newGloss || !practiceSign) return;
+    // Abort any in-flight streaming attempt so we don't show a stale result
+    // labeled against the new word.
+    if (practiceStream) { try { practiceStream.stop(); } catch(_) {} practiceStream = null; }
+    const recordBtn = document.getElementById('pracRecordBtn');
+    if (recordBtn) { recordBtn.disabled = false; recordBtn.innerHTML = '&#x1F534; Record Sign'; }
+
+    // Reset prediction badge (the only result surface now).
+    const badge = document.getElementById('pracPredictionBadge');
+    if (badge) badge.style.display = 'none';
+    _practiceSetStatus(null);
+
+    practiceSign.gloss = newGloss;
+
+    // Try to load a reference video if one exists; otherwise show the
+    // "no reference, sign from memory" hint.
+    const videoUrl = `/sign-bank/${newGloss.toLowerCase()}.mp4`;
+    try {
+        const resp = await fetch(videoUrl, { method: 'HEAD' });
+        practiceSign.video_url = resp.ok ? videoUrl : null;
+    } catch (_) { practiceSign.video_url = null; }
+    _applyPracticeReferenceVideo();
+}
+
+async function switchPracticeDomain(newDomain) {
+    if (!newDomain || !practiceSign) return;
+    practiceSign.domain = newDomain;
+    try { localStorage.setItem('signbridge.lastPracticeDomain', newDomain); } catch (_) {}
+    await _populatePracticeWordSelector(newDomain);
+    // Pick the first word in the new domain as the active target.
+    const wordSel = document.getElementById('pracWordSelect');
+    if (wordSel && wordSel.value) {
+        await switchPracticeWord(wordSel.value);
+    }
+}
+
+// Mirror of the existing reference-video setup inside startPracticeSession,
+// pulled out so switchPracticeWord can reuse it without duplicating code.
+function _applyPracticeReferenceVideo() {
+    if (!practiceSign) return;
+    const refVid = document.getElementById('pracRefVideo');
+    const refPanel = refVid ? refVid.closest('.prac-panel') : null;
+    const existingNoRef = refPanel ? refPanel.querySelector('.prac-no-ref') : null;
+    if (existingNoRef) existingNoRef.remove();
+    if (practiceSign.video_url) {
+        if (refPanel) refPanel.style.display = '';
+        refVid.src = practiceSign.video_url;
+        try { refVid.play().catch(()=>{}); } catch(_) {}
+    } else {
+        if (refVid) refVid.removeAttribute('src');
+        if (refPanel) {
+            const isMobile = window.matchMedia('(max-width: 640px)').matches;
+            if (isMobile) { refPanel.style.display = 'none'; }
+            else {
+                refPanel.style.display = '';
+                const msg = document.createElement('div');
+                msg.className = 'prac-no-ref';
+                msg.style.cssText = 'padding:40px 20px;text-align:center;color:var(--text-muted);font-size:0.85rem;background:var(--bg-page);border-radius:8px;';
+                msg.innerHTML = `<div style="font-size:2rem;margin-bottom:8px">📖</div>No reference video yet.<br>Sign <strong>${(practiceSign.gloss || '').toUpperCase()}</strong> based on what you know.`;
+                const box = refPanel.querySelector('.prac-video-box');
+                if (box) box.appendChild(msg);
+            }
+        }
+    }
+}
+
 function exitPracticeSession() {
+    // Stop the streaming practice WS if listening.
+    if (practiceStream) {
+        try { practiceStream.stop(); } catch (_) {}
+        practiceStream = null;
+    }
     // Stop camera
     if (practiceCameraStream) {
         practiceCameraStream.getTracks().forEach(t => t.stop());
@@ -1606,13 +1893,16 @@ function exitPracticeSession() {
     refVid.removeAttribute('src');
 
     document.getElementById('practiceSession').style.display = 'none';
-    // Restore sign bank browse UI
+
+    // Custom Practice picker is gone -- Back always returns to the Sign Bank grid.
+    _practiceLaunchedFromPicker = false;
+    practiceSign = null;
+
     const hero = document.querySelector('.sb-hero');
     if (hero) hero.style.display = '';
     const searchRow = document.querySelector('.sb-search-row');
     if (searchRow) searchRow.style.display = '';
     document.getElementById('sbGrid').style.display = '';
-    practiceSign = null;
 }
 
 function updatePracticeScore() {
@@ -1624,7 +1914,169 @@ function updatePracticeScore() {
     }
 }
 
+// Streaming practice handle (phase 1: full pipeline port to Sign Bank).
+// Holds the active StreamingLiveMode instance while practice is listening
+// for a sign. Cleaned up by practiceRetry() / exitPracticeSession().
+let practiceStream = null;
+
 async function practiceRecord() {
+    if (!practiceCameraStream || !practiceSign) return;
+    // Reuse if already listening (idempotent click).
+    if (practiceStream) return;
+
+    const btn = document.getElementById('pracRecordBtn');
+    const feedback = document.getElementById('pracFeedback');
+    feedback.style.display = 'none';
+
+    // Clear any prior prediction badge.
+    const predBadge = document.getElementById('pracPredictionBadge');
+    if (predBadge) { predBadge.style.display = 'none'; predBadge.className = 'prac-prediction-badge'; }
+
+    // Just disable the button -- no spinner / no label change. The corner
+    // status badge will appear only when the pipeline is actually busy
+    // (Signing / Recognizing); the "Listening" state is implicit because
+    // the button is gray.
+    btn.disabled = true;
+    _practiceSetStatus(null);
+
+    // Use the same StreamingLiveMode class that drives /ws/live-stream, but
+    // point at the practice endpoint and give it the target gloss so the
+    // server can compute target-match on each segment.
+    const videoEl = document.getElementById('pracCameraFeed');
+    const targetGloss = (practiceSign.gloss || '').toUpperCase();
+    const targetDomain = practiceSign.domain === 'other' ? 'generic' : practiceSign.domain;
+
+    // Read current zone slider values (same control as live mode).
+    const _zTop = parseInt((document.getElementById('streamZoneTop') || {}).value || 0) / 100;
+    const _zBot = parseInt((document.getElementById('streamZoneBottom') || {}).value || 90) / 100;
+
+    practiceStream = new StreamingLiveMode({
+        wsPath: '/ws/practice-stream',
+        domain: targetDomain,
+        zoneTop: _zTop,
+        zoneBottom: _zBot,
+    });
+    // Practice's start message includes target_gloss for server-side match check.
+    practiceStream.targetGloss = targetGloss;
+    // Patch _openWS to include target_gloss in the start payload. Simpler than
+    // adding a constructor field since this is a one-line tweak.
+    const origOpenWS = practiceStream._openWS.bind(practiceStream);
+    practiceStream._openWS = function () {
+        origOpenWS();
+        const _origOnOpen = this._ws.onopen;
+        this._ws.onopen = (ev) => {
+            // Re-send start with target_gloss after the base class's start fires.
+            try {
+                this._ws.send(JSON.stringify({
+                    type: 'tune',
+                    target_gloss: this.targetGloss || '',
+                }));
+            } catch (_) {}
+            if (_origOnOpen) _origOnOpen.call(this._ws, ev);
+        };
+    };
+
+    // Intercept the WS message handler to react to practice_result events.
+    // The base class's _handleMessage doesn't know about practice events --
+    // we install a wrapper that handles them and falls through to the base.
+    const baseHandle = practiceStream._handleMessage.bind(practiceStream);
+    practiceStream._handleMessage = function (m) {
+        if (m.type === 'practice_result') {
+            _practiceOnResult(m);
+            return;
+        }
+        if (m.type === 'practice_error') {
+            console.warn('[Practice WS] error:', m.msg);
+            return;
+        }
+        baseHandle(m);
+    };
+
+    // Drive the corner status badge ("✨ Listening / Signing / Recognizing")
+    // off the streaming class's state events. This replaces the older big
+    // fullscreen "LISTENING" overlay which was intrusive and short-lived.
+    // Only two statuses are surfaced on the camera: Signing (motion detected,
+    // segment being captured) and Recognizing (server-side pose+inference in
+    // flight). The implicit "waiting for input" state is conveyed by the
+    // grayed-out Record button -- no badge needed.
+    practiceStream.onStateChange = (state) => {
+        if (state === 'signing')        _practiceSetStatus('Signing');
+        else if (state === 'analyzing') _practiceSetStatus('Recognizing');
+        else                            _practiceSetStatus(null);
+    };
+
+    await practiceStream.init(videoEl);
+}
+
+function _practiceSetStatus(text) {
+    const badge = document.getElementById('pracStatusBadge');
+    const label = document.getElementById('pracStatusText');
+    if (!badge) return;
+    if (!text) { badge.style.display = 'none'; return; }
+    if (label) label.textContent = text;
+    badge.style.display = 'flex';
+}
+
+// Called by the wrapped message handler when the server emits practice_result.
+function _practiceOnResult(m) {
+    const btn = document.getElementById('pracRecordBtn');
+    // Tear down the streaming session — we got our one result for this attempt.
+    if (practiceStream) {
+        try { practiceStream.stop(); } catch (_) {}
+        practiceStream = null;
+    }
+    // Hide the status badge; show the prediction badge on the camera.
+    _practiceSetStatus(null);
+    const predBadge = document.getElementById('pracPredictionBadge');
+    if (predBadge) {
+        const predicted = (m.gloss || '?').toUpperCase();
+        const conf = Math.round((m.confidence || 0) * 100);
+        const matched = !!m.match_top1;
+        predBadge.textContent = `${predicted} ${matched ? '✓' : '✗'} ${conf}%`;
+        predBadge.className = 'prac-prediction-badge ' + (matched ? 'match' : 'miss');
+        predBadge.style.display = 'block';
+    }
+    const overlay = document.getElementById('pracBigCountdown');
+    if (overlay) overlay.style.display = 'none';
+
+    practiceStats.attempts++;
+    const predicted = (m.gloss || '').toLowerCase();
+    const expected  = (practiceSign.gloss || '').toLowerCase();
+    const confidence = Math.round((m.confidence || 0) * 100);
+    const topKGlosses = (m.top_k || []).map(k => (k.gloss || '').toLowerCase());
+
+    // Diagnostic shape matches what showPracticeFeedback expects.
+    const diag = {
+        videoBlob: null,         // phase 2: provide via /api/practice-clips/<id>
+        sampleId: null,
+        topK: m.top_k || [{ gloss: m.gloss, confidence: m.confidence }],
+        expected: expected,
+        userPose: null,          // phase 2
+        userFrames: m.frames_after_trim,
+        referencePose: null,     // phase 2
+        referenceFrames: 0,
+        comparison: null,        // phase 2
+    };
+
+    // Feedback panel removed -- result is conveyed by the corner prediction
+    // badge on the camera. We just record the stat for the score counter.
+    if (m.match_top1) {
+        practiceStats.correct++;
+        recordPracticeResult(expected, true);
+    } else {
+        recordPracticeResult(expected, false);
+    }
+    updatePracticeScore();
+    btn.disabled = false;
+    // After the first attempt, the button always says "Try Again" -- clicking
+    // it starts a new recognition pass (same handler as Record Sign).
+    btn.innerHTML = '&#x1F501; Try Again';
+}
+
+// ── Legacy timed-record path retained below for reference / fallback. Not
+// called anymore by practiceRecord(), but kept compiling so unused helpers
+// remain available if needed.
+async function practiceRecordLegacy() {
     if (!practiceCameraStream || !practiceSign) return;
 
     const btn = document.getElementById('pracRecordBtn');
@@ -1851,6 +2303,21 @@ function showPracticeFeedback(type, title, detail, diagnostic) {
 
 function practiceRetry() {
     document.getElementById('pracFeedback').style.display = 'none';
+    // If a streaming attempt is still listening (shouldn't be, but be safe),
+    // tear it down so the next Record Sign click starts a clean session.
+    if (practiceStream) {
+        try { practiceStream.stop(); } catch (_) {}
+        practiceStream = null;
+    }
+    const btn = document.getElementById('pracRecordBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '&#x1F534; Record Sign';
+    }
+    // Clear the prediction + status badges for a fresh attempt.
+    const predBadge = document.getElementById('pracPredictionBadge');
+    if (predBadge) { predBadge.style.display = 'none'; predBadge.className = 'prac-prediction-badge'; }
+    _practiceSetStatus(null);
     // Restart the reference video
     const refVid = document.getElementById('pracRefVideo');
     refVid.currentTime = 0;
@@ -2351,8 +2818,19 @@ async function startExternalCamera(mjpegUrl) {
     const proxyUrl = '/api/camera-proxy?url=' + encodeURIComponent(mjpegUrl);
 
     return new Promise((resolve, reject) => {
-        externalCameraImg = new Image();
+        // Chrome only decodes subsequent MJPEG frames when the <img> is
+        // attached to the document. An off-DOM `new Image()` decodes the
+        // FIRST frame, fires onload, and then never updates -- the canvas
+        // ends up redrawing the same pixels at 15fps, the server's motion
+        // diff is always 0, no segments ever open. Attaching the element
+        // (off-screen, no layout impact) keeps the decoder ticking.
+        externalCameraImg = document.createElement('img');
         externalCameraImg.crossOrigin = 'anonymous';
+        // Off-screen but at NATURAL size so Chrome actually decodes the
+        // full image bitmap. A 1px CSS layout box appears to make Chrome
+        // skip frame updates / decode only the visible portion.
+        externalCameraImg.style.cssText = 'position:fixed;top:0;left:-10000px;pointer-events:none;visibility:hidden';
+        document.body.appendChild(externalCameraImg);
 
         externalCameraCanvas = document.createElement('canvas');
         const ctx = externalCameraCanvas.getContext('2d');
@@ -2401,6 +2879,7 @@ function stopExternalCamera() {
     }
     if (externalCameraImg) {
         externalCameraImg.src = '';
+        if (externalCameraImg.parentNode) externalCameraImg.parentNode.removeChild(externalCameraImg);
         externalCameraImg = null;
     }
     externalCameraCanvas = null;
@@ -2588,8 +3067,20 @@ updateSubTabVisibility();
 // CONVERSATION FLOW -- DEMO MODE
 // ══════════════════════════════════════════════════════════════
 btnStart.addEventListener('click', async () => {
-    btnStart.disabled = true;
-    btnRestart.style.display = 'inline-block';
+    // Single button that morphs between "Start Conversation" and "Restart".
+    // On subsequent clicks we just delegate to btnRestart's handler. btnRestart
+    // stays in the DOM (still hidden) so the existing handler keeps working.
+    if (btnStart.dataset.armed === '1') {
+        btnRestart.click();
+        return;
+    }
+    btnStart.dataset.armed = '1';
+    btnStart.textContent = 'Restart';
+    // Reuse the existing secondary-button styling so it visually reads as restart.
+    btnStart.classList.remove('btn-primary');
+    btnStart.classList.add('btn-secondary');
+    // btnRestart stays hidden -- btnStart now plays both roles.
+    btnRestart.style.display = 'none';
     history = [];
 
     if ('speechSynthesis' in window) {
@@ -2611,12 +3102,69 @@ btnStart.addEventListener('click', async () => {
     playNextTurn();
 });
 
-btnRestart.addEventListener('click', () => {
+btnRestart.addEventListener('click', async () => {
+    // In streaming-live mode, Restart is a SOFT reset of the in-flight
+    // utterance only. Sequence:
+    //   1. Pause streaming -- no new segments after this point.
+    //   2. Pause also sends `reset` to the server, clearing motion state.
+    //   3. Wait for any segment whose inference was already dispatched
+    //      to finish (so its gloss doesn't appear as the first gloss of
+    //      the new utterance).
+    //   4. Clear local state (glosses, caption, gloss panel).
+    //   5. Resume streaming with a fresh server motion gate.
+    // Without the pause/drain, a sign in mid-capture leaks a gloss past
+    // the clear -- which manifests as "first word missed" / "phantom first
+    // gloss" after Restart.
+    if (liveActive && signSegmenter && typeof signSegmenter.clearGlosses === 'function') {
+        statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Restarting... <span class="spinner"></span></span>';
+        if (typeof signSegmenter.pause === 'function') signSegmenter.pause();
+        // Drain in-flight inference (max 4s).
+        const drainStart = Date.now();
+        while (typeof signSegmenter.inFlightCount === 'function'
+               && signSegmenter.inFlightCount() > 0
+               && (Date.now() - drainStart) < 4000) {
+            await sleep(120);
+        }
+        // Also wait for any in-flight LLM call to settle (cheap; usually 0).
+        while (_captionPending && (Date.now() - drainStart) < 5000) {
+            await sleep(120);
+        }
+        // Now safe to clear -- no more late events will land.
+        signSegmenter.clearGlosses();
+        liveCollectedGlosses = [];
+        _clearGlossRows();
+        _setLiveCaption(null);
+        _currentTurnRowEl = null;
+        _currentTurnHistoryIndex = -1;
+        _runningCaption = '';
+        _lastSentGlossCount = 0;
+        _lastCtqi = null;
+        _captionIsEdited = false;
+        _lastRenderedCaptionHtml = '';
+    _regenerateAttempts = 0;
+        if (typeof signSegmenter.resume === 'function') signSegmenter.resume();
+        const btnSendMessage = document.getElementById('btnSendMessage');
+        if (btnSendMessage) {
+            btnSendMessage.textContent = 'Send Message';
+            btnSendMessage.style.background = '#4caf80';
+            btnSendMessage.disabled = false;
+            btnSendMessage.onclick = () => sendNowAndPause();
+        }
+        statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+        return;
+    }
+
+    // Full reset (demo / non-live modes).
     currentTurn = 0;
     history = [];
     isPlaying = false;
     transcriptMsgs.innerHTML = '';
     btnStart.disabled = false;
+    // Morph the merged Start/Restart button back to its initial state.
+    btnStart.textContent = 'Start Conversation';
+    btnStart.dataset.armed = '0';
+    btnStart.classList.remove('btn-secondary');
+    btnStart.classList.add('btn-primary');
     btnRestart.style.display = 'none';
     recBadge.classList.remove('on');
     recBorder.classList.remove('on');
@@ -2719,31 +3267,35 @@ async function startLiveMode() {
     const btnSendMessage = document.getElementById('btnSendMessage');
 
     if (METHOD === 'sign') {
-        // Manual tap-to-record: tap to start recording a sign, tap to stop
-        // Much more reliable than auto-segmentation for now
+        // Streaming live mode: WS pipeline auto-records continuously. The
+        // legacy "Record Signs" button is hidden (it competed with the WS
+        // pipeline by calling /api/process-signing-clip). The Send Message
+        // button is rewired to the streaming-mode flush-and-pause flow.
         liveCollectedGlosses = [];
 
         if (btnRecordSign) {
-            btnRecordSign.style.display = 'inline-block';
-            btnRecordSign.textContent = 'Record Signs';
-            btnRecordSign.style.background = '#b07cf0';
-            btnRecordSign.onclick = () => tapToSign();
+            btnRecordSign.style.display = 'none';
+            btnRecordSign.onclick = null;
         }
         if (btnSendMessage) {
-            btnSendMessage.style.display = 'none';
-            btnSendMessage.textContent = 'Send Now \u27A4';
+            btnSendMessage.style.display = 'inline-block';
+            btnSendMessage.textContent = 'Send Message';
             btnSendMessage.style.background = '#4caf80';
-            btnSendMessage.onclick = () => sendSignMessage();
+            btnSendMessage.disabled = false;
+            btnSendMessage.onclick = () => sendNowAndPause();
         }
 
-        statusBar.innerHTML = '<span class="processing">Tap "Record Signs" \u2014 sign your message for 10 seconds</span>';
+        statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
 
-        // Start segmenter in track-only mode (hand landmarks for pose overlay, no recording)
+        // (Settings cog is part of the camera toolbar and is always visible
+        // once the live phase loads \u2014 no per-session show/hide needed.)
+
+        // Start streaming pipeline (WS + server-side motion gate + inference).
         try {
             const seg = await ensureSegmenter();
             if (cameraStream) {
-                seg.start(cameraStream, true);  // trackOnly=true
-                console.log('[Live] Segmenter started (track-only for hand overlay)');
+                seg.start(cameraStream, true);
+                console.log('[Live] StreamingLiveMode started');
             }
         } catch (e) {
             console.warn('[Live] Segmenter init failed:', e.message);
@@ -2775,6 +3327,7 @@ function stopLiveMode() {
     speakerBuffer = '';
     if (signSegmenter) {
         signSegmenter.stop();
+        signSegmenter = null;  // streaming mode needs a fresh instance per session
     }
     if (poseOverlay) {
         poseOverlay.stop();
@@ -2783,6 +3336,21 @@ function stopLiveMode() {
         try { liveRecognition.stop(); } catch(e) {}
         liveRecognition = null;
     }
+    // Streaming-live: clear rolling caption + turn-tracking state.
+    _setLiveCaption(null);
+    _currentTurnRowEl = null;
+    _currentTurnHistoryIndex = -1;
+    _captionPending = false;
+    _runningCaption = '';
+    _lastSentGlossCount = 0;
+    _lastCtqi = null;
+    _captionIsEdited = false;
+    _lastRenderedCaptionHtml = '';
+    _regenerateAttempts = 0;
+    _hideZoneOverlay();
+    // Close the settings panel if it was left open.
+    const spanel = document.getElementById('settingsPanel');
+    if (spanel) spanel.style.display = 'none';
     const btnSpeakSend = document.getElementById('btnSpeakSend');
     if (btnSpeakSend) btnSpeakSend.style.display = 'none';
 }
@@ -3025,138 +3593,558 @@ function updateRecCountdown(remaining) {
     }
 }
 
-// Initialize the sign segmenter (called once when first needed)
+// ============================================================================
+// STREAMING LIVE MODE -- caption overlay + rewrite-in-place transcript (option C)
+// ----------------------------------------------------------------------------
+// The wrist-velocity SignSegmenter has been replaced with the WebSocket-driven
+// StreamingLiveMode (server-side motion gate + pose + OpenHands inference).
+// The old SignSegmenter / PoseOverlay / pose_player code is kept on disk for
+// revert; it is no longer called from the live path.
+// ============================================================================
+
+let _currentTurnRowEl = null;
+let _currentTurnHistoryIndex = -1;
+let _captionPending = false;
+let _sendInProgress = false;   // true while sendNowAndPause is running
+
+// Running-caption (extend mode) state. Reset on Send Message and on Restart.
+// _runningCaption: the most recent LLM output for the in-flight utterance.
+// _lastSentGlossCount: how many of liveCollectedGlosses have already been
+//   handed to the LLM; the next call sends only glosses[_lastSentGlossCount:].
+let _runningCaption = '';
+let _lastSentGlossCount = 0;
+let _lastCtqi = null;                // most recently computed CTQI (for re-render on cancel-edit)
+let _captionIsEdited = false;        // user has manually edited the caption
+let _lastRenderedCaptionHtml = '';   // cached for cancel-edit restoration
+let _regenerateAttempts = 0;         // resets per turn; capped at REGENERATE_LIMIT
+const REGENERATE_LIMIT = 3;
+
+function _liveCaptionEl() { return document.getElementById('liveCaption'); }
+
+// Position the signing-zone overlay lines on the camera view to match the
+// server's effective config. Called when a config arrives from the WS server
+// (initially after start, and after every tune() reply).
+function _updateZoneOverlay(zoneTop, zoneBottom) {
+    const lineTop = document.getElementById('liveZoneLineTop');
+    const lineBot = document.getElementById('liveZoneLineBottom');
+    if (lineTop) {
+        if (zoneTop != null && zoneTop > 0) {
+            lineTop.style.top = (zoneTop * 100).toFixed(1) + '%';
+            lineTop.style.display = 'block';
+        } else {
+            lineTop.style.display = 'none';   // top is 0; no line to draw
+        }
+    }
+    if (lineBot && zoneBottom != null) {
+        lineBot.style.top = (zoneBottom * 100).toFixed(1) + '%';
+        lineBot.style.display = (zoneBottom < 1.0) ? 'block' : 'none';
+    }
+    // Mirror values into the sliders (without re-firing the input handler).
+    if (zoneTop != null) {
+        const slider = document.getElementById('streamZoneTop');
+        const label  = document.getElementById('streamZoneTopLabel');
+        if (slider) slider.value = Math.round(zoneTop * 100);
+        if (label)  label.textContent = Math.round(zoneTop * 100) + '%';
+    }
+    if (zoneBottom != null) {
+        const slider = document.getElementById('streamZoneBottom');
+        const label  = document.getElementById('streamZoneBottomLabel');
+        if (slider) slider.value = Math.round(zoneBottom * 100);
+        if (label)  label.textContent = Math.round(zoneBottom * 100) + '%';
+    }
+}
+
+function _hideZoneOverlay() {
+    const lineTop = document.getElementById('liveZoneLineTop');
+    const lineBot = document.getElementById('liveZoneLineBottom');
+    if (lineTop) lineTop.style.display = 'none';
+    if (lineBot) lineBot.style.display = 'none';
+}
+
+// Dead since the camera-source and zone-settings panels were merged into the
+// unified `settingsPanel` (HTML now wires onclick="toggleSettings()"). The
+// older `streamSettingsPanel` and `cameraSourcePanel` ids no longer exist.
+// Function kept as a thin alias so any latent caller still works.
+function toggleStreamSettings() { toggleSettings(); }
+
+// Slider handler — pushes the new zone to the server via tune(). The server
+// echoes back an ack-control with the effective config, which lands in
+// onConfig and updates the line position. We also nudge the line locally so
+// the visual lags by 0ms instead of one round-trip.
+function updateStreamZone() {
+    const top    = parseInt(document.getElementById('streamZoneTop').value) / 100;
+    const bottom = parseInt(document.getElementById('streamZoneBottom').value) / 100;
+    _updateZoneOverlay(top, bottom);
+    if (signSegmenter && typeof signSegmenter.tune === 'function') {
+        signSegmenter.tune({ zone_top: top, zone_bottom: bottom });
+    }
+}
+
+function _setLiveCaption(text, opts) {
+    const el = _liveCaptionEl();
+    if (!el) return;
+    if (text == null || text === '') {
+        el.style.display = 'none';
+        el.innerHTML = '';
+        el.classList.remove('updating');
+        return;
+    }
+    el.style.display = 'block';
+    if (opts && opts.html) el.innerHTML = text;
+    else                   el.textContent = text;
+    if (opts && opts.updating) el.classList.add('updating');
+    else el.classList.remove('updating');
+}
+
+function _escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+// Render caption HTML: escaped sentence + CTQI badge + (when CTQI is low or
+// missing and not currently editing) the regenerate + edit action chips.
+// Caches the result so cancel-edit can restore.
+function _renderCaptionHtml(sentence, ctqi) {
+    const escaped = _escapeHtml(sentence);
+    let scoreHtml;
+    if (_captionIsEdited) {
+        scoreHtml = `<span class="ctqi-edited">(edited)</span>`;
+    } else if (ctqi != null) {
+        const cls = ctqi > 80 ? 'ctqi-good' : 'ctqi-bad';
+        scoreHtml = `<span class="${cls}">(CTQI = ${ctqi.toFixed(0)})</span>`;
+    } else {
+        scoreHtml = `<span class="ctqi-missing">(CTQI = ?)</span>`;
+    }
+    // Action chips when CTQI ≤ 80 or missing, but not while editing.
+    let actionsHtml = '';
+    const showActions = !_captionIsEdited && (ctqi == null || ctqi <= 80);
+    if (showActions) {
+        const regenLeft = REGENERATE_LIMIT - _regenerateAttempts;
+        if (regenLeft > 0) {
+            const tooltip = `Regenerate translation (${regenLeft} left)`;
+            actionsHtml += `<span class="caption-action" data-action="regenerate" title="${tooltip}">🔄</span>`;
+        } else {
+            // Regenerate cap reached — gentle hint that Edit is the path forward.
+            actionsHtml += `<span class="caption-action caption-action-disabled" title="Out of retries — try Edit">🔄</span>`;
+        }
+        actionsHtml += `<span class="caption-action" data-action="edit" title="Edit caption manually">✏️</span>`;
+    }
+    return `${escaped}${scoreHtml}${actionsHtml}`;
+}
+
+function _renderAndShowCaption(sentence, ctqi) {
+    const html = _renderCaptionHtml(sentence, ctqi);
+    _lastRenderedCaptionHtml = html;
+    _lastCtqi = ctqi;
+    _setLiveCaption(html, { updating: false, html: true });
+    _initCaptionInteractions();
+}
+
+// One-time event-delegation wiring for the caption banner. Subsequent
+// innerHTML rewrites are fine because the listener is on the parent element.
+function _initCaptionInteractions() {
+    const el = _liveCaptionEl();
+    if (!el || el.dataset.interactionsInit === '1') return;
+    el.addEventListener('click', (e) => {
+        const target = e.target.closest('[data-action]');
+        if (!target) return;
+        const action = target.getAttribute('data-action');
+        if (action === 'regenerate')        _regenerateCaption();
+        else if (action === 'edit')         _enterCaptionEditMode();
+        else if (action === 'edit-confirm') _confirmCaptionEdit();
+        else if (action === 'edit-cancel')  _cancelCaptionEdit();
+    });
+    el.dataset.interactionsInit = '1';
+}
+
+// Regenerate: re-run the LLM with the SAME accumulated glosses but in fresh
+// mode + a "previous attempt was rejected" hint, so it produces a different
+// interpretation. Used when the user clicks 🔄 on a low-CTQI caption.
+async function _regenerateCaption() {
+    if (_captionPending) return;
+    if (!liveActive || !signSegmenter) return;
+    if (_regenerateAttempts >= REGENERATE_LIMIT) {
+        // Out of retries — auto-open edit so the user has a clear path forward.
+        _enterCaptionEditMode();
+        return;
+    }
+    const allGlosses = signSegmenter.getCollectedGlosses();
+    if (allGlosses.length === 0) return;
+
+    _captionPending = true;
+    _regenerateAttempts += 1;
+    const rejectedAttempt = _runningCaption || '';
+
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Regenerating... <span class="spinner"></span></span>';
+    if (_liveCaptionEl()) _liveCaptionEl().classList.add('updating');
+
+    let sentence = allGlosses.map(p => p.gloss).join(' ');
+    let plausibility = null;
+    try {
+        const resp = await fetch('/api/construct-sentence-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gloss_predictions: allGlosses,
+                running_caption: '',            // fresh build, not extend
+                previous_attempt: rejectedAttempt,
+                conversation_history: history,
+                domain: selectedDomain,
+            }),
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) sentence = result.sentence.trim();
+        if (typeof result.plausibility === 'number') plausibility = result.plausibility;
+    } catch (e) {
+        console.warn('[Live] Regenerate error:', e.message);
+    }
+
+    _runningCaption = sentence;
+    _lastSentGlossCount = allGlosses.length;
+    _captionIsEdited = false;
+
+    let ctqi = null;
+    if (plausibility != null && allGlosses.length > 0) {
+        const avgConf = allGlosses.reduce((s, g) => s + (g.confidence || 0), 0) / allGlosses.length;
+        ctqi = avgConf * 100 * (0.5 + 0.5 * plausibility / 100);
+    }
+    _renderAndShowCaption(sentence, ctqi);
+    statusBar.innerHTML = _statusForIdle();
+    _captionPending = false;
+}
+
+// Edit mode: replace caption content with an input and confirm/cancel chips.
+// On confirm, the user's text becomes the running caption (and is marked
+// "edited" so the next LLM call extends from their text, not the LLM's).
+function _enterCaptionEditMode() {
+    if (_captionPending) return;
+    const el = _liveCaptionEl();
+    if (!el) return;
+    const current = _runningCaption || '';
+    el.innerHTML =
+        `<input class="caption-edit-input" type="text" value="${_escapeHtml(current)}">` +
+        `<span class="caption-action" data-action="edit-confirm" title="Save (Enter)">✓</span>` +
+        `<span class="caption-action" data-action="edit-cancel" title="Cancel (Esc)">✗</span>`;
+    const input = el.querySelector('.caption-edit-input');
+    if (input) {
+        input.focus();
+        input.select();
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter')       { e.preventDefault(); _confirmCaptionEdit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); _cancelCaptionEdit();  }
+        });
+    }
+}
+
+function _confirmCaptionEdit() {
+    const el = _liveCaptionEl();
+    if (!el) return;
+    const input = el.querySelector('.caption-edit-input');
+    if (!input) return;
+    const edited = (input.value || '').trim();
+    if (!edited) { _cancelCaptionEdit(); return; }
+    _runningCaption = edited;
+    _captionIsEdited = true;
+    // Edited caption: no CTQI (LLM didn't produce this); show "(edited)" badge.
+    _renderAndShowCaption(edited, null);
+}
+
+function _cancelCaptionEdit() {
+    // Restore whatever was last rendered (sentence + CTQI badge + chips).
+    if (_lastRenderedCaptionHtml) {
+        _setLiveCaption(_lastRenderedCaptionHtml, { updating: false, html: true });
+    } else if (_runningCaption) {
+        _renderAndShowCaption(_runningCaption, _lastCtqi);
+    } else {
+        _setLiveCaption(null);
+    }
+}
+
+// Compact top-K format: "WORD 87% (ALT1, ALT2)" -- top-1 with confidence,
+// 2nd/3rd in parens without confidence. Full top-K with confidences still
+// goes to the LLM payload, so prompt guidance is unaffected.
+function _formatGlossWithTopK(pred) {
+    const conf = Math.round((pred.confidence || 0) * 100);
+    const alts = (pred.top_k || []).slice(1, 3)
+        .map(t => (t.gloss || '').toUpperCase())
+        .filter(Boolean);
+    const main = `${(pred.gloss || '').toUpperCase()} ${conf}%`;
+    return alts.length ? `${main} (${alts.join(', ')})` : main;
+}
+
+// Triggered every glossBatchSize new glosses OR every idleSendMs idle.
+// The configurable trigger lives in streaming_live.js. This function owns
+// the rewrite-in-place caption AND the rewrite-in-place transcript row.
+async function updateRollingCaption(glosses) {
+    if (!glosses || glosses.length === 0) return;
+    if (_captionPending) return;
+
+    // Extend mode: only send glosses NEW since the last LLM call. The server
+    // gets the running caption + new glosses and extends rather than rebuilds.
+    const newGlosses = glosses.slice(_lastSentGlossCount);
+    if (newGlosses.length === 0) return;   // nothing fresh to send
+
+    _captionPending = true;
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Constructing sentence... <span class="spinner"></span></span>';
+    if (_liveCaptionEl()) _liveCaptionEl().classList.add('updating');
+
+    let sentence = _runningCaption || newGlosses.map(p => p.gloss).join(' ');
+    let plausibility = null;
+    try {
+        const resp = await fetch('/api/construct-sentence-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gloss_predictions: newGlosses,
+                running_caption: _runningCaption,
+                conversation_history: history,
+                domain: selectedDomain,
+            }),
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) {
+            sentence = result.sentence.trim();
+        } else if (result.fallback) {
+            sentence = result.fallback;
+        }
+        if (typeof result.plausibility === 'number') {
+            plausibility = result.plausibility;
+        }
+    } catch (e) {
+        console.warn('[Live] LLM error:', e.message);
+    }
+
+    // Persist running-caption state so the next LLM call extends from here.
+    _runningCaption = sentence;
+    _lastSentGlossCount = glosses.length;
+
+    // Live CTQI estimate. Real CTQI needs ground truth (Gloss Accuracy +
+    // Coverage F1) which we don't have in live mode. We approximate:
+    //   GA  = mean top-1 confidence across all glosses in this utterance
+    //   CF1 = 1.0 (no reference; can't measure semantic preservation)
+    //   P   = LLM's self-critique plausibility (geometric mean of the
+    //         grammatical/semantic/naturalness sub-scores)
+    //
+    // Formula matches CTQI v2:  CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5*P/100) * 100
+    let ctqi = null;
+    if (plausibility != null && glosses.length > 0) {
+        const avgConf = glosses.reduce((s, g) => s + (g.confidence || 0), 0) / glosses.length;
+        const ga = avgConf * 100;
+        ctqi = ga * (0.5 + 0.5 * plausibility / 100);
+    }
+    // LLM call produced a new caption — it overrides any prior manual edit.
+    _captionIsEdited = false;
+    _renderAndShowCaption(sentence, ctqi);
+    statusBar.innerHTML = _statusForIdle();
+
+    // NOTE: the transcript / conversation panel is *not* updated here. The
+    // running caption is the in-flight working copy of the LLM's interpretation;
+    // only on "Send Message" (sendNowAndPause) does it get committed to the
+    // transcript + history. If the user doesn't like what the LLM produced,
+    // they can click Restart to abandon this utterance.
+
+    _captionPending = false;
+}
+
+// Default status-bar HTML when no transient state (signing/recognizing/
+// constructing/sending) is in force. Slight variation if there are
+// uncommitted glosses pending Send.
+function _statusForIdle() {
+    if (liveCollectedGlosses && liveCollectedGlosses.length > 0) {
+        return '<span class="processing">Keep signing or click <b>Send Message</b></span>';
+    }
+    return '<span class="processing">Sign when ready — your signs will appear here</span>';
+}
+
+// "Send Message" handler -- explicit flush + pause flow for I-SIGN mode.
+//   1. Pause frame send so no new segments open.
+//   2. Wait for any in-flight server-side segments to resolve to gloss events
+//      so they make it into the LLM payload.
+//   3. Wait for any in-flight LLM call to finish.
+//   4. Fire one final LLM call with the full accumulated gloss buffer.
+//   5. Speak the resulting sentence (in-person / speak-method).
+//   6. Lock in the turn (next user gloss starts a new transcript row even
+//      without a doctor message in between).
+//   7. Flip the button to "Resume Signing" — detection stays paused until
+//      the user clicks it.
+async function sendNowAndPause() {
+    if (!liveActive) return;
+    _sendInProgress = true;   // suppresses status-bar rewrites from state ticks
+    const btn = document.getElementById('btnSendMessage');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+    }
+
+    // 1. Pause frame send.
+    if (signSegmenter && typeof signSegmenter.pause === 'function') {
+        signSegmenter.pause();
+    }
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Sending message... <span class="spinner"></span></span>';
+
+    // 2. Wait (up to 8s) for in-flight server segments to drain into glosses.
+    const start = Date.now();
+    const timeoutMs = 8000;
+    while (signSegmenter && typeof signSegmenter.inFlightCount === 'function'
+           && signSegmenter.inFlightCount() > 0
+           && (Date.now() - start) < timeoutMs) {
+        await sleep(150);
+    }
+
+    // 3. Wait for any in-flight LLM call to finish.
+    while (_captionPending && (Date.now() - start) < timeoutMs) {
+        await sleep(150);
+    }
+
+    // 4. Final LLM flush with everything collected. updateRollingCaption only
+    //    updates the in-flight caption; commit-to-transcript happens here.
+    const glosses = signSegmenter ? signSegmenter.getCollectedGlosses() : liveCollectedGlosses.slice();
+    if (glosses.length > 0) {
+        await updateRollingCaption(glosses);
+    }
+
+    // 5. Commit the latest LLM-constructed sentence to the transcript + history.
+    //    Use _runningCaption (raw LLM output, no CTQI suffix) rather than
+    //    reading the caption banner DOM — the banner includes "(CTQI = X)"
+    //    which we don't want in the permanent transcript.
+    const finalText = (_runningCaption || _liveCaptionEl()?.textContent || '').trim();
+    if (finalText) {
+        addMsg('patient', SIGNER_LABEL, finalText);
+        history.push({ speaker: 'patient', text: finalText });
+        if (interactionMode === 'in-person' || METHOD === 'speak') {
+            try { await speak(finalText); } catch (e) { console.warn('[Live] speak failed:', e); }
+        }
+    }
+
+    // 6. Clear all in-flight state. The next turn starts fresh.
+    _currentTurnRowEl = null;
+    _currentTurnHistoryIndex = -1;
+    _runningCaption = '';
+    _lastSentGlossCount = 0;
+    _lastCtqi = null;
+    _captionIsEdited = false;
+    _lastRenderedCaptionHtml = '';
+    _regenerateAttempts = 0;
+    if (signSegmenter && typeof signSegmenter.clearGlosses === 'function') {
+        signSegmenter.clearGlosses();
+    }
+    liveCollectedGlosses = [];
+    _clearGlossRows();
+    _setLiveCaption(null);   // clear the caption banner after commit
+
+    // 7. Flip button to Resume.
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Resume Signing';
+        btn.style.background = '#b07cf0';
+        btn.onclick = () => resumeSigning();
+    }
+    statusBar.innerHTML = '<span class="prompt">Message sent. Click <b>Resume Signing</b> to continue.</span>';
+    _sendInProgress = false;
+}
+
+function resumeSigning() {
+    if (!liveActive) return;
+    if (signSegmenter && typeof signSegmenter.resume === 'function') {
+        signSegmenter.resume();
+    }
+    const btn = document.getElementById('btnSendMessage');
+    if (btn) {
+        btn.textContent = 'Send Message';
+        btn.style.background = '#4caf80';
+        btn.onclick = () => sendNowAndPause();
+    }
+    statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+}
+
+// Initialize the sign engine (called once when first needed). Variable name
+// `signSegmenter` is kept for compatibility with the rest of the file; it now
+// holds a StreamingLiveMode instance instead of a SignSegmenter instance.
 async function ensureSegmenter() {
     if (signSegmenter) return signSegmenter;
 
-    signSegmenter = new SignSegmenter({
-        restVelocityThreshold: 0.012,
-        minSignDurationMs: 400,
-        maxSignDurationMs: 4000,
-        restDurationMs: 300,
-        slidingWindowMs: 2500,
-        confidenceThreshold: 0.15,
-        deduplicateConsecutive: true,
-        autoSendDelayMs: 3000,
+    // Read current slider values so a zone tuned before Start Conversation
+    // is honored by the server when the WS opens.
+    const _zTopEl = document.getElementById('streamZoneTop');
+    const _zBotEl = document.getElementById('streamZoneBottom');
+    const _zTop = _zTopEl ? parseInt(_zTopEl.value) / 100 : null;
+    const _zBot = _zBotEl ? parseInt(_zBotEl.value) / 100 : null;
+
+    signSegmenter = new StreamingLiveMode({
+        domain: selectedDomain,
+        zoneTop: _zTop,
+        zoneBottom: _zBot,
+        // glossBatchSize defaults to 3. Override at runtime via
+        // ?glossBatchSize=N or localStorage signbridge.glossBatchSize.
+        // (Idle timer removed -- Send Message is the only manual flush.)
     });
 
     const videoEl = document.getElementById('cameraFeed');
     await signSegmenter.init(videoEl);
 
-    // Wire up: when a sign is captured, send to inference API
-    signSegmenter.onSignCaptured = async (videoBlob, metadata) => {
-        const formData = new FormData();
-        formData.append('video', videoBlob, 'sign.webm');
-        formData.append('domain', selectedDomain);
-
-        try {
-            const resp = await fetch('/api/process-sign', { method: 'POST', body: formData });
-            const result = await resp.json();
-            if (result.success) {
-                console.log(`[Segmenter] Detected: ${result.gloss} (${(result.confidence * 100).toFixed(1)}%) ${metadata.isFallback ? '[fallback]' : ''} dur=${metadata.durationMs}ms`);
-            }
-            return result;
-        } catch (e) {
-            console.error('[Segmenter] Inference error:', e);
-            showToast('Sign inference failed \u2014 is the inference API running?', 'error');
-            return null;
+    // Compact gloss event from the WS pipeline. Receives EVERY prediction
+    // (confident or not). The diagnostic panel shows all of them so the user
+    // can see what the model is hearing; only confident ones are reflected
+    // in liveCollectedGlosses (the LLM-bound buffer).
+    signSegmenter.onGloss = (pred, collected) => {
+        if (!liveActive) return;
+        if (collected) {
+            liveCollectedGlosses = signSegmenter.getCollectedGlosses();
         }
+        updateDebugPanel({ signs: liveCollectedGlosses.length });
+        _appendGlossRow(pred);
     };
 
-    // Wire up: state changes update the UI
-    signSegmenter.onStateChange = (state, info) => {
+    // State adapter -- handles 'signing' | 'analyzing' | 'idle'.
+    // The status bar tracks the *latest* state event. While the LLM is in
+    // flight, updateRollingCaption temporarily overwrites this to
+    // "Constructing..." and restores it via _statusForIdle when done.
+    signSegmenter.onStateChange = (state) => {
         if (!liveActive) return;
-
-        const glosses = signSegmenter.getCollectedGlosses();
-        const detected = glosses.map(p => p.gloss.toUpperCase()).join(' ');
-        const btnSendMessage = document.getElementById('btnSendMessage');
-
-        updateDebugPanel({ state, signs: glosses.length });
-
-        // Show/hide Send Now button based on whether we have glosses
-        if (btnSendMessage) {
-            btnSendMessage.style.display = glosses.length > 0 ? 'inline-block' : 'none';
-        }
-
+        updateDebugPanel({ state });
+        // Don't clobber Send/Resume/Constructing messages with state ticks.
+        if (_captionPending || _sendInProgress) return;
         switch (state) {
             case 'signing':
                 recBadge.classList.add('on');
                 recBorder.classList.add('on');
-                statusBar.innerHTML = '<span class="processing">Signing...' +
-                    (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
-                    '</span>';
+                statusBar.innerHTML = '<span class="processing">Signing...</span>';
                 break;
             case 'analyzing':
                 recBadge.classList.remove('on');
-                statusBar.innerHTML = '<span class="processing">Analyzing sign... <span class="spinner"></span>' +
-                    (detected ? ' <span class="gloss" style="animation:none;color:#6c8cff">[' + detected + ']</span>' : '') +
-                    '</span>';
+                recBorder.classList.remove('on');
+                statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Recognizing... <span class="spinner"></span></span>';
                 break;
             case 'idle':
+            default:
                 recBadge.classList.remove('on');
                 recBorder.classList.remove('on');
-                if (detected) {
-                    statusBar.innerHTML = `<span class="gloss">Signs: ${detected}</span> <span class="processing" style="font-size:0.75em">\u2014 keep signing or wait to auto-send...</span>`;
-                } else {
-                    statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
-                }
-                break;
-            case 'no_hands':
-                recBadge.classList.remove('on');
-                recBorder.classList.remove('on');
-                statusBar.innerHTML = '<span class="processing" style="color:#ff9800">Hands not detected \u2014 make sure your hands are visible and well-lit</span>';
+                statusBar.innerHTML = _statusForIdle();
                 break;
         }
-
-        // Sync collected glosses to the shared state
-        liveCollectedGlosses = signSegmenter.getCollectedGlosses();
     };
 
-    // Wire up: auto-send after prolonged idle with glosses
+    // LLM trigger: streaming_live.js fires every glossBatchSize new glosses
+    // OR every idleSendMs idle. Rewrite caption + transcript row in place;
+    // gloss buffer is NOT cleared (LLM gets a rolling context window).
     signSegmenter.onReadyToSend = async (glosses) => {
         if (!liveActive || glosses.length === 0) return;
-        console.log(`[Segmenter] Auto-sending ${glosses.length} glosses`);
-        liveCollectedGlosses = glosses;
-        await sendSignMessage();
+        await updateRollingCaption(glosses);
+    };
 
-        // After sending, restart segmenter for next turn
-        if (liveActive && signSegmenter) {
-            signSegmenter.clearGlosses();
-            liveCollectedGlosses = [];
-            continuousRecording = true;
-            isRecordingSign = true;
-            signSegmenter.start(cameraStream, true);  // trackOnly — tapToSign handles recording
-            statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
+    // Server echoes its effective config after start/tune; sync the zone
+    // overlay + sliders so the user always sees what's actually in force.
+    signSegmenter.onConfig = (cfg) => {
+        if (cfg && (cfg.zone_top != null || cfg.zone_bottom != null)) {
+            _updateZoneOverlay(cfg.zone_top, cfg.zone_bottom);
         }
     };
 
-    // Wire up: forward hand landmarks to pose overlay
-    signSegmenter.onHandLandmarks = (landmarks) => {
-        if (poseOverlay) poseOverlay.updateHandLandmarks(landmarks);
-        updateDebugPanel({ hands: landmarks.length });
-    };
 
-    signSegmenter.onVelocityUpdate = (velocity) => {
-        updateDebugPanel({ velocity });
-    };
-
-    // Initialize pose overlay (upper body + hands skeleton)
-    if (window.Pose && !poseOverlay) {
-        try {
-            const savedPref = localStorage.getItem('signbridge-pose-overlay');
-            const initiallyVisible = savedPref !== '0'; // default on
-            poseOverlay = new PoseOverlay({ visible: initiallyVisible });
-            await poseOverlay.init(videoEl);
-            poseOverlay.start();
-            const btn = document.getElementById('poseOverlayBtn');
-            if (btn) btn.classList.toggle('active', initiallyVisible);
-            console.log('[PoseOverlay] Started (visible:', initiallyVisible, ')');
-        } catch (e) {
-            console.warn('[PoseOverlay] Failed to init:', e.message);
-            poseOverlay = null;
-        }
-    }
-
+    console.log('[Live] StreamingLiveMode ready (domain=' + selectedDomain +
+        ', batch=' + signSegmenter.glossBatchSize + ')');
     return signSegmenter;
 }
 
@@ -3576,9 +4564,10 @@ function addMsg(type, speaker, text) {
     d.className = 'msg ' + type;
     const now = new Date();
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    d.innerHTML = `<div class="speaker">${speaker}<span class="msg-timestamp">${timeStr}</span></div><div>${text}</div>`;
+    d.innerHTML = `<div class="speaker">${speaker}<span class="msg-timestamp">${timeStr}</span></div><div class="msg-text">${text}</div>`;
     transcriptMsgs.appendChild(d);
     transcriptMsgs.scrollTop = transcriptMsgs.scrollHeight;
+    return d;  // returned so callers can rewrite-in-place (streaming-live caption)
 }
 
 // ══════════════════════════════════════════════════════════════
