@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SignBridge — streaming-live segmentation test</title>
+<style>
+  body { font-family: -apple-system, system-ui, Segoe UI, sans-serif;
+         background: #0f1419; color: #e6e6e6; margin: 0; padding: 24px; }
+  h1   { margin: 0 0 4px; font-weight: 500; font-size: 18px; }
+  .sub { color: #8a96a0; font-size: 13px; margin-bottom: 16px; max-width: 720px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  .panel { background: #1a2129; border: 1px solid #2a3441; border-radius: 8px;
+           padding: 16px; min-width: 320px; max-width: 420px; }
+  video { background: #000; border-radius: 4px; width: 320px; height: 240px; }
+  button { background: #2563eb; color: white; border: 0; padding: 8px 16px;
+           border-radius: 4px; cursor: pointer; font-size: 14px; margin-right: 8px; }
+  button:disabled { background: #374151; cursor: not-allowed; }
+  button.stop { background: #dc2626; }
+  button.ghost { background: #374151; }
+  label { font-size: 13px; color: #b0bcc7; display: block; margin-top: 10px; }
+  .v   { font-family: ui-monospace, Consolas, monospace; color: #34d399; }
+  input[type=range] { width: 220px; vertical-align: middle; }
+  input[type=number] { width: 110px; background: #0f1419; color: #e6e6e6;
+                       border: 1px solid #2a3441; border-radius: 3px; padding: 3px 6px;
+                       font-family: ui-monospace, Consolas, monospace; }
+  .stat { font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+          line-height: 1.7; }
+  .stat .k { color: #8a96a0; }
+  #log, #segLog { font-family: ui-monospace, Consolas, monospace; font-size: 11px;
+                  background: #0a0e13; border-radius: 4px; padding: 8px; height: 180px;
+                  overflow-y: auto; white-space: pre-wrap; color: #94a3b8; }
+  #segLog { height: 220px; }
+  .seg.accept   { color: #34d399; }
+  .seg.reject   { color: #f59e0b; }
+  .seg.infer    { color: #93c5fd; padding-left: 12px; }
+  .seg.gloss    { color: #fbbf24; padding-left: 12px; font-weight: 500; }
+  .seg.gloss.unconfident { color: #6b7884; padding-left: 12px; font-style: italic; }
+  .seg.error    { color: #f87171; padding-left: 12px; }
+  /* Sticky gloss banner — always visible while signing, no scroll needed */
+  #glossBanner { position: sticky; top: 0; z-index: 10;
+                 background: #0a0e13; border: 1px solid #2a3441; border-radius: 8px;
+                 padding: 10px 16px; margin-bottom: 16px;
+                 display: flex; align-items: center; gap: 12px;
+                 box-shadow: 0 4px 16px rgba(0,0,0,0.4); }
+  #glossBanner .label { color: #8a96a0; font-size: 12px;
+                        text-transform: uppercase; letter-spacing: 0.05em;
+                        white-space: nowrap; }
+  #glossList { font-family: ui-monospace, Consolas, monospace; font-size: 16px;
+               color: #fbbf24; line-height: 1.6; flex: 1;
+               white-space: nowrap; overflow-x: auto; }
+  #glossList .unconfident { color: #6b7884; font-style: italic; font-size: 13px; }
+  #glossList .latest { font-size: 22px; font-weight: 600; color: #fde68a; }
+
+  /* Motion bar */
+  .bar-wrap { position: relative; background: #0a0e13; border-radius: 4px;
+              height: 22px; margin-top: 4px; overflow: hidden; }
+  .bar-fill { background: linear-gradient(90deg, #2563eb, #34d399);
+              height: 100%; width: 0%; transition: width 0.05s linear; }
+  .bar-thresh { position: absolute; top: 0; bottom: 0; width: 2px;
+                background: #f59e0b; }
+  .bar-label { position: absolute; left: 8px; top: 0; bottom: 0;
+               display: flex; align-items: center; font-family: ui-monospace, Consolas, monospace;
+               font-size: 11px; color: #fff; mix-blend-mode: difference; }
+
+  /* Signing dot */
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%;
+         background: #374151; margin-right: 6px; vertical-align: middle; transition: background 0.1s; }
+  .dot.signing { background: #ef4444; box-shadow: 0 0 12px #ef4444; }
+
+  /* Zone overlay on the video */
+  .cam-wrap { position: relative; width: 320px; height: 240px; }
+  .cam-wrap video { position: absolute; inset: 0; }
+  .zone-overlay { position: absolute; left: 0; right: 0;
+                  pointer-events: none;
+                  border-top: 2px dashed rgba(245, 158, 11, 0.85);
+                  border-bottom: 2px dashed rgba(245, 158, 11, 0.85);
+                  background: linear-gradient(rgba(34,197,94,0.07), rgba(34,197,94,0.07)); }
+  .zone-label { position: absolute; right: 4px; padding: 1px 5px;
+                background: rgba(245, 158, 11, 0.85); color: #000;
+                font-family: ui-monospace, Consolas, monospace; font-size: 10px;
+                border-radius: 2px; }
+</style>
+</head>
+<body>
+  <h1>Streaming-live segmentation test</h1>
+  <div class="sub">
+    Verifies the closed-captions motion gate + segmentation state machine running
+    server-side, now wired through to MediaPipe Holistic + OpenHands inference.
+    The sticky bar below shows recent gloss predictions in real time.
+  </div>
+
+  <!-- Sticky banner so the latest prediction is always visible -->
+  <div id="glossBanner">
+    <span class="label">Recent glosses →</span>
+    <div id="glossList">—</div>
+  </div>
+
+  <div class="row">
+
+    <!-- ─────────────────────────── camera + controls ─────────────────────────── -->
+    <div class="panel">
+      <div class="cam-wrap">
+        <video id="cam" autoplay muted playsinline></video>
+        <div id="zoneOverlay" class="zone-overlay" style="top:0; bottom:10%">
+          <span class="zone-label" style="top:-18px">zone top</span>
+          <span class="zone-label" style="bottom:-18px">zone bottom</span>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <button id="startBtn">Start streaming</button>
+        <button id="stopBtn" class="stop" disabled>Stop</button>
+        <button id="resetBtn" class="ghost" disabled>Reset state</button>
+      </div>
+
+      <label>Target FPS: <span class="v" id="fpsLabel">15</span>
+        <input type="range" id="fps" min="5" max="30" value="15">
+      </label>
+      <label>JPEG quality: <span class="v" id="qLabel">0.60</span>
+        <input type="range" id="q" min="20" max="95" value="60">
+      </label>
+      <label>Resolution: <span class="v" id="resLabel">320×240</span>
+        <input type="range" id="res" min="160" max="640" step="80" value="320">
+      </label>
+
+      <hr style="border:0; border-top:1px solid #2a3441; margin: 14px 0">
+
+      <label>Signing zone top: <span class="v" id="zoneTopLabel">0.00</span>
+        <input type="range" id="zone_top" min="0" max="80" value="0">
+      </label>
+      <label>Signing zone bottom: <span class="v" id="zoneBottomLabel">0.90</span>
+        <input type="range" id="zone_bottom" min="20" max="100" value="90">
+      </label>
+      <div style="font-size:11px; color:#8a96a0; margin-top:2px">
+        Motion below the bottom line (lap area) is ignored — main fix for
+        approach/hand-drop false segments.
+      </div>
+
+      <label>Motion threshold (open):
+        <input type="number" id="motion_threshold" value="325000" step="25000" min="0">
+      </label>
+      <label>Motion threshold (continue, while signing):
+        <input type="number" id="motion_threshold_continue" value="120000" step="20000" min="0">
+      </label>
+      <div style="font-size:11px; color:#8a96a0; margin-top:2px">
+        Hysteresis: high bar to start a sign, low bar to keep it open through
+        subtle motion (fingerspelling, slow holds).
+      </div>
+      <label>Cooldown frames (motion-off → segment close):
+        <input type="number" id="cooldown_frames" value="8" min="1" max="60">
+      </label>
+      <label>Min sign frames:
+        <input type="number" id="min_sign_frames" value="10" min="1" max="60">
+      </label>
+      <label>Sign debounce (s):
+        <input type="number" id="sign_debounce_s" value="0.5" step="0.1" min="0">
+      </label>
+      <label>Post-segment quiet (s) <span style="color:#6b7884">— catches hand-drop</span>:
+        <input type="number" id="post_segment_quiet_s" value="0.8" step="0.1" min="0">
+      </label>
+      <label style="margin-top:10px">
+        <input type="checkbox" id="require_hand_present" checked>
+        Require hand in zone at segment open <span style="color:#6b7884">— blocks chair/body</span>
+      </label>
+      <button id="tuneBtn" class="ghost" disabled style="margin-top:10px">Apply tuning</button>
+    </div>
+
+    <!-- ─────────────────────────── live state ─────────────────────────── -->
+    <div class="panel" style="min-width: 380px">
+      <div class="stat">
+        <div><span class="k">connection</span>: <span class="v" id="conn">disconnected</span></div>
+        <div><span class="k">client send fps</span>: <span class="v" id="cFps">—</span></div>
+        <div><span class="k">server recv fps</span>: <span class="v" id="sFps">—</span></div>
+        <div><span class="k">server bandwidth</span>: <span class="v" id="sKbps">—</span></div>
+        <div><span class="k">total frames</span>: <span class="v" id="total">0</span></div>
+        <div><span class="k">total segments</span>: <span class="v" id="segTotal">0</span></div>
+      </div>
+
+      <hr style="border:0; border-top:1px solid #2a3441; margin: 14px 0">
+
+      <div><span class="dot" id="signingDot"></span><span id="signingText">idle</span>
+        &nbsp;<span class="k">segment frames so far:</span> <span class="v" id="segFrames">0</span></div>
+
+      <label style="margin-top:10px">Motion score (vs threshold):</label>
+      <div class="bar-wrap">
+        <div class="bar-fill" id="motionBar"></div>
+        <div class="bar-thresh" id="motionThresh"></div>
+        <div class="bar-label" id="motionLabel">—</div>
+      </div>
+      <div class="stat" style="font-size:11px; color:#8a96a0; margin-top:4px">
+        Display range = 4× open threshold. Orange line = <b>effective</b> threshold —
+        it shifts left to the lower "continue" threshold while a segment is open.
+      </div>
+    </div>
+
+    <!-- ─────────────────────────── segment log ─────────────────────────── -->
+    <div class="panel" style="min-width: 360px; flex: 1">
+      <label>Segment log (newest at top)</label>
+      <div id="segLog"></div>
+      <label style="margin-top:14px">Connection log</label>
+      <div id="log"></div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ts = () => new Date().toLocaleTimeString();
+  const log = (msg) => {
+    const el = $('log');
+    el.textContent += `[${ts()}] ${msg}\n`;
+    el.scrollTop = el.scrollHeight;
+  };
+  const segLog = (cls, msg) => {
+    const el = $('segLog');
+    const div = document.createElement('div');
+    div.className = 'seg ' + cls;
+    div.textContent = `[${ts()}] ${msg}`;
+    el.insertBefore(div, el.firstChild);
+  };
+
+  // Tracks gloss list for the "Recent glosses" panel (rolling, last 10).
+  const recentGlosses = [];
+  function pushGloss(gloss, confidence, confident) {
+    recentGlosses.push({ gloss, confidence, confident });
+    if (recentGlosses.length > 10) recentGlosses.shift();
+    // Newest first, with the most-recent rendered prominently
+    const reversed = [...recentGlosses].reverse();
+    const html = reversed.map((g, i) => {
+      const pct = (g.confidence * 100).toFixed(0);
+      const cls = (i === 0 ? 'latest' : '') + (g.confident ? '' : ' unconfident');
+      const inner = g.confident
+        ? `${g.gloss} <span style="color:#6b7884;font-size:0.75em">(${pct}%)</span>`
+        : `${g.gloss} (${pct}%)`;
+      return `<span class="${cls.trim()}">${inner}</span>`;
+    }).join(' &nbsp;·&nbsp; ');
+    $('glossList').innerHTML = html || '—';
+  }
+
+  let ws = null;
+  let stream = null;
+  let tickHandle = null;
+  let canvas = null;
+  let ctx = null;
+
+  let sentInWindow = 0;
+  let sentWindowStart = 0;
+
+  // ─────────── slider labels ───────────
+  $('fps').oninput = (e) => $('fpsLabel').textContent = e.target.value;
+  $('q').oninput   = (e) => $('qLabel').textContent = (e.target.value / 100).toFixed(2);
+  $('res').oninput = (e) => {
+    const w = parseInt(e.target.value);
+    $('resLabel').textContent = `${w}×${Math.round(w * 0.75)}`;
+  };
+
+  // ─────────── helpers ───────────
+  function tuningPayload() {
+    return {
+      motion_threshold:           parseInt($('motion_threshold').value),
+      motion_threshold_continue:  parseInt($('motion_threshold_continue').value),
+      cooldown_frames:            parseInt($('cooldown_frames').value),
+      min_sign_frames:            parseInt($('min_sign_frames').value),
+      sign_debounce_s:            parseFloat($('sign_debounce_s').value),
+      post_segment_quiet_s:       parseFloat($('post_segment_quiet_s').value),
+      zone_top:                   parseInt($('zone_top').value) / 100,
+      zone_bottom:                parseInt($('zone_bottom').value) / 100,
+      require_hand_present:       $('require_hand_present').checked,
+      fps:                        parseInt($('fps').value),
+    };
+  }
+
+  function updateZoneOverlay() {
+    const t = parseInt($('zone_top').value);
+    const b = parseInt($('zone_bottom').value);
+    $('zoneTopLabel').textContent    = (t / 100).toFixed(2);
+    $('zoneBottomLabel').textContent = (b / 100).toFixed(2);
+    const ov = $('zoneOverlay');
+    ov.style.top    = t + '%';
+    ov.style.bottom = (100 - b) + '%';
+  }
+  $('zone_top').oninput    = updateZoneOverlay;
+  $('zone_bottom').oninput = updateZoneOverlay;
+
+  function updateMotionBar(score, threshold, active, signing) {
+    // Always scale the bar against the OPEN threshold so the visual is stable;
+    // hysteresis is shown by the moving threshold marker.
+    const openThresh = parseInt($('motion_threshold').value);
+    const display = Math.min(score / Math.max(openThresh * 4, 1), 1.0);  // 4x open = full bar
+    $('motionBar').style.width = (display * 100).toFixed(1) + '%';
+    // Effective threshold marker position (open vs continue, server-decided)
+    const markerPct = Math.min(threshold / Math.max(openThresh * 4, 1), 1.0) * 100;
+    $('motionThresh').style.left = markerPct.toFixed(1) + '%';
+    $('motionLabel').textContent =
+      `${score.toLocaleString()}  |  thr ${threshold.toLocaleString()}  ` +
+      `${active ? '● active' : '○ quiet'}` +
+      (signing ? '  (continue)' : '  (open)');
+  }
+
+  function updateSigningDot(signing, segFrames) {
+    if (signing) {
+      $('signingDot').classList.add('signing');
+      $('signingText').textContent = 'SIGNING';
+    } else {
+      $('signingDot').classList.remove('signing');
+      $('signingText').textContent = 'idle';
+    }
+    $('segFrames').textContent = segFrames || 0;
+  }
+
+  // ─────────── start / stop ───────────
+  async function start() {
+    $('startBtn').disabled = true;
+    $('stopBtn').disabled = false;
+    $('resetBtn').disabled = false;
+    $('tuneBtn').disabled = false;
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, frameRate: 30 }, audio: false,
+      });
+      $('cam').srcObject = stream;
+      log('camera open');
+    } catch (e) {
+      log('getUserMedia FAILED: ' + e.message);
+      stop(); return;
+    }
+
+    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${proto}//${location.host}/ws/live-stream`);
+    ws.binaryType = 'arraybuffer';
+
+    ws.onopen = () => {
+      $('conn').textContent = 'connected';
+      log('ws open');
+      ws.send(JSON.stringify({ type: 'start', ...tuningPayload() }));
+      beginCaptureLoop();
+    };
+    ws.onmessage = (ev) => {
+      let m; try { m = JSON.parse(ev.data); } catch { return; }
+      switch (m.type) {
+        case 'motion':
+          updateMotionBar(m.score, m.threshold, m.active, m.signing);
+          updateSigningDot(m.signing, m.segment_frames);
+          $('total').textContent = m.frame;
+          break;
+        case 'segment_start':
+          segLog('accept', `segment ${m.segment_id} START @ frame ${m.frame}`);
+          break;
+        case 'segment_end':
+          $('segTotal').textContent = m.segment_id;
+          if (m.accepted) {
+            segLog('accept',
+              `segment ${m.segment_id} END  ✓ ACCEPT  ${m.frames} frames (${m.duration_ms} ms)`);
+          } else {
+            segLog('reject',
+              `segment ${m.segment_id} END  ✗ reject  ${m.frames} frames (${m.duration_ms} ms) — ${m.rejected_reason}`);
+          }
+          break;
+        case 'segment_suppressed':
+          if (m.reason === 'no_hand_in_zone') {
+            segLog('reject',
+              `motion suppressed — no hand in zone (mediapipe ${m.mediapipe_ms}ms, ${m.num_hands_detected} hands total)`);
+          } else if (m.reason === 'quiet_window') {
+            segLog('reject',
+              `motion suppressed — in quiet window (${m.gap_s}s < ${m.quiet_s}s, likely hand-drop)`);
+          } else {
+            segLog('reject', `motion suppressed — ${m.reason || 'unknown'}`);
+          }
+          break;
+        case 'inference_start':
+          segLog('infer',
+            `segment ${m.segment_id} → inference running (${m.frames} frames)…`);
+          break;
+        case 'gloss': {
+          const pct = (m.confidence * 100).toFixed(0);
+          const cls = m.confident ? 'gloss' : 'gloss unconfident';
+          const mark = m.confident ? '★' : '○';
+          const refined = m.refined ? ' [refined]' : '';
+          segLog(cls,
+            `segment ${m.segment_id} → ${mark} "${m.gloss}" ${pct}% ` +
+            `(${m.frames_in}→${m.frames_after_trim} frames, ${m.trim_reason}, ` +
+            `pose ${m.pose_ms}ms + infer ${m.infer_ms}ms = ${m.total_ms}ms)${refined}`);
+          pushGloss(m.gloss, m.confidence, m.confident);
+          break;
+        }
+        case 'gloss_error':
+          segLog('error', `segment ${m.segment_id} → ERROR: ${m.msg}`);
+          break;
+        case 'stats':
+          $('sFps').textContent  = m.recv_fps + ' fps';
+          $('sKbps').textContent = m.recv_kbps + ' KB/s';
+          break;
+        case 'ack-control':
+          log('control ack: ' + JSON.stringify(m.echo));
+          break;
+        case 'error':
+          log(`server error [${m.where}]: ${m.msg}`);
+          break;
+      }
+    };
+    ws.onclose = (ev) => {
+      $('conn').textContent = `closed (${ev.code})`;
+      log(`ws closed code=${ev.code} reason=${ev.reason || '(none)'}`);
+      stop();
+    };
+    ws.onerror = () => log('ws error');
+  }
+
+  function beginCaptureLoop() {
+    const w = parseInt($('res').value);
+    const h = Math.round(w * 0.75);
+    canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    ctx = canvas.getContext('2d');
+    log(`canvas ready ${w}x${h}`);
+
+    const fps = parseInt($('fps').value);
+    const intervalMs = 1000 / fps;
+    sentInWindow = 0; sentWindowStart = performance.now();
+    let firstSendLogged = false;
+    let lastErrLogged = '';
+
+    const sendFrame = () => {
+      try {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        const v = $('cam');
+        if (v.readyState < 2 || v.videoWidth === 0) return;
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const quality = parseInt($('q').value) / 100;
+        canvas.toBlob((blob) => {
+          if (!blob || !ws || ws.readyState !== WebSocket.OPEN) return;
+          try {
+            ws.send(blob);
+            sentInWindow++;
+            if (!firstSendLogged) {
+              log(`first frame sent (${blob.size} bytes)`);
+              firstSendLogged = true;
+            }
+            const now = performance.now();
+            if (now - sentWindowStart >= 1000) {
+              const cFps = sentInWindow / ((now - sentWindowStart) / 1000);
+              $('cFps').textContent = cFps.toFixed(1) + ' fps';
+              sentInWindow = 0; sentWindowStart = now;
+            }
+          } catch (e) {
+            const m = 'send failed: ' + e.message;
+            if (m !== lastErrLogged) { log(m); lastErrLogged = m; }
+          }
+        }, 'image/jpeg', quality);
+      } catch (e) {
+        const m = 'sendFrame failed: ' + e.message;
+        if (m !== lastErrLogged) { log(m); lastErrLogged = m; }
+      }
+    };
+
+    tickHandle = setInterval(sendFrame, intervalMs);
+  }
+
+  function stop() {
+    if (tickHandle) { clearInterval(tickHandle); tickHandle = null; }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try { ws.send(JSON.stringify({ type: 'stop' })); } catch {}
+      ws.close();
+    }
+    ws = null;
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    $('startBtn').disabled = false;
+    $('stopBtn').disabled = true;
+    $('resetBtn').disabled = true;
+    $('tuneBtn').disabled = true;
+    updateSigningDot(false, 0);
+  }
+
+  $('startBtn').onclick = start;
+  $('stopBtn').onclick  = stop;
+  $('resetBtn').onclick = () => {
+    if (ws && ws.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({ type: 'reset' }));
+    $('segLog').textContent = '';
+    $('segTotal').textContent = '0';
+    log('state reset');
+  };
+  $('tuneBtn').onclick = () => {
+    if (ws && ws.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({ type: 'tune', ...tuningPayload() }));
+    log('tuning sent: ' + JSON.stringify(tuningPayload()));
+  };
+})();
+</script>
+</body>
+</html>

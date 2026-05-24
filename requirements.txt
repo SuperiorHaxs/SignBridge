@@ -32,6 +32,7 @@ sacrebleu>=2.3.0
 bert-score>=0.3.13  # For semantic similarity evaluation
 requests>=2.31.0  # For HTTP requests (LLM APIs)
 python-dotenv>=1.0.0  # For .env file support
+flask-sock>=0.7.0  # WebSocket support for streaming live mode
 
 # File Format Support
 h5py>=3.9.0
