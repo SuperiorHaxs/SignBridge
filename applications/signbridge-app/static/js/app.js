@@ -19,6 +19,50 @@ let currentTrainingSubTab = 'scripted';
 let currentLiveSubTab = 'scenarios';
 let currentNav = 'live';
 
+// SignBridge Live mode (Kiosk / Lanyard / Conf Call). Declared up here
+// so that applySignBridgeMode() / syncTtsToggleUI() called from the
+// page-load init block (~line 920) don't hit a temporal-dead-zone
+// ReferenceError -- the function definitions live further down and
+// reference these via closure. Defaults: Kiosk, TTS ON.
+let SIGNBRIDGE_MODE = localStorage.getItem('signbridge.mode') || 'kiosk';
+// TTS defaults to ON unless the user has explicitly toggled it off
+// (stored as '0'). Earlier the default was off which was confusing --
+// users expected the signed sentence to be spoken aloud after Send.
+let TTS_ENABLED = localStorage.getItem('signbridge.ttsEnabled') !== '0';
+
+// Audible chime when CTQI just crossed below the low threshold.
+// Hoisted up here so the page-load init block (~line 920) can read it
+// without hitting a temporal-dead-zone ReferenceError. Default off
+// (chimes are easy to find annoying).
+let CHIME_ON_LOW_CTQI = localStorage.getItem('signbridge.lowCtqiChime') === '1';
+let _prevCtqiWasHigh = true;     // start optimistic so the first low one chimes
+let _chimeAudioCtx = null;
+
+// CTQI low-alert threshold (0-100). Captions with CTQI below this get
+// the pulsing red border + chime (if enabled). User-tunable in
+// Settings -> Advanced. Default 80.
+let CTQI_LOW_THRESHOLD = (() => {
+    const stored = parseInt(localStorage.getItem('signbridge.ctqiThreshold'), 10);
+    return (isFinite(stored) && stored >= 0 && stored <= 100) ? stored : 80;
+})();
+
+// CTQI hard floor (0-100). When the score drops below this, the model
+// is essentially guessing -- we hide the caption text and show
+// "[unclear]" instead so we don't confidently present a wrong sentence.
+// CTQI badge + Regenerate/Edit chips still appear (user can manually
+// rescue the message). User-tunable. Default 40.
+let CTQI_HARD_FLOOR = (() => {
+    const stored = parseInt(localStorage.getItem('signbridge.ctqiHardFloor'), 10);
+    return (isFinite(stored) && stored >= 0 && stored <= 100) ? stored : 40;
+})();
+
+// Hoisted up from the kiosk-mode section further below. selectCameraSource
+// (called indirectly from applySignBridgeMode at init time) reads from
+// KIOSK_PARAMS; without this earlier declaration, a Lanyard-mode default
+// would hit a TDZ ReferenceError on page load and break the whole script.
+const KIOSK_PARAMS = new URLSearchParams(window.location.search);
+const IS_KIOSK = KIOSK_PARAMS.get('kiosk') === 'true';
+
 // ── Feature flags ──
 // Set to true to convert spoken English to ASL glosses + play sign bank videos.
 // Set to false for speech-to-text only (deaf users read English directly).
@@ -156,6 +200,10 @@ function selectCameraSource(type) {
             if (signSegmenter && typeof signSegmenter.setZoom === 'function') {
                 signSegmenter.setZoom(1.0);
             }
+            // Device cam frames already have correct handedness for inference.
+            if (signSegmenter && typeof signSegmenter.setMirror === 'function') {
+                signSegmenter.setMirror(false);
+            }
             // Restart with device camera if live
             if (liveActive) {
                 stopCamera();
@@ -250,6 +298,19 @@ async function connectWifiCamera() {
         if (signSegmenter && typeof signSegmenter.setZoom === 'function') {
             signSegmenter.setZoom(1.3);
         }
+        // Two mirrors, by design:
+        //   1) Canvas-bridge mirror in startExternalCamera flips the MJPEG
+        //      so the preview looks like the device cam (selfie-feel).
+        //   2) setMirror(true) here flips the inference frame in _sendFrame
+        //      so it lands back at the ESP32's original orientation, which
+        //      empirically matches OpenHands' training convention (signer's
+        //      right hand on viewer's RIGHT -- the model was trained on
+        //      pre-mirrored video, not standard un-mirrored).
+        // Both mirrors compound to give: preview = selfie, inference =
+        // mirrored. Validated live by single-handed-sign accuracy.
+        if (signSegmenter && typeof signSegmenter.setMirror === 'function') {
+            signSegmenter.setMirror(true);
+        }
 
         statusEl.style.color = '#4caf80';
         statusEl.textContent = 'Connected';
@@ -276,8 +337,8 @@ async function connectWifiCamera() {
 }
 
 // ── Kiosk Mode (WI-3) ───────────────────────────────────────
-const KIOSK_PARAMS = new URLSearchParams(window.location.search);
-const IS_KIOSK = KIOSK_PARAMS.get('kiosk') === 'true';
+// KIOSK_PARAMS / IS_KIOSK hoisted to top-of-file (above) to fix a TDZ
+// that bit at page-load init time.
 let kioskIdleTimer = null;
 const KIOSK_IDLE_TIMEOUT = 30000; // 30 seconds
 
@@ -605,12 +666,10 @@ function saveProfile(profile) {
 function initProfile() {
     const profile = loadProfile();
 
-    // Set profile button avatar
-    const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
-    const btn = document.getElementById('profileBtn');
-    if (btn) btn.textContent = initial;
+    // (Header profile button removed -- panel folded into Settings tab.)
 
-    // Apply saved method preference
+    // Apply saved method preference (still respected for non-Kiosk/Lanyard
+    // modes; setSignBridgeMode pins METHOD='sign' in those two modes).
     if (profile.method) {
         METHOD = profile.method;
         const htogSign = document.getElementById('htogSign');
@@ -628,76 +687,24 @@ function initProfile() {
 }
 
 function openProfile() {
-    const profile = loadProfile();
-    const overlay = document.getElementById('profileOverlay');
-    overlay.classList.add('visible');
-
-    // Populate fields
-    document.getElementById('profileNameInput').value = profile.name || '';
-    document.getElementById('profileMethodPref').value = profile.method || 'speak';
-    document.getElementById('profileSaveHistory').checked = profile.saveHistory !== false;
-
-    // Avatar
-    const initial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
-    document.getElementById('profileAvatar').textContent = initial;
-    document.getElementById('profileNameDisplay').textContent = profile.name || 'Guest';
-    document.getElementById('profileJoined').textContent = profile.joinedDate
-        ? `Joined ${profile.joinedDate}` : '';
-
-    // Practice stats
-    const stats = profile.practiceStats || {};
-    let totalAttempts = 0, totalCorrect = 0;
-    for (const gloss in stats) {
-        totalAttempts += stats[gloss].attempts || 0;
-        totalCorrect += stats[gloss].correct || 0;
-    }
-    document.getElementById('profStatAttempts').textContent = totalAttempts;
-    document.getElementById('profStatCorrect').textContent = totalCorrect;
-    document.getElementById('profStatAccuracy').textContent = totalAttempts > 0
-        ? Math.round(totalCorrect / totalAttempts * 100) + '%' : '-';
-
-    // Recent scenarios
-    renderRecentScenarios(profile);
-
-    // Conversation history (inside profile)
-    renderProfileHistory(profile);
+    // Profile panel was removed in favor of the Settings tab.
+    // Redirect any legacy openProfile() calls to navigate there instead.
+    if (typeof navigateTo === 'function') navigateTo('settings');
 }
 
 function closeProfile() {
-    document.getElementById('profileOverlay').classList.remove('visible');
+    // No-op now that the profile overlay is gone. Kept for any legacy
+    // callers (e.g., inline onclicks) that might still reference it.
 }
 
 function saveProfileName() {
-    const profile = loadProfile();
-    const name = document.getElementById('profileNameInput').value.trim();
-    profile.name = name;
-    saveProfile(profile);
-
-    // Update UI
-    const initial = name ? name.charAt(0).toUpperCase() : '?';
-    document.getElementById('profileBtn').textContent = initial;
-    document.getElementById('profileAvatar').textContent = initial;
-    document.getElementById('profileNameDisplay').textContent = name || 'Guest';
-
-    const welcomeEl = document.getElementById('heroWelcome');
-    if (welcomeEl) {
-        if (name) {
-            welcomeEl.textContent = `Welcome back, ${name}`;
-            welcomeEl.style.display = 'inline';
-        } else {
-            welcomeEl.style.display = 'none';
-        }
-    }
+    // Legacy entry point -- the new flow goes through the Settings
+    // tab's Edit/Save buttons. Keep as a defensive no-op so any stale
+    // call site doesn't throw.
 }
 
 function saveProfilePrefs() {
-    const profile = loadProfile();
-    profile.method = document.getElementById('profileMethodPref').value;
-    profile.saveHistory = document.getElementById('profileSaveHistory').checked;
-    saveProfile(profile);
-
-    // Apply immediately
-    setMethod(profile.method);
+    // Same as above -- handled by onSettingsSaveClick now.
 }
 
 function recordRecentScenario(domain, label) {
@@ -717,6 +724,7 @@ function recordRecentScenario(domain, label) {
 
 function renderRecentScenarios(profile) {
     const list = document.getElementById('profileRecentList');
+    if (!list) return;   // Profile panel was removed; no DOM target.
     const recents = profile.recentScenarios || [];
     if (recents.length === 0) {
         list.innerHTML = '<div style="font-size:0.82rem;color:var(--text-muted)">No recent activity</div>';
@@ -760,14 +768,14 @@ function formatTimeAgo(isoStr) {
 function renderProfileHistory(profile) {
     const summary = document.getElementById('profileHistorySummary');
     const link = document.getElementById('profileHistoryLink');
+    if (!summary && !link) return;   // Profile panel removed; nothing to render.
     const convs = profile.conversations || [];
-
     if (convs.length === 0) {
-        summary.textContent = 'No conversations saved yet';
-        link.style.display = 'none';
+        if (summary) summary.textContent = 'No conversations saved yet';
+        if (link) link.style.display = 'none';
     } else {
-        summary.textContent = `${convs.length} conversation${convs.length !== 1 ? 's' : ''} saved`;
-        link.style.display = 'inline-block';
+        if (summary) summary.textContent = `${convs.length} conversation${convs.length !== 1 ? 's' : ''} saved`;
+        if (link) link.style.display = 'inline-block';
     }
 }
 
@@ -886,14 +894,19 @@ function recordPracticeResult(gloss, correct) {
 function clearProfileData() {
     if (!confirm('Clear all your SignBridge data? This will reset your name, practice stats, and recent scenarios.')) return;
     localStorage.removeItem(PROFILE_KEY);
-    document.getElementById('profileBtn').textContent = '?';
-    document.getElementById('heroWelcome').style.display = 'none';
-    closeProfile();
+    const welcomeEl = document.getElementById('heroWelcome');
+    if (welcomeEl) welcomeEl.style.display = 'none';
     showToast('Profile data cleared', 'info');
 }
 
 // Init on page load
 initProfile();
+applySignBridgeMode();
+syncTtsToggleUI();
+syncWakeWordUI();
+syncLowCtqiChimeUI();
+syncSettingsPageUI();
+_wireNavLiveSubmenu();
 
 // ══════════════════════════════════════════════════════════════
 // CONVERSATION HISTORY (2.3)
@@ -901,35 +914,9 @@ initProfile();
 const MAX_SAVED_CONVERSATIONS = 20;
 
 function saveConversation() {
-    // Only save if there's actual content
-    if (history.length === 0) return;
-
-    const profile = loadProfile();
-    if (!profile.conversations) profile.conversations = [];
-
-    const conv = {
-        id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        domain: selectedDomain,
-        scenario: selectedScenario,
-        mode: MODE,
-        method: METHOD,
-        messages: history.map(m => ({ ...m })),
-        timestamp: new Date().toISOString(),
-    };
-
-    // Don't save duplicates (same messages as last saved)
-    const last = profile.conversations[0];
-    if (last && last.messages.length === conv.messages.length && last.domain === conv.domain) {
-        const lastTexts = last.messages.map(m => m.text).join('|');
-        const newTexts = conv.messages.map(m => m.text).join('|');
-        if (lastTexts === newTexts) return; // duplicate
-    }
-
-    profile.conversations.unshift(conv);
-    // Cap storage
-    profile.conversations = profile.conversations.slice(0, MAX_SAVED_CONVERSATIONS);
-    saveProfile(profile);
-    console.log('[History] Saved conversation:', conv.scenario, conv.messages.length, 'messages');
+    // Conversation history feature was removed; this is now a no-op.
+    // Existing call sites (stopLiveMode, etc.) can keep invoking it
+    // harmlessly.
 }
 
 function closeHistoryViewer() {
@@ -1098,6 +1085,810 @@ function setInteractionMode(mode) {
             mode === 'in-person' ? 'in-person' : 'video'
         ));
     });
+}
+
+// ══════════════════════════════════════════════════════════════
+// SIGNBRIDGE MODE (Kiosk / Lanyard / Conf Call)
+// ══════════════════════════════════════════════════════════════
+// Hover sub-menu off the Live nav button. Both Kiosk and Lanyard are
+// single-device, same-physical-space setups, so they keep
+// interactionMode='in-person' under the hood -- the existing camera /
+// streaming / inference pipeline is unchanged. Mode only flips a few UI
+// defaults: hides the I Sign / I Speak header toggle (roles are fixed
+// within each mode), sets the default camera source, updates the chip
+// label on the Live nav button, and (for Lanyard) auto-opens the WiFi
+// camera URL prompt on user-initiated entry. Conf Call is P5/deferred.
+
+function setSignBridgeMode(mode, userInitiated) {
+    if (mode !== 'kiosk' && mode !== 'lanyard') return;
+    if (userInitiated === undefined) userInitiated = true;
+    SIGNBRIDGE_MODE = mode;
+    localStorage.setItem('signbridge.mode', mode);
+
+    // Active highlight in the sub-menu.
+    const btnK = document.getElementById('modeBtnKiosk');
+    const btnL = document.getElementById('modeBtnLanyard');
+    if (btnK) btnK.classList.toggle('active', mode === 'kiosk');
+    if (btnL) btnL.classList.toggle('active', mode === 'lanyard');
+
+    // Chip on the Live nav button so the active mode is visible without
+    // hovering the menu.
+    const chip = document.getElementById('navLiveModeChip');
+    if (chip) chip.textContent = mode === 'lanyard' ? 'Lanyard' : 'Kiosk';
+
+    // Both modes are single-device, same-space. Pin interactionMode so
+    // existing code paths that branch on it (camera placement, transcript
+    // layout) continue to take the in-person branch.
+    interactionMode = 'in-person';
+
+    // Pin METHOD = 'sign' in both modes. The signer's streaming pipeline
+    // is the always-on side; the speaker's turn is on-demand via the
+    // Tap-to-Reply button (avoids the continuous-listener-for-speaker
+    // path that would fight Tap-to-Reply for the microphone).
+    METHOD = 'sign';
+    try { document.body.dataset.method = 'sign'; } catch (_) {}
+
+    // Roles are fixed within each mode (signer in front, speaker behind
+    // the iPad); the global I Sign / I Speak header toggle is meaningless.
+    const headerToggle = document.getElementById('headerMethodToggle');
+    if (headerToggle) headerToggle.style.display = 'none';
+
+    // Per-mode camera default.
+    const deviceRadio = document.querySelector('input[name="cameraSource"][value="device"]');
+    const wifiRadio   = document.querySelector('input[name="cameraSource"][value="wifi"]');
+    if (mode === 'kiosk') {
+        if (deviceRadio) deviceRadio.checked = true;
+        // Only flip the actual source if a WiFi cam isn't currently in use --
+        // a user mid-session shouldn't have their feed yanked.
+        if (!externalCameraUrl) selectCameraSource('device');
+    } else if (mode === 'lanyard') {
+        if (wifiRadio) wifiRadio.checked = true;
+        selectCameraSource('wifi');
+        // Auto-open the WiFi camera prompt only on user action, only if
+        // no cam is connected yet. Don't badger on every page load.
+        if (userInitiated && !externalCameraUrl) {
+            const panel = document.getElementById('settingsPanel');
+            if (panel) panel.style.display = 'block';
+            const urlInput = document.getElementById('wifiCameraUrl');
+            if (urlInput) setTimeout(() => { try { urlInput.focus(); } catch (_) {} }, 50);
+        }
+    }
+}
+
+// Apply the saved mode at page-load time -- no auto-prompt, no focus
+// grab, just sync the UI state (chip label, active highlight, hide
+// header toggle).
+function applySignBridgeMode() {
+    setSignBridgeMode(SIGNBRIDGE_MODE, false);
+}
+
+// ── Live nav sub-menu: JS-driven hover popover ──────────────────
+// Sidebar has overflow-y:auto, which clips absolute-positioned children.
+// Solution: append the sub-menu to document.body (so no clipping
+// ancestor), keep it position:fixed, and reposition it on every show
+// to track the nav button's bounding rect (handles window resize and
+// sticky-scroll).
+let _navSubmenuHideTimer = null;
+
+function _positionNavLiveSubmenu() {
+    const wrap = document.getElementById('navLive');
+    const menu = document.getElementById('navLiveSubmenu');
+    if (!wrap || !menu) return;
+    const r = wrap.getBoundingClientRect();
+    // 4px gap to the right of the nav button.
+    menu.style.left = (r.right + 4) + 'px';
+    menu.style.top  = r.top + 'px';
+}
+
+function showNavLiveSubmenu() {
+    if (_navSubmenuHideTimer) {
+        clearTimeout(_navSubmenuHideTimer);
+        _navSubmenuHideTimer = null;
+    }
+    const menu = document.getElementById('navLiveSubmenu');
+    if (!menu) return;
+    _positionNavLiveSubmenu();
+    menu.classList.add('is-open');
+}
+
+function hideNavLiveSubmenu() {
+    // Slight delay so moving the mouse from the nav button across the
+    // 4px gap into the menu doesn't dismiss it mid-transit.
+    if (_navSubmenuHideTimer) clearTimeout(_navSubmenuHideTimer);
+    _navSubmenuHideTimer = setTimeout(() => {
+        const menu = document.getElementById('navLiveSubmenu');
+        if (menu) menu.classList.remove('is-open');
+    }, 200);
+}
+
+function _wireNavLiveSubmenu() {
+    const wrap = document.getElementById('navLive') &&
+                 document.getElementById('navLive').closest('.sidebar-item-wrap');
+    const menu = document.getElementById('navLiveSubmenu');
+    if (!wrap || !menu) return;
+    // Move the menu out of the sidebar's overflow:auto so it can't be
+    // clipped. Keep the reference fields by ID either way.
+    if (menu.parentNode !== document.body) {
+        document.body.appendChild(menu);
+    }
+    wrap.addEventListener('mouseenter', showNavLiveSubmenu);
+    wrap.addEventListener('mouseleave', hideNavLiveSubmenu);
+    menu.addEventListener('mouseenter', showNavLiveSubmenu);
+    menu.addEventListener('mouseleave', hideNavLiveSubmenu);
+    // Reposition on window resize and scroll so the menu stays anchored
+    // to the (sticky) nav button.
+    window.addEventListener('resize', () => {
+        const m = document.getElementById('navLiveSubmenu');
+        if (m && m.classList.contains('is-open')) _positionNavLiveSubmenu();
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// TAP TO SPEAK (speaker turn in Kiosk / Lanyard modes)
+// ══════════════════════════════════════════════════════════════
+// Button-triggered continuous Web Speech API session. Tap to start,
+// tap again to stop early, OR 5s of silence auto-finalizes. The
+// signer's streaming pipeline is paused while listening so the
+// speaker's mouth motion doesn't open phantom segments on the camera
+// side. Result is appended to the transcript as a Speaker message.
+//
+// NOTE on wake-word approach (reverted): an always-on continuous
+// SpeechRecognition session that starts WITHOUT a user gesture errors
+// out with `network` instantly on Edge (and inconsistently on Chrome).
+// The button-triggered start path works reliably because the click
+// satisfies the user-activation requirement Chromium puts on the API.
+
+const TAP_REPLY_SILENCE_MS = 5000;   // 5s silence -> auto-finalize
+let _tapReplyRecognition = null;
+let _tapReplyListening = false;
+let _tapReplySilenceTimer = null;
+
+function showTapReplyButton() {
+    const inMode = (SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard');
+    const live   = (typeof liveActive !== 'undefined' && liveActive);
+    // Tap to Speak is intentionally hidden in Kiosk/Lanyard now -- the
+    // wake-word listener handles the speaker's turn (armed by Start /
+    // Send / New Conversation clicks). Having both visible was confusing
+    // the turn-taking flow. Code path stays alive in case we re-enable
+    // it as a fallback later.
+    const btn = document.getElementById('btnTapReply');
+    if (btn) btn.style.display = 'none';
+    _setTapReplyButtonIdle();
+    // New Conversation button stays Kiosk/Lanyard-only.
+    const btnNew = document.getElementById('btnNewConvo');
+    if (btnNew) {
+        btnNew.style.display = (inMode && live) ? 'inline-block' : 'none';
+    }
+}
+
+function hideTapReplyButton() {
+    const btn = document.getElementById('btnTapReply');
+    if (btn) btn.style.display = 'none';
+    const btnNew = document.getElementById('btnNewConvo');
+    if (btnNew) btnNew.style.display = 'none';
+    _stopTapReplyListening('hidden');
+    stopWakeWordListener();
+}
+
+function _setTapReplyButtonIdle() {
+    const btn = document.getElementById('btnTapReply');
+    if (!btn) return;
+    btn.innerHTML = '\u{1F399} Tap to Speak';
+    btn.disabled = false;
+}
+
+function _setTapReplyButtonListening() {
+    const btn = document.getElementById('btnTapReply');
+    if (!btn) return;
+    btn.innerHTML = '\u{1F399} Listening... (tap to stop)';
+    btn.disabled = false;
+}
+
+function onTapReplyClick() {
+    // Mid-listen tap = early stop; accumulated text gets emitted via onend.
+    if (_tapReplyListening) {
+        _stopTapReplyListening('user-stop');
+        return;
+    }
+    _startTapReplyListening();
+}
+
+function _startTapReplyListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        showToast('Speech recognition not available in this browser', 'warn');
+        return;
+    }
+    if (_tapReplyListening) return;
+
+    // Pause the signing pipeline so the speaker's mouth/head motion
+    // doesn't open phantom segments on the WS side.
+    if (signSegmenter && typeof signSegmenter.pause === 'function') {
+        try { signSegmenter.pause(); } catch (_) {}
+    }
+    // Cancel any in-progress TTS so it doesn't bleed into the mic.
+    if ('speechSynthesis' in window) {
+        try { speechSynthesis.cancel(); } catch (_) {}
+    }
+
+    _tapReplyRecognition = new SpeechRecognition();
+    _tapReplyRecognition.lang = 'en-US';
+    _tapReplyRecognition.interimResults = true;
+    _tapReplyRecognition.continuous = true;
+    _tapReplyRecognition.maxAlternatives = 1;
+
+    let finalText = '';
+
+    _tapReplyRecognition.onresult = (event) => {
+        // Any result resets the silence timer so a mid-sentence pause
+        // doesn't drop the second half.
+        _armTapReplySilenceTimer();
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            if (event.results[i].isFinal) {
+                finalText += event.results[i][0].transcript + ' ';
+            }
+        }
+    };
+    _tapReplyRecognition.onerror = (event) => {
+        console.warn('[TapReply] recognition error:', event.error);
+    };
+    _tapReplyRecognition.onend = () => {
+        _tapReplyListening = false;
+        _clearTapReplySilenceTimer();
+        _setTapReplyButtonIdle();
+        if (signSegmenter && typeof signSegmenter.resume === 'function') {
+            try { signSegmenter.resume(); } catch (_) {}
+        }
+        const text = (finalText || '').trim();
+        if (!text) {
+            showToast('Didn’t catch that — try again', 'info', 2200);
+            return;
+        }
+        _appendSpeakerTurnToTranscript(text);
+    };
+
+    try {
+        _tapReplyRecognition.start();
+        _tapReplyListening = true;
+        _setTapReplyButtonListening();
+        _armTapReplySilenceTimer();
+    } catch (e) {
+        console.warn('[TapReply] start failed:', e);
+        _tapReplyListening = false;
+        _setTapReplyButtonIdle();
+        if (signSegmenter && typeof signSegmenter.resume === 'function') {
+            try { signSegmenter.resume(); } catch (_) {}
+        }
+    }
+}
+
+function _armTapReplySilenceTimer() {
+    _clearTapReplySilenceTimer();
+    _tapReplySilenceTimer = setTimeout(() => {
+        if (_tapReplyListening && _tapReplyRecognition) {
+            try { _tapReplyRecognition.stop(); } catch (_) {}
+        }
+    }, TAP_REPLY_SILENCE_MS);
+}
+
+function _clearTapReplySilenceTimer() {
+    if (_tapReplySilenceTimer) {
+        clearTimeout(_tapReplySilenceTimer);
+        _tapReplySilenceTimer = null;
+    }
+}
+
+function _stopTapReplyListening(reason) {
+    _clearTapReplySilenceTimer();
+    if (_tapReplyRecognition && _tapReplyListening) {
+        // user-stop -> stop() (emits accumulated text via onend).
+        // hidden / restart -> abort() (drops pending result; we don't
+        // want a half-finished reply landing in the next turn).
+        try {
+            if (reason === 'user-stop') _tapReplyRecognition.stop();
+            else _tapReplyRecognition.abort();
+        } catch (_) {}
+    }
+    if (reason === 'hidden' || reason === 'restart') {
+        _tapReplyListening = false;
+        _tapReplyRecognition = null;
+        _setTapReplyButtonIdle();
+        if (signSegmenter && typeof signSegmenter.resume === 'function') {
+            try { signSegmenter.resume(); } catch (_) {}
+        }
+    }
+}
+
+function _appendSpeakerTurnToTranscript(text) {
+    try {
+        addMsg('doctor', SPEAKER_LABEL, text);
+    } catch (e) {
+        console.warn('[TapReply] addMsg failed:', e);
+    }
+    try {
+        history.push({ speaker: 'doctor', text });
+    } catch (_) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+// WAKE WORD LISTENER (started by New Conversation click)
+// ══════════════════════════════════════════════════════════════
+// Continuous SpeechRecognition that scans for a configurable wake
+// word (default "Signer"). Triggered by the New Conversation button's
+// click handler, NOT auto-started, because SpeechRecognition.start()
+// without a user gesture errors with `network` on Edge / modern Chrome.
+// After the gesture-blessed initial start, the listener auto-recycles
+// every 25s to dodge Chromium's ~60s continuous-session failure mode.
+
+const WAKE_WORD_RECYCLE_MS = 25000;
+const WAKE_WORD_SILENCE_MS = 5000;
+// Short post-speech delay before flipping the status bar from
+// "Listening to speaker..." to "Processing speech...". Gives the
+// signer a clear visual cue that the speaker has paused and STT is
+// finalizing, instead of staring at an unchanged screen.
+const WAKE_WORD_PROCESSING_DELAY_MS = 1500;
+let _wakeRecognition = null;
+let _wakeListening   = false;
+let _wakeCapturing   = false;        // wake word heard, accumulating reply
+let _wakeFinalText   = '';
+let _wakeSilenceTimer = null;
+let _wakeRestartTimer = null;
+let _wakeRecycleTimer = null;
+let _wakeProcessingTimer = null;
+
+function _getWakeWord() {
+    let w = (localStorage.getItem('signbridge.wakeWord') || 'Signer').trim();
+    w = w.split(/\s+/)[0] || 'Signer';
+    return w;
+}
+
+function updateWakeWord() {
+    const el = document.getElementById('wakeWordInput');
+    if (!el) return;
+    let val = (el.value || '').trim().split(/\s+/)[0] || 'Signer';
+    if (val.length > 20) val = val.slice(0, 20);
+    el.value = val;
+    localStorage.setItem('signbridge.wakeWord', val);
+    const mirror = document.getElementById('setWakeWord');
+    if (mirror) mirror.value = val;
+}
+
+function syncWakeWordUI() {
+    const el = document.getElementById('wakeWordInput');
+    if (el) el.value = _getWakeWord();
+}
+
+function _wakeWordRegex() {
+    const w = _getWakeWord();
+    const esc = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('\\b' + esc + '\\b[,.!?:;]*\\s*', 'i');
+}
+
+// Critical: must be invoked SYNCHRONOUSLY from a user-gesture click
+// handler. Calling .start() outside one will silently fail on Edge.
+function startWakeWordListener() {
+    const inMode = (SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard');
+    if (!inMode) return;
+    if (typeof liveActive === 'undefined' || !liveActive) return;
+    if (_wakeListening) return;
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        console.warn('[WakeWord] SpeechRecognition not available in this browser');
+        return;
+    }
+
+    _wakeRecognition = new SpeechRecognition();
+    _wakeRecognition.lang = 'en-US';
+    _wakeRecognition.interimResults = true;
+    _wakeRecognition.continuous = true;
+    _wakeRecognition.maxAlternatives = 1;
+    _wakeRecognition.onresult = _onWakeResult;
+    _wakeRecognition.onerror = (event) => {
+        console.warn('[WakeWord] error:', event.error);
+        if (event.error === 'network' && _wakeRecognition) {
+            try { _wakeRecognition.abort(); } catch (_) {}
+        }
+    };
+    _wakeRecognition.onend = () => {
+        _wakeListening = false;
+        console.log('[WakeWord] listener ended; awaiting next user-gesture (Start / Send / New Conversation) to re-arm');
+        // NO auto-restart. setTimeout-triggered start() has no user
+        // gesture and Chromium aborts it instantly, causing a tight
+        // abort/restart loop. Each new wake-word session must come
+        // from a real click handler.
+    };
+
+    try {
+        _wakeRecognition.start();
+        _wakeListening = true;
+        console.log('[WakeWord] listener started; wake word =', _getWakeWord());
+    } catch (e) {
+        console.warn('[WakeWord] start failed:', e);
+        _wakeListening = false;
+        _wakeRecognition = null;
+    }
+}
+
+function stopWakeWordListener() {
+    if (_wakeRestartTimer) { clearTimeout(_wakeRestartTimer); _wakeRestartTimer = null; }
+    _clearWakeSilenceTimer();
+    if (_wakeRecognition) {
+        try { _wakeRecognition.abort(); } catch (_) {}
+    }
+    const wasCapturing = _wakeCapturing;
+    _wakeRecognition = null;
+    _wakeListening = false;
+    _wakeCapturing = false;
+    _wakeFinalText = '';
+    // If we were mid-capture, re-enable the buttons + clear the
+    // "Listening / Processing" status so the signer isn't stuck with a
+    // disabled UI after a New Conversation / mode change interruption.
+    if (wasCapturing) _exitSpeakerTurnUI();
+}
+
+// ── Speaker-turn UI helpers ────────────────────────────────────
+// During the wake-word capture window the signer can't usefully click
+// Start Conversation / Restart / Resume Signing / New Conversation
+// without interrupting the speaker. Disable them, and show a clear
+// status badge so the signer sees something is happening.
+function _enterSpeakerTurnUI() {
+    const btnStart = document.getElementById('btnStart');
+    const btnSend  = document.getElementById('btnSendMessage');
+    const btnNew   = document.getElementById('btnNewConvo');
+    if (btnStart) btnStart.disabled = true;
+    if (btnSend)  btnSend.disabled  = true;
+    if (btnNew)   btnNew.disabled   = true;
+    if (typeof statusBar !== 'undefined' && statusBar) {
+        statusBar.innerHTML = '<span class="processing">\u{1F399}\u{FE0F} Listening to speaker…</span>';
+    }
+}
+
+function _setSpeakerProcessingUI() {
+    if (typeof statusBar !== 'undefined' && statusBar) {
+        statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Processing speech… <span class="spinner"></span></span>';
+    }
+}
+
+function _exitSpeakerTurnUI() {
+    const btnStart = document.getElementById('btnStart');
+    const btnSend  = document.getElementById('btnSendMessage');
+    const btnNew   = document.getElementById('btnNewConvo');
+    if (btnStart) btnStart.disabled = false;
+    if (btnSend)  btnSend.disabled  = false;
+    if (btnNew)   btnNew.disabled   = false;
+    // Status bar restoration: if we're still in the post-Send "Resume
+    // Signing" state, prefer that prompt; otherwise revert to the
+    // idle "Sign when ready" prompt.
+    const sendBtn = document.getElementById('btnSendMessage');
+    if (sendBtn && sendBtn.textContent === 'Resume Signing'
+        && typeof statusBar !== 'undefined' && statusBar) {
+        statusBar.innerHTML = '<span class="prompt">Speaker replied. Click <b>Resume Signing</b> to continue.</span>';
+    } else if (typeof statusBar !== 'undefined' && statusBar) {
+        statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+    }
+}
+
+function _onWakeResult(event) {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+        const res = event.results[i];
+        const text = res[0].transcript;
+        const isFinal = res.isFinal;
+
+        if (!_wakeCapturing) {
+            const re = _wakeWordRegex();
+            const match = re.exec(text);
+            if (match) {
+                _wakeCapturing = true;
+                _wakeFinalText = text.slice(match.index + match[0].length).trim();
+                _armWakeSilenceTimer();
+                if ('speechSynthesis' in window) {
+                    try { speechSynthesis.cancel(); } catch (_) {}
+                }
+                _enterSpeakerTurnUI();
+                console.log('[WakeWord] HEARD; initial text after wake:', JSON.stringify(_wakeFinalText));
+            }
+        } else if (isFinal) {
+            _wakeFinalText += ' ' + text;
+            _armWakeSilenceTimer();
+        }
+    }
+    if (_wakeCapturing) _armWakeSilenceTimer();
+}
+
+function _armWakeSilenceTimer() {
+    // Two timers run in tandem while capturing:
+    //   _wakeProcessingTimer (1.5s) -> flip status to "Processing speech..."
+    //   _wakeSilenceTimer    (5.0s) -> finalize + append to transcript
+    // Both reset on every new result, so they only fire when the
+    // speaker truly stops talking.
+    _clearWakeSilenceTimer();
+    _wakeSilenceTimer = setTimeout(_finalizeWakeCapture, WAKE_WORD_SILENCE_MS);
+    if (_wakeProcessingTimer) clearTimeout(_wakeProcessingTimer);
+    _wakeProcessingTimer = setTimeout(() => {
+        _wakeProcessingTimer = null;
+        if (_wakeCapturing) _setSpeakerProcessingUI();
+    }, WAKE_WORD_PROCESSING_DELAY_MS);
+}
+
+function _clearWakeSilenceTimer() {
+    if (_wakeSilenceTimer) {
+        clearTimeout(_wakeSilenceTimer);
+        _wakeSilenceTimer = null;
+    }
+    if (_wakeProcessingTimer) {
+        clearTimeout(_wakeProcessingTimer);
+        _wakeProcessingTimer = null;
+    }
+}
+
+function _finalizeWakeCapture() {
+    _clearWakeSilenceTimer();
+    const wasCapturing = _wakeCapturing;
+    if (!wasCapturing) return;
+    const text = (_wakeFinalText || '').trim();
+    _wakeCapturing = false;
+    _wakeFinalText = '';
+    if (text) {
+        const re = _wakeWordRegex();
+        let clean = text;
+        const m = re.exec(clean);
+        if (m && m.index === 0) clean = clean.slice(m[0].length);
+        clean = clean.trim();
+        if (clean) _appendSpeakerTurnToTranscript(clean);
+    }
+    _exitSpeakerTurnUI();
+}
+
+// ══════════════════════════════════════════════════════════════
+// NEW CONVERSATION button (Kiosk / Lanyard)
+// ══════════════════════════════════════════════════════════════
+// Full transcript wipe + fresh segmenter state + re-arms a single-shot
+// wake-word session in this click's gesture context. Distinct from
+// Restart, which only soft-resets the current in-flight utterance.
+function onNewConversationClick() {
+    const msgs = document.getElementById('transcriptMsgs');
+    if (msgs) msgs.innerHTML = '';
+    history = [];
+    try { btnRestart.click(); } catch (_) {}
+    stopWakeWordListener();
+    startWakeWordListener();
+    showToast('New conversation — say "' + _getWakeWord() + '" to reply', 'info', 3000);
+}
+
+// ── Text-to-speech enabled toggle (per-device settings) ─────────
+// Off by default in both modes (staff reads from screen). Opt-in via
+// the settings popup when an audible reply makes sense.
+function updateTtsEnabled() {
+    const cb = document.getElementById('ttsEnabledToggle');
+    if (!cb) return;
+    TTS_ENABLED = !!cb.checked;
+    localStorage.setItem('signbridge.ttsEnabled', TTS_ENABLED ? '1' : '0');
+    // Mirror to Settings page if its DOM is built.
+    const mirror = document.getElementById('setTtsEnabled');
+    if (mirror) mirror.checked = TTS_ENABLED;
+}
+
+function syncTtsToggleUI() {
+    const cb = document.getElementById('ttsEnabledToggle');
+    if (cb) cb.checked = TTS_ENABLED;
+}
+
+// ══════════════════════════════════════════════════════════════
+// SETTINGS PAGE -- edit/save workflow + bidirectional sync with cog
+// ══════════════════════════════════════════════════════════════
+// Inputs are disabled by default. Click Edit -> capture current
+// values as a snapshot and enable inputs. On Save, persist the
+// edited values to localStorage + globals + sync the cog popup. On
+// Cancel, restore the snapshot. The cog popup keeps its own
+// auto-persist-on-change behavior (since it's used mid-session and
+// changes should apply NOW) -- the two stay in sync because both
+// read/write the same localStorage keys.
+
+let _settingsEditing = false;
+let _settingsSnapshot = null;   // values captured at Edit time, restored on Cancel
+
+// ── Editable-input IDs (collected for enable/disable + snapshot) ──
+const _SETTINGS_INPUTS = [
+    'setDisplayName',
+    'setTtsEnabled',
+    'setChimeEnabled',
+    'setWakeWord',
+    'setCtqiThreshold',
+    'setCtqiHardFloor',
+];
+
+function _settingsInputValue(el) {
+    if (!el) return null;
+    return el.type === 'checkbox' ? !!el.checked : el.value;
+}
+function _settingsSetInputValue(el, val) {
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = !!val;
+    else el.value = val == null ? '' : val;
+}
+
+function _settingsToggleInputs(enabled) {
+    _SETTINGS_INPUTS.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = !enabled;
+    });
+    const page = document.querySelector('.settings-page');
+    if (page) page.classList.toggle('editing', enabled);
+    const editBtn   = document.getElementById('settingsEditBtn');
+    const saveBtn   = document.getElementById('settingsSaveBtn');
+    const cancelBtn = document.getElementById('settingsCancelBtn');
+    if (editBtn)   editBtn.style.display   = enabled ? 'none' : 'inline-block';
+    if (saveBtn)   saveBtn.style.display   = enabled ? 'inline-block' : 'none';
+    if (cancelBtn) cancelBtn.style.display = enabled ? 'inline-block' : 'none';
+}
+
+function onSettingsEditClick() {
+    if (_settingsEditing) return;
+    // Snapshot current values so Cancel can restore.
+    _settingsSnapshot = {};
+    _SETTINGS_INPUTS.forEach(id => {
+        _settingsSnapshot[id] = _settingsInputValue(document.getElementById(id));
+    });
+    _settingsEditing = true;
+    _settingsToggleInputs(true);
+    // Focus the first editable input for immediate keyboard editing.
+    const firstEl = document.getElementById(_SETTINGS_INPUTS[0]);
+    if (firstEl) try { firstEl.focus(); } catch (_) {}
+}
+
+function onSettingsCancelClick() {
+    if (!_settingsEditing) return;
+    if (_settingsSnapshot) {
+        _SETTINGS_INPUTS.forEach(id => {
+            _settingsSetInputValue(document.getElementById(id), _settingsSnapshot[id]);
+        });
+    }
+    _settingsSnapshot = null;
+    _settingsEditing = false;
+    _settingsToggleInputs(false);
+}
+
+function onSettingsSaveClick() {
+    if (!_settingsEditing) return;
+
+    // --- Display name (Profile section) ---
+    const nameEl = document.getElementById('setDisplayName');
+    if (nameEl) {
+        const profile = (typeof loadProfile === 'function') ? loadProfile() : {};
+        const name = (nameEl.value || '').trim().slice(0, 30);
+        profile.name = name;
+        if (typeof saveProfile === 'function') saveProfile(profile);
+        // Update the welcome message in the header.
+        const welcomeEl = document.getElementById('heroWelcome');
+        if (welcomeEl) {
+            if (name) {
+                welcomeEl.textContent = `Welcome back, ${name}`;
+                welcomeEl.style.display = 'inline';
+            } else {
+                welcomeEl.style.display = 'none';
+            }
+        }
+    }
+
+    // --- TTS (Audio) ---
+    const ttsCb = document.getElementById('setTtsEnabled');
+    if (ttsCb) {
+        TTS_ENABLED = !!ttsCb.checked;
+        localStorage.setItem('signbridge.ttsEnabled', TTS_ENABLED ? '1' : '0');
+        syncTtsToggleUI();
+    }
+
+    // --- Chime (Audio) ---
+    const chimeCb = document.getElementById('setChimeEnabled');
+    if (chimeCb) {
+        CHIME_ON_LOW_CTQI = !!chimeCb.checked;
+        localStorage.setItem('signbridge.lowCtqiChime', CHIME_ON_LOW_CTQI ? '1' : '0');
+        syncLowCtqiChimeUI();
+    }
+
+    // --- Wake word (Audio) ---
+    const wakeEl = document.getElementById('setWakeWord');
+    if (wakeEl) {
+        let val = (wakeEl.value || '').trim().split(/\s+/)[0] || 'Signer';
+        if (val.length > 20) val = val.slice(0, 20);
+        wakeEl.value = val;
+        localStorage.setItem('signbridge.wakeWord', val);
+        syncWakeWordUI();
+    }
+
+    // --- CTQI alert threshold (Advanced) ---
+    const ctqiEl = document.getElementById('setCtqiThreshold');
+    if (ctqiEl) {
+        let v = parseInt(ctqiEl.value, 10);
+        if (!isFinite(v)) v = 80;
+        v = Math.max(0, Math.min(100, v));
+        ctqiEl.value = v;
+        CTQI_LOW_THRESHOLD = v;
+        localStorage.setItem('signbridge.ctqiThreshold', String(v));
+    }
+
+    // --- CTQI hard floor (Advanced) ---
+    const ctqiFloorEl = document.getElementById('setCtqiHardFloor');
+    if (ctqiFloorEl) {
+        let v = parseInt(ctqiFloorEl.value, 10);
+        if (!isFinite(v)) v = 40;
+        v = Math.max(0, Math.min(100, v));
+        // Sanity: hard floor must be < alert threshold; if user set
+        // floor above alert, clamp to alert - 1.
+        if (v >= CTQI_LOW_THRESHOLD) v = Math.max(0, CTQI_LOW_THRESHOLD - 1);
+        ctqiFloorEl.value = v;
+        CTQI_HARD_FLOOR = v;
+        localStorage.setItem('signbridge.ctqiHardFloor', String(v));
+    }
+
+    _settingsSnapshot = null;
+    _settingsEditing = false;
+    _settingsToggleInputs(false);
+    if (typeof showToast === 'function') showToast('Settings saved', 'info', 1800);
+}
+
+function onSettingsClearData() {
+    if (typeof clearProfileData === 'function') clearProfileData();
+    syncSettingsPageUI();
+}
+
+// Called when the Settings tab is opened (and once on page load).
+// Populates every input from current state. Also re-renders read-only
+// sections (practice stats, history summary).
+function syncSettingsPageUI() {
+    // Profile section
+    const profile = (typeof loadProfile === 'function') ? loadProfile() : {};
+    const nameEl = document.getElementById('setDisplayName');
+    if (nameEl) nameEl.value = profile.name || '';
+
+    // Audio section
+    const ttsCb   = document.getElementById('setTtsEnabled');
+    if (ttsCb) ttsCb.checked = TTS_ENABLED;
+    const chimeCb = document.getElementById('setChimeEnabled');
+    if (chimeCb) chimeCb.checked = CHIME_ON_LOW_CTQI;
+    const wakeEl  = document.getElementById('setWakeWord');
+    if (wakeEl) wakeEl.value = _getWakeWord();
+
+    // Advanced section
+    const ctqiEl  = document.getElementById('setCtqiThreshold');
+    if (ctqiEl) ctqiEl.value = CTQI_LOW_THRESHOLD;
+    const ctqiFloorEl = document.getElementById('setCtqiHardFloor');
+    if (ctqiFloorEl) ctqiFloorEl.value = CTQI_HARD_FLOOR;
+
+    // Stats section (read-only -- just render current totals).
+    const stats = (profile && profile.practiceStats) || {};
+    let totalAttempts = 0, totalCorrect = 0;
+    for (const g in stats) {
+        totalAttempts += stats[g].attempts || 0;
+        totalCorrect  += stats[g].correct || 0;
+    }
+    const aEl = document.getElementById('setStatAttempts');
+    const cEl = document.getElementById('setStatCorrect');
+    const accEl = document.getElementById('setStatAccuracy');
+    if (aEl) aEl.textContent = totalAttempts;
+    if (cEl) cEl.textContent = totalCorrect;
+    if (accEl) accEl.textContent = totalAttempts > 0
+        ? Math.round(totalCorrect / totalAttempts * 100) + '%' : '—';
+
+    // Data section: history summary + link visibility.
+    if (typeof renderProfileHistory === 'function') {
+        // Reuse the existing function but redirect its DOM writes to
+        // the Settings-page IDs we exposed.
+        try {
+            const hist = (profile && profile.conversations) || [];
+            const sumEl = document.getElementById('setHistorySummary');
+            const linkEl = document.getElementById('setHistoryLink');
+            if (sumEl) sumEl.textContent = hist.length
+                ? `${hist.length} conversation${hist.length === 1 ? '' : 's'} saved`
+                : 'No conversations saved yet';
+            if (linkEl) linkEl.style.display = hist.length ? 'inline-block' : 'none';
+        } catch (_) {}
+    }
+
+    // If we were in edit mode and the page just re-synced, keep inputs
+    // disabled until the user re-clicks Edit.
+    if (!_settingsEditing) _settingsToggleInputs(false);
 }
 
 let headerTogglesLocked = false;
@@ -2363,13 +3154,14 @@ function navigateTo(section) {
         demo: 'navDemo',
         live: 'navLive',
         upload: 'navUpload',
+        settings: 'navSettings',
     };
     const activeBtn = document.getElementById(navIds[section]);
     if (activeBtn) activeBtn.classList.add('active');
 
     // Hide all content sections (including secondary screens)
     const sectionIds = ['demoScenarios', 'liveScenarios', 'signBankScreen', 'uploadScreen', 'historyScreen',
-                        'phaseConvo', 'phaseLiveDemo', 'phaseBreakdown', 'vocabPanel'];
+                        'settingsScreen', 'phaseConvo', 'phaseLiveDemo', 'phaseBreakdown', 'vocabPanel'];
     sectionIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
 
     // Show hero on live tab (default landing), demo intro on demo tab
@@ -2391,6 +3183,12 @@ function navigateTo(section) {
         if (!signBankLoaded) loadSignBank();
     } else if (section === 'upload') {
         const el = document.getElementById('uploadScreen'); if (el) el.style.display = 'block';
+    } else if (section === 'settings') {
+        const el = document.getElementById('settingsScreen'); if (el) el.style.display = 'block';
+        // Pull the freshest stored values into the Settings page UI
+        // every time the tab is opened (in case the user changed
+        // something in the in-session cog popup).
+        syncSettingsPageUI();
     }
 
     // Clean up practice camera if leaving sign bank
@@ -2749,6 +3547,12 @@ async function startCamera() {
             await startExternalCamera(externalCameraUrl);
         } else {
             // ── Local device camera ──
+            // METHOD === 'sign' requests audio because Tap-to-Speak relies
+            // on the implicit mic-permission grant from getUserMedia. (Tried
+            // dropping audio in Kiosk/Lanyard to free the mic for
+            // continuous wake-word recognition; turns out Edge's
+            // SpeechRecognition silently fails to receive audio without
+            // that grant, which broke Tap-to-Speak. Reverted.)
             const needsAudio = (MODE === 'live' && METHOD === 'sign');
             cameraStream = await requestCameraWithPrompt(needsAudio);
 
@@ -2843,10 +3647,23 @@ async function startExternalCamera(mjpegUrl) {
                 externalCameraCanvas.height = externalCameraImg.naturalHeight || 480;
                 dimensionsSet = true;
 
-                // Start draw loop at ~15fps
+                // Start draw loop at ~15fps. Horizontally mirror the MJPEG
+                // frame so the canvas matches device-camera handedness:
+                // signer's right hand at viewer's LEFT, which is what both
+                // (a) the .camera-view CSS scaleX(-1) expects (so the
+                // preview reads as a selfie like device cam) and
+                // (b) the inference model expects (standard training-data
+                // orientation -- ASL right-vs-left signs differ).
+                // Applied here at the source-of-truth canvas, so every
+                // downstream consumer (preview video, _sendFrame's
+                // drawImage) inherits the correct orientation.
                 externalCameraInterval = setInterval(() => {
                     if (externalCameraImg && externalCameraImg.complete) {
+                        ctx.save();
+                        ctx.translate(externalCameraCanvas.width, 0);
+                        ctx.scale(-1, 1);
                         ctx.drawImage(externalCameraImg, 0, 0);
+                        ctx.restore();
                     }
                 }, 67);
 
@@ -2900,6 +3717,10 @@ function stopCamera() {
 // ══════════════════════════════════════════════════════════════
 function speak(text) {
     return new Promise(resolve => {
+        // Honor the per-device TTS toggle (Settings -> "Speak responses
+        // aloud"). Off = silent; caller still resolves so any code that
+        // chains `.then(...)` after a speak() continues normally.
+        if (!TTS_ENABLED) { resolve(); return; }
         if (!('speechSynthesis' in window)) { resolve(); return; }
 
         function doSpeak() {
@@ -3090,6 +3911,17 @@ btnStart.addEventListener('click', async () => {
     }
 
     if (MODE === 'live') {
+        // Kiosk/Lanyard: arm the single-shot wake-word session
+        // synchronously here so it inherits this click's user-gesture
+        // context. startLiveMode is async; once it awaits, the gesture
+        // is gone and SpeechRecognition.start() will be rejected. The
+        // listener guards on liveActive, so flip it true now (startLiveMode
+        // sets it again -- idempotent).
+        if (SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard') {
+            liveActive = true;
+            stopWakeWordListener();
+            startWakeWordListener();
+        }
         await startLiveMode();
         return;
     }
@@ -3103,6 +3935,18 @@ btnStart.addEventListener('click', async () => {
 });
 
 btnRestart.addEventListener('click', async () => {
+    console.log('[Restart] clicked. liveActive=', liveActive,
+                ' hasSegmenter=', !!signSegmenter,
+                ' segmenterPaused=', signSegmenter && typeof signSegmenter.isPaused === 'function' ? signSegmenter.isPaused() : '?');
+    // If Tap-to-Speak is mid-listen, stop it first -- otherwise its
+    // delayed onend would fire after this handler completes, calling
+    // resume() on a streamer that we've already restarted past, and
+    // (worse) appending the half-finished speaker text into the fresh
+    // turn we're about to start. Wrapped defensively so a bug in the
+    // cleanup path can never block the actual Restart sequence below.
+    try { _stopTapReplyListening('restart'); }
+    catch (e) { console.warn('[Restart] tap-reply cleanup threw:', e); }
+
     // In streaming-live mode, Restart is a SOFT reset of the in-flight
     // utterance only. Sequence:
     //   1. Pause streaming -- no new segments after this point.
@@ -3139,6 +3983,7 @@ btnRestart.addEventListener('click', async () => {
         _runningCaption = '';
         _lastSentGlossCount = 0;
         _lastCtqi = null;
+        _prevCtqiWasHigh = true;
         _captionIsEdited = false;
         _lastRenderedCaptionHtml = '';
     _regenerateAttempts = 0;
@@ -3317,6 +4162,9 @@ async function startLiveMode() {
 
     // Mode switch button removed — was covering the camera view
     kioskResetIdleTimer();
+    // Kiosk / Lanyard: expose the Tap-to-Reply button for the speaker's
+    // turn. No-op in any other SIGNBRIDGE_MODE.
+    showTapReplyButton();
 }
 
 function stopLiveMode() {
@@ -3344,6 +4192,7 @@ function stopLiveMode() {
     _runningCaption = '';
     _lastSentGlossCount = 0;
     _lastCtqi = null;
+    _prevCtqiWasHigh = true;   // next session's first low caption chimes
     _captionIsEdited = false;
     _lastRenderedCaptionHtml = '';
     _regenerateAttempts = 0;
@@ -3353,6 +4202,8 @@ function stopLiveMode() {
     if (spanel) spanel.style.display = 'none';
     const btnSpeakSend = document.getElementById('btnSpeakSend');
     if (btnSpeakSend) btnSpeakSend.style.display = 'none';
+    // Tear down Tap-to-Reply too.
+    hideTapReplyButton();
 }
 
 // ── Speaker mode: speech recognition → English → ASL glosses ──
@@ -3614,6 +4465,58 @@ let _sendInProgress = false;   // true while sendNowAndPause is running
 let _runningCaption = '';
 let _lastSentGlossCount = 0;
 let _lastCtqi = null;                // most recently computed CTQI (for re-render on cancel-edit)
+// CTQI_LOW_THRESHOLD lives at top-of-file globals (TDZ avoidance, +
+// user-tunable from Settings tab).
+
+// Chime state lives at the top of the file (TDZ avoidance for the
+// page-load init block). Helpers below; edge-triggered firing happens
+// from _renderAndShowCaption.
+function updateLowCtqiChime() {
+    const cb = document.getElementById('lowCtqiChimeToggle');
+    if (!cb) return;
+    CHIME_ON_LOW_CTQI = !!cb.checked;
+    localStorage.setItem('signbridge.lowCtqiChime', CHIME_ON_LOW_CTQI ? '1' : '0');
+    const mirror = document.getElementById('setChimeEnabled');
+    if (mirror) mirror.checked = CHIME_ON_LOW_CTQI;
+}
+
+function syncLowCtqiChimeUI() {
+    const cb = document.getElementById('lowCtqiChimeToggle');
+    if (cb) cb.checked = CHIME_ON_LOW_CTQI;
+}
+
+function _playLowCtqiChime() {
+    if (!CHIME_ON_LOW_CTQI) return;
+    try {
+        // Lazy-init the AudioContext on first chime -- creating it
+        // pre-emptively can throw in browsers that require a user
+        // gesture (Chrome autoplay policy). By the time we get here a
+        // session is well underway, so a gesture has already happened.
+        if (!_chimeAudioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            _chimeAudioCtx = new Ctx();
+        }
+        const ctx = _chimeAudioCtx;
+        if (ctx.state === 'suspended') ctx.resume();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        // Two short pips (descending): E5 -> C5. Distinguishable from a
+        // notification ding, short enough to not disrupt conversation.
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(659.25, now);             // E5
+        osc.frequency.setValueAtTime(523.25, now + 0.12);      // C5
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.30);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.32);
+    } catch (e) {
+        console.warn('[Chime] play failed:', e);
+    }
+}
 let _captionIsEdited = false;        // user has manually edited the caption
 let _lastRenderedCaptionHtml = '';   // cached for cancel-edit restoration
 let _regenerateAttempts = 0;         // resets per turn; capped at REGENERATE_LIMIT
@@ -3687,6 +4590,7 @@ function _setLiveCaption(text, opts) {
         el.style.display = 'none';
         el.innerHTML = '';
         el.classList.remove('updating');
+        el.classList.remove('low-ctqi');
         return;
     }
     el.style.display = 'block';
@@ -3706,19 +4610,26 @@ function _escapeHtml(s) {
 // missing and not currently editing) the regenerate + edit action chips.
 // Caches the result so cancel-edit can restore.
 function _renderCaptionHtml(sentence, ctqi) {
-    const escaped = _escapeHtml(sentence);
+    // Hard floor: below this CTQI the model is essentially guessing.
+    // Hide the constructed sentence and show "[unclear]" so we don't
+    // present a confidently-wrong caption. User can still hit Edit to
+    // manually type what they meant. Doesn't apply to manually-edited
+    // captions (the edit is ground truth).
+    const belowHardFloor = !_captionIsEdited && ctqi != null && ctqi < CTQI_HARD_FLOOR;
+    const displaySentence = belowHardFloor ? '[unclear]' : sentence;
+    const escaped = _escapeHtml(displaySentence);
     let scoreHtml;
     if (_captionIsEdited) {
         scoreHtml = `<span class="ctqi-edited">(edited)</span>`;
     } else if (ctqi != null) {
-        const cls = ctqi > 80 ? 'ctqi-good' : 'ctqi-bad';
+        const cls = ctqi >= CTQI_LOW_THRESHOLD ? 'ctqi-good' : 'ctqi-bad';
         scoreHtml = `<span class="${cls}">(CTQI = ${ctqi.toFixed(0)})</span>`;
     } else {
         scoreHtml = `<span class="ctqi-missing">(CTQI = ?)</span>`;
     }
-    // Action chips when CTQI ≤ 80 or missing, but not while editing.
+    // Action chips when CTQI is low or missing, but not while editing.
     let actionsHtml = '';
-    const showActions = !_captionIsEdited && (ctqi == null || ctqi <= 80);
+    const showActions = !_captionIsEdited && (ctqi == null || ctqi < CTQI_LOW_THRESHOLD);
     if (showActions) {
         const regenLeft = REGENERATE_LIMIT - _regenerateAttempts;
         if (regenLeft > 0) {
@@ -3738,6 +4649,18 @@ function _renderAndShowCaption(sentence, ctqi) {
     _lastRenderedCaptionHtml = html;
     _lastCtqi = ctqi;
     _setLiveCaption(html, { updating: false, html: true });
+    // Low-CTQI alert: pulsing red border on the banner. Skip when the
+    // user has manually edited the caption -- their edit is the ground
+    // truth, no need to nag.
+    const el = _liveCaptionEl();
+    const isLow = !_captionIsEdited && ctqi != null && ctqi < CTQI_LOW_THRESHOLD;
+    if (el) el.classList.toggle('low-ctqi', isLow);
+    // Edge-triggered chime: only on a high->low (or missing->low)
+    // transition. Updates the "previous" flag whether we chime or not.
+    if (isLow && _prevCtqiWasHigh) {
+        _playLowCtqiChime();
+    }
+    _prevCtqiWasHigh = !isLow;
     _initCaptionInteractions();
 }
 
@@ -3970,6 +4893,18 @@ function _statusForIdle() {
 //      the user clicks it.
 async function sendNowAndPause() {
     if (!liveActive) return;
+
+    // Kiosk/Lanyard: re-arm the single-shot wake-word listener inside
+    // this click's user-gesture window (before any await below).
+    // Speaker's reply naturally comes right after Send, so a fresh
+    // ~30-60s window starts now.
+    if (SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard') {
+        try {
+            stopWakeWordListener();
+            startWakeWordListener();
+        } catch (e) { console.warn('[Send] wake re-arm failed:', e); }
+    }
+
     _sendInProgress = true;   // suppresses status-bar rewrites from state ticks
     const btn = document.getElementById('btnSendMessage');
 

@@ -691,7 +691,12 @@ def _get_direct_model(domain):
         return _direct_model_cache[domain]
 
 
-# Confidence threshold below which predictions are marked as unclear
+# Per-sign confidence floor. Predictions below this get marked
+# confident=False and `status='unclear'`; the client drops them from
+# the LLM-bound buffer so weak guesses don't poison the caption.
+# (This is a *gloss-level* gate. The user-facing "CTQI hard floor"
+# in Settings is a separate sentence-level gate that hides the whole
+# caption as "[unclear]" -- see CTQI_HARD_FLOOR in app.js.)
 PREDICTION_CONFIDENCE_THRESHOLD = float(os.environ.get("SIGNBRIDGE_MIN_CONFIDENCE", "0.35"))
 
 
@@ -1423,9 +1428,13 @@ def ws_live_stream(ws):
                         "total_frames": session.frame_count,
                         "total_bytes": bytes_total,
                     })
-                    print(f"[WS] {fps:.1f} fps, {kbps:.1f} KB/s "
-                          f"(total {session.frame_count} frames, "
-                          f"{bytes_total/1024:.0f} KB, segments {session.segment_id})")
+                    # Stats are still sent to the client every second
+                    # for the diagnostic panel; the server-side print
+                    # was just noisy in the terminal. Re-enable by
+                    # un-commenting if you need to debug throughput.
+                    # print(f"[WS] {fps:.1f} fps, {kbps:.1f} KB/s "
+                    #       f"(total {session.frame_count} frames, "
+                    #       f"{bytes_total/1024:.0f} KB, segments {session.segment_id})")
                     window_start = now
                     window_count = 0
                     window_bytes = 0

@@ -603,6 +603,18 @@ body {
     background: rgba(0, 0, 0, 0.55);
     opacity: 0.8;
 }
+/* Low-CTQI alert: pulsing red border so the signer cannot miss that
+ * the translation is questionable and they should look at the
+ * Regenerate / Edit chips. Threshold lives in app.js
+ * (CTQI_LOW_THRESHOLD = 80; user-tunable from unified Settings later). */
+.live-caption.low-ctqi {
+    border: 2px solid #e74c3c;
+    animation: lowCtqiPulse 1.4s ease-in-out infinite;
+}
+@keyframes lowCtqiPulse {
+    0%, 100% { box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 0 0 0 rgba(231,76,60,0.55); }
+    50%      { box-shadow: 0 4px 16px rgba(0,0,0,0.45), 0 0 0 6px rgba(231,76,60,0.0); }
+}
 .live-caption .ctqi-good {
     color: #34d399;
     font-weight: 700;
@@ -744,6 +756,10 @@ body {
     font-size: 0.95rem;
     border-top: 1px solid var(--border-subtle);
     transition: background 0.3s;
+    /* Never shrink under flex pressure -- the camera-box is overflow:hidden
+     * and camera-view has min-height:280px, so without this multi-line
+     * status messages got vertically clipped at the bottom edge. */
+    flex-shrink: 0;
 }
 
 .status-bar .gloss { color: var(--text-primary); font-family: 'SF Mono', monospace; font-weight: 600; letter-spacing: 1px; }
@@ -1207,6 +1223,12 @@ body {
     color: var(--text-primary);
 }
 .mode-icon { font-size: 1rem; }
+.mode-btn-disabled,
+.mode-btn[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
 .mode-description {
     color: var(--text-dimmed);
     font-size: 0.75rem;
@@ -1274,6 +1296,224 @@ body {
 }
 .sidebar-spacer {
     flex: 1;
+}
+
+/* ── Settings page (backlog #7) ────────────────────────────────── */
+.settings-page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 8px 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+.settings-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 16px 20px;
+}
+.settings-section h3 {
+    margin: 0 0 14px;
+    color: var(--text-primary);
+    font-size: 1.05rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+.settings-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid var(--border-subtle);
+}
+.settings-row:first-of-type { border-top: none; padding-top: 0; }
+.settings-row-text {
+    flex: 1;
+    min-width: 0;
+}
+.settings-row-label {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin-bottom: 4px;
+}
+.settings-row-desc {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.4;
+}
+.settings-row-desc code {
+    background: rgba(255,255,255,0.07);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+.settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.settings-text-input,
+.settings-number-input {
+    flex-shrink: 0;
+    width: 140px;
+    padding: 7px 9px;
+    font-size: 0.88rem;
+    /* Theme-aware: bg + text follow whichever theme is active. The old
+     * hardcoded #1f1b18 fallback collided with --text-primary in light
+     * theme (dark text on dark bg = invisible). */
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    color: var(--text-primary);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.15s, opacity 0.15s;
+}
+.settings-text-input:focus,
+.settings-number-input:focus {
+    border-color: var(--accent);
+}
+.settings-text-input:disabled,
+.settings-number-input:disabled,
+.settings-toggle input:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.settings-readonly {
+    opacity: 0.55 !important;
+    cursor: not-allowed;
+}
+.settings-edit-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.settings-edit-bar .btn {
+    padding: 8px 18px;
+    font-size: 0.85rem;
+}
+.settings-page.editing .settings-section {
+    /* Subtle ring so the user knows edit mode is active. */
+    box-shadow: 0 0 0 1px var(--accent);
+}
+.settings-stats-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
+.settings-stat-card {
+    flex: 1;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 14px 12px;
+    text-align: center;
+}
+.settings-stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+}
+.settings-stat-label {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.settings-footer-note {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-style: italic;
+    padding: 0 8px;
+}
+
+/* ── Live nav sub-menu (mode selector, hover-revealed) ─────────── */
+/* The sub-menu is appended to document.body and positioned via JS
+   (showNavLiveSubmenu) so it can't be clipped by .sidebar's overflow.
+   Hover detection is JS-driven on .sidebar-item-wrap + the submenu. */
+.sidebar-item-wrap {
+    position: relative;
+}
+.sidebar-mode-chip {
+    margin-left: auto;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 0.3px;
+}
+.sidebar-item.active .sidebar-mode-chip {
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+}
+.sidebar-submenu {
+    position: fixed;
+    min-width: 180px;
+    background: #1a1612;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    display: none;
+    z-index: 1500;
+}
+[data-theme="dark"] .sidebar-submenu {
+    background: #121010;
+}
+.sidebar-submenu.is-open {
+    display: block;
+}
+.sidebar-submenu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: rgba(255,255,255,0.75);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+}
+.sidebar-submenu-item:hover:not(.sidebar-submenu-item-disabled) {
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+}
+.sidebar-submenu-item.active {
+    background: rgba(91,155,213,0.22);
+    color: #fff;
+}
+.sidebar-submenu-item-disabled,
+.sidebar-submenu-item[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.sidebar-submenu-tag {
+    margin-left: auto;
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
 }
 
 .home-content {

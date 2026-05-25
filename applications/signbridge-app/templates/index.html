@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=40">
+    <link rel="stylesheet" href="/static/css/main.css?v=47">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -21,7 +21,6 @@
         <div class="header-actions">
             <span class="header-welcome" id="heroWelcome" style="display:none"></span>
             <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">&#x1F319;</button>
-            <button class="profile-btn" id="profileBtn" onclick="openProfile()" title="Profile">?</button>
         </div>
     </div>
     <div class="header-row-toggles">
@@ -32,79 +31,10 @@
     </div>
 </header>
 
-<!-- ══════════════════════════════════════════
-     PROFILE PANEL (2.12)
-     ══════════════════════════════════════════ -->
-<div class="profile-panel-overlay" id="profileOverlay" onclick="if(event.target===this)closeProfile()">
-    <div class="profile-panel">
-        <div class="profile-header">
-            <h3>Your Profile</h3>
-            <button class="profile-close" onclick="closeProfile()">&#x2715;</button>
-        </div>
+<!-- Profile panel removed in favor of unified Settings tab (backlog #7).
+     Display name + save-history + practice stats + clear-data + history
+     all live in Settings now. -->
 
-        <div class="profile-avatar-row">
-            <div class="profile-avatar" id="profileAvatar">?</div>
-            <div class="profile-avatar-info">
-                <div class="profile-name-display" id="profileNameDisplay">Guest</div>
-                <div class="profile-joined" id="profileJoined"></div>
-            </div>
-        </div>
-
-        <div>
-            <div class="profile-section-label">Settings</div>
-            <div class="profile-field">
-                <label>Display Name</label>
-                <input type="text" id="profileNameInput" placeholder="Enter your name" maxlength="30" oninput="saveProfileName()">
-            </div>
-            <div class="profile-field" style="margin-top:10px">
-                <label>Preferred Method</label>
-                <select id="profileMethodPref" onchange="saveProfilePrefs()">
-                    <option value="sign">I Sign</option>
-                    <option value="speak">I Speak</option>
-                </select>
-            </div>
-            <div class="profile-field" style="margin-top:10px">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                    <input type="checkbox" id="profileSaveHistory" onchange="saveProfilePrefs()" checked>
-                    Save live conversation history
-                </label>
-            </div>
-        </div>
-
-        <div>
-            <div class="profile-section-label">Practice Stats</div>
-            <div class="profile-stats">
-                <div class="profile-stat-card">
-                    <div class="profile-stat-value" id="profStatAttempts">0</div>
-                    <div class="profile-stat-label">Attempts</div>
-                </div>
-                <div class="profile-stat-card">
-                    <div class="profile-stat-value" id="profStatCorrect">0</div>
-                    <div class="profile-stat-label">Correct</div>
-                </div>
-                <div class="profile-stat-card">
-                    <div class="profile-stat-value" id="profStatAccuracy">-</div>
-                    <div class="profile-stat-label">Accuracy</div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <div class="profile-section-label">Recent Scenarios</div>
-            <div class="profile-recent-list" id="profileRecentList">
-                <div style="font-size:0.82rem;color:var(--text-muted)">No recent activity</div>
-            </div>
-        </div>
-
-        <div>
-            <div class="profile-section-label">Conversation History</div>
-            <div id="profileHistorySummary" style="font-size:0.82rem;color:var(--text-muted)">No conversations saved yet</div>
-            <button class="btn btn-secondary" id="profileHistoryLink" onclick="closeProfile(); showHistoryPage()" style="display:none; margin-top:8px; font-size:0.78rem; padding:8px 16px;">View All Conversations &rarr;</button>
-        </div>
-
-        <button class="profile-clear-btn" onclick="clearProfileData()">Clear All Data</button>
-    </div>
-</div>
 
 <!-- ══════════════════════════════════════════
      CAMERA PERMISSION MODAL (1.5)
@@ -128,10 +58,32 @@
 
     <!-- Sidebar nav (desktop) / Bottom tab bar (mobile) -->
     <nav class="sidebar" id="sidebarNav">
-        <button class="sidebar-item active" id="navLive" onclick="navigateTo('live')">
-            <span class="sidebar-icon">&#x1F4E1;</span>
-            <span class="sidebar-label">Live</span>
-        </button>
+        <!-- Live nav with mode sub-menu (hover-revealed). Modes are Kiosk /
+             Lanyard / Conf Call. Selecting a mode adjusts UI defaults
+             (camera source, hidden header toggles) but does NOT change the
+             underlying camera/streaming/inference pipeline. -->
+        <div class="sidebar-item-wrap">
+            <button class="sidebar-item active" id="navLive" onclick="navigateTo('live')">
+                <span class="sidebar-icon">&#x1F4E1;</span>
+                <span class="sidebar-label">Live</span>
+                <span class="sidebar-mode-chip" id="navLiveModeChip">Kiosk</span>
+            </button>
+            <div class="sidebar-submenu" id="navLiveSubmenu">
+                <button class="sidebar-submenu-item" id="modeBtnKiosk" onclick="setSignBridgeMode('kiosk')">
+                    <span class="sidebar-icon">&#x1F5A5;&#xFE0F;</span>
+                    <span>Kiosk</span>
+                </button>
+                <button class="sidebar-submenu-item" id="modeBtnLanyard" onclick="setSignBridgeMode('lanyard')">
+                    <span class="sidebar-icon">&#x1F4F7;</span>
+                    <span>Lanyard</span>
+                </button>
+                <button class="sidebar-submenu-item sidebar-submenu-item-disabled" id="modeBtnConfCall" disabled title="Coming soon">
+                    <span class="sidebar-icon">&#x1F4DE;</span>
+                    <span>Conf Call</span>
+                    <span class="sidebar-submenu-tag">Soon</span>
+                </button>
+            </div>
+        </div>
         <button class="sidebar-item" id="navUpload" onclick="navigateTo('upload')">
             <span class="sidebar-icon">&#x1F4F9;</span>
             <span class="sidebar-label">Upload</span>
@@ -144,9 +96,9 @@
             <span class="sidebar-icon">&#x1F4D6;</span>
             <span class="sidebar-label">Sign Bank</span>
         </button>
-        <button class="sidebar-item" id="navProfile" onclick="openProfile()">
-            <span class="sidebar-icon" id="navProfileIcon">&#x1F464;</span>
-            <span class="sidebar-label">Profile</span>
+        <button class="sidebar-item" id="navSettings" onclick="navigateTo('settings')">
+            <span class="sidebar-icon">&#x2699;&#xFE0F;</span>
+            <span class="sidebar-label">Settings</span>
         </button>
     </nav>
 
@@ -366,6 +318,101 @@
     <!-- ══════════════════════════════════════════
          CONVERSATION HISTORY (2.3)
          ══════════════════════════════════════════ -->
+
+    <!-- ══════════════════════════════════════════
+         SETTINGS PAGE (backlog #7 -- top-level unified Settings)
+         All knobs live in localStorage; in-session cog popup mirrors
+         the Audio section so changes from either UI stay in sync.
+         ══════════════════════════════════════════ -->
+    <div id="settingsScreen" style="display:none">
+        <div class="tab-intro" style="display:flex;align-items:center;justify-content:space-between;gap:16px">
+            <div>
+                <h2 style="margin:0 0 4px">Settings</h2>
+                <p style="margin:0">Configure how SignBridge captures, recognizes, and presents the conversation. Changes are saved on this device.</p>
+            </div>
+            <div class="settings-edit-bar">
+                <button class="btn btn-secondary" id="settingsEditBtn" onclick="onSettingsEditClick()">&#x270F;&#xFE0F; Edit</button>
+                <button class="btn btn-primary" id="settingsSaveBtn" onclick="onSettingsSaveClick()" style="display:none">&#x2713; Save</button>
+                <button class="btn btn-secondary" id="settingsCancelBtn" onclick="onSettingsCancelClick()" style="display:none">Cancel</button>
+            </div>
+        </div>
+        <div class="settings-page">
+
+            <!-- PROFILE -->
+            <section class="settings-section">
+                <h3>Profile</h3>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Display name</div>
+                        <div class="settings-row-desc">Shown in the header greeting. Stored only on this device.</div>
+                    </div>
+                    <input type="text" id="setDisplayName" maxlength="30" placeholder="Your name" class="settings-text-input" disabled>
+                </div>
+            </section>
+
+            <!-- AUDIO -->
+            <section class="settings-section">
+                <h3>Audio</h3>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Speak responses aloud</div>
+                        <div class="settings-row-desc">Synth voice reads the signer's caption to the hearing person. Off = staff reads from the screen.</div>
+                    </div>
+                    <label class="settings-toggle">
+                        <input type="checkbox" id="setTtsEnabled" disabled>
+                        <span>Enable</span>
+                    </label>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Chime when translation quality drops</div>
+                        <div class="settings-row-desc">Plays a short tone when CTQI falls below the alert threshold (Advanced section).</div>
+                    </div>
+                    <label class="settings-toggle">
+                        <input type="checkbox" id="setChimeEnabled" disabled>
+                        <span>Enable</span>
+                    </label>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">Speaker wake word</div>
+                        <div class="settings-row-desc">Say this word to start a spoken reply (e.g. "Signer, I'd like a coffee"). The wake word is stripped from the transcript. Single word only.</div>
+                    </div>
+                    <input type="text" id="setWakeWord" maxlength="20" placeholder="Signer" class="settings-text-input" disabled>
+                </div>
+            </section>
+
+            <!-- ADVANCED -->
+            <section class="settings-section">
+                <h3>Advanced</h3>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">CTQI alert threshold</div>
+                        <div class="settings-row-desc">Captions with CTQI below this value get a red pulsing border + optional chime. 0&ndash;100, default 80.</div>
+                    </div>
+                    <input type="number" id="setCtqiThreshold" min="0" max="100" step="1" class="settings-number-input" disabled>
+                </div>
+
+                <div class="settings-row">
+                    <div class="settings-row-text">
+                        <div class="settings-row-label">CTQI hard floor</div>
+                        <div class="settings-row-desc">Captions with CTQI below this value are replaced with <b>[unclear]</b> instead of showing the constructed sentence (the model is essentially guessing). CTQI badge + Regenerate / Edit chips still appear so the signer can rescue the message. 0&ndash;100, default 40.</div>
+                    </div>
+                    <input type="number" id="setCtqiHardFloor" min="0" max="100" step="1" class="settings-number-input" disabled>
+                </div>
+            </section>
+
+            <div class="settings-footer-note">
+                In-session shortcuts for camera source + signing zone live in the gear icon (&#x2699;&#xFE0F;) on the camera view.
+            </div>
+        </div>
+    </div>
+
     <!-- History page (opened from Profile > View All Conversations) -->
     <div id="historyScreen" style="display:none">
         <div style="max-width:700px;margin:0 auto;padding:24px 20px;">
@@ -464,6 +511,30 @@
                 <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
                     Motion outside this band is ignored.
                 </div>
+
+                <hr style="border:0;border-top:1px solid var(--border-light);margin:12px 0 8px">
+                <div style="font-size:0.78rem;font-weight:500;color:var(--text-muted);margin-bottom:6px">Audio</div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;color:var(--text-secondary)">
+                    <input type="checkbox" id="ttsEnabledToggle" onchange="updateTtsEnabled()">
+                    <span>Speak responses aloud (text-to-speech)</span>
+                </label>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+                    When off, the hearing person reads the transcribed signs from the screen.
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;color:var(--text-secondary);margin-top:10px">
+                    <input type="checkbox" id="lowCtqiChimeToggle" onchange="updateLowCtqiChime()">
+                    <span>Chime when translation quality drops</span>
+                </label>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+                    Plays a short tone when CTQI falls below 80, so the signer knows to review the caption.
+                </div>
+                <label style="display:block;font-size:0.78rem;margin:10px 0 4px;color:var(--text-muted)">
+                    Speaker wake word
+                    <input type="text" id="wakeWordInput" maxlength="20" placeholder="Signer" onchange="updateWakeWord()" oninput="updateWakeWord()" style="width:100%;margin-top:4px;padding:6px 8px;font-size:0.85rem;background:var(--input-bg,#1f1b18);border:1px solid var(--border-light);border-radius:6px;color:var(--text-primary)">
+                </label>
+                <div style="font-size:0.7rem;color:var(--text-muted);margin-top:4px">
+                    Wake-word listener arms on each <b>Start Conversation</b>, <b>Send Message</b>, and <b>New Conversation</b> click. Say the wake word to start your reply (e.g. "Signer, I'd like a coffee"). Stripped from the transcript. Single word only.
+                </div>
             </div>
             <div class="camera-view" id="cameraView">
                 <div class="camera-placeholder" id="cameraPlaceholder">Camera will start when you begin</div>
@@ -507,6 +578,19 @@
             <button class="btn btn-primary" id="btnRecordSign" style="display:none;background:#b07cf0">Record Sign</button>
             <button class="btn btn-primary" id="btnSendMessage" style="display:none;background:#4caf80">Send Message</button>
             <button class="btn btn-primary" id="btnSpeakSend" style="display:none;background:#7cb3f0">&#x1F399; Send to Signer</button>
+            <!-- Tap-to-Speak: speaker's turn trigger in Kiosk / Lanyard
+                 modes. Continuous Web Speech API session started on user
+                 click, finalized on 5s silence OR a second tap. Started
+                 inside a click-handler so we satisfy the user-gesture
+                 requirement that Edge/Chrome put on SpeechRecognition. -->
+            <button class="btn btn-primary" id="btnTapReply" style="display:none;background:#7cb3f0" onclick="onTapReplyClick()">&#x1F399; Tap to Speak</button>
+            <!-- New Conversation: full transcript wipe + fresh segmenter
+                 state (distinct from Restart which is only a soft reset of
+                 the current utterance). In Kiosk/Lanyard, this click also
+                 starts the continuous wake-word listener -- the user-gesture
+                 satisfies Chromium's SpeechRecognition activation rule that
+                 the previous auto-start path was missing. -->
+            <button class="btn btn-secondary" id="btnNewConvo" style="display:none" onclick="onNewConversationClick()">&#x21BB; New Conversation</button>
             <button id="btnHowItWorks" onclick="showBreakdown()">&#x1F9EA; How does SignBridge work?</button>
         </div>
     </div>
@@ -547,7 +631,7 @@
 <script src="/static/vendor/mediapipe-pose/pose.js"></script>
 <script src="/static/js/sign_segmenter.js?v=2"></script>
 <script src="/static/js/pose_overlay.js?v=1"></script>
-<script src="/static/js/streaming_live.js?v=13"></script>
-<script src="/static/js/app.js?v=88"></script>
+<script src="/static/js/streaming_live.js?v=14"></script>
+<script src="/static/js/app.js?v=121"></script>
 </body>
 </html>

@@ -88,6 +88,16 @@
       // into the target, no info-loss upscale).
       this.zoomFactor = opts.zoomFactor != null ? opts.zoomFactor : 1.0;
 
+      // Horizontal flip applied INSIDE _sendFrame, before drawImage. The
+      // display preview is independently CSS-mirrored via .camera-view >
+      // video {scaleX(-1)}; this flag only affects what's sent to the
+      // server for inference. Set true when the source frame has signer's
+      // right hand on viewer's RIGHT (opposite of standard training data
+      // convention) -- e.g. the case-mounted ESP32 cam where hmirror+vflip
+      // produces the wrong handedness. Without this, ASL signs that differ
+      // only by hand dominance get misclassified.
+      this.mirrorBeforeSend = !!opts.mirrorBeforeSend;
+
       // Callbacks (set by the integration site).
       this.onGloss        = null;
       this.onReadyToSend  = null;
@@ -207,6 +217,15 @@
       console.log('[StreamingLive] zoom set to', v);
     }
 
+    // Toggle horizontal flip on frames sent to inference. Display is
+    // unaffected (separate CSS mirror). Console-tunable:
+    //   signSegmenter.setMirror(true)   // flip (use for ESP32 wifi cam)
+    //   signSegmenter.setMirror(false)  // no flip (device cam default)
+    setMirror(m) {
+      this.mirrorBeforeSend = !!m;
+      console.log('[StreamingLive] mirrorBeforeSend =', this.mirrorBeforeSend);
+    }
+
     // Optional: change domain mid-session (e.g. user switches scenarios).
     setDomain(domain) {
       this.domain = domain;
@@ -310,7 +329,17 @@
         }
         const cx = (sw - cw) / 2;
         const cy = (sh - ch) / 2;
-        this._ctx.drawImage(v, cx, cy, cw, ch, 0, 0, this.captureWidth, this.captureHeight);
+        if (this.mirrorBeforeSend) {
+          // Draw mirrored: translate to the right edge, flip the X axis,
+          // then drawImage at (0,0) of the now-flipped coordinate system.
+          this._ctx.save();
+          this._ctx.translate(this.captureWidth, 0);
+          this._ctx.scale(-1, 1);
+          this._ctx.drawImage(v, cx, cy, cw, ch, 0, 0, this.captureWidth, this.captureHeight);
+          this._ctx.restore();
+        } else {
+          this._ctx.drawImage(v, cx, cy, cw, ch, 0, 0, this.captureWidth, this.captureHeight);
+        }
 
         this._canvas.toBlob((blob) => {
           if (!blob) return;
