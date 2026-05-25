@@ -21,6 +21,7 @@ import threading
 import tempfile
 import subprocess
 from pathlib import Path
+import re
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, Response
 
 # ============================================================================
@@ -32,6 +33,38 @@ PROJECT_UTILITIES_DIR = PROJECT_ROOT / "project-utilities"
 MODELS_DIR = PROJECT_ROOT / "models"
 APP_DIR = Path(__file__).resolve().parent
 PRACTICE_SAMPLES_DIR = APP_DIR / "practice_samples"
+
+# Load .env file from this app's directory if present (local dev).
+# In production the deploy platform sets env vars directly, so this is
+# a no-op there. Existing OS env vars take precedence over .env.
+try:
+    from dotenv import load_dotenv
+    _env_path = APP_DIR / ".env"
+    if _env_path.exists():
+        load_dotenv(_env_path, override=False)
+except ImportError:
+    pass
+
+# ── Sign-bank video source config ──────────────────────────────────
+# Local: applications/show-and-tell/sign-bank/<gloss>.mp4 (small set of
+#        hand-recorded videos)
+# Remote: <R2_PUBLIC_BASE_URL>/<gloss>.mp4 (WLASL-derived, ~2000 glosses)
+#
+# When PREFER_LOCAL_SIGN_BANK is True, the API returns the LOCAL URL for
+# any gloss where we have a local file, and falls back to R2 otherwise.
+# Flip to False to ignore local files entirely and always serve from R2.
+PREFER_LOCAL_SIGN_BANK = True
+R2_PUBLIC_BASE_URL = os.environ.get("R2_PUBLIC_BASE_URL", "").rstrip("/")
+
+
+def _gloss_to_r2_url(gloss: str) -> str | None:
+    """Mirror of the migration script's gloss_to_filename normalization."""
+    if not R2_PUBLIC_BASE_URL:
+        return None
+    s = gloss.strip().lower()
+    s = re.sub(r"\s+", "_", s)
+    s = re.sub(r"[^a-z0-9_\-]", "", s)
+    return f"{R2_PUBLIC_BASE_URL}/{s}.mp4" if s else None
 
 # Add paths for imports
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
@@ -1528,16 +1561,26 @@ def get_conversation():
 
 @app.route("/api/sign-bank")
 def get_sign_bank():
-    """Return sign bank videos grouped by domain vocabulary (from registry)."""
-    # Collect all sign bank files
-    all_signs = {}
-    if SIGN_BANK_DIR.exists():
+    """
+    Return sign bank videos grouped by domain vocabulary (from registry).
+    For each gloss in a domain, the video_url is chosen by:
+      PREFER_LOCAL_SIGN_BANK = True  -> local file if present, else R2
+      PREFER_LOCAL_SIGN_BANK = False -> always R2
+    """
+    # Local catalog: lowercase gloss -> original filename, for prefer-
+    # local resolution. Empty dict if PREFER_LOCAL_SIGN_BANK is False
+    # so we never even check disk.
+    local_files = {}
+    if PREFER_LOCAL_SIGN_BANK and SIGN_BANK_DIR.exists():
         for f in sorted(SIGN_BANK_DIR.iterdir()):
             if f.suffix.lower() in ('.mp4', '.webm', '.mov'):
-                all_signs[f.stem.lower()] = {
-                    "gloss": f.stem,
-                    "video_url": f"/sign-bank/{f.name}",
-                }
+                local_files[f.stem.lower()] = f.name
+
+    def _resolve_url(gloss_lower):
+        """Local first (if enabled and present), else R2 URL, else None."""
+        if PREFER_LOCAL_SIGN_BANK and gloss_lower in local_files:
+            return f"/sign-bank/{local_files[gloss_lower]}"
+        return _gloss_to_r2_url(gloss_lower)
 
     registry = _load_registry()
     domains = registry.get("domains", {})
@@ -1553,7 +1596,8 @@ def get_sign_bank():
             continue
         with open(class_file, 'r') as f:
             mapping = json.load(f)
-        domain_vocabs[domain_key] = set(v.lower() for v in mapping.values())
+        # Preserve display-cased glosses; iterate sorted by lowercase.
+        domain_vocabs[domain_key] = sorted(mapping.values(), key=str.lower)
 
     # Also check fallback model
     fallback = registry.get("fallback_model")
@@ -1562,7 +1606,7 @@ def get_sign_bank():
         if fb_class_file.exists():
             with open(fb_class_file, 'r') as f:
                 mapping = json.load(f)
-            domain_vocabs["_fallback"] = set(v.lower() for v in mapping.values())
+            domain_vocabs["_fallback"] = sorted(mapping.values(), key=str.lower)
 
     # Group signs: assign each to the first domain whose vocab contains it
     # Priority: ready domains first (in registry order), then fallback
@@ -1576,12 +1620,19 @@ def get_sign_bank():
     for domain_key in priority:
         if domain_key not in domain_vocabs:
             continue
-        vocab = domain_vocabs[domain_key]
         group_signs = []
-        for gloss_lower, sign_data in sorted(all_signs.items()):
-            if gloss_lower in vocab and gloss_lower not in assigned:
-                group_signs.append(sign_data)
-                assigned.add(gloss_lower)
+        for gloss in domain_vocabs[domain_key]:
+            gloss_lower = gloss.lower()
+            if gloss_lower in assigned:
+                continue
+            url = _resolve_url(gloss_lower)
+            if not url:
+                continue   # neither local nor R2 -- skip
+            group_signs.append({
+                "gloss": gloss,
+                "video_url": url,
+            })
+            assigned.add(gloss_lower)
         if group_signs:
             if domain_key == "_fallback":
                 label = "General"
@@ -1593,8 +1644,13 @@ def get_sign_bank():
                 "signs": group_signs,
             })
 
-    # Catch any signs not in any vocabulary
-    uncategorized = [s for g, s in sorted(all_signs.items()) if g not in assigned]
+    # Catch any local-only signs that aren't in any registry vocabulary
+    # (legacy self-signed files for words no model knows about).
+    uncategorized_files = [(g, fn) for g, fn in sorted(local_files.items()) if g not in assigned]
+    uncategorized = [
+        {"gloss": Path(fn).stem, "video_url": f"/sign-bank/{fn}"}
+        for g, fn in uncategorized_files
+    ]
     if uncategorized:
         groups.append({
             "domain": "other",
@@ -1785,13 +1841,21 @@ ASL glosses:"""
         vocab_set = set(g.upper() for g in available_glosses)
         valid_glosses = [g for g in glosses if g in vocab_set]
 
-        # Check which glosses have sign bank videos
+        # Resolve a video URL for each gloss. Prefer the local self-signed
+        # file when present (matches the sign-bank API's prefer-local logic);
+        # otherwise fall back to the R2 URL. Glosses with no video at either
+        # location are simply omitted from sign_videos.
         sign_videos = {}
-        if SIGN_BANK_DIR.exists():
-            for g in valid_glosses:
-                video_path = SIGN_BANK_DIR / f"{g.lower()}.mp4"
-                if video_path.exists():
-                    sign_videos[g] = f"/sign-bank/{g.lower()}.mp4"
+        for g in valid_glosses:
+            gl = g.lower()
+            if PREFER_LOCAL_SIGN_BANK and SIGN_BANK_DIR.exists():
+                local_path = SIGN_BANK_DIR / f"{gl}.mp4"
+                if local_path.exists():
+                    sign_videos[g] = f"/sign-bank/{gl}.mp4"
+                    continue
+            r2_url = _gloss_to_r2_url(g)
+            if r2_url:
+                sign_videos[g] = r2_url
 
         print(f"[English->ASL] \"{text}\" -> {valid_glosses} (videos: {list(sign_videos.keys())})")
 

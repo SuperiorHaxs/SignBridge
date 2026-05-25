@@ -56,6 +56,22 @@ let CTQI_HARD_FLOOR = (() => {
     return (isFinite(stored) && stored >= 0 && stored <= 100) ? stored : 40;
 })();
 
+// Settings-page state, hoisted up here so the page-load init block
+// (~line 920) can call syncSettingsPageUI() without hitting TDZ
+// ReferenceErrors. (Same pattern as CHIME_ON_LOW_CTQI / CTQI_LOW_THRESHOLD
+// up above. Any future Settings-page state with let/const that the
+// sync function transitively reads must also be hoisted here.)
+let _settingsEditing = false;
+let _settingsSnapshot = null;
+const _SETTINGS_INPUTS = [
+    'setDisplayName',
+    'setTtsEnabled',
+    'setChimeEnabled',
+    'setWakeWord',
+    'setCtqiThreshold',
+    'setCtqiHardFloor',
+];
+
 // Hoisted up from the kiosk-mode section further below. selectCameraSource
 // (called indirectly from applySignBridgeMode at init time) reads from
 // KIOSK_PARAMS; without this earlier declaration, a Lanyard-mode default
@@ -1685,18 +1701,12 @@ function syncTtsToggleUI() {
 // changes should apply NOW) -- the two stay in sync because both
 // read/write the same localStorage keys.
 
-let _settingsEditing = false;
-let _settingsSnapshot = null;   // values captured at Edit time, restored on Cancel
+// _settingsEditing / _settingsSnapshot are hoisted to top-of-file
+// globals (TDZ avoidance, since syncSettingsPageUI is called from the
+// page-load init block before this line in source order would run).
 
 // ── Editable-input IDs (collected for enable/disable + snapshot) ──
-const _SETTINGS_INPUTS = [
-    'setDisplayName',
-    'setTtsEnabled',
-    'setChimeEnabled',
-    'setWakeWord',
-    'setCtqiThreshold',
-    'setCtqiHardFloor',
-];
+// _SETTINGS_INPUTS hoisted to top-of-file globals.
 
 function _settingsInputValue(el) {
     if (!el) return null;
@@ -2138,7 +2148,15 @@ function renderSignBank(data) {
         const grid = document.createElement('div');
         grid.className = 'sb-group-grid';
 
-        group.signs.forEach(sign => {
+        // Cap preview cards per group at 4. Loading 2000 thumbnails
+        // froze the page; the rest are accessible via the picker
+        // below. Each card here still does metadata preload, but
+        // 4 * (number of domains) is bounded.
+        const PREVIEW_LIMIT = 4;
+        const previewSigns = group.signs.slice(0, PREVIEW_LIMIT);
+        const restSigns    = group.signs.slice(PREVIEW_LIMIT);
+
+        previewSigns.forEach(sign => {
             const card = document.createElement('div');
             card.className = 'sb-card';
             card.dataset.gloss = sign.gloss.toLowerCase();
@@ -2180,6 +2198,38 @@ function renderSignBank(data) {
         });
 
         section.appendChild(grid);
+
+        // Picker for "the rest" -- any sign in this domain beyond the
+        // 4 previewed. Selecting an entry jumps straight to practice
+        // for that gloss (no thumbnail load for the whole list).
+        if (restSigns.length > 0) {
+            const pickerRow = document.createElement('div');
+            pickerRow.className = 'sb-group-picker-row';
+            const picker = document.createElement('select');
+            picker.className = 'sb-group-picker';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = `Practice another ${group.label} sign\u2026 (${restSigns.length} more)`;
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            picker.appendChild(placeholder);
+            restSigns.forEach(sign => {
+                const opt = document.createElement('option');
+                opt.value = sign.gloss.toLowerCase();
+                opt.textContent = sign.gloss;
+                picker.appendChild(opt);
+            });
+            picker.addEventListener('change', () => {
+                const sel = picker.value;
+                if (!sel) return;
+                const sign = group.signs.find(s => s.gloss.toLowerCase() === sel);
+                if (sign) startPracticeSession({ ...sign, domain: group.domain });
+                picker.selectedIndex = 0;  // reset for next pick
+            });
+            pickerRow.appendChild(picker);
+            section.appendChild(pickerRow);
+        }
+
         container.appendChild(section);
     });
 }
@@ -2339,10 +2389,9 @@ async function startPracticeSession(sign) {
     document.getElementById('pracSignName').textContent = sign.gloss.toUpperCase();
     updatePracticeScore();
 
-    // Populate the on-screen word + domain selectors so the user can switch
-    // signs without leaving the practice screen.
-    _populatePracticeDomainSelector();
-    _populatePracticeWordSelector(sign.domain || 'emergency');
+    // Update static practice header: "Practicing 'Coffee' in Domain RESTAURANT"
+    // Gloss = first letter upper + rest lower; domain label = ALL CAPS.
+    _updatePracticeHeader(sign);
 
     // Reset prediction badge from any prior session.
     const _predBadge = document.getElementById('pracPredictionBadge');
@@ -2553,83 +2602,45 @@ function startCustomPractice() {
     });
 }
 
-// ── On-screen word + domain switcher (inside the practice session) ──────────
-async function _populatePracticeDomainSelector() {
-    const sel = document.getElementById('pracDomainSelect');
-    if (!sel) return;
+// ── Static practice header populator ────────────────────────────────────────
+// The in-page word/domain selectors were removed (cluttered the practice
+// UI). To switch signs the user clicks "Back to Sign Bank" and picks
+// another one. This helper just fills in the static "Practicing 'Gloss'
+// in Domain DOMAIN" label on session start.
+//
+// Casing: gloss = first letter upper + rest lower (e.g. "Coffee", "A lot");
+// domain label = ALL CAPS via toUpperCase().
+function _firstLetterCap(s) {
+    if (!s) return '';
+    const t = String(s);
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+}
+
+async function _updatePracticeHeader(sign) {
+    const glossEl  = document.getElementById('pracHeaderGloss');
+    const domainEl = document.getElementById('pracHeaderDomain');
+    if (glossEl)  glossEl.textContent  = `'${_firstLetterCap(sign.gloss || '')}'`;
+    // For the domain side, try to resolve a friendly label via the
+    // registry; fall back to the key if the registry isn't available.
+    let domainText = String(sign.domain || '').toUpperCase();
     try {
         const resp = await fetch('/api/registry');
-        const registry = await resp.json();
-        sel.innerHTML = '';
-        Object.entries(registry.domains || {}).forEach(([key, entry]) => {
-            const opt = document.createElement('option');
-            opt.value = key;
-            opt.textContent = entry.label || key;
-            if (practiceSign && key === practiceSign.domain) opt.selected = true;
-            sel.appendChild(opt);
-        });
-    } catch (e) { /* leave empty if registry fetch fails */ }
+        if (resp.ok) {
+            const registry = await resp.json();
+            const entry = (registry.domains || {})[sign.domain];
+            if (entry && entry.label) domainText = String(entry.label).toUpperCase();
+        }
+    } catch (_) {}
+    if (domainEl) domainEl.textContent = domainText;
 }
 
-async function _populatePracticeWordSelector(domain) {
-    const sel = document.getElementById('pracWordSelect');
-    if (!sel) return;
-    sel.innerHTML = '<option>Loading...</option>';
-    try {
-        const resp = await fetch(`/api/vocabulary/${domain}`);
-        const data = await resp.json();
-        const glosses = (data.glosses || []).slice().sort();
-        sel.innerHTML = '';
-        glosses.forEach(g => {
-            const opt = document.createElement('option');
-            opt.value = g;
-            opt.textContent = (g || '').toUpperCase();
-            if (practiceSign && g.toLowerCase() === (practiceSign.gloss || '').toLowerCase()) {
-                opt.selected = true;
-            }
-            sel.appendChild(opt);
-        });
-    } catch (e) {
-        sel.innerHTML = '<option>Failed to load</option>';
-    }
-}
-
-async function switchPracticeWord(newGloss) {
-    if (!newGloss || !practiceSign) return;
-    // Abort any in-flight streaming attempt so we don't show a stale result
-    // labeled against the new word.
-    if (practiceStream) { try { practiceStream.stop(); } catch(_) {} practiceStream = null; }
-    const recordBtn = document.getElementById('pracRecordBtn');
-    if (recordBtn) { recordBtn.disabled = false; recordBtn.innerHTML = '&#x1F534; Record Sign'; }
-
-    // Reset prediction badge (the only result surface now).
-    const badge = document.getElementById('pracPredictionBadge');
-    if (badge) badge.style.display = 'none';
-    _practiceSetStatus(null);
-
-    practiceSign.gloss = newGloss;
-
-    // Try to load a reference video if one exists; otherwise show the
-    // "no reference, sign from memory" hint.
-    const videoUrl = `/sign-bank/${newGloss.toLowerCase()}.mp4`;
-    try {
-        const resp = await fetch(videoUrl, { method: 'HEAD' });
-        practiceSign.video_url = resp.ok ? videoUrl : null;
-    } catch (_) { practiceSign.video_url = null; }
-    _applyPracticeReferenceVideo();
-}
-
-async function switchPracticeDomain(newDomain) {
-    if (!newDomain || !practiceSign) return;
-    practiceSign.domain = newDomain;
-    try { localStorage.setItem('signbridge.lastPracticeDomain', newDomain); } catch (_) {}
-    await _populatePracticeWordSelector(newDomain);
-    // Pick the first word in the new domain as the active target.
-    const wordSel = document.getElementById('pracWordSelect');
-    if (wordSel && wordSel.value) {
-        await switchPracticeWord(wordSel.value);
-    }
-}
+// Defensive shims for any leftover call sites of the now-removed
+// selectors. They still get called from startPracticeSession's history
+// (and from any unforeseen path), so keep them callable as no-ops.
+async function _populatePracticeDomainSelector() { /* removed */ }
+async function _populatePracticeWordSelector(_domain) { /* removed */ }
+async function switchPracticeWord(_newGloss) { /* removed */ }
+async function switchPracticeDomain(_newDomain) { /* removed */ }
 
 // Mirror of the existing reference-video setup inside startPracticeSession,
 // pulled out so switchPracticeWord can reuse it without duplicating code.

@@ -575,6 +575,27 @@ body {
 }
 .prac-word-selector select:focus { outline: 2px solid var(--accent); }
 
+/* Static practice header replaces the selectors. Inline run of text
+ * with the gloss and domain visually emphasized but not interactive. */
+.prac-word-selector.prac-word-static {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    line-height: 1.4;
+}
+.prac-word-selector.prac-word-static .prac-header-gloss {
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin: 0 4px;
+}
+.prac-word-selector.prac-word-static .prac-header-domain {
+    color: var(--text-primary);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-left: 4px;
+}
+
 /* ── Live closed-caption overlay (streaming mode) ──
  * Anchored to the bottom of the camera view, sits on top of the video feed.
  * Updates in place each time the LLM rewrites the rolling sentence — like
@@ -1931,6 +1952,30 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     gap: 14px;
+}
+
+/* "Practice another sign" picker shown below the 4-preview cap.
+ * Native <select> so it scales to thousands of options without
+ * any rendering cost. Type-ahead works in all browsers. */
+.sb-group-picker-row {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-start;
+}
+.sb-group-picker {
+    width: 100%;
+    max-width: 360px;
+    padding: 9px 12px;
+    font-size: 0.88rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+.sb-group-picker:focus {
+    outline: none;
+    border-color: var(--accent);
 }
 
 .sb-card {

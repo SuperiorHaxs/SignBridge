@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=47">
+    <link rel="stylesheet" href="/static/css/main.css?v=49">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -230,13 +230,13 @@
                 <div class="prac-score" id="pracScore"></div>
             </div>
 
-            <!-- Word + domain selector replaces the static sign name so the
-                 user can switch what they're practicing without exiting. -->
-            <div class="prac-word-selector">
-                <span class="prac-sel-label">Practicing:</span>
-                <select id="pracWordSelect" onchange="switchPracticeWord(this.value)"></select>
-                <span class="prac-sel-label">in</span>
-                <select id="pracDomainSelect" onchange="switchPracticeDomain(this.value)"></select>
+            <!-- Static practice header. To switch signs, the user clicks
+                 "Back to Sign Bank" and picks another. Format:
+                 Practicing 'Gloss' in Domain DOMAIN
+                 (gloss = first letter caps; domain = all caps) -->
+            <div class="prac-word-selector prac-word-static" id="pracHeader">
+                Practicing <span class="prac-header-gloss" id="pracHeaderGloss"></span>
+                in Domain <span class="prac-header-domain" id="pracHeaderDomain"></span>
             </div>
             <!-- Hidden mirror for legacy code that referenced pracSignName -->
             <div class="prac-sign-name" id="pracSignName" style="display:none"></div>
@@ -632,6 +632,6 @@
 <script src="/static/js/sign_segmenter.js?v=2"></script>
 <script src="/static/js/pose_overlay.js?v=1"></script>
 <script src="/static/js/streaming_live.js?v=14"></script>
-<script src="/static/js/app.js?v=121"></script>
+<script src="/static/js/app.js?v=125"></script>
 </body>
 </html>
