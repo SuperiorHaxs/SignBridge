@@ -21,6 +21,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Install remaining Python dependencies
 RUN pip install --no-cache-dir \
     flask \
+    "flask-sock>=0.7.0" \
     numpy \
     opencv-python-headless \
     "mediapipe<0.10.15" \
@@ -33,6 +34,7 @@ RUN pip install --no-cache-dir \
     scipy \
     scikit-learn \
     openai \
+    requests \
     python-dotenv
 
 USER user
@@ -41,5 +43,7 @@ USER user
 ENV PORT=7860
 EXPOSE 7860
 
-# Start the Flask app
-CMD ["python", "applications/show-and-tell/app.py"]
+# Start the SignBridge app in live mode (WS streaming + WiFi camera
+# + wake-word + Settings tab -- the current production flow). Show-
+# and-tell remains in the repo but isn't the deployed entry point.
+CMD ["python", "applications/signbridge-app/app.py", "--mode", "live", "--port", "7860"]
