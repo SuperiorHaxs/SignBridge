@@ -1118,8 +1118,18 @@ function setInteractionMode(mode) {
 function setSignBridgeMode(mode, userInitiated) {
     if (mode !== 'kiosk' && mode !== 'lanyard') return;
     if (userInitiated === undefined) userInitiated = true;
+    const prevMode = SIGNBRIDGE_MODE;
     SIGNBRIDGE_MODE = mode;
     localStorage.setItem('signbridge.mode', mode);
+
+    // If the user explicitly switches mode while inside a conversation,
+    // start the next conversation blank. Skip on page-load syncing
+    // (userInitiated=false) and no-op same-mode clicks.
+    if (userInitiated && prevMode !== mode) {
+        const phaseConvo = document.getElementById('phaseConvo');
+        const inConvo = phaseConvo && phaseConvo.style.display !== 'none';
+        if (inConvo) _resetConversationForFreshStart();
+    }
 
     // Active highlight in the sub-menu.
     const btnK = document.getElementById('modeBtnKiosk');
@@ -1641,15 +1651,20 @@ function _exitSpeakerTurnUI() {
     if (btnStart) btnStart.disabled = false;
     if (btnSend)  btnSend.disabled  = false;
     if (btnNew)   btnNew.disabled   = false;
-    // Status bar restoration: if we're still in the post-Send "Resume
-    // Signing" state, prefer that prompt; otherwise revert to the
-    // idle "Sign when ready" prompt.
+    // Status bar restoration: prefer a prompt that matches the current
+    // gated-button state (Start Signing at conversation start, Resume
+    // Signing after Send). Falls back to the idle hint when detection
+    // is already running.
     const sendBtn = document.getElementById('btnSendMessage');
-    if (sendBtn && sendBtn.textContent === 'Resume Signing'
-        && typeof statusBar !== 'undefined' && statusBar) {
-        statusBar.innerHTML = '<span class="prompt">Speaker replied. Click <b>Resume Signing</b> to continue.</span>';
-    } else if (typeof statusBar !== 'undefined' && statusBar) {
-        statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+    const label   = sendBtn ? sendBtn.textContent : '';
+    if (typeof statusBar !== 'undefined' && statusBar) {
+        if (label === 'Start Signing') {
+            statusBar.innerHTML = '<span class="prompt">Speaker replied. Click <b>Start Signing</b> when you\'re ready.</span>';
+        } else if (label === 'Resume Signing') {
+            statusBar.innerHTML = '<span class="prompt">Speaker replied. Click <b>Resume Signing</b> to continue.</span>';
+        } else {
+            statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+        }
     }
 }
 
@@ -1764,15 +1779,29 @@ function _finalizeWakeCapture() {
 // wake-word session in this click's gesture context. Distinct from
 // Restart, which only soft-resets the current in-flight utterance.
 function onNewConversationClick() {
-    const msgs = document.getElementById('transcriptMsgs');
-    if (msgs) msgs.innerHTML = '';
-    history = [];
-    try { btnRestart.click(); } catch (_) {}
+    _resetConversationForFreshStart();
     // Use deferred re-arm for the same reason as sendNowAndPause:
     // synchronous restart-after-abort silently fails on Chrome.
     stopWakeWordListener();
     _armWakeWordDeferred('new-conversation');
     showToast('New conversation — say "' + _getWakeWord() + '" to reply', 'info', 3000);
+}
+
+// Wipe transcript + history so the next conversation starts blank. Used
+// when entering a scenario (selectScenario), switching mode mid-session
+// (setSignBridgeMode), and the New Conversation button. Without this the
+// prior conversation's messages persisted across domain/mode changes.
+function _resetConversationForFreshStart() {
+    const msgs = document.getElementById('transcriptMsgs');
+    if (msgs) msgs.innerHTML = '';
+    history = [];
+    currentTurn = 0;
+    // Soft-reset any live in-flight state (segmenter buffer, partial
+    // caption, gloss panel). btnRestart's live branch handles this when
+    // active; in non-live state it does a full reset which is also fine.
+    if (liveActive) {
+        try { btnRestart.click(); } catch (_) {}
+    }
 }
 
 // ── Text-to-speech enabled toggle (per-device settings) ─────────
@@ -2051,6 +2080,11 @@ function hideHomeContent() {
 }
 
 function selectScenario(domain, scenarioName) {
+    // Always start a fresh conversation when entering a scenario --
+    // including when re-selecting the same domain. Without this the
+    // previous session's transcript persists across Back -> re-enter.
+    _resetConversationForFreshStart();
+
     selectedDomain = domain;
     selectedScenario = scenarioName;
     if (MODE === 'live') recordRecentScenario(domain, scenarioName);
@@ -4236,15 +4270,6 @@ async function startLiveMode() {
             btnRecordSign.style.display = 'none';
             btnRecordSign.onclick = null;
         }
-        if (btnSendMessage) {
-            btnSendMessage.style.display = 'inline-block';
-            btnSendMessage.textContent = 'Send Message';
-            btnSendMessage.style.background = '#4caf80';
-            btnSendMessage.disabled = false;
-            btnSendMessage.onclick = () => sendNowAndPause();
-        }
-
-        statusBar.innerHTML = '<span class="processing">Sign when ready \u2014 your signs will appear here</span>';
 
         // (Settings cog is part of the camera toolbar and is always visible
         // once the live phase loads \u2014 no per-session show/hide needed.)
@@ -4256,9 +4281,18 @@ async function startLiveMode() {
                 seg.start(cameraStream, true);
                 console.log('[Live] StreamingLiveMode started');
             }
+            // Conversation-start gate: pause the segmenter immediately so
+            // detection doesn't begin until the user explicitly clicks
+            // Start Signing. Mirrors the Resume Signing pattern after Send
+            // -- the user controls when capture is active.
+            if (typeof seg.pause === 'function') seg.pause();
         } catch (e) {
             console.warn('[Live] Segmenter init failed:', e.message);
         }
+
+        // Arm the Start Signing button (same purple as Resume Signing,
+        // delegates to the same resumeSigning() handler).
+        _armSigningGate('conversation-start');
     } else {
         // Speaker mode
         const speakHint = SPEAK_MODE_TRANSLATE_TO_ASL
@@ -5107,6 +5141,25 @@ function resumeSigning() {
         btn.onclick = () => sendNowAndPause();
     }
     statusBar.innerHTML = '<span class="processing">Sign when ready — your signs will appear here</span>';
+}
+
+// Conversation-start gate. Shows the same purple button as Resume Signing
+// but labeled "Start Signing", and delegates to resumeSigning() on click.
+// Caller is responsible for ensuring the segmenter is paused before
+// arming the gate. Used at the start of every new conversation so the
+// user explicitly opts in to detection (instead of it being on from the
+// moment the camera starts).
+function _armSigningGate(reason) {
+    console.log('[SigningGate] arm:', reason);
+    const btn = document.getElementById('btnSendMessage');
+    if (btn) {
+        btn.style.display = 'inline-block';
+        btn.textContent = 'Start Signing';
+        btn.style.background = '#b07cf0';
+        btn.disabled = false;
+        btn.onclick = () => resumeSigning();
+    }
+    statusBar.innerHTML = '<span class="prompt">Click <b>Start Signing</b> when you\'re ready.</span>';
 }
 
 // Initialize the sign engine (called once when first needed). Variable name
