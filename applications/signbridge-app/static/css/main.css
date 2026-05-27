@@ -376,13 +376,18 @@ body {
     flex: 1;
     background: var(--bg-card);
     border-radius: 20px;
-    overflow: hidden;
+    /* overflow:hidden moved to .camera-view so the video still gets clipped
+     * to rounded corners, but the status-bar (last flex child) can never be
+     * clipped if flex math gets tight. */
     position: relative;
     display: flex;
     flex-direction: column;
     border: 1px solid var(--border-light);
     box-shadow: var(--shadow-card);
     transition: background 0.3s, border-color 0.3s;
+    /* min-height:0 lets the camera-view inside shrink past its preferred
+     * size when the viewport is tight, instead of overflowing the box. */
+    min-height: 0;
 }
 
 .camera-topbar {
@@ -423,7 +428,12 @@ body {
     justify-content: center;
     position: relative;
     background: var(--camera-bg);
-    min-height: 280px;
+    min-height: 200px;
+    /* Clips the absolutely-positioned video (and the rounded-corner shape
+     * inherited from camera-box). Was on .camera-box but that clipped the
+     * status-bar; moving it here is safe because the video and overlays
+     * (pip, live-caption, speaker-turn-overlay) all live inside camera-view. */
+    overflow: hidden;
 }
 
 .camera-view > video {
@@ -624,6 +634,39 @@ body {
     background: rgba(0, 0, 0, 0.55);
     opacity: 0.8;
 }
+/* Speaker-turn overlay (wake-word capture in Kiosk / Lanyard).
+ * Big centered badge over the camera so the signer can SEE the
+ * system is listening / processing speech (the status-bar text is
+ * easy to miss).
+ */
+.speaker-turn-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(91, 155, 213, 0.92);   /* accent blue */
+    color: #fff;
+    padding: 16px 24px;
+    border-radius: 14px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+    animation: speakerOverlayPulse 1.6s ease-in-out infinite;
+}
+.speaker-turn-overlay.processing {
+    background: rgba(176, 124, 240, 0.92);  /* purple */
+}
+.speaker-turn-icon { font-size: 1.4rem; }
+@keyframes speakerOverlayPulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(0,0,0,0.55), 0 0 0 0 rgba(91,155,213,0.55); }
+    50%      { box-shadow: 0 8px 24px rgba(0,0,0,0.55), 0 0 0 10px rgba(91,155,213,0.0); }
+}
+
 /* Low-CTQI alert: pulsing red border so the signer cannot miss that
  * the translation is questionable and they should look at the
  * Regenerate / Edit chips. Threshold lives in app.js
@@ -765,27 +808,29 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Status bar under camera */
+/* Status bar at the bottom of .camera-box.
+ * Used to be clipped invisible because .camera-box had overflow:hidden and
+ * camera-view's min-height pushed the status-bar past the clip boundary.
+ * Fixed by moving overflow:hidden to .camera-view + min-height:0 on
+ * camera-box -- now status-bar always renders as the bottom strip of the
+ * camera card. Accent tint gives it visible identity vs the camera area. */
 .status-bar {
-    padding: 12px 16px;
-    min-height: 50px;
-    background: var(--bg-card);
+    padding: 8px 14px;
+    min-height: 38px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 0.95rem;
-    border-top: 1px solid var(--border-subtle);
-    transition: background 0.3s;
-    /* Never shrink under flex pressure -- the camera-box is overflow:hidden
-     * and camera-view has min-height:280px, so without this multi-line
-     * status messages got vertically clipped at the bottom edge. */
+    font-size: 0.9rem;
+    border-top: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-light));
+    transition: background 0.3s, border-top-color 0.3s;
     flex-shrink: 0;
 }
 
 .status-bar .gloss { color: var(--text-primary); font-family: 'SF Mono', monospace; font-weight: 600; letter-spacing: 1px; }
 .status-bar .sentence { color: #2d7a2d; font-weight: 500; }
-.status-bar .prompt { color: var(--text-dimmed); font-style: italic; }
+.status-bar .prompt { color: var(--text-secondary); font-style: italic; font-weight: 500; }
 .status-bar .processing {
     color: var(--accent);
     font-weight: 600;

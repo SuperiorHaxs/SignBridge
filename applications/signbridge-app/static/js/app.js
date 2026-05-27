@@ -1447,6 +1447,7 @@ let _wakeRecognition = null;
 let _wakeListening   = false;
 let _wakeCapturing   = false;        // wake word heard, accumulating reply
 let _wakeFinalText   = '';
+let _wakeLatestInterim = '';         // most recent interim transcript (fallback)
 let _wakeSilenceTimer = null;
 let _wakeRestartTimer = null;
 let _wakeRecycleTimer = null;
@@ -1519,11 +1520,21 @@ function startWakeWordListener() {
             return;
         }
         _wakeListening = false;
-        console.log('[WakeWord] listener ended; awaiting next user-gesture (Start / Send / New Conversation) to re-arm');
-        // NO auto-restart. setTimeout-triggered start() has no user
-        // gesture and Chromium aborts it instantly, causing a tight
-        // abort/restart loop. Each new wake-word session must come
-        // from a real click handler.
+        _wakeRecognition = null;
+        console.log('[WakeWord] listener ended');
+        // Auto-restart on natural end (Chrome closes the SR session
+        // after extended silence, ~5-10s on typical settings).
+        // Without this, the listener silently dies and the user has
+        // to click Send / New Conversation to revive it -- exactly
+        // the "worked once then stopped" symptom.
+        // Use _armWakeWordDeferred (300ms setTimeout) -- a stale
+        // abort cascade is fine because we null-checked the instance
+        // above, and Chrome's user-activation seems to persist long
+        // enough through setTimeout for the new start() to succeed.
+        if ((SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard')
+            && typeof liveActive !== 'undefined' && liveActive) {
+            _armWakeWordDeferred('natural-end');
+        }
     };
 
     _wakeRecognition = thisRec;
@@ -1538,10 +1549,33 @@ function startWakeWordListener() {
     }
 }
 
+// Schedule a wake-word start() with a small delay. Chrome reliably
+// silent-fails a fresh SR session if started synchronously right after
+// aborting/ending the previous one (new session reports started but
+// receives no audio). A 300ms gap gives the browser enough time to
+// release the audio resource before the new session grabs it. Use
+// this everywhere we re-arm; only the very first initial start in
+// btnStart's click handler is synchronous (no prior session).
+function _armWakeWordDeferred(why) {
+    if (_wakeRestartTimer) clearTimeout(_wakeRestartTimer);
+    _wakeRestartTimer = setTimeout(() => {
+        _wakeRestartTimer = null;
+        console.log('[WakeWord] deferred re-arm fires (' + (why || 'manual') + ')');
+        startWakeWordListener();
+    }, 300);
+}
+
 function stopWakeWordListener() {
+    // Cancel any pending deferred re-arm first. If we don't, a
+    // previously-scheduled _armWakeWordDeferred would still fire
+    // after we've explicitly stopped (e.g., mode switch, end live).
     if (_wakeRestartTimer) { clearTimeout(_wakeRestartTimer); _wakeRestartTimer = null; }
     _clearWakeSilenceTimer();
-    if (_wakeRecognition) {
+    // Only abort if we have a recognition AND it's still listening.
+    // After onend, _wakeRecognition is nulled out (so this won't fire).
+    // Calling .abort() on a recently-ended instance appears to confuse
+    // Chrome into silently failing the very next .start().
+    if (_wakeRecognition && _wakeListening) {
         try { _wakeRecognition.abort(); } catch (_) {}
     }
     const wasCapturing = _wakeCapturing;
@@ -1549,6 +1583,7 @@ function stopWakeWordListener() {
     _wakeListening = false;
     _wakeCapturing = false;
     _wakeFinalText = '';
+    _wakeLatestInterim = '';
     // If we were mid-capture, re-enable the buttons + clear the
     // "Listening / Processing" status so the signer isn't stuck with a
     // disabled UI after a New Conversation / mode change interruption.
@@ -1560,6 +1595,22 @@ function stopWakeWordListener() {
 // Start Conversation / Restart / Resume Signing / New Conversation
 // without interrupting the speaker. Disable them, and show a clear
 // status badge so the signer sees something is happening.
+function _showSpeakerOverlay(text, processing) {
+    const el  = document.getElementById('speakerTurnOverlay');
+    const txt = document.getElementById('speakerTurnText');
+    const ico = document.getElementById('speakerTurnIcon');
+    if (!el || !txt) return;
+    txt.textContent = text;
+    if (ico) ico.textContent = processing ? '✨' : '\u{1F399}\u{FE0F}';
+    el.classList.toggle('processing', !!processing);
+    el.style.display = 'inline-flex';
+}
+
+function _hideSpeakerOverlay() {
+    const el = document.getElementById('speakerTurnOverlay');
+    if (el) el.style.display = 'none';
+}
+
 function _enterSpeakerTurnUI() {
     console.log('[SpeakerUI] enter -> Listening to speaker');
     const btnStart = document.getElementById('btnStart');
@@ -1571,6 +1622,7 @@ function _enterSpeakerTurnUI() {
     if (typeof statusBar !== 'undefined' && statusBar) {
         statusBar.innerHTML = '<span class="processing">\u{1F399}\u{FE0F} Listening to speaker…</span>';
     }
+    _showSpeakerOverlay('Listening to speaker…', false);
 }
 
 function _setSpeakerProcessingUI() {
@@ -1578,9 +1630,11 @@ function _setSpeakerProcessingUI() {
     if (typeof statusBar !== 'undefined' && statusBar) {
         statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Processing speech… <span class="spinner"></span></span>';
     }
+    _showSpeakerOverlay('Processing speech…', true);
 }
 
 function _exitSpeakerTurnUI() {
+    _hideSpeakerOverlay();
     const btnStart = document.getElementById('btnStart');
     const btnSend  = document.getElementById('btnSendMessage');
     const btnNew   = document.getElementById('btnNewConvo');
@@ -1600,6 +1654,13 @@ function _exitSpeakerTurnUI() {
 }
 
 function _onWakeResult(event) {
+    // Track the most recent interim transcript so we always have the
+    // freshest "in-flight" reply text. Prior versions only accumulated
+    // FINAL transcripts after the wake word fired, which lost any words
+    // that arrived in an interim ("Signer hello" came as interim ->
+    // wake-word triggered on "Signer" -> "hello" was never captured
+    // because final never came before listener ended).
+    let latestInterim = null;
     for (let i = event.resultIndex; i < event.results.length; i++) {
         const res = event.results[i];
         const text = res[0].transcript;
@@ -1621,7 +1682,19 @@ function _onWakeResult(event) {
         } else if (isFinal) {
             _wakeFinalText += ' ' + text;
             _armWakeSilenceTimer();
+        } else {
+            // Interim while capturing -- remember the latest so
+            // _finalizeWakeCapture has something to fall back to if no
+            // final ever arrives before the silence timer fires.
+            latestInterim = text;
+            _armWakeSilenceTimer();
         }
+    }
+    // Stash the latest interim as a fallback for finalize. Don't append
+    // to _wakeFinalText directly (interims supersede prior interims, and
+    // appending would create duplicates as the same phrase repeats).
+    if (_wakeCapturing && latestInterim != null) {
+        _wakeLatestInterim = latestInterim;
     }
     if (_wakeCapturing) _armWakeSilenceTimer();
 }
@@ -1656,16 +1729,30 @@ function _finalizeWakeCapture() {
     _clearWakeSilenceTimer();
     const wasCapturing = _wakeCapturing;
     if (!wasCapturing) return;
-    const text = (_wakeFinalText || '').trim();
+    // Prefer accumulated final text; fall back to the latest interim
+    // if no final ever arrived (Chrome sometimes ends the session
+    // before flushing a final transcript). Strip the wake word from
+    // either source, because interim sometimes includes it.
+    let text = (_wakeFinalText || '').trim();
+    if (!text && _wakeLatestInterim) text = _wakeLatestInterim.trim();
     _wakeCapturing = false;
     _wakeFinalText = '';
+    _wakeLatestInterim = '';
+    console.log('[WakeWord] finalize; raw text =', JSON.stringify(text));
     if (text) {
         const re = _wakeWordRegex();
         let clean = text;
         const m = re.exec(clean);
-        if (m && m.index === 0) clean = clean.slice(m[0].length);
+        if (m) clean = clean.slice(m.index + m[0].length);
         clean = clean.trim();
-        if (clean) _appendSpeakerTurnToTranscript(clean);
+        if (clean) {
+            console.log('[WakeWord] appending to transcript:', JSON.stringify(clean));
+            _appendSpeakerTurnToTranscript(clean);
+        } else {
+            console.log('[WakeWord] post-strip text empty -- nothing to append');
+        }
+    } else {
+        console.log('[WakeWord] no text captured -- nothing to append');
     }
     _exitSpeakerTurnUI();
 }
@@ -1681,8 +1768,10 @@ function onNewConversationClick() {
     if (msgs) msgs.innerHTML = '';
     history = [];
     try { btnRestart.click(); } catch (_) {}
+    // Use deferred re-arm for the same reason as sendNowAndPause:
+    // synchronous restart-after-abort silently fails on Chrome.
     stopWakeWordListener();
-    startWakeWordListener();
+    _armWakeWordDeferred('new-conversation');
     showToast('New conversation — say "' + _getWakeWord() + '" to reply', 'info', 3000);
 }
 
@@ -4919,14 +5008,15 @@ function _statusForIdle() {
 async function sendNowAndPause() {
     if (!liveActive) return;
 
-    // Kiosk/Lanyard: re-arm the single-shot wake-word listener inside
-    // this click's user-gesture window (before any await below).
-    // Speaker's reply naturally comes right after Send, so a fresh
-    // ~30-60s window starts now.
+    // Kiosk/Lanyard: re-arm the wake-word listener inside this click's
+    // user-gesture window. Use deferred start (300ms) -- synchronous
+    // restart-after-abort silently fails in Chrome (new SR session
+    // never receives audio). The user-activation context survives the
+    // 300ms delay in practice.
     if (SIGNBRIDGE_MODE === 'kiosk' || SIGNBRIDGE_MODE === 'lanyard') {
         try {
             stopWakeWordListener();
-            startWakeWordListener();
+            _armWakeWordDeferred('send');
         } catch (e) { console.warn('[Send] wake re-arm failed:', e); }
     }
 
@@ -5066,6 +5156,12 @@ async function ensureSegmenter() {
         updateDebugPanel({ state });
         // Don't clobber Send/Resume/Constructing messages with state ticks.
         if (_captionPending || _sendInProgress) return;
+        // Also don't clobber the speaker-turn "Listening / Processing"
+        // status while wake-word capture is in progress. State ticks
+        // come at ~15fps from the streamer; without this guard they
+        // overwrite the speaker-turn indicator within 67ms of it being
+        // set, making it invisible to the user.
+        if (_wakeCapturing) return;
         switch (state) {
             case 'signing':
                 recBadge.classList.add('on');

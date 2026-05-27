@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=49">
+    <link rel="stylesheet" href="/static/css/main.css?v=54">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -552,6 +552,13 @@
                 <div class="live-zone-line live-zone-line-bottom" id="liveZoneLineBottom" style="top:90%"></div>
                 <!-- Live closed-caption overlay (streaming mode) -->
                 <div class="live-caption" id="liveCaption" style="display:none"></div>
+                <!-- Speaker-turn overlay (wake-word capture in Kiosk / Lanyard).
+                     Sits on top of the camera view so the signer can't miss
+                     that the system is listening / processing speech. -->
+                <div class="speaker-turn-overlay" id="speakerTurnOverlay" style="display:none">
+                    <span class="speaker-turn-icon" id="speakerTurnIcon">&#x1F399;&#xFE0F;</span>
+                    <span class="speaker-turn-text" id="speakerTurnText">Listening to speaker…</span>
+                </div>
                 <!-- Diagnostics: scrollable gloss list, overlays camera right
                      side. Hidden until the bug icon toggles it. -->
                 <div class="debug-panel" id="debugPanel" style="display:none">
@@ -632,6 +639,6 @@
 <script src="/static/js/sign_segmenter.js?v=2"></script>
 <script src="/static/js/pose_overlay.js?v=1"></script>
 <script src="/static/js/streaming_live.js?v=14"></script>
-<script src="/static/js/app.js?v=126"></script>
+<script src="/static/js/app.js?v=130"></script>
 </body>
 </html>
