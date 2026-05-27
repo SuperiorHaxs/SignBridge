@@ -1494,19 +1494,30 @@ function startWakeWordListener() {
         return;
     }
 
-    _wakeRecognition = new SpeechRecognition();
-    _wakeRecognition.lang = 'en-US';
-    _wakeRecognition.interimResults = true;
-    _wakeRecognition.continuous = true;
-    _wakeRecognition.maxAlternatives = 1;
-    _wakeRecognition.onresult = _onWakeResult;
-    _wakeRecognition.onerror = (event) => {
+    // Capture the instance in a closure so onend / onerror can tell
+    // whether THIS instance is still the "current" one. Without this,
+    // an old instance's late-firing onend (triggered by abort() during
+    // a stop-then-start race) would set _wakeListening = false on the
+    // NEW listener that's still alive -- causing wake-word to silently
+    // stop working after the first Send.
+    const thisRec = new SpeechRecognition();
+    thisRec.lang = 'en-US';
+    thisRec.interimResults = true;
+    thisRec.continuous = true;
+    thisRec.maxAlternatives = 1;
+    thisRec.onresult = _onWakeResult;
+    thisRec.onerror = (event) => {
+        if (thisRec !== _wakeRecognition) return;   // stale instance
         console.warn('[WakeWord] error:', event.error);
-        if (event.error === 'network' && _wakeRecognition) {
-            try { _wakeRecognition.abort(); } catch (_) {}
+        if (event.error === 'network') {
+            try { thisRec.abort(); } catch (_) {}
         }
     };
-    _wakeRecognition.onend = () => {
+    thisRec.onend = () => {
+        if (thisRec !== _wakeRecognition) {
+            console.log('[WakeWord] (stale instance onend ignored)');
+            return;
+        }
         _wakeListening = false;
         console.log('[WakeWord] listener ended; awaiting next user-gesture (Start / Send / New Conversation) to re-arm');
         // NO auto-restart. setTimeout-triggered start() has no user
@@ -1515,14 +1526,15 @@ function startWakeWordListener() {
         // from a real click handler.
     };
 
+    _wakeRecognition = thisRec;
     try {
-        _wakeRecognition.start();
+        thisRec.start();
         _wakeListening = true;
         console.log('[WakeWord] listener started; wake word =', _getWakeWord());
     } catch (e) {
         console.warn('[WakeWord] start failed:', e);
         _wakeListening = false;
-        _wakeRecognition = null;
+        if (_wakeRecognition === thisRec) _wakeRecognition = null;
     }
 }
 
@@ -1549,6 +1561,7 @@ function stopWakeWordListener() {
 // without interrupting the speaker. Disable them, and show a clear
 // status badge so the signer sees something is happening.
 function _enterSpeakerTurnUI() {
+    console.log('[SpeakerUI] enter -> Listening to speaker');
     const btnStart = document.getElementById('btnStart');
     const btnSend  = document.getElementById('btnSendMessage');
     const btnNew   = document.getElementById('btnNewConvo');
@@ -1561,6 +1574,7 @@ function _enterSpeakerTurnUI() {
 }
 
 function _setSpeakerProcessingUI() {
+    console.log('[SpeakerUI] -> Processing speech');
     if (typeof statusBar !== 'undefined' && statusBar) {
         statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Processing speech… <span class="spinner"></span></span>';
     }
