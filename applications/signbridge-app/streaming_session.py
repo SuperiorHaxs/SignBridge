@@ -224,6 +224,11 @@ class StreamingSession:
     def __init__(self, send_json, **overrides):
         self.cfg = {**self.DEFAULTS, **{k: v for k, v in overrides.items() if v is not None}}
         self.send_json = send_json
+        # Injectable clock. Live path uses wall time; the offline clip driver
+        # overrides this with a virtual clock that advances at the clip's frame
+        # cadence, so the time-based gates (quiet window, debounce) behave the
+        # same offline as they do live.
+        self.now_fn = time.time
         self.motion = _MotionDetector(
             threshold=self.cfg['motion_threshold'],
             threshold_continue=self.cfg['motion_threshold_continue'],
@@ -314,7 +319,7 @@ class StreamingSession:
         # Open a new segment on the rising edge of motion — UNLESS we're still
         # in the post-segment quiet window, in which case suppress (likely hand-drop).
         if is_active and not self.is_signing:
-            now = time.time()
+            now = self.now_fn()
             quiet = self.cfg['post_segment_quiet_s']
             gap = now - self.last_sign_ts
             if self.last_sign_ts > 0 and quiet > 0 and gap < quiet:
@@ -376,7 +381,7 @@ class StreamingSession:
 
     def _close_segment(self):
         n = len(self.signing_frames)
-        now = time.time()
+        now = self.now_fn()
 
         rejected = None
         if n < self.cfg['min_sign_frames']:
@@ -406,3 +411,88 @@ class StreamingSession:
 
         self.is_signing = False
         self.signing_frames = []
+
+
+# Reference capture size + fps the motion thresholds are calibrated against.
+# Matches the live streamer (streaming_live.js captures 480x360 @ 15 fps), so
+# resizing offline clip frames to this size makes the same thresholds behave
+# the same way they do live.
+_REF_W, _REF_H, _REF_FPS = 480, 360, 15
+
+
+def segment_clip_offline(frames, fps, zone_top=None, zone_bottom=None):
+    """
+    Run the LIVE motion gate over a pre-recorded clip and return accepted
+    segment boundaries as (start_idx, end_idx) tuples into `frames`.
+
+    This gives the batch ("record then Translate") flow the same hand-gated
+    segmentation the streaming WebSocket path produces -- signing-zone mask +
+    motion hysteresis + MediaPipe hand-presence + quiet-window/debounce --
+    instead of HybridSegmenter's pixel-only boundaries.
+
+    Faithfulness to the live path is what matters here:
+      * Frames are SUBSAMPLED to the reference fps (15) before scoring, so the
+        frame-to-frame motion deltas match the calibrated thresholds. Driving
+        every frame of a 30 fps clip would halve the delta interval, shrink the
+        motion score, and split single signs into fragments.
+      * Frames are resized to the reference capture size (480x360) for scoring.
+      * A VIRTUAL CLOCK advances at the reference cadence so the time-based
+        gates (post_segment_quiet_s, sign_debounce_s) behave exactly as live --
+        these are what stop a brief mid-sign motion lull from closing a segment
+        and immediately reopening a second one.
+
+    `frames` are full-resolution BGR frames; the returned indices point into
+    that original full-fps list (so the caller slices full temporal resolution
+    for pose extraction).
+    """
+    if not frames:
+        return []
+    fps = fps or _REF_FPS
+
+    # Subsample original frame indices down to ~_REF_FPS.
+    stride = max(fps / _REF_FPS, 1.0)
+    sample_idx = []
+    i = 0.0
+    while int(round(i)) < len(frames):
+        sample_idx.append(int(round(i)))
+        i += stride
+    if not sample_idx:
+        return []
+
+    overrides = {'fps': _REF_FPS}
+    if zone_top is not None:
+        overrides['zone_top'] = zone_top
+    if zone_bottom is not None:
+        overrides['zone_bottom'] = zone_bottom
+
+    session = StreamingSession(send_json=lambda *_a, **_k: None, **overrides)
+
+    # Virtual clock at the reference cadence.
+    clock = {'t': 0.0}
+    dt = 1.0 / _REF_FPS
+    session.now_fn = lambda: clock['t']
+
+    segments = []
+    cur = {'k': -1}
+
+    def _dispatch(_seg_id, seg_frames):
+        end_k = cur['k']
+        start_k = max(0, end_k - len(seg_frames) + 1)
+        segments.append((sample_idx[start_k], sample_idx[min(end_k, len(sample_idx) - 1)]))
+
+    session.dispatch_segment = _dispatch
+
+    for k, oidx in enumerate(sample_idx):
+        cur['k'] = k
+        clock['t'] += dt
+        small = cv2.resize(frames[oidx], (_REF_W, _REF_H))
+        is_active, _score = session.motion.update(small, is_signing=session.is_signing)
+        session._tick_segmentation(is_active, small)
+
+    # Flush a segment still open at end-of-clip (no trailing cooldown to close it).
+    if session.is_signing and len(session.signing_frames) >= session.cfg['min_sign_frames']:
+        end_k = cur['k']
+        start_k = max(0, end_k - len(session.signing_frames) + 1)
+        segments.append((sample_idx[start_k], sample_idx[min(end_k, len(sample_idx) - 1)]))
+
+    return segments

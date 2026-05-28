@@ -269,6 +269,55 @@ or when explicitly changed.
 - [ ] Graceful failure when translation API is down -- fall back to
       the original English with a small indicator
 
+## 9. Per-mode translate pipeline: streaming vs batch (record -> Translate)
+
+Two ways to drive recognition, selectable **per Live mode** via the
+`TRANSLATE_MODE` map in app.js:
+
+- **stream** -- continuous WS pipeline: frames stream live, motion-gated
+  segmentation + per-sign inference run in real time, caption built
+  incrementally (original production flow).
+- **batch** -- record the whole signing clip locally with NO inference;
+  "Start Signing" begins an open-ended recording, "Translate" sends the
+  entire clip to `/api/process-signing-clip` (segment + gloss inference in
+  one pass) then one LLM sentence build. Send / Regenerate / Edit unchanged.
+
+Motivation: signers prefer signing a full sentence then translating, rather
+than the system reacting word-by-word. Batch also matches the isolated-sign
+(WLASL) training distribution better when the signer pauses between words
+-> cleaner segmentation + higher accuracy.
+
+Current state (experiment, behind config -- default Kiosk=batch, Lanyard=stream):
+- [~] Per-mode config `TRANSLATE_MODE = { kiosk: 'batch', lanyard: 'stream' }`;
+      `_isBatchTranslate()` reads `SIGNBRIDGE_MODE` live. Any combination valid.
+- [x] Batch flow wired: Start Signing -> open-ended MediaRecorder; Translate
+      -> process-signing-clip -> construct-sentence-live; Send/Regenerate/Edit
+      reuse the existing handlers (no segmenter; reads `liveCollectedGlosses`).
+- [x] Tail-motion cleanup: drop glosses starting in the last
+      `BATCH_TRAILING_TRIM_SEC` (default 0.6s) of the clip + dedup consecutive
+      identical glosses (hands lowering / reaching for the mouse were creating
+      phantom signs like a doubled BATHROOM + a spurious BREAKDOWN).
+- [x] Restart / New Conversation / stopLiveMode have batch-aware branches
+      (soft reset without tearing down the camera).
+- [x] `process-signing-clip` returns `duration_sec` / `total_frames` so the
+      client can identify tail-motion segments.
+
+Open / to decide:
+- [ ] Final default per mode after an accuracy + latency A/B (stream vs batch
+      on the same camera / lighting; the config flag makes this a 1-line flip)
+- [ ] Auto-stop on stillness: lightweight client-side pixel-diff (NO model)
+      that fires Translate after ~2.5s of no motion, so the signer never
+      reaches for the mouse -- removes the tail-motion problem at the source
+- [ ] Lanyard-batch fps caveat: WiFi cam captures at 15fps but
+      `HybridSegmenter.cooldown_frames=45` assumes ~30fps (=> 3s vs 1.5s to
+      close a segment). Make cooldown fps-relative if Lanyard batch is adopted.
+- [ ] Tune segmenter for deliberate paused isolated signing (adaptive p25
+      motion threshold can pick up jitter on pause-heavy clips; `min_sign_frames`
+      floor). Only if segment COUNT errors show up -- gloss errors are the
+      classifier's limit, not segmentation.
+- [ ] Mid-session mode switch does NOT rebuild the pipeline -- **decided out of
+      scope** (mode is chosen before Start Conversation, the normal flow).
+
 ---
 
 ## Prioritization
@@ -279,7 +328,7 @@ tier and an ordering within tier.)
 | Priority | Items |
 |---|---|
 | P0 | **1a** (Kiosk mode), **1b** (Lanyard mode), 4 (Per-mode setup -- now scoped to just the small per-mode defaults defined in 1a/1b, no separate wizard) |
-| P1 | 5 (Signer CTQI alert), 6 (Graceful failure) |
+| P1 | **9 (Per-mode translate: stream vs batch -- IN PROGRESS / experimental)**, 5 (Signer CTQI alert), 6 (Graceful failure) |
 | P2 | 7 (Unified Settings tab) |
 | P3 | 3 (Sign-bank video storage) |
 | P4 | 8 (Language translation on send) |

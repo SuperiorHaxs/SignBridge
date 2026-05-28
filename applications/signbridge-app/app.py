@@ -1020,6 +1020,50 @@ def _load_llm_prompt():
     return None
 
 
+def _active_glosses_for_model_dir(model_dir_name):
+    """
+    Return (active_glosses, masked_count) for a production model directory.
+
+    active_glosses = the gloss names the model can actually predict, i.e.
+    class_index_mapping.json values MINUS the classes listed in
+    masked_classes.json. masked_classes.json is a metadata *dict* whose
+    masked indices live under "masked_class_ids" (a legacy flat-list-of-IDs
+    form is also tolerated). Returns ([], 0) if the class mapping is missing.
+
+    Single source of truth for "what can this model output" -- used by both
+    the LLM prompt builder (_domain_context) and the Sign Bank so they can
+    never disagree on the active vocabulary.
+    """
+    if not model_dir_name:
+        return [], 0
+    model_path = MODELS_DIR / "openhands-modernized" / "production-models" / model_dir_name
+    class_file = model_path / "class_index_mapping.json"
+    if not class_file.exists():
+        return [], 0
+    try:
+        with open(class_file, 'r', encoding='utf-8') as f:
+            mapping = json.load(f)
+    except Exception as e:
+        print(f"[Vocab] Failed to load class mapping for {model_dir_name}: {e}")
+        return [], 0
+
+    masked_ids = set()
+    mask_file = model_path / "masked_classes.json"
+    if mask_file.exists():
+        try:
+            with open(mask_file, 'r', encoding='utf-8') as mf:
+                raw_mask = json.load(mf)
+            if isinstance(raw_mask, dict):
+                masked_ids = {str(x) for x in raw_mask.get('masked_class_ids', [])}
+            else:
+                masked_ids = {str(x) for x in raw_mask}
+        except Exception as e:
+            print(f"[Vocab] Failed to load masked classes for {model_dir_name}: {e}")
+
+    active = [v for k, v in mapping.items() if isinstance(v, str) and str(k) not in masked_ids]
+    return active, len(masked_ids)
+
+
 def _domain_context(domain):
     """
     Resolve a domain key to its human-readable label, description, and the
@@ -1041,33 +1085,11 @@ def _domain_context(domain):
     vocab = []
     model_dir = entry.get("model_dir") or (registry.get("fallback_model") if registry else None)
     if model_dir:
-        model_path = MODELS_DIR / "openhands-modernized" / "production-models" / model_dir
-        class_file = model_path / "class_index_mapping.json"
-        mask_file  = model_path / "masked_classes.json"
-        if class_file.exists():
-            try:
-                with open(class_file, 'r', encoding='utf-8') as f:
-                    mapping = json.load(f)
-                masked_ids = set()
-                if mask_file.exists():
-                    try:
-                        with open(mask_file, 'r', encoding='utf-8') as mf:
-                            raw_mask = json.load(mf)
-                        # masked_classes.json is typically a list of int IDs;
-                        # tolerate both list-of-int and list-of-str forms.
-                        masked_ids = {str(x) for x in raw_mask}
-                    except Exception as e:
-                        print(f"[Domain] Failed to load masked classes for {domain}: {e}")
-                # mapping is {"0": "ABDOMEN", "1": "ACCIDENT", ...}
-                vocab = sorted({
-                    v for k, v in mapping.items()
-                    if isinstance(v, str) and str(k) not in masked_ids
-                })
-                if masked_ids:
-                    print(f"[Domain] {domain}: {len(vocab)} active vocab "
-                          f"(after masking {len(masked_ids)} classes)")
-            except Exception as e:
-                print(f"[Domain] Failed to load vocab for {domain}: {e}")
+        active, masked_count = _active_glosses_for_model_dir(model_dir)
+        vocab = sorted(set(active))
+        if masked_count:
+            print(f"[Domain] {domain}: {len(vocab)} active vocab "
+                  f"(after masking {masked_count} classes)")
     return {"label": label, "description": description, "vocabulary": vocab}
 
 
@@ -1591,28 +1613,27 @@ def get_sign_bank():
     registry = _load_registry()
     domains = registry.get("domains", {})
 
-    # Build domain -> glosses mapping (only for domains with a model)
+    # Build domain -> glosses mapping (only for domains with a model).
+    # Use the model's ACTIVE (unmasked) glosses so the Sign Bank shows the
+    # same vocabulary the model can actually predict -- not the masked-out
+    # classes. (Shared helper with the LLM prompt builder.)
     domain_vocabs = {}
     for domain_key, entry in domains.items():
         model_dir_name = entry.get("model_dir")
         if not model_dir_name:
             continue
-        class_file = MODELS_DIR / "openhands-modernized" / "production-models" / model_dir_name / "class_index_mapping.json"
-        if not class_file.exists():
+        active, _ = _active_glosses_for_model_dir(model_dir_name)
+        if not active:
             continue
-        with open(class_file, 'r') as f:
-            mapping = json.load(f)
         # Preserve display-cased glosses; iterate sorted by lowercase.
-        domain_vocabs[domain_key] = sorted(mapping.values(), key=str.lower)
+        domain_vocabs[domain_key] = sorted(active, key=str.lower)
 
     # Also check fallback model
     fallback = registry.get("fallback_model")
     if fallback:
-        fb_class_file = MODELS_DIR / "openhands-modernized" / "production-models" / fallback / "class_index_mapping.json"
-        if fb_class_file.exists():
-            with open(fb_class_file, 'r') as f:
-                mapping = json.load(f)
-            domain_vocabs["_fallback"] = sorted(mapping.values(), key=str.lower)
+        active_fb, _ = _active_glosses_for_model_dir(fallback)
+        if active_fb:
+            domain_vocabs["_fallback"] = sorted(active_fb, key=str.lower)
 
     # Group signs: assign each to the first domain whose vocab contains it
     # Priority: ready domains first (in registry order), then fallback
@@ -2564,19 +2585,8 @@ def process_signing_clip():
 
         t_ffmpeg = _time.time()
 
-        # Step 1: HybridSegmenter on the video (pixel-based motion, cheap)
-        sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "segmentation"))
-        from hybrid_segmenter import HybridSegmenter
-        segmenter = HybridSegmenter()
-        segments = segmenter.detect_segments_from_video(video_path, verbose=False)
-
-        t_segment = _time.time()
-        print(f"[Clip] ffmpeg={t_ffmpeg-t0:.1f}s segment={t_segment-t_ffmpeg:.1f}s -> {len(segments)} segments")
-
-        if not segments:
-            return jsonify({"success": True, "glosses": [], "segment_count": 0, "message": "No signs detected"})
-
-        # Step 2: Read all frames once, get fps
+        # Step 1: Read all frames once, get fps. (Needed for inference; the
+        # motion-gate segmenter also runs over these frames.)
         cap = cv2.VideoCapture(video_path)
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         all_frames = []
@@ -2591,7 +2601,33 @@ def process_signing_clip():
             return jsonify({"success": False, "error": "Could not read video frames"}), 500
 
         t_decode = _time.time()
-        print(f"[Clip] decoded {len(all_frames)} frames in {t_decode-t_segment:.1f}s (fps={fps:.1f})")
+        print(f"[Clip] ffmpeg={t_ffmpeg-t0:.1f}s decode={t_decode-t_ffmpeg:.1f}s -> {len(all_frames)} frames (fps={fps:.1f})")
+
+        # Step 2: Segmentation. Two strategies:
+        #   'motion_gate' (batch / record-then-Translate): reuse the LIVE motion
+        #       gate over the recorded frames -- signing-zone mask + hysteresis
+        #       + MediaPipe hand-presence. Rejects hand-drops, body shifts, and
+        #       reaching-for-the-mouse motion that pixel-only segmentation
+        #       turned into phantom signs.
+        #   'hybrid' (default, legacy chunk flow): pixel-only HybridSegmenter.
+        segmenter_mode = request.form.get('segmenter', 'hybrid')
+        if segmenter_mode == 'motion_gate':
+            from streaming_session import segment_clip_offline
+            segments = segment_clip_offline(all_frames, fps)
+        else:
+            sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "segmentation"))
+            from hybrid_segmenter import HybridSegmenter
+            segmenter = HybridSegmenter()
+            segments = segmenter.detect_segments_from_video(video_path, verbose=False)
+
+        t_segment = _time.time()
+        print(f"[Clip] segmenter={segmenter_mode} segment={t_segment-t_decode:.1f}s -> {len(segments)} segments")
+
+        if not segments:
+            return jsonify({"success": True, "glosses": [], "segment_count": 0,
+                            "message": "No signs detected",
+                            "total_frames": len(all_frames),
+                            "duration_sec": round(len(all_frames) / fps, 2) if fps else None})
 
         # Step 3: Per-segment pose extraction + inference (using the same pipeline as /api/process-sign)
         predictions = []
@@ -2646,6 +2682,11 @@ def process_signing_clip():
             "segment_count": len(predictions),
             "total_time": round(t_done - t0, 1),
             "fps": round(fps, 1),
+            # Total clip length so the client can identify / trim "tail motion"
+            # segments (e.g. hands lowering, reaching for the mouse) that the
+            # whole-clip segmenter otherwise treats as extra signs.
+            "total_frames": len(all_frames),
+            "duration_sec": round(len(all_frames) / fps, 2) if fps else None,
         })
 
     except Exception as e:

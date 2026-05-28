@@ -30,6 +30,45 @@ let SIGNBRIDGE_MODE = localStorage.getItem('signbridge.mode') || 'kiosk';
 // users expected the signed sentence to be spoken aloud after Send.
 let TTS_ENABLED = localStorage.getItem('signbridge.ttsEnabled') !== '0';
 
+// ── Translate mode, per Live mode (experiment) ──────────────────
+// 'stream'  -> continuous WebSocket pipeline: frames stream to the server,
+//              motion-gated segmentation + per-sign inference run live, and
+//              the caption is built incrementally (original production flow).
+// 'batch'   -> record the WHOLE signing clip locally with NO inference, then
+//              on "Translate" send the entire clip to /api/process-signing-clip
+//              (segment + gloss inference in one pass) and feed all glosses to
+//              the LLM in a single sentence-construction call.
+// Set independently per mode -- e.g. Kiosk batch + Lanyard stream, or the
+// reverse. Both cameras produce a recordable MediaStream (device camera
+// directly; WiFi camera via canvas.captureStream), so batch works in either.
+const TRANSLATE_MODE = {
+    kiosk:   'batch',
+    lanyard: 'batch',
+};
+
+// Reads SIGNBRIDGE_MODE live, so it reflects the current mode at call time.
+function _isBatchTranslate() {
+    return TRANSLATE_MODE[SIGNBRIDGE_MODE] === 'batch';
+}
+
+// Batch-mode gloss cleanup. The whole-clip segmenter has no live "I'm done"
+// signal, so "tail motion" (hands lowering, reaching for the mouse to click
+// Translate) gets segmented as extra signs. Two cheap cleanups:
+//   - BATCH_TRAILING_TRIM_SEC: drop glosses that START within the last N
+//     seconds of the clip (the mouse-reach window). 0 disables. Conservative
+//     default; if it ever eats a fast-signed final word, lower it -- and
+//     Regenerate/Edit are always the manual fallback.
+//   - BATCH_DEDUP_CONSECUTIVE: collapse consecutive identical glosses (one
+//     sign over-segmented into two). Matches the streaming path's behavior.
+const BATCH_TRAILING_TRIM_SEC = 0.6;
+const BATCH_DEDUP_CONSECUTIVE = true;
+
+// Batch-mode open-ended recording state. Hoisted here (rather than next to
+// the batch functions further down) so stopLiveMode / the Restart handler --
+// defined earlier in source order -- never hit a temporal-dead-zone error.
+let _batchRecorder = null;
+let _batchChunks = [];
+
 // Audible chime when CTQI just crossed below the low threshold.
 // Hoisted up here so the page-load init block (~line 920) can read it
 // without hitting a temporal-dead-zone ReferenceError. Default off
@@ -4101,6 +4140,29 @@ btnRestart.addEventListener('click', async () => {
     try { _stopTapReplyListening('restart'); }
     catch (e) { console.warn('[Restart] tap-reply cleanup threw:', e); }
 
+    // Batch (kiosk) mode has no streaming segmenter -- Restart is a soft
+    // reset of the in-flight utterance that keeps the camera/session alive.
+    // (Without this it would fall through to the full reset below, which
+    // tears down the camera and ends the conversation.)
+    if (liveActive && _isBatchTranslate()) {
+        statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Restarting... <span class="spinner"></span></span>';
+        if (_batchRecorder) { try { await _stopBatchRecording(); } catch (_) {} }
+        recBadge.classList.remove('on');
+        recBorder.classList.remove('on');
+        liveCollectedGlosses = [];
+        _clearGlossRows();
+        _setLiveCaption(null);
+        _runningCaption = '';
+        _lastSentGlossCount = 0;
+        _lastCtqi = null;
+        _prevCtqiWasHigh = true;
+        _captionIsEdited = false;
+        _lastRenderedCaptionHtml = '';
+        _regenerateAttempts = 0;
+        _armSigningGate('batch-restart');
+        return;
+    }
+
     // In streaming-live mode, Restart is a SOFT reset of the in-flight
     // utterance only. Sequence:
     //   1. Pause streaming -- no new segments after this point.
@@ -4280,24 +4342,32 @@ async function startLiveMode() {
         // (Settings cog is part of the camera toolbar and is always visible
         // once the live phase loads \u2014 no per-session show/hide needed.)
 
-        // Start streaming pipeline (WS + server-side motion gate + inference).
-        try {
-            const seg = await ensureSegmenter();
-            if (cameraStream) {
-                seg.start(cameraStream, true);
-                console.log('[Live] StreamingLiveMode started');
+        if (_isBatchTranslate()) {
+            // Batch (kiosk): no streaming segmenter, no WS, no live inference.
+            // Camera is already running (startCamera above). The Start Signing
+            // gate begins an open-ended local recording; Translate processes
+            // the whole clip in one pass.
+            console.log('[Live] Kiosk BATCH translate mode \u2014 streaming pipeline skipped');
+        } else {
+            // Streaming pipeline (WS + server-side motion gate + inference).
+            try {
+                const seg = await ensureSegmenter();
+                if (cameraStream) {
+                    seg.start(cameraStream, true);
+                    console.log('[Live] StreamingLiveMode started');
+                }
+                // Conversation-start gate: pause the segmenter immediately so
+                // detection doesn't begin until the user explicitly clicks
+                // Start Signing. Mirrors the Resume Signing pattern after Send
+                // -- the user controls when capture is active.
+                if (typeof seg.pause === 'function') seg.pause();
+            } catch (e) {
+                console.warn('[Live] Segmenter init failed:', e.message);
             }
-            // Conversation-start gate: pause the segmenter immediately so
-            // detection doesn't begin until the user explicitly clicks
-            // Start Signing. Mirrors the Resume Signing pattern after Send
-            // -- the user controls when capture is active.
-            if (typeof seg.pause === 'function') seg.pause();
-        } catch (e) {
-            console.warn('[Live] Segmenter init failed:', e.message);
         }
 
-        // Arm the Start Signing button (same purple as Resume Signing,
-        // delegates to the same resumeSigning() handler).
+        // Arm the Start Signing button. In batch mode it starts a recording;
+        // in streaming mode it resumes the (paused) segmenter.
         _armSigningGate('conversation-start');
     } else {
         // Speaker mode
@@ -4330,6 +4400,13 @@ function stopLiveMode() {
     if (signSegmenter) {
         signSegmenter.stop();
         signSegmenter = null;  // streaming mode needs a fresh instance per session
+    }
+    // Batch mode: abort any in-progress recording so the MediaRecorder
+    // releases the camera track and doesn't fire onstop after teardown.
+    if (_batchRecorder) {
+        try { if (_batchRecorder.state === 'recording') _batchRecorder.stop(); } catch (_) {}
+        _batchRecorder = null;
+        _batchChunks = [];
     }
     if (poseOverlay) {
         poseOverlay.stop();
@@ -4840,13 +4917,15 @@ function _initCaptionInteractions() {
 // interpretation. Used when the user clicks 🔄 on a low-CTQI caption.
 async function _regenerateCaption() {
     if (_captionPending) return;
-    if (!liveActive || !signSegmenter) return;
+    if (!liveActive) return;
     if (_regenerateAttempts >= REGENERATE_LIMIT) {
         // Out of retries — auto-open edit so the user has a clear path forward.
         _enterCaptionEditMode();
         return;
     }
-    const allGlosses = signSegmenter.getCollectedGlosses();
+    // Streaming mode reads from the segmenter; batch mode has no segmenter
+    // and keeps its glosses in liveCollectedGlosses.
+    const allGlosses = signSegmenter ? signSegmenter.getCollectedGlosses() : liveCollectedGlosses.slice();
     if (allGlosses.length === 0) return;
 
     _captionPending = true;
@@ -5124,14 +5203,20 @@ async function sendNowAndPause() {
     _clearGlossRows();
     _setLiveCaption(null);   // clear the caption banner after commit
 
-    // 7. Flip button to Resume.
-    if (btn) {
-        btn.disabled = false;
-        btn.textContent = 'Resume Signing';
-        btn.style.background = '#b07cf0';
-        btn.onclick = () => resumeSigning();
+    // 7. Flip button back to the start-of-turn gate. Batch mode re-arms
+    //    "Start Signing" (next click starts a fresh recording); streaming
+    //    mode shows "Resume Signing" (next click un-pauses the segmenter).
+    if (_isBatchTranslate()) {
+        _armSigningGate('post-send');
+    } else {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Resume Signing';
+            btn.style.background = '#b07cf0';
+            btn.onclick = () => resumeSigning();
+        }
+        statusBar.innerHTML = '<span class="prompt">Message sent. Click <b>Resume Signing</b> to continue.</span>';
     }
-    statusBar.innerHTML = '<span class="prompt">Message sent. Click <b>Resume Signing</b> to continue.</span>';
     _sendInProgress = false;
 }
 
@@ -5150,22 +5235,230 @@ function resumeSigning() {
 }
 
 // Conversation-start gate. Shows the same purple button as Resume Signing
-// but labeled "Start Signing", and delegates to resumeSigning() on click.
-// Caller is responsible for ensuring the segmenter is paused before
-// arming the gate. Used at the start of every new conversation so the
-// user explicitly opts in to detection (instead of it being on from the
-// moment the camera starts).
+// but labeled "Start Signing". In streaming mode it resumes the (paused)
+// segmenter; in batch mode it begins an open-ended local recording. Used at
+// the start of every new conversation so the user explicitly opts in to
+// detection (instead of it being on from the moment the camera starts).
 function _armSigningGate(reason) {
-    console.log('[SigningGate] arm:', reason);
+    console.log('[SigningGate] arm:', reason, 'batch=', _isBatchTranslate());
     const btn = document.getElementById('btnSendMessage');
     if (btn) {
         btn.style.display = 'inline-block';
         btn.textContent = 'Start Signing';
         btn.style.background = '#b07cf0';
         btn.disabled = false;
-        btn.onclick = () => resumeSigning();
+        btn.onclick = _isBatchTranslate() ? () => _startBatchSigning() : () => resumeSigning();
     }
     statusBar.innerHTML = '<span class="prompt">Click <b>Start Signing</b> when you\'re ready.</span>';
+}
+
+// ── Batch (kiosk) translate flow ────────────────────────────────
+// Open-ended local recording (runs until Translate), distinct from the
+// demo-mode recordFromCamera which records a fixed duration.
+// _batchRecorder / _batchChunks are hoisted to the top of the file.
+
+function _startBatchRecording() {
+    if (!cameraStream) return false;
+    _batchChunks = [];
+    try {
+        _batchRecorder = new MediaRecorder(cameraStream, { mimeType: 'video/webm' });
+    } catch (e) {
+        try { _batchRecorder = new MediaRecorder(cameraStream); }
+        catch (e2) { _batchRecorder = null; return false; }
+    }
+    _batchRecorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) _batchChunks.push(e.data); };
+    _batchRecorder.start();
+    return true;
+}
+
+function _stopBatchRecording() {
+    return new Promise((resolve) => {
+        const rec = _batchRecorder;
+        if (!rec) { resolve(null); return; }
+        rec.onstop = () => {
+            const blob = new Blob(_batchChunks, { type: 'video/webm' });
+            _batchRecorder = null;
+            resolve(blob.size > 0 ? blob : null);
+        };
+        try {
+            if (rec.state === 'recording') rec.stop();
+            else { _batchRecorder = null; resolve(null); }
+        } catch (e) { _batchRecorder = null; resolve(null); }
+    });
+}
+
+// "Start Signing" in batch mode: begin recording the whole utterance. No
+// inference happens yet. Button morphs to "Translate".
+function _startBatchSigning() {
+    if (!liveActive) return;
+    // Fresh utterance.
+    liveCollectedGlosses = [];
+    _clearGlossRows();
+    _setLiveCaption(null);
+    _runningCaption = '';
+    _lastSentGlossCount = 0;
+    _regenerateAttempts = 0;
+    _captionIsEdited = false;
+    _lastCtqi = null;
+
+    if (!_startBatchRecording()) {
+        statusBar.innerHTML = '<span class="processing" style="color:#ff6666">Could not start recording — camera not ready</span>';
+        return;
+    }
+    recBadge.classList.add('on');
+    recBorder.classList.add('on');
+
+    const btn = document.getElementById('btnSendMessage');
+    if (btn) {
+        btn.style.display = 'inline-block';
+        btn.textContent = 'Translate';
+        btn.style.background = '#7cb3f0';   // blue — distinct from green Send
+        btn.disabled = false;
+        btn.onclick = () => _translateBatch();
+    }
+    statusBar.innerHTML = '<span class="processing">Recording — sign your full sentence, then click <b>Translate</b></span>';
+}
+
+// Remove tail-motion artifacts from a batch gloss list:
+//   1. Trailing trim -- drop glosses starting in the last
+//      BATCH_TRAILING_TRIM_SEC of the clip (mouse-reach / hands lowering).
+//      Never trims to empty: if every gloss falls in the window the user
+//      signed entirely there, so we keep them all.
+//   2. Consecutive dedup -- collapse adjacent identical glosses.
+function _cleanBatchGlosses(glosses, durationSec) {
+    let out = glosses.slice();
+
+    if (BATCH_TRAILING_TRIM_SEC > 0 && durationSec > 0) {
+        const cutoff = durationSec - BATCH_TRAILING_TRIM_SEC;
+        const kept = out.filter(g => g.start_sec == null || g.start_sec < cutoff);
+        if (kept.length > 0 && kept.length !== out.length) {
+            const dropped = out.slice(kept.length).map(g => g.gloss).join(', ');
+            console.log(`[Batch] trailing-trim: dropped ${out.length - kept.length} gloss(es) ` +
+                        `starting after ${cutoff.toFixed(2)}s -> [${dropped}]`);
+            out = kept;
+        }
+    }
+
+    if (BATCH_DEDUP_CONSECUTIVE) {
+        const deduped = [];
+        for (const g of out) {
+            const prev = deduped[deduped.length - 1];
+            if (prev && (prev.gloss || '').toLowerCase() === (g.gloss || '').toLowerCase()) {
+                console.log(`[Batch] dedup consecutive '${g.gloss}'`);
+                continue;
+            }
+            deduped.push(g);
+        }
+        out = deduped;
+    }
+
+    return out;
+}
+
+// "Translate" in batch mode: stop recording, send the whole clip for
+// segmentation + gloss inference in one pass, then construct the sentence.
+async function _translateBatch() {
+    const btn = document.getElementById('btnSendMessage');
+    if (btn) { btn.disabled = true; btn.textContent = 'Translating…'; }
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Segmenting + recognizing… <span class="spinner"></span></span>';
+
+    const blob = await _stopBatchRecording();
+    if (!blob) {
+        _armSigningGate('batch-retry');   // re-arm first (it sets its own status)
+        statusBar.innerHTML = '<span class="processing" style="color:#ff6666">No video captured — click <b>Start Signing</b> to try again</span>';
+        return;
+    }
+
+    // Step 1: whole-clip segmentation + gloss inference.
+    const tClip = performance.now();
+    let glosses = [];
+    let durationSec = 0;
+    try {
+        const fd = new FormData();
+        fd.append('video', blob, 'clip.webm');
+        fd.append('domain', selectedDomain);
+        // Use the live motion gate (zone + hand-presence) for boundaries
+        // instead of pixel-only HybridSegmenter -- matches streaming quality.
+        fd.append('segmenter', 'motion_gate');
+        const resp = await fetch('/api/process-signing-clip', { method: 'POST', body: fd });
+        const result = await resp.json();
+        if (result.success && Array.isArray(result.glosses)) {
+            glosses = result.glosses.filter(g => g.confident !== false);
+            durationSec = result.duration_sec || 0;
+            console.log(`[Batch] clip processed: ${result.segment_count} segments, ` +
+                        `${glosses.length} confident glosses, dur=${durationSec}s, ` +
+                        `server total_time=${result.total_time}s, ` +
+                        `client=${((performance.now() - tClip) / 1000).toFixed(1)}s`);
+        } else {
+            console.warn('[Batch] process-signing-clip non-success:', result.error || result.message);
+        }
+    } catch (e) {
+        console.warn('[Batch] process-signing-clip error:', e.message);
+    }
+
+    // Clean up tail-motion artifacts (trailing trim + consecutive dedup).
+    glosses = _cleanBatchGlosses(glosses, durationSec);
+
+    if (glosses.length === 0) {
+        _armSigningGate('batch-no-signs');   // re-arm first (it sets its own status)
+        statusBar.innerHTML = '<span class="processing">No signs detected — click <b>Start Signing</b> to try again</span>';
+        return;
+    }
+
+    // Stash glosses where the rest of the live flow (send / regenerate) reads.
+    liveCollectedGlosses = glosses;
+    _clearGlossRows();
+    glosses.forEach(g => _appendGlossRow(g));
+
+    // Step 2: single full-build LLM sentence construction.
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Constructing sentence… <span class="spinner"></span></span>';
+    const tLLM = performance.now();
+    let sentence = glosses.map(g => g.gloss).join(' ');
+    let plausibility = null;
+    try {
+        const resp = await fetch('/api/construct-sentence-live', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                gloss_predictions: glosses,
+                running_caption: '',            // full build, not extend
+                conversation_history: history,
+                domain: selectedDomain,
+            }),
+        });
+        const result = await resp.json();
+        if (result.success && result.sentence) sentence = result.sentence.trim();
+        else if (result.fallback) sentence = result.fallback;
+        if (typeof result.plausibility === 'number') plausibility = result.plausibility;
+    } catch (e) {
+        console.warn('[Batch] construct-sentence error:', e.message);
+    }
+    console.log(`[Batch] LLM construct=${((performance.now() - tLLM) / 1000).toFixed(1)}s`);
+
+    _runningCaption = sentence;
+    // Mark all glosses as already sent so sendNowAndPause's updateRollingCaption
+    // sees nothing new and just commits _runningCaption (no re-construction).
+    _lastSentGlossCount = glosses.length;
+    _captionIsEdited = false;
+
+    // CTQI estimate — same formula as updateRollingCaption / regenerate.
+    let ctqi = null;
+    if (plausibility != null && glosses.length > 0) {
+        const avgConf = glosses.reduce((s, g) => s + (g.confidence || 0), 0) / glosses.length;
+        ctqi = (avgConf * 100) * (0.5 + 0.5 * plausibility / 100);
+    }
+    _renderAndShowCaption(sentence, ctqi);
+
+    // Button → Send Message (Regenerate / Edit live on the caption chips).
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Send Message';
+        btn.style.background = '#4caf80';
+        btn.onclick = () => sendNowAndPause();
+    }
+    statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
 }
 
 // Initialize the sign engine (called once when first needed). Variable name
