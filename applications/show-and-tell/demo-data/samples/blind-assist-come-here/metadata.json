@@ -1,0 +1,83 @@
+{
+  "id": "blind-assist-come-here",
+  "name": "blind assist come here",
+  "description": "Emergency demo: Witness describes trapped person needing help",
+  "reference_sentence": "They are blind and need help. Come here!",
+  "created": "2026-05-24",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "blind",
+        "confidence": 0.88,
+        "top_k": [
+          { "gloss": "blind", "confidence": 0.88 },
+          { "gloss": "face", "confidence": 0.04 },
+          { "gloss": "attention", "confidence": 0.03 },
+          { "gloss": "careful", "confidence": 0.02 },
+          { "gloss": "awake", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "assist",
+        "confidence": 0.81,
+        "top_k": [
+          { "gloss": "assist", "confidence": 0.81 },
+          { "gloss": "allow", "confidence": 0.07 },
+          { "gloss": "authority", "confidence": 0.04 },
+          { "gloss": "approach", "confidence": 0.03 },
+          { "gloss": "arrive", "confidence": 0.02 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "come here",
+        "confidence": 0.86,
+        "top_k": [
+          { "gloss": "come here", "confidence": 0.86 },
+          { "gloss": "approach", "confidence": 0.05 },
+          { "gloss": "arrive", "confidence": 0.04 },
+          { "gloss": "hurry", "confidence": 0.02 },
+          { "gloss": "fast", "confidence": 0.01 }
+        ]
+      }
+    ],
+    "raw_sentence": "blind assist come here",
+    "llm_sentence": "They are blind and need help. Come here!",
+    "selections": ["blind", "assist", "come here"],
+    "evaluation": {
+      "raw": {
+        "bleu": 12.8,
+        "bert": 85.1,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 55.7,
+        "plausibility": 39.8
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 93.5
+      }
+    }
+  }
+}

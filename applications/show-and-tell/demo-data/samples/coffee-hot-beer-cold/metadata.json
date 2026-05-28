@@ -1,0 +1,97 @@
+{
+  "id": "coffee-hot-beer-cold",
+  "name": "coffee hot beer cold",
+  "description": "Restaurant demo: Customer orders drinks",
+  "reference_sentence": "A hot coffee and a cold beer.",
+  "created": "2026-05-27",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "coffee",
+        "confidence": 0.91,
+        "top_k": [
+          { "gloss": "coffee", "confidence": 0.91 },
+          { "gloss": "beer", "confidence": 0.03 },
+          { "gloss": "glass", "confidence": 0.02 },
+          { "gloss": "cook", "confidence": 0.01 },
+          { "gloss": "check", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "hot",
+        "confidence": 0.86,
+        "top_k": [
+          { "gloss": "hot", "confidence": 0.86 },
+          { "gloss": "cold", "confidence": 0.05 },
+          { "gloss": "boil", "confidence": 0.03 },
+          { "gloss": "bake", "confidence": 0.02 },
+          { "gloss": "pepper", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "beer",
+        "confidence": 0.88,
+        "top_k": [
+          { "gloss": "beer", "confidence": 0.88 },
+          { "gloss": "glass", "confidence": 0.04 },
+          { "gloss": "coffee", "confidence": 0.03 },
+          { "gloss": "lunch", "confidence": 0.02 },
+          { "gloss": "cold", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "cold",
+        "confidence": 0.83,
+        "top_k": [
+          { "gloss": "cold", "confidence": 0.83 },
+          { "gloss": "hot", "confidence": 0.06 },
+          { "gloss": "full", "confidence": 0.04 },
+          { "gloss": "barely", "confidence": 0.03 },
+          { "gloss": "better", "confidence": 0.02 }
+        ]
+      }
+    ],
+    "raw_sentence": "coffee hot beer cold",
+    "llm_sentence": "A hot coffee and a cold beer.",
+    "selections": ["coffee", "hot", "beer", "cold"],
+    "evaluation": {
+      "raw": {
+        "bleu": 16.4,
+        "bert": 88.2,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 60.1,
+        "plausibility": 43.7
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 95.1
+      }
+    }
+  }
+}

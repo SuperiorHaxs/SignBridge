@@ -1553,7 +1553,13 @@ def get_registry():
 
 @app.route("/api/conversation")
 def get_conversation():
-    """Return the conversation script."""
+    """Return the conversation script for the requested domain."""
+    domain = request.args.get("domain", "")
+    if domain and domain != "doctor_visit":
+        domain_path = DEMO_DATA_DIR / f"conversation_{domain}.json"
+        if domain_path.exists():
+            with open(domain_path) as f:
+                return jsonify(json.load(f))
     conv_path = DEMO_DATA_DIR / "conversation.json"
     with open(conv_path) as f:
         return jsonify(json.load(f))

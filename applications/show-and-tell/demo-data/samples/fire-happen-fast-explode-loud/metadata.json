@@ -1,0 +1,111 @@
+{
+  "id": "fire-happen-fast-explode-loud",
+  "name": "fire happen fast explode loud",
+  "description": "Emergency demo: Deaf witness describes a fire breaking out",
+  "reference_sentence": "A fire broke out fast. There was a loud explosion.",
+  "created": "2026-05-24",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "fire",
+        "confidence": 0.91,
+        "top_k": [
+          { "gloss": "fire", "confidence": 0.91 },
+          { "gloss": "hot", "confidence": 0.04 },
+          { "gloss": "burn", "confidence": 0.02 },
+          { "gloss": "light", "confidence": 0.01 },
+          { "gloss": "destroy", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "happen",
+        "confidence": 0.78,
+        "top_k": [
+          { "gloss": "happen", "confidence": 0.78 },
+          { "gloss": "event", "confidence": 0.08 },
+          { "gloss": "arrive", "confidence": 0.05 },
+          { "gloss": "approach", "confidence": 0.04 },
+          { "gloss": "come here", "confidence": 0.03 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "fast",
+        "confidence": 0.85,
+        "top_k": [
+          { "gloss": "fast", "confidence": 0.85 },
+          { "gloss": "hurry", "confidence": 0.06 },
+          { "gloss": "quick", "confidence": 0.04 },
+          { "gloss": "run", "confidence": 0.03 },
+          { "gloss": "blow", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "explode",
+        "confidence": 0.82,
+        "top_k": [
+          { "gloss": "explode", "confidence": 0.82 },
+          { "gloss": "blow", "confidence": 0.07 },
+          { "gloss": "destroy", "confidence": 0.04 },
+          { "gloss": "loud", "confidence": 0.03 },
+          { "gloss": "fire", "confidence": 0.02 }
+        ]
+      },
+      {
+        "segment_id": 5,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "loud",
+        "confidence": 0.74,
+        "top_k": [
+          { "gloss": "loud", "confidence": 0.74 },
+          { "gloss": "attention", "confidence": 0.09 },
+          { "gloss": "alarm", "confidence": 0.07 },
+          { "gloss": "explode", "confidence": 0.05 },
+          { "gloss": "angry", "confidence": 0.03 }
+        ]
+      }
+    ],
+    "raw_sentence": "fire happen fast explode loud",
+    "llm_sentence": "A fire broke out fast. There was a loud explosion.",
+    "selections": ["fire", "happen", "fast", "explode", "loud"],
+    "evaluation": {
+      "raw": {
+        "bleu": 18.2,
+        "bert": 89.5,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 62.4,
+        "plausibility": 45.3
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 95.8
+      }
+    }
+  }
+}

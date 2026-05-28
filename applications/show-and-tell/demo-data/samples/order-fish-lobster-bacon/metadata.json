@@ -1,0 +1,97 @@
+{
+  "id": "order-fish-lobster-bacon",
+  "name": "order fish lobster bacon",
+  "description": "Restaurant demo: Customer orders main course",
+  "reference_sentence": "I'll order the fish, lobster, and bacon.",
+  "created": "2026-05-27",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "order",
+        "confidence": 0.84,
+        "top_k": [
+          { "gloss": "order", "confidence": 0.84 },
+          { "gloss": "check", "confidence": 0.05 },
+          { "gloss": "allow", "confidence": 0.04 },
+          { "gloss": "attention", "confidence": 0.03 },
+          { "gloss": "agree", "confidence": 0.02 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "fish",
+        "confidence": 0.92,
+        "top_k": [
+          { "gloss": "fish", "confidence": 0.92 },
+          { "gloss": "lobster", "confidence": 0.03 },
+          { "gloss": "bacon", "confidence": 0.02 },
+          { "gloss": "cracker", "confidence": 0.01 },
+          { "gloss": "knife", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "lobster",
+        "confidence": 0.79,
+        "top_k": [
+          { "gloss": "lobster", "confidence": 0.79 },
+          { "gloss": "fish", "confidence": 0.07 },
+          { "gloss": "crab", "confidence": 0.05 },
+          { "gloss": "hot dog", "confidence": 0.04 },
+          { "gloss": "bacon", "confidence": 0.03 }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "bacon",
+        "confidence": 0.81,
+        "top_k": [
+          { "gloss": "bacon", "confidence": 0.81 },
+          { "gloss": "bread", "confidence": 0.06 },
+          { "gloss": "cracker", "confidence": 0.04 },
+          { "gloss": "cheese", "confidence": 0.03 },
+          { "gloss": "cook", "confidence": 0.02 }
+        ]
+      }
+    ],
+    "raw_sentence": "order fish lobster bacon",
+    "llm_sentence": "I'll order the fish, lobster, and bacon.",
+    "selections": ["order", "fish", "lobster", "bacon"],
+    "evaluation": {
+      "raw": {
+        "bleu": 14.8,
+        "bert": 86.5,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 57.6,
+        "plausibility": 41.2
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 94.8
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "id": "pie-apple-cherry-enjoy",
+  "name": "pie apple cherry enjoy",
+  "description": "Restaurant demo: Customer orders dessert",
+  "reference_sentence": "Apple cherry pie, I'll enjoy that.",
+  "created": "2026-05-27",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "pie",
+        "confidence": 0.89,
+        "top_k": [
+          { "gloss": "pie", "confidence": 0.89 },
+          { "gloss": "bake", "confidence": 0.04 },
+          { "gloss": "bread", "confidence": 0.02 },
+          { "gloss": "cracker", "confidence": 0.02 },
+          { "gloss": "cook", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "apple",
+        "confidence": 0.93,
+        "top_k": [
+          { "gloss": "apple", "confidence": 0.93 },
+          { "gloss": "peach", "confidence": 0.02 },
+          { "gloss": "cherry", "confidence": 0.02 },
+          { "gloss": "pear", "confidence": 0.01 },
+          { "gloss": "fruit", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "cherry",
+        "confidence": 0.82,
+        "top_k": [
+          { "gloss": "cherry", "confidence": 0.82 },
+          { "gloss": "apple", "confidence": 0.06 },
+          { "gloss": "peach", "confidence": 0.04 },
+          { "gloss": "banana", "confidence": 0.03 },
+          { "gloss": "fruit", "confidence": 0.02 }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "enjoy",
+        "confidence": 0.87,
+        "top_k": [
+          { "gloss": "enjoy", "confidence": 0.87 },
+          { "gloss": "beautiful", "confidence": 0.04 },
+          { "gloss": "better", "confidence": 0.03 },
+          { "gloss": "agree", "confidence": 0.02 },
+          { "gloss": "believe", "confidence": 0.01 }
+        ]
+      }
+    ],
+    "raw_sentence": "pie apple cherry enjoy",
+    "llm_sentence": "Apple cherry pie, I'll enjoy that.",
+    "selections": ["pie", "apple", "cherry", "enjoy"],
+    "evaluation": {
+      "raw": {
+        "bleu": 15.2,
+        "bert": 87.1,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 58.4,
+        "plausibility": 42.6
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 95.3
+      }
+    }
+  }
+}

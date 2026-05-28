@@ -5,7 +5,7 @@
       "description": "Urgent situations, communicating with first responders",
       "icon": "\ud83d\udea8",
       "status": "ready",
-      "demo_available": false,
+      "demo_available": true,
       "model_dir": "wlasl_116_emergency_model"
     },
     "doctor_visit": {
@@ -21,7 +21,7 @@
       "description": "Ordering food, asking about the menu, dietary needs",
       "icon": "\ud83c\udf7d\ufe0f",
       "status": "ready",
-      "demo_available": false,
+      "demo_available": true,
       "model_dir": "wlasl_116_restaurant_model"
     },
     "education": {

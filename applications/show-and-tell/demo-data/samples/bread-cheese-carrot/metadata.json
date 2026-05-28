@@ -1,0 +1,83 @@
+{
+  "id": "bread-cheese-carrot",
+  "name": "bread cheese carrot",
+  "description": "Restaurant demo: Customer orders sides",
+  "reference_sentence": "Bread, cheese, and carrots on the side.",
+  "created": "2026-05-27",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "bread",
+        "confidence": 0.87,
+        "top_k": [
+          { "gloss": "bread", "confidence": 0.87 },
+          { "gloss": "cracker", "confidence": 0.04 },
+          { "gloss": "cheese", "confidence": 0.03 },
+          { "gloss": "bacon", "confidence": 0.02 },
+          { "gloss": "bake", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "cheese",
+        "confidence": 0.90,
+        "top_k": [
+          { "gloss": "cheese", "confidence": 0.90 },
+          { "gloss": "bread", "confidence": 0.03 },
+          { "gloss": "peanut butter", "confidence": 0.02 },
+          { "gloss": "cracker", "confidence": 0.02 },
+          { "gloss": "cabbage", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_002.pose",
+        "video_file": "segments/segment_002.mp4",
+        "top_1": "carrot",
+        "confidence": 0.85,
+        "top_k": [
+          { "gloss": "carrot", "confidence": 0.85 },
+          { "gloss": "cabbage", "confidence": 0.05 },
+          { "gloss": "pepper", "confidence": 0.04 },
+          { "gloss": "banana", "confidence": 0.03 },
+          { "gloss": "apple", "confidence": 0.01 }
+        ]
+      }
+    ],
+    "raw_sentence": "bread cheese carrot",
+    "llm_sentence": "Bread, cheese, and carrots on the side.",
+    "selections": ["bread", "cheese", "carrot"],
+    "evaluation": {
+      "raw": {
+        "bleu": 13.5,
+        "bert": 84.7,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 56.3,
+        "plausibility": 40.2
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 93.9
+      }
+    }
+  }
+}

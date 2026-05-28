@@ -1,0 +1,55 @@
+{
+  "title": "Restaurant - ASL Communication Demo",
+  "description": "A server takes an order from a Deaf customer who responds in ASL, translated by SignBridge.",
+  "turns": [
+    {
+      "speaker": "doctor",
+      "text": "Welcome in! Can I get you something to drink?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["coffee", "hot", "beer", "cold"],
+      "asl_sentence": "A hot coffee and a cold beer.",
+      "sign_videos": ["coffee", "hot", "beer", "cold"],
+      "sentence_sample": "coffee-hot-beer-cold"
+    },
+    {
+      "speaker": "doctor",
+      "text": "Great choices. Are you ready to order food?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["order", "fish", "lobster", "bacon"],
+      "asl_sentence": "I'll order the fish, lobster, and bacon.",
+      "sign_videos": ["order", "fish", "lobster", "bacon"],
+      "sentence_sample": "order-fish-lobster-bacon"
+    },
+    {
+      "speaker": "doctor",
+      "text": "Excellent. Would you like anything on the side?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["bread", "cheese", "carrot"],
+      "asl_sentence": "Bread, cheese, and carrots on the side.",
+      "sign_videos": ["bread", "cheese", "carrot"],
+      "sentence_sample": "bread-cheese-carrot"
+    },
+    {
+      "speaker": "doctor",
+      "text": "Perfect. Can I get you any dessert?",
+      "duration": 3.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["pie", "apple", "cherry", "enjoy"],
+      "asl_sentence": "Apple cherry pie, I'll enjoy that.",
+      "sign_videos": ["pie", "apple", "cherry", "enjoy"],
+      "sentence_sample": "pie-apple-cherry-enjoy"
+    }
+  ],
+  "breakdown_samples": ["coffee-hot-beer-cold", "order-fish-lobster-bacon", "bread-cheese-carrot", "pie-apple-cherry-enjoy"]
+}

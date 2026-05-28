@@ -1,0 +1,55 @@
+{
+  "title": "Emergency - ASL Communication Demo",
+  "description": "A firefighter arrives at a house fire and communicates with a Deaf witness who responds in ASL, translated by SignBridge.",
+  "turns": [
+    {
+      "speaker": "doctor",
+      "text": "Are you okay? What happened here?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["fire", "happen", "fast", "explode", "loud"],
+      "asl_sentence": "A fire broke out fast. There was a loud explosion.",
+      "sign_videos": ["fire", "happen", "fast", "explode", "loud"],
+      "sentence_sample": "fire-happen-fast-explode-loud"
+    },
+    {
+      "speaker": "doctor",
+      "text": "Do you know what caused it? Is anyone inside?",
+      "duration": 4.0
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["leak", "blow", "destroy", "door"],
+      "asl_sentence": "A gas leak blew out and destroyed the door.",
+      "sign_videos": ["leak", "blow", "destroy", "door"],
+      "sentence_sample": "leak-blow-destroy-door"
+    },
+    {
+      "speaker": "doctor",
+      "text": "Is anyone still inside? Do they need help?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["blind", "assist", "come here"],
+      "asl_sentence": "They are blind and need help. Come here!",
+      "sign_videos": ["blind", "assist", "come here"],
+      "sentence_sample": "blind-assist-come-here"
+    },
+    {
+      "speaker": "doctor",
+      "text": "We're on it. How did you get out safely?",
+      "duration": 3.5
+    },
+    {
+      "speaker": "patient",
+      "glosses": ["awake", "careful", "avoid", "fire"],
+      "asl_sentence": "I was awake, stayed careful, and avoided the fire.",
+      "sign_videos": ["awake", "careful", "avoid", "fire"],
+      "sentence_sample": "awake-careful-avoid-fire"
+    }
+  ],
+  "breakdown_samples": ["fire-happen-fast-explode-loud", "leak-blow-destroy-door", "blind-assist-come-here", "awake-careful-avoid-fire"]
+}

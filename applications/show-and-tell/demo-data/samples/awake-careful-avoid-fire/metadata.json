@@ -1,0 +1,97 @@
+{
+  "id": "awake-careful-avoid-fire",
+  "name": "awake careful avoid fire",
+  "description": "Emergency demo: Witness describes how they escaped the fire",
+  "reference_sentence": "I was awake, stayed careful, and avoided the fire.",
+  "created": "2026-05-24",
+  "original_video": "original_video.mp4",
+  "precomputed": {
+    "pose_file": "capture.pose",
+    "pose_video": "pose_video.mp4",
+    "segments": [
+      {
+        "segment_id": 1,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "awake",
+        "confidence": 0.79,
+        "top_k": [
+          { "gloss": "awake", "confidence": 0.79 },
+          { "gloss": "attention", "confidence": 0.07 },
+          { "gloss": "careful", "confidence": 0.05 },
+          { "gloss": "alarm", "confidence": 0.04 },
+          { "gloss": "face", "confidence": 0.02 }
+        ]
+      },
+      {
+        "segment_id": 2,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "careful",
+        "confidence": 0.84,
+        "top_k": [
+          { "gloss": "careful", "confidence": 0.84 },
+          { "gloss": "attention", "confidence": 0.06 },
+          { "gloss": "avoid", "confidence": 0.04 },
+          { "gloss": "awake", "confidence": 0.03 },
+          { "gloss": "blind", "confidence": 0.01 }
+        ]
+      },
+      {
+        "segment_id": 3,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "avoid",
+        "confidence": 0.77,
+        "top_k": [
+          { "gloss": "avoid", "confidence": 0.77 },
+          { "gloss": "apart", "confidence": 0.08 },
+          { "gloss": "around", "confidence": 0.05 },
+          { "gloss": "careful", "confidence": 0.04 },
+          { "gloss": "escape", "confidence": 0.03 }
+        ]
+      },
+      {
+        "segment_id": 4,
+        "pose_file": "segments/segment_001.pose",
+        "video_file": "segments/segment_001.mp4",
+        "top_1": "fire",
+        "confidence": 0.92,
+        "top_k": [
+          { "gloss": "fire", "confidence": 0.92 },
+          { "gloss": "hot", "confidence": 0.03 },
+          { "gloss": "burn", "confidence": 0.02 },
+          { "gloss": "destroy", "confidence": 0.01 },
+          { "gloss": "explode", "confidence": 0.01 }
+        ]
+      }
+    ],
+    "raw_sentence": "awake careful avoid fire",
+    "llm_sentence": "I was awake, stayed careful, and avoided the fire.",
+    "selections": ["awake", "careful", "avoid", "fire"],
+    "evaluation": {
+      "raw": {
+        "bleu": 14.1,
+        "bert": 86.9,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 57.2,
+        "plausibility": 41.5
+      },
+      "llm": {
+        "bleu": 100.0,
+        "bert": 100.0,
+        "coverage_recall": 100.0,
+        "coverage_precision": 100.0,
+        "coverage_f1": 100.0,
+        "missing_words": [],
+        "hallucinated_words": [],
+        "composite": 100.0,
+        "plausibility": 94.7
+      }
+    }
+  }
+}

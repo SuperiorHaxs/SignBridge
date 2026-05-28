@@ -2099,6 +2099,7 @@ function selectScenario(domain, scenarioName) {
 
     console.log('[Scenario] Selected:', scenarioName, '| Domain:', domain, '| Mode:', interactionMode, '| Method:', METHOD, '| AppMode:', MODE);
 
+    if (MODE === 'demo') loadConversation(domain);
     loadVocabulary(domain);
 
     // Model warmup. Block Start Conversation until the OpenHands model +
@@ -4022,15 +4023,20 @@ updateSubTabVisibility();
 // ══════════════════════════════════════════════════════════════
 // LOAD DATA (always load demo conversation so it's ready when needed)
 // ══════════════════════════════════════════════════════════════
-(async function loadConversation() {
+async function loadConversation(domain) {
     try {
-        const resp = await fetch('/api/conversation');
+        const url = domain ? `/api/conversation?domain=${domain}` : '/api/conversation';
+        const resp = await fetch(url);
         conversation = await resp.json();
+        breakdownLoaded = false;
+        breakdownData = [];
         btnStart.disabled = false;
+        console.log('[Demo] Loaded conversation for domain:', domain || 'default');
     } catch (e) {
         console.warn('[Demo] Could not load conversation data:', e);
     }
-})();
+}
+loadConversation();
 
 // ══════════════════════════════════════════════════════════════
 // CONVERSATION FLOW -- DEMO MODE
