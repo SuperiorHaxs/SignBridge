@@ -1272,13 +1272,20 @@ def _build_domain_section(domain):
 
 @app.route("/")
 def index():
-    response = make_response(render_template("index.html", mode=APP_MODE, method=APP_METHOD))
+    # static_v is also exposed via @app.context_processor (so any template
+    # render gets it), but we pass it explicitly here too -- belt and
+    # suspenders. Some long-running Flask processes started before the
+    # context processor was registered (auto-reloader is off) still need
+    # this kwarg to resolve {{ static_v(...) }} on first reload.
+    response = make_response(render_template(
+        "index.html", mode=APP_MODE, method=APP_METHOD, static_v=_static_v,
+    ))
     # Never cache index.html itself. The cache-buster URLs for css/js are
-    # computed from the static files' mtimes (see _static_v + the template
-    # context processor below), so the only way the browser learns about
-    # those updated URLs is by re-fetching this HTML. Caching index.html
-    # would serve stale ?v= references pointing to old assets -- the cause
-    # of the "page is broken after every push" symptom.
+    # computed from the static files' mtimes (see _static_v), so the only
+    # way the browser learns about those updated URLs is by re-fetching
+    # this HTML. Caching index.html would serve stale ?v= references
+    # pointing to old assets -- the cause of the "page is broken after
+    # every push" symptom.
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma']  = 'no-cache'
     response.headers['Expires'] = '0'
