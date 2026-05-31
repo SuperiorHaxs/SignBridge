@@ -3,3 +3,12 @@ models/training-scripts/models/wlasl_100_class_model/pytorch_model.bin filter=lf
 kaggle-training/wlasl_kaggle/bin/pytorch_model.bin filter=lfs diff=lfs merge=lfs -text
 kaggle-training/wlasl_kaggle/bin/pytorch_model_1.bin filter=lfs diff=lfs merge=lfs -text
 research_artifacts/2025[[:space:]]CCIR[[:space:]]Winter[[:space:]]Symposium/Book[[:space:]]of[[:space:]]Abstract[[:space:]]Conference[[:space:]]Proceedings-41767297790079.pdf filter=lfs diff=lfs merge=lfs -text
+
+# All production-model weight files must be LFS-tracked. Without this,
+# huggingface_hub.upload_folder auto-LFSes them on the HF Space (its
+# default behavior for *.bin ML weights), but our repo treats them as
+# raw blobs -- the mismatch causes HF's Docker build to COPY the LFS
+# pointer text files instead of resolved content, and torch.load fails
+# with "invalid load key, 'v'" (the 'v' of "version https://git-lfs/...").
+# Forcing LFS here keeps the representation consistent end-to-end.
+models/openhands-modernized/production-models/**/*.bin filter=lfs diff=lfs merge=lfs -text
