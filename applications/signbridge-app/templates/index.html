@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=60">
+    <link rel="stylesheet" href="/static/css/main.css?v=63">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -177,7 +177,8 @@
                     </div>
                 </div>
 
-                <!-- Result: video preview + per-sentence cards. Rendered by upload.js -->
+                <!-- Result: video preview + paragraph + paragraph-level chips.
+                     Single block of text -- no per-sentence cards. Rendered by upload.js -->
                 <div id="uploadResult" class="upload-result" hidden>
                     <div class="upload-result-summary" id="uploadSummary"></div>
 
@@ -186,7 +187,17 @@
                             <video id="uploadVideoPreview" class="upload-video-preview" controls playsinline></video>
                         </div>
                         <div class="upload-result-transcript-col">
-                            <div class="upload-paragraph" id="uploadParagraph"></div>
+                            <!-- Paragraph text block. In view mode shows joined sentences;
+                                 in edit mode upload.js swaps the inner content for a textarea. -->
+                            <div class="upload-paragraph-block" id="uploadParagraphBlock">
+                                <div class="upload-paragraph-text" id="uploadParagraph"></div>
+                                <div class="upload-paragraph-chips" id="uploadParagraphChips">
+                                    <button type="button" class="caption-action" id="uploadRegenBtn"
+                                            title="Regenerate -- ask the LLM for a different paragraph from the same signs">&#x1F504;</button>
+                                    <button type="button" class="caption-action" id="uploadEditBtn"
+                                            title="Edit the paragraph manually">&#x270F;&#xFE0F;</button>
+                                </div>
+                            </div>
                             <div class="upload-actions">
                                 <button class="btn btn-secondary" id="uploadCopyBtn">&#x1F4CB; Copy</button>
                                 <button class="btn btn-secondary" id="uploadDownloadBtn">&#x2B07; Download .txt</button>
@@ -653,6 +664,6 @@
 <!-- Upload tab (backlog item 10). Loaded after app.js so loadDomainsToUI
      has already populated #uploadDomainSelect by the time the user
      navigates to the tab and submits. Self-contained module. -->
-<script src="/static/js/upload.js?v=1"></script>
+<script src="/static/js/upload.js?v=2"></script>
 </body>
 </html>

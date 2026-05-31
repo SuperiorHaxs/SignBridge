@@ -36,6 +36,12 @@
     let _selectedFile  = null;
     let _previewBlobUrl = null;       // URL.createObjectURL handle to revoke on reset
     let _lastResult    = null;        // last server response (for copy/download)
+    let _lastGlosses   = null;        // confident-only glosses sent to the LLM
+                                       // (kept around so Regenerate can re-call
+                                       // /api/construct-paragraph without re-running
+                                       // the heavy recognition pipeline)
+    let _lastDomain    = null;
+    let _regenInFlight = false;
 
     // ── DOM lookups (helper) ──────────────────────────────────────
     const $ = (id) => document.getElementById(id);
@@ -68,9 +74,13 @@
         const copyBtn     = $('uploadCopyBtn');
         const downloadBtn = $('uploadDownloadBtn');
         const anotherBtn  = $('uploadAnotherBtn');
+        const regenBtn    = $('uploadRegenBtn');
+        const editBtn     = $('uploadEditBtn');
         if (copyBtn)     copyBtn.addEventListener('click', _copyParagraph);
         if (downloadBtn) downloadBtn.addEventListener('click', _downloadParagraph);
         if (anotherBtn)  anotherBtn.addEventListener('click', _reset);
+        if (regenBtn)    regenBtn.addEventListener('click', _regenerateParagraph);
+        if (editBtn)     editBtn.addEventListener('click', _enterParagraphEdit);
     }
 
     // ── File entry point ──────────────────────────────────────────
@@ -167,8 +177,15 @@
             ctqi = (avgConf * 100) * (0.5 + 0.5 * plausibility / 100);
         }
 
+        // Cache the inputs the Regenerate button needs to re-call
+        // /api/construct-paragraph without re-running recognition.
+        _lastGlosses = confidentGlss;
+        _lastDomain  = domain;
+
         _lastResult = {
             sentences,
+            paragraphText: sentences.join(' '),
+            edited:        false,         // becomes true after manual Edit
             ctqi,
             plausibility,
             unclearCount: unclearGlosses.length,
@@ -219,18 +236,34 @@
         if (_previewBlobUrl) { try { URL.revokeObjectURL(_previewBlobUrl); } catch (_) {} _previewBlobUrl = null; }
         _selectedFile = null;
         _lastResult   = null;
+        _lastGlosses  = null;
+        _lastDomain   = null;
+        _regenInFlight = false;
         $('uploadProgress').hidden = true;
         $('uploadResult').hidden   = true;
         $('uploadDropZone').hidden = false;
         $('uploadFileInput').value = '';
         const vid = $('uploadVideoPreview');
         if (vid) { vid.removeAttribute('src'); vid.load && vid.load(); }
-        $('uploadParagraph').innerHTML = '';
-        $('uploadSummary').innerHTML   = '';
+        const para = $('uploadParagraph');
+        if (para) { para.textContent = ''; para.hidden = false; }
+        $('uploadSummary').innerHTML = '';
+        // Strip any leftover edit-mode textarea + actions from a prior session.
+        const block = $('uploadParagraphBlock');
+        if (block) {
+            block.classList.remove('upload-paragraph-edited');
+            block.querySelectorAll('.upload-paragraph-edit, .upload-paragraph-edit-actions').forEach(n => n.remove());
+        }
+        const chips = $('uploadParagraphChips');
+        if (chips) chips.hidden = false;
         _clearError();
     }
 
     // ── Result rendering ──────────────────────────────────────────
+    // Renders the entire paragraph as a single text block plus paragraph-
+    // level chips (Regenerate, Edit). No per-sentence cards -- the LLM
+    // sometimes mis-segments the sentence boundaries anyway, and at this
+    // stage the user just wants the whole narrative to read well.
     function _renderResult(r) {
         _clearError();
         $('uploadProgress').hidden = true;
@@ -249,75 +282,140 @@
             }
         }
 
-        // Summary bar: signs, sentences, CTQI, unrecognized count.
+        _renderSummary(r);
+        _renderParagraphText(r);
+    }
+
+    function _renderSummary(r) {
         const sumEl = $('uploadSummary');
-        if (sumEl) {
-            const ctqiHtml = r.ctqi != null
-                ? `<span class="${r.ctqi >= _ctqiLow() ? 'ctqi-good' : 'ctqi-bad'}">CTQI = ${r.ctqi.toFixed(0)}</span>`
-                : `<span class="ctqi-missing">CTQI = ?</span>`;
-            const unclearHtml = r.unclearCount > 0
-                ? `<span class="upload-summary-warn">⚠ ${r.unclearCount} sign${r.unclearCount === 1 ? '' : 's'} not recognized</span>`
-                : '';
-            sumEl.innerHTML =
-                `<span class="upload-summary-stat"><b>${r.segmentCount}</b> sign${r.segmentCount === 1 ? '' : 's'} detected</span>` +
-                ` · <span class="upload-summary-stat"><b>${r.sentences.length}</b> sentence${r.sentences.length === 1 ? '' : 's'}</span>` +
-                ` · ${ctqiHtml}` +
-                (unclearHtml ? ` · ${unclearHtml}` : '');
-        }
+        if (!sumEl) return;
+        const ctqiHtml = r.ctqi != null
+            ? `<span class="${r.ctqi >= _ctqiLow() ? 'ctqi-good' : 'ctqi-bad'}">CTQI = ${r.ctqi.toFixed(0)}</span>`
+            : `<span class="ctqi-missing">CTQI = ?</span>`;
+        const unclearHtml = r.unclearCount > 0
+            ? `<span class="upload-summary-warn">⚠ ${r.unclearCount} sign${r.unclearCount === 1 ? '' : 's'} not recognized</span>`
+            : '';
+        const editedHtml = r.edited
+            ? `<span class="upload-summary-stat"><b>(edited)</b></span>`
+            : '';
+        sumEl.innerHTML =
+            `<span class="upload-summary-stat"><b>${r.segmentCount}</b> sign${r.segmentCount === 1 ? '' : 's'} detected</span>` +
+            ` · <span class="upload-summary-stat"><b>${r.sentences.length}</b> sentence${r.sentences.length === 1 ? '' : 's'}</span>` +
+            ` · ${ctqiHtml}` +
+            (unclearHtml ? ` · ${unclearHtml}` : '') +
+            (editedHtml  ? ` · ${editedHtml}`  : '');
+    }
 
-        // Per-sentence cards
-        const paraEl = $('uploadParagraph');
-        if (paraEl) {
-            paraEl.innerHTML = '';
-            r.sentences.forEach((sent, idx) => {
-                paraEl.appendChild(_buildSentenceCard(sent, idx));
+    function _renderParagraphText(r) {
+        const block = $('uploadParagraphBlock');
+        const para  = $('uploadParagraph');
+        const chips = $('uploadParagraphChips');
+        if (!block || !para || !chips) return;
+        block.classList.toggle('upload-paragraph-edited', !!r.edited);
+        para.textContent = r.paragraphText;
+        para.hidden = false;
+        // Edit mode (if active) replaces these chips with Save/Cancel; restore.
+        chips.hidden = false;
+        // Remove any leftover edit textarea from a prior edit session.
+        const leftover = block.querySelector('.upload-paragraph-edit');
+        if (leftover) leftover.remove();
+    }
+
+    // ── Regenerate (paragraph-level) ──────────────────────────────
+    // Re-calls /api/construct-paragraph with previous_attempt set to the
+    // current paragraph, so the LLM is instructed to explore top-2/top-3
+    // alternates and try a different sentence structure. Does NOT re-run
+    // recognition -- the gloss list is whatever was recognized at upload time.
+    async function _regenerateParagraph() {
+        if (_regenInFlight) return;
+        if (!_lastResult || !_lastGlosses || !_lastGlosses.length) return;
+        _regenInFlight = true;
+
+        const regenBtn = $('uploadRegenBtn');
+        const editBtn  = $('uploadEditBtn');
+        const para     = $('uploadParagraph');
+        const prevText = para ? (para.textContent || '') : (_lastResult.paragraphText || '');
+
+        if (regenBtn) regenBtn.disabled = true;
+        if (editBtn)  editBtn.disabled  = true;
+        if (para)     para.classList.add('upload-paragraph-loading');
+
+        try {
+            const resp = await fetch('/api/construct-paragraph', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    gloss_predictions:  _lastGlosses,
+                    domain:             _lastDomain,
+                    previous_attempt:   prevText,
+                    conversation_history: [],
+                }),
             });
+            const data = await resp.json();
+            const sentences = (data && data.sentences && data.sentences.length)
+                ? data.sentences
+                : (data && data.fallback) || [];
+            if (!sentences.length) {
+                _showError('Regenerate returned no sentences. Original paragraph kept.');
+                return;
+            }
+            const plausibility = (data && typeof data.plausibility === 'number') ? data.plausibility : null;
+            // Recompute CTQI with the new plausibility but the same gloss
+            // confidences (recognition didn't change).
+            const allSegs = _lastGlosses;
+            let ctqi = null;
+            if (plausibility != null && allSegs.length > 0) {
+                const avgConf = allSegs.reduce((s, g) => s + (g.confidence || 0), 0) / allSegs.length;
+                ctqi = (avgConf * 100) * (0.5 + 0.5 * plausibility / 100);
+            }
+            _lastResult.sentences     = sentences;
+            _lastResult.paragraphText = sentences.join(' ');
+            _lastResult.plausibility  = plausibility;
+            _lastResult.ctqi          = ctqi;
+            _lastResult.edited        = false;   // a regen replaces any prior edit
+            _renderSummary(_lastResult);
+            _renderParagraphText(_lastResult);
+            console.log('[Upload] regenerate ok:', sentences.length, 'sentence(s), CTQI=', ctqi);
+        } catch (e) {
+            _showError(`Regenerate failed: ${e.message}`);
+        } finally {
+            if (regenBtn) regenBtn.disabled = false;
+            if (editBtn)  editBtn.disabled  = false;
+            if (para)     para.classList.remove('upload-paragraph-loading');
+            _regenInFlight = false;
         }
     }
 
-    function _buildSentenceCard(text, idx) {
-        const card = document.createElement('div');
-        card.className = 'upload-sentence-card';
-        card.dataset.idx = String(idx);
+    // ── Edit (paragraph-level) ────────────────────────────────────
+    // Swaps the paragraph text for a textarea and replaces the regen/edit
+    // chips with Save / Cancel. Save commits the user's text as the new
+    // paragraph (sentences is re-derived by sentence-splitting on . ! ?).
+    function _enterParagraphEdit() {
+        if (!_lastResult) return;
+        const block = $('uploadParagraphBlock');
+        const para  = $('uploadParagraph');
+        const chips = $('uploadParagraphChips');
+        if (!block || !para || !chips) return;
+        // Already in edit mode? no-op.
+        if (block.querySelector('.upload-paragraph-edit')) return;
 
-        const textEl = document.createElement('div');
-        textEl.className = 'upload-sentence-text';
-        textEl.textContent = text;
-        card.appendChild(textEl);
+        const cur = _lastResult.paragraphText || '';
 
-        const actionsEl = document.createElement('div');
-        actionsEl.className = 'upload-sentence-actions';
-        const editBtn = document.createElement('button');
-        editBtn.type = 'button';
-        editBtn.className = 'caption-action';
-        editBtn.title = 'Edit this sentence';
-        editBtn.textContent = '✏️';
-        editBtn.addEventListener('click', () => _enterEdit(card));
-        actionsEl.appendChild(editBtn);
-        card.appendChild(actionsEl);
+        para.hidden = true;
+        chips.hidden = true;
 
-        return card;
-    }
-
-    function _enterEdit(card) {
-        if (card.dataset.editing === '1') return;
-        card.dataset.editing = '1';
-        const idx = parseInt(card.dataset.idx, 10);
-        const cur = _lastResult.sentences[idx] || '';
-
-        card.innerHTML = '';
-        const input = document.createElement('textarea');
-        input.className = 'upload-sentence-edit';
-        input.value = cur;
-        input.rows = Math.max(2, Math.ceil(cur.length / 60));
-        card.appendChild(input);
+        const ta = document.createElement('textarea');
+        ta.className = 'upload-paragraph-edit';
+        ta.value = cur;
+        ta.rows = Math.max(4, Math.ceil(cur.length / 70));
+        block.appendChild(ta);
 
         const actions = document.createElement('div');
-        actions.className = 'upload-sentence-actions';
+        actions.className = 'upload-paragraph-edit-actions';
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
         saveBtn.className = 'caption-action';
-        saveBtn.title = 'Save';
+        saveBtn.title = 'Save edit';
         saveBtn.textContent = '✓';
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
@@ -326,29 +424,43 @@
         cancelBtn.textContent = '✗';
         actions.appendChild(saveBtn);
         actions.appendChild(cancelBtn);
-        card.appendChild(actions);
-        input.focus();
-        input.select();
+        block.appendChild(actions);
 
-        const commit = (newText) => {
-            _lastResult.sentences[idx] = newText;
-            const replacement = _buildSentenceCard(newText, idx);
-            // Mark edited so the user sees their change is in the saved state.
-            replacement.classList.add('upload-sentence-edited');
-            card.parentNode.replaceChild(replacement, card);
+        ta.focus();
+        ta.select();
+
+        const cleanup = () => {
+            ta.remove();
+            actions.remove();
+            para.hidden = false;
+            chips.hidden = false;
         };
-        saveBtn.addEventListener('click', () => commit((input.value || '').trim()));
-        cancelBtn.addEventListener('click', () => commit(cur));
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit((input.value || '').trim()); }
-            else if (e.key === 'Escape')                       { e.preventDefault(); commit(cur); }
+        const commit = (newText) => {
+            _lastResult.paragraphText = newText;
+            // Re-derive sentences by splitting on terminal punctuation so
+            // Copy / Download still get sentence-segmented output.
+            const split = newText.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean);
+            _lastResult.sentences = split.length ? split : [newText];
+            _lastResult.edited = true;
+            cleanup();
+            _renderSummary(_lastResult);
+            _renderParagraphText(_lastResult);
+        };
+        saveBtn.addEventListener('click', () => commit((ta.value || '').trim()));
+        cancelBtn.addEventListener('click', () => { cleanup(); });
+        ta.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit((ta.value || '').trim()); }
+            else if (e.key === 'Escape')                       { e.preventDefault(); cleanup(); }
         });
     }
 
     // ── Copy + download ───────────────────────────────────────────
     function _joinParagraph() {
-        if (!_lastResult || !_lastResult.sentences) return '';
-        return _lastResult.sentences.join(' ');
+        if (!_lastResult) return '';
+        // Prefer the live paragraph text (reflects any in-flight edit that
+        // hasn't been committed yet would have been swapped back anyway).
+        return _lastResult.paragraphText
+            || (_lastResult.sentences ? _lastResult.sentences.join(' ') : '');
     }
     function _copyParagraph() {
         const text = _joinParagraph();

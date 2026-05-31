@@ -3070,6 +3070,12 @@ def construct_paragraph():
         gloss_predictions = data.get("gloss_predictions", [])
         domain = (data.get("domain") or "emergency").strip()
         conversation_history = data.get("conversation_history", [])
+        # Regenerate hint: when the client passes the paragraph it just got
+        # (which the user rejected), we instruct the LLM to produce a
+        # meaningfully different interpretation by exploring top-2/top-3
+        # alternates and a different sentence structure. Mirrors
+        # construct-sentence-live's regenerate flow.
+        previous_attempt = (data.get("previous_attempt") or "").strip()
 
         if not gloss_predictions:
             return jsonify({"success": False, "error": "No gloss predictions"}), 400
@@ -3102,6 +3108,46 @@ def construct_paragraph():
 
         domain_section = _build_domain_section(domain)
 
+        # Regenerate-mode section -- empty unless the client sent a rejected
+        # previous attempt. When present, the LLM is told to actively explore
+        # top-2/top-3 alternates and a different sentence structure, NOT to
+        # paraphrase the rejected attempt.
+        if previous_attempt:
+            regenerate_section = (
+                "═══════════════════════════════════════\n"
+                "REGENERATE MODE — IMPORTANT\n"
+                "═══════════════════════════════════════\n"
+                f"Your previous attempt at this paragraph was:\n"
+                f"    \"{previous_attempt}\"\n"
+                "The user rejected it as low quality. You MUST produce a "
+                "MEANINGFULLY DIFFERENT paragraph -- not a paraphrase, not "
+                "synonyms of the same words.\n"
+                "\n"
+                "ACTIVELY EXPLORE TOP-2 AND TOP-3 ALTERNATES:\n"
+                "- For each position the Option 2 and Option 3 entries below "
+                "  are real possibilities -- the model wasn't sure. Try them.\n"
+                "- The Option 1 word does NOT need to be in your output. If "
+                "  the Option 1 reading produced an awkward sentence in the "
+                "  previous attempt, swap it for an Option 2 or Option 3 "
+                "  reading that forms a more sensible narrative.\n"
+                "- It is OK to use a 0.5%-confidence alternate if it produces "
+                "  a coherent paragraph; the previous run already failed with "
+                "  the top-1 picks.\n"
+                "\n"
+                "ALSO TRY A DIFFERENT SENTENCE COUNT / STRUCTURE:\n"
+                "- If the previous attempt was N sentences, try N-2 or N+2.\n"
+                "- If declaratives didn't work, try imperatives or questions.\n"
+                "- Try a different sentence-boundary placement based on the\n"
+                "  same timestamps.\n"
+                "\n"
+                "DO NOT repeat the previous wording, its near-synonyms, or "
+                "its sentence breaks. If no different coherent paragraph is "
+                "achievable, output a shorter set of fragments using only the "
+                "glosses you are most confident about.\n"
+            )
+        else:
+            regenerate_section = ""
+
         prompt = f"""You are translating a long ordered sequence of ASL glosses into a natural English NARRATIVE PARAGRAPH for a hearing audience.
 
 {domain_section}
@@ -3109,6 +3155,7 @@ def construct_paragraph():
 Conversation context (prior turns, if any):
 {context_str}
 
+{regenerate_section}
 The signer produced these glosses in order, with per-gloss start timestamps and the model's top-k alternates (the "(NN%)" is the model's confidence, not yours):
 
 {gloss_timeline}
@@ -3176,7 +3223,8 @@ Output STRICT JSON ONLY, no markdown fences, no commentary:
             joined = " ".join(p.get("gloss", "") for p in gloss_predictions).strip()
             sentences = [joined + "."] if joined else ["(no glosses)"]
 
-        print(f"[Paragraph LLM] {len(gloss_predictions)} glosses -> {len(sentences)} sentence(s). "
+        mode_tag = "REGEN" if previous_attempt else "FRESH"
+        print(f"[Paragraph LLM {mode_tag}] {len(gloss_predictions)} glosses -> {len(sentences)} sentence(s). "
               f"P={plausibility_overall if plausibility_overall is None else round(plausibility_overall, 1)}")
         for s in sentences:
             print(f"  - {s}")
@@ -3500,11 +3548,18 @@ if __name__ == "__main__":
     cert_file = cert_dir / "cert.pem"
     key_file = cert_dir / "key.pem"
 
+    # threaded=True so the dev server handles parallel requests properly --
+    # default Werkzeug serves one at a time, which (combined with debug
+    # auto-reload) causes the browser's ~10 parallel page-load requests to
+    # serialize and occasionally race with a file-save reload, surfacing as
+    # ERR_TOO_MANY_RETRIES on a static asset (usually main.css). threaded
+    # mode is safe for dev use; production should use a proper WSGI server
+    # (gunicorn / uvicorn) which the HF Docker container already does.
     if cert_file.exists() and key_file.exists():
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(str(cert_file), str(key_file))
         print("  Running with HTTPS (speech recognition enabled)\n")
-        app.run(host="0.0.0.0", port=args.port, debug=True, ssl_context=context)
+        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True, ssl_context=context)
     else:
         print("  WARNING: No SSL certs found — speech recognition won't work on mobile\n")
-        app.run(host="0.0.0.0", port=args.port, debug=True)
+        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True)

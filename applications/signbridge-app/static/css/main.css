@@ -3349,6 +3349,16 @@ html, body { max-width: 100vw; overflow-x: hidden; }
     border-radius: 12px;
     padding: 18px 20px;
 }
+/* `display: flex` above overrides the browser's UA default for [hidden]
+ * (which is `display: none`), so the spinner showed on page load even with
+ * the `hidden` attribute set. Re-assert hidden via an attribute selector --
+ * higher specificity than the class alone, so this wins. Same fix applies
+ * to any future block here that gets an explicit `display` rule. */
+.upload-progress[hidden],
+.upload-result[hidden],
+.upload-drop-zone[hidden] {
+    display: none;
+}
 .upload-progress-spinner {
     width: 22px;
     height: 22px;
@@ -3404,64 +3414,96 @@ html, body { max-width: 100vw; overflow-x: hidden; }
     flex-direction: column;
     gap: 12px;
 }
-.upload-paragraph {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    max-height: 480px;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-/* Per-sentence cards */
-.upload-sentence-card {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
+/* Paragraph block -- single text block + paragraph-level chips
+ * (Regenerate, Edit). Replaces the per-sentence cards: at this stage
+ * the user wants the whole narrative to read well, so we surface one
+ * affordance to redo the LLM call and one to type a manual fix. */
+.upload-paragraph-block {
+    position: relative;
     background: color-mix(in srgb, var(--accent) 4%, var(--bg-card));
     border: 1px solid var(--border-subtle);
     border-radius: 10px;
+    padding: 14px 16px;
 }
-.upload-sentence-card.upload-sentence-edited {
+.upload-paragraph-block.upload-paragraph-edited {
     border-color: color-mix(in srgb, var(--accent) 50%, var(--border-light));
     background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
 }
-.upload-sentence-text {
-    flex: 1;
-    font-size: 0.95rem;
-    line-height: 1.45;
+.upload-paragraph-text {
+    font-size: 0.98rem;
+    line-height: 1.55;
     color: var(--text-primary);
     word-wrap: break-word;
+    /* Leave room on the right for the chips overlay so a long paragraph
+     * doesn't run text under them. */
+    padding-right: 60px;
 }
-.upload-sentence-edit {
-    flex: 1;
-    width: 100%;
-    font-family: inherit;
-    font-size: 0.95rem;
-    line-height: 1.45;
-    color: var(--text-primary);
-    background: var(--bg-card);
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    padding: 8px 10px;
-    resize: vertical;
-    outline: none;
+/* Spinner-y state while a regenerate is in flight. */
+.upload-paragraph-text.upload-paragraph-loading {
+    opacity: 0.55;
+    transition: opacity 0.15s ease;
 }
-.upload-sentence-actions {
+.upload-paragraph-chips {
+    position: absolute;
+    top: 10px;
+    right: 12px;
     display: flex;
     gap: 4px;
-    flex-shrink: 0;
+    z-index: 1;
 }
-/* Reuse caption-action chip style but ensure clickability in this context
- * (parent doesn't have pointer-events:none here, but explicit is safer). */
-.upload-sentence-actions .caption-action {
+.upload-paragraph-chips .caption-action {
     cursor: pointer;
     pointer-events: auto;
     padding: 2px 6px;
     background: none;
     border: none;
+    font-size: 1.05em;
+    line-height: 1;
+    opacity: 0.85;
+    transition: opacity 0.15s, transform 0.15s;
+}
+.upload-paragraph-chips .caption-action:hover:not([disabled]) {
+    opacity: 1;
+    transform: scale(1.12);
+}
+.upload-paragraph-chips .caption-action[disabled] {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* Edit mode (textarea + Save/Cancel) lives inside the paragraph block
+ * after upload.js swaps the chip row out. */
+.upload-paragraph-edit {
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 10px 12px;
+    resize: vertical;
+    outline: none;
+    min-height: 100px;
+}
+.upload-paragraph-edit-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+.upload-paragraph-edit-actions .caption-action {
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 4px 10px;
+    background: none;
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
     font-size: 1em;
+}
+.upload-paragraph-edit-actions .caption-action:hover {
+    border-color: var(--accent);
 }
 
 /* Action buttons row under the transcript */
@@ -3476,7 +3518,7 @@ html, body { max-width: 100vw; overflow-x: hidden; }
     .upload-result-grid {
         grid-template-columns: 1fr;
     }
-    .upload-paragraph { max-height: none; }
     .upload-drop-zone { padding: 32px 16px; }
+    .upload-paragraph-text { padding-right: 56px; }
 }
 
