@@ -15,7 +15,15 @@ jobs:
           lfs: true
 
       - name: Install huggingface_hub
-        run: pip install -U "huggingface_hub[hf_xet]"
+        # Pinned to a known-good version. pip install -U "huggingface_hub[hf_xet]"
+        # picked up a release whose auto-LFS behavior for .bin files diverged
+        # from how our repo tracked them, and the Docker build's COPY ended
+        # up baking LFS pointer text into the image -- torch.load then failed
+        # with "invalid load key, 'v'" on every model load on the Space. Even
+        # though we've since explicitly LFS-tracked the production model
+        # weights (.gitattributes), pinning the SDK protects us from another
+        # silent behavior change. Bump deliberately after testing.
+        run: pip install "huggingface_hub[hf_xet]==0.36.0"
 
       - name: Upload to Hugging Face Spaces
         env:
