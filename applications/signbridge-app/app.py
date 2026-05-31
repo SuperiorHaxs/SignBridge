@@ -1656,13 +1656,21 @@ def get_sign_bank():
         if active_fb:
             domain_vocabs["_fallback"] = sorted(active_fb, key=str.lower)
 
-    # Group signs: assign each to the first domain whose vocab contains it
-    # Priority: ready domains first (in registry order), then fallback
+    # Group signs by domain. Each gloss appears in EVERY domain whose vocab
+    # contains it (no cross-domain dedup) -- so the per-domain card count
+    # matches the model's active vocabulary the user sees in Live mode.
+    # The trade-off: glosses common to multiple domains (e.g. NAME, HELLO)
+    # show as duplicate cards across groups, but each group correctly
+    # reflects "what the model can recognize for this domain."
+    #
+    # `present_in_vocab` is still tracked, but only to compute the
+    # "Uncategorized" group below (local files that no registered model
+    # claims). It's no longer a dedup gate.
     priority = [k for k, v in domains.items() if v.get("model_dir")]
     if "_fallback" in domain_vocabs:
         priority.append("_fallback")
 
-    assigned = set()
+    present_in_vocab = set()
     groups = []
 
     for domain_key in priority:
@@ -1671,16 +1679,14 @@ def get_sign_bank():
         group_signs = []
         for gloss in domain_vocabs[domain_key]:
             gloss_lower = gloss.lower()
-            if gloss_lower in assigned:
-                continue
+            present_in_vocab.add(gloss_lower)
             url = _resolve_url(gloss_lower)
             if not url:
-                continue   # neither local nor R2 -- skip
+                continue   # neither local nor R2 -- skip (no video to show)
             group_signs.append({
                 "gloss": gloss,
                 "video_url": url,
             })
-            assigned.add(gloss_lower)
         if group_signs:
             if domain_key == "_fallback":
                 label = "General"
@@ -1694,7 +1700,7 @@ def get_sign_bank():
 
     # Catch any local-only signs that aren't in any registry vocabulary
     # (legacy self-signed files for words no model knows about).
-    uncategorized_files = [(g, fn) for g, fn in sorted(local_files.items()) if g not in assigned]
+    uncategorized_files = [(g, fn) for g, fn in sorted(local_files.items()) if g not in present_in_vocab]
     uncategorized = [
         {"gloss": Path(fn).stem, "video_url": f"/sign-bank/{fn}"}
         for g, fn in uncategorized_files
