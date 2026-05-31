@@ -42,6 +42,7 @@ Usage (from the SignBridge venv):
 """
 
 import argparse
+import json
 import os
 import sys
 import time
@@ -52,8 +53,40 @@ SCRIPT_DIR         = Path(__file__).resolve().parent
 ASL_V1_DIR         = SCRIPT_DIR.parent.parent
 SIGNBRIDGE_APP_DIR = ASL_V1_DIR / "applications" / "signbridge-app"
 SAMPLES_DIR        = ASL_V1_DIR / "applications" / "show-and-tell" / "demo-data" / "samples"
+# Per-domain demo conversation files; each names the sample IDs it uses.
+DOMAIN_DEMOS_DIR   = SIGNBRIDGE_APP_DIR / "demo-data"
 
 R2_KEY_PREFIX = "demo-samples"   # all sample objects live under this prefix
+
+
+def referenced_sample_ids() -> set[str]:
+    """
+    Collect every sample id referenced by a per-domain demo conversation
+    file (conversation_<domain>.json under signbridge-app/demo-data/).
+    The bare conversation.json (legacy default) is intentionally skipped.
+
+    Returns the union of every conversation file's `breakdown_samples`
+    list plus any per-turn `sentence_sample` value. This is the set of
+    samples actually wired up to a current domain demo -- the only ones
+    that need to live on R2.
+    """
+    ids: set[str] = set()
+    if not DOMAIN_DEMOS_DIR.is_dir():
+        return ids
+    for path in sorted(DOMAIN_DEMOS_DIR.glob("conversation_*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"[warn] could not parse {path.name}: {e}")
+            continue
+        for sid in (data.get("breakdown_samples") or []):
+            if sid:
+                ids.add(sid)
+        for turn in (data.get("turns") or []):
+            sid = turn.get("sentence_sample")
+            if sid:
+                ids.add(sid)
+    return ids
 
 
 # ── Helpers (mirror migrate_wlasl_to_r2.py for credentials + S3 setup) ──
@@ -135,16 +168,23 @@ def upload_one(s3, bucket: str, local_path: Path, key: str):
     )
 
 
-def discover_files(samples_root: Path, include_pose: bool) -> list[tuple[Path, str]]:
+def discover_files(samples_root: Path, include_pose: bool,
+                   keep_ids: set[str] | None) -> list[tuple[Path, str]]:
     """
     Walk samples_root and return [(local_path, r2_key), ...].
     r2_key = '<R2_KEY_PREFIX>/<sample_id>/<relative_path_with_forward_slashes>'.
+
+    When `keep_ids` is not None, only sample folders whose name is in that
+    set are included -- used to limit uploads to samples actually wired
+    into a per-domain demo (avoids dragging unrelated legacy samples).
     """
     out: list[tuple[Path, str]] = []
     if not samples_root.is_dir():
         return out
     for sample_dir in sorted(p for p in samples_root.iterdir() if p.is_dir()):
         sample_id = sample_dir.name
+        if keep_ids is not None and sample_id not in keep_ids:
+            continue
         for path in sorted(sample_dir.rglob("*")):
             if not path.is_file():
                 continue
@@ -156,6 +196,51 @@ def discover_files(samples_root: Path, include_pose: bool) -> list[tuple[Path, s
     return out
 
 
+def prune_extras(s3, bucket: str, keep_ids: set[str], dry_run: bool) -> dict:
+    """
+    Delete every R2 key under R2_KEY_PREFIX/ whose <sample_id> is NOT in
+    keep_ids. Used to clean up earlier all-samples uploads after the
+    script switched to a domain-wired keep-set default.
+    """
+    paginator = s3.get_paginator("list_objects_v2")
+    to_delete: list[str] = []
+    kept = 0
+    for page in paginator.paginate(Bucket=bucket, Prefix=R2_KEY_PREFIX + "/"):
+        for obj in page.get("Contents", []) or []:
+            key = obj["Key"]
+            # key format: demo-samples/<sample_id>/<rest>
+            parts = key.split("/", 2)
+            if len(parts) < 3:
+                continue
+            sample_id = parts[1]
+            if sample_id in keep_ids:
+                kept += 1
+            else:
+                to_delete.append(key)
+
+    print(f"[prune] keep={kept}  extras_to_delete={len(to_delete)}")
+    for k in to_delete:
+        print(f"  {'[dry] ' if dry_run else '[del] '}{k}")
+
+    stats = {"kept": kept, "to_delete": len(to_delete), "deleted": 0, "errors": 0}
+    if dry_run or not to_delete:
+        return stats
+
+    # delete_objects max 1000 keys per call
+    for i in range(0, len(to_delete), 1000):
+        batch = [{"Key": k} for k in to_delete[i:i + 1000]]
+        try:
+            resp = s3.delete_objects(Bucket=bucket, Delete={"Objects": batch, "Quiet": True})
+            stats["deleted"] += len(batch)
+            for err in resp.get("Errors", []) or []:
+                stats["errors"] += 1
+                print(f"[err] delete {err.get('Key')}: {err.get('Message')}")
+        except Exception as e:
+            stats["errors"] += len(batch)
+            print(f"[err] batch delete: {type(e).__name__}: {e}")
+    return stats
+
+
 # ── Main ─────────────────────────────────────────────────────────────
 
 def main():
@@ -164,7 +249,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     ap.add_argument("--dry-run", action="store_true",
-                    help="Don't upload; print what would upload.")
+                    help="Don't upload/delete; just print what would happen.")
     ap.add_argument("--limit", type=int, default=0,
                     help="Stop after N uploads (0 = no limit).")
     ap.add_argument("--force", action="store_true",
@@ -173,6 +258,15 @@ def main():
                     help="Also upload .pose binaries (default: only .mp4).")
     ap.add_argument("--samples-root", type=Path, default=SAMPLES_DIR,
                     help=f"Samples directory (default {SAMPLES_DIR}).")
+    ap.add_argument("--all-samples", action="store_true",
+                    help="Upload every sample folder under samples-root. By "
+                         "default the script restricts to sample ids referenced "
+                         "by a per-domain conversation_<domain>.json -- the only "
+                         "ones actually wired into a current demo.")
+    ap.add_argument("--prune", action="store_true",
+                    help="After (or instead of) uploads, delete R2 objects "
+                         "under demo-samples/ whose sample_id is NOT in the "
+                         "current keep-set. No-op with --all-samples.")
     args = ap.parse_args()
 
     load_env_from_signbridge()
@@ -186,8 +280,18 @@ def main():
         print(f"[fatal] samples dir not found at {args.samples_root}")
         sys.exit(3)
 
-    files = discover_files(args.samples_root, include_pose=args.include_pose)
-    if not files:
+    # Compute keep-set unless the user explicitly asked for everything.
+    keep_ids: set[str] | None = None
+    if not args.all_samples:
+        keep_ids = referenced_sample_ids()
+        if not keep_ids:
+            print(f"[fatal] no sample ids found in {DOMAIN_DEMOS_DIR}/conversation_*.json. "
+                  "Pass --all-samples to upload everything anyway.")
+            sys.exit(3)
+
+    files = discover_files(args.samples_root, include_pose=args.include_pose,
+                           keep_ids=keep_ids)
+    if not files and not args.prune:
         print(f"[fatal] no matching files under {args.samples_root}")
         sys.exit(3)
 
@@ -196,11 +300,17 @@ def main():
     print(f"R2 bucket     : {bucket}")
     print(f"R2 prefix     : {R2_KEY_PREFIX}/")
     print(f"Include .pose : {args.include_pose}")
-    print(f"Discovered    : {len(files)} files ({total_mb:.1f} MB)")
+    if keep_ids is not None:
+        print(f"Keep-set      : {len(keep_ids)} sample ids from conversation_*.json")
+        print(f"                {sorted(keep_ids)}")
+    else:
+        print("Keep-set      : (--all-samples) every folder under samples-root")
+    print(f"Discovered    : {len(files)} files ({total_mb:.1f} MB) for upload")
+    print(f"Prune extras  : {args.prune}")
     print(f"Dry-run       : {args.dry_run}")
     print()
 
-    if not args.dry_run:
+    if not args.dry_run or args.prune:
         s3 = make_s3_client()
         print(f"[probe] listing existing keys under '{R2_KEY_PREFIX}/' ...")
         existing_keys = list_existing_r2_keys(s3, bucket, R2_KEY_PREFIX + "/")
@@ -237,13 +347,29 @@ def main():
 
     elapsed = time.time() - t0
     print("\n" + "=" * 60)
-    print(f"Done in {elapsed:.1f}s")
+    print(f"Uploads done in {elapsed:.1f}s")
     print(f"  uploaded     : {stats['uploaded']}")
     print(f"  skipped (R2) : {stats['skipped_r2']}   (already in bucket)")
     print(f"  errors       : {stats['errors']}")
     if total_bytes:
         mb = total_bytes / 1024 / 1024
         print(f"  total uploaded: {mb:.1f} MB ({mb / max(elapsed, 0.001):.2f} MB/s)")
+
+    # Optional: delete R2 objects whose sample_id isn't in the keep-set.
+    # Only meaningful when keep_ids is set (i.e. not --all-samples).
+    if args.prune:
+        if keep_ids is None:
+            print("\n[prune] skipped: --all-samples means there's no keep-set to "
+                  "filter against.")
+        else:
+            print("\n" + "=" * 60)
+            print(f"Pruning extras under '{R2_KEY_PREFIX}/' "
+                  f"(keep {len(keep_ids)} sample ids)")
+            pstats = prune_extras(s3, bucket, keep_ids, dry_run=args.dry_run)
+            print(f"\n[prune] kept       : {pstats['kept']} keys")
+            print(f"[prune] to_delete  : {pstats['to_delete']} keys")
+            print(f"[prune] deleted    : {pstats['deleted']} keys")
+            print(f"[prune] errors     : {pstats['errors']}")
 
 
 if __name__ == "__main__":
