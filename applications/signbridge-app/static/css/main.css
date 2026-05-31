@@ -443,6 +443,11 @@ body {
     height: 100%;
     object-fit: contain;
     transform: scaleX(-1);
+    /* Paint the letterbox area dark so it reads as a camera "bezel"
+     * instead of glaring white. object-fit:contain leaves uncovered
+     * strips inside the video element; without an explicit background
+     * those strips show the camera-box's white --bg-card through. */
+    background: var(--camera-bg);
 }
 
 .camera-placeholder {
@@ -2775,9 +2780,50 @@ body {
     .tab-intro h2 { font-size: 1.15rem; }
     .tab-intro p { font-size: 0.82rem; }
 
-    .conversation-layout { flex-direction: column; height: calc(100vh - 84px); padding: 8px; gap: 8px; }
+    .conversation-layout {
+        flex-direction: column;
+        height: calc(100vh - 84px);
+        padding: 8px;
+        gap: 8px;
+        /* Explicit full-width + border-box so padding doesn't push content
+         * past the viewport and a child can't end up narrower than expected. */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    /* Force the column-stack children to actually fill the cross-axis. The
+     * align-items:stretch default *should* do this, but on some mobile
+     * browsers an inherited width/align-self can leave a phantom whitespace
+     * column on the right of the camera card. Explicit width:100% +
+     * align-self:stretch is the belt-and-suspenders fix. */
+    .camera-side, .camera-box, .camera-view {
+        width: 100%;
+        box-sizing: border-box;
+        align-self: stretch;
+    }
     .camera-side { flex: 1; min-height: 0; }
     .camera-view { min-height: 180px; }
+    /* Mobile-only: paint the camera card itself dark to match the camera
+     * area. On mobile the video letterbox / aspect mismatch was leaving
+     * the white card background visible inside the frame (object-fit:cover
+     * below doesn't always apply reliably to getUserMedia streams on iOS
+     * Safari). Dark card + dark video bg = no visible white inside the
+     * frame, regardless of which layer fails to cover. */
+    .camera-box { background: var(--camera-bg); }
+    /* On mobile portrait the camera stream is often portrait-oriented
+     * (e.g. 720x1280 from getUserMedia on a phone in portrait). With
+     * object-fit:contain the video letterboxes inside a wider container
+     * and the gaps show the camera-box white card background through --
+     * which reads as "camera shrunk to half with white on the side."
+     * Switch to cover so the video fills the box (slight edge crop is
+     * acceptable for signing; central handshapes still in frame), and
+     * force the video to actually span camera-view in case iOS Safari
+     * doesn't honor inset:0 + width/height:100% on a video element. */
+    .camera-view > video {
+        object-fit: cover;
+        top: 0; right: 0; bottom: 0; left: 0;
+        min-width: 100%;
+        min-height: 100%;
+    }
     .transcript-side { flex: none; min-width: unset; max-width: 100%; max-height: 200px; border-radius: 10px; }
     .transcript-side.collapsed { display: none !important; }
     .transcript-title { padding: 10px 14px; font-size: 0.82rem; }
