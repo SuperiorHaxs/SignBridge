@@ -5466,11 +5466,25 @@ async function _translateBatch() {
     _lastSentGlossCount = glosses.length;
     _captionIsEdited = false;
 
-    // CTQI estimate — same formula as updateRollingCaption / regenerate.
+    // CTQI v3: GA is the mean top-1 confidence across EVERY detected segment
+    // in the utterance -- not just the confident ones that made it into the
+    // LLM payload. That's what "gloss accuracy" should measure: how sure was
+    // the model across the whole signed sequence, including the segments it
+    // couldn't recognize. Without this, a dropped middle word (e.g. FIRE
+    // classified as FIGHT@30%) leaves GA = average of the surviving high-
+    // confidence words, so CTQI lands ~83 and the user thinks the caption
+    // is fine -- the missed sign is invisible to the score.
+    //
+    // Formula: CTQI = (GA/100) * (CF1/100) * (0.5 + 0.5*P/100) * 100,
+    // with CF1 = 1.0 (no ground truth in live mode) and P = LLM plausibility.
     let ctqi = null;
-    if (plausibility != null && glosses.length > 0) {
-        const avgConf = glosses.reduce((s, g) => s + (g.confidence || 0), 0) / glosses.length;
+    const allSegments = glosses.concat(unclearGlosses);
+    if (plausibility != null && allSegments.length > 0) {
+        const avgConf = allSegments.reduce((s, g) => s + (g.confidence || 0), 0) / allSegments.length;
         ctqi = (avgConf * 100) * (0.5 + 0.5 * plausibility / 100);
+        console.log(`[Batch] CTQI=${ctqi.toFixed(1)}  GA=${(avgConf*100).toFixed(1)} ` +
+                    `(${allSegments.length} segs: ${glosses.length} confident + ${unclearGlosses.length} unclear)  ` +
+                    `P=${plausibility}`);
     }
     // Force the Edit/Regenerate chips when any segment went unrecognized,
     // even if the LLM-built sentence has high CTQI. The CTQI only reflects
