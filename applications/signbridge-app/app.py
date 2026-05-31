@@ -22,7 +22,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 import re
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, Response
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, Response, redirect
 
 # ============================================================================
 # PATH CONFIGURATION
@@ -56,6 +56,13 @@ except ImportError:
 PREFER_LOCAL_SIGN_BANK = True
 R2_PUBLIC_BASE_URL = os.environ.get("R2_PUBLIC_BASE_URL", "").rstrip("/")
 
+# Same idea for the breakdown/demo sample videos under demo-data/samples/<id>/.
+# original_video.mp4 runs 14-28 MB and is rejected by HF Spaces' >10 MB
+# non-LFS limit, so on the deployed Space the local file is missing -- the
+# Flask sample routes fall back to the R2 URL (uploaded by
+# migrate_demo_samples_to_r2.py under the 'demo-samples/' prefix).
+PREFER_LOCAL_SAMPLES = True
+
 
 def _gloss_to_r2_url(gloss: str) -> str | None:
     """Mirror of the migration script's gloss_to_filename normalization."""
@@ -65,6 +72,20 @@ def _gloss_to_r2_url(gloss: str) -> str | None:
     s = re.sub(r"\s+", "_", s)
     s = re.sub(r"[^a-z0-9_\-]", "", s)
     return f"{R2_PUBLIC_BASE_URL}/{s}.mp4" if s else None
+
+
+def _sample_r2_url(sample_id: str, relpath: str) -> str | None:
+    """
+    Build the R2 URL for a file inside a demo sample. `relpath` is the
+    file's path relative to the sample dir (e.g. 'original_video.mp4'
+    or 'segments/segment_001.mp4'). Matches the key scheme used by
+    migrate_demo_samples_to_r2.py: demo-samples/<sample_id>/<relpath>.
+    """
+    if not R2_PUBLIC_BASE_URL or not sample_id or not relpath:
+        return None
+    # Normalize backslashes (Windows callers) and strip leading slashes.
+    relpath = relpath.replace("\\", "/").lstrip("/")
+    return f"{R2_PUBLIC_BASE_URL}/demo-samples/{sample_id}/{relpath}"
 
 # Add paths for imports
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
@@ -3125,12 +3146,20 @@ def serve_sign_bank(filename):
 
 @app.route("/samples/<sample_id>/original_video.mp4")
 def serve_sample_video(sample_id):
-    """Serve full-sentence original video from demo-data samples."""
+    """
+    Full-sentence original video from a demo sample. Prefer-local-then-R2,
+    same pattern as the sign bank: if the file exists on disk (local dev /
+    fully-synced deploy) serve it directly; otherwise redirect to its R2
+    URL (HF Spaces case -- big files don't sync without LFS).
+    """
     sample_dir = SAMPLES_DIR / sample_id
     video_path = sample_dir / "original_video.mp4"
-    if video_path.exists():
+    if PREFER_LOCAL_SAMPLES and video_path.exists():
         return send_from_directory(str(sample_dir), "original_video.mp4")
-    print(f"[Samples] Not found: {video_path}")
+    r2_url = _sample_r2_url(sample_id, "original_video.mp4")
+    if r2_url:
+        return redirect(r2_url, code=302)
+    print(f"[Samples] Not found locally and no R2 URL: {video_path}")
     return "Sample video not found", 404
 
 
@@ -3146,8 +3175,25 @@ def get_sample_metadata(sample_id):
 
 @app.route("/demo-data/samples/<path:filepath>")
 def serve_sample_file(filepath):
-    """Serve media files from demo-data samples directory."""
-    return send_from_directory(SAMPLES_DIR, filepath)
+    """
+    Generic media file under a demo sample (pose_video.mp4, segments/*.mp4,
+    capture.pose, segments/*.pose). Prefer-local-then-R2: serve the local
+    file if present, otherwise redirect to R2 for .mp4/.pose (which the
+    migration script uploads). Other extensions stay 404 if absent --
+    metadata.json and the like aren't on R2 and shouldn't redirect.
+    """
+    local_path = SAMPLES_DIR / filepath
+    if PREFER_LOCAL_SAMPLES and local_path.exists():
+        return send_from_directory(SAMPLES_DIR, filepath)
+    # Fallback to R2 only for media we actually migrate (.mp4 always;
+    # .pose only if --include-pose was passed to the migration).
+    norm = filepath.replace("\\", "/").lstrip("/")
+    if "/" in norm and norm.lower().endswith((".mp4", ".pose")):
+        sample_id, _, relpath = norm.partition("/")
+        r2_url = _sample_r2_url(sample_id, relpath)
+        if r2_url:
+            return redirect(r2_url, code=302)
+    return "Not found", 404
 
 
 # ============================================================================
