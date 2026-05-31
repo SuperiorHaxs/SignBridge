@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=64">
+    <link rel="stylesheet" href="/static/css/main.css?v=65">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -145,11 +145,26 @@
 
             <div class="tab-body">
 
-                <!-- Domain picker. Same id `uploadDomainSelect` so the existing
-                     loadDomainsToUI() populates it on page load. -->
+                <!-- Top-bar row: domain picker on the left, Library link on the right.
+                     Library opens a panel listing previously saved demos. -->
                 <div class="upload-form-row">
                     <label class="upload-form-label" for="uploadDomainSelect">Domain</label>
                     <select id="uploadDomainSelect" class="upload-form-select"></select>
+                    <button class="btn btn-secondary upload-library-btn" id="uploadLibraryBtn"
+                            title="Browse previously saved demos">&#x1F4DA; Library</button>
+                </div>
+
+                <!-- Library panel (hidden by default). When open, replaces the
+                     drop zone / progress / result area; populated by upload.js. -->
+                <div id="uploadLibraryPanel" class="upload-library-panel" hidden>
+                    <div class="upload-library-header">
+                        <h3 class="upload-library-title">Saved demos</h3>
+                        <button class="btn btn-secondary" id="uploadLibraryCloseBtn">&#x2715; Close</button>
+                    </div>
+                    <div id="uploadLibraryEmpty" class="upload-library-empty" hidden>
+                        No demos saved yet. Translate a video on this tab and click <b>&#x1F4BE; Save</b> to add one.
+                    </div>
+                    <div id="uploadLibraryList" class="upload-library-list"></div>
                 </div>
 
                 <!-- Honest helper text on signing pace and limits -->
@@ -199,6 +214,8 @@
                                 </div>
                             </div>
                             <div class="upload-actions">
+                                <button class="btn btn-secondary" id="uploadSaveBtn"
+                                        title="Save this demo to the Library so you can reload it later">&#x1F4BE; Save</button>
                                 <button class="btn btn-secondary" id="uploadCopyBtn">&#x1F4CB; Copy</button>
                                 <button class="btn btn-secondary" id="uploadDownloadBtn">&#x2B07; Download .txt</button>
                                 <button class="btn btn-primary" id="uploadAnotherBtn">Upload another</button>
@@ -664,6 +681,6 @@
 <!-- Upload tab (backlog item 10). Loaded after app.js so loadDomainsToUI
      has already populated #uploadDomainSelect by the time the user
      navigates to the tab and submits. Self-contained module. -->
-<script src="/static/js/upload.js?v=4"></script>
+<script src="/static/js/upload.js?v=5"></script>
 </body>
 </html>

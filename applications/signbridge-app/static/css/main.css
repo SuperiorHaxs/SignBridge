@@ -3514,11 +3514,112 @@ html, body { max-width: 100vw; overflow-x: hidden; }
     padding-top: 4px;
 }
 
+/* Library button on the top-bar row */
+.upload-library-btn {
+    margin-left: auto;
+    padding: 8px 14px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+/* Library panel -- shown in place of the drop zone / progress / result */
+.upload-library-panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 18px;
+}
+.upload-library-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.upload-library-title {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+}
+.upload-library-empty {
+    padding: 32px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.88rem;
+}
+.upload-library-loading {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.upload-library-error {
+    padding: 16px;
+    color: #c0392b;
+    font-size: 0.85rem;
+    background: rgba(231, 76, 60, 0.08);
+    border-radius: 8px;
+}
+.upload-library-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+/* Each saved demo is a clickable card */
+.upload-library-card {
+    text-align: left;
+    background: color-mix(in srgb, var(--accent) 4%, var(--bg-card));
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.15s, background 0.15s, transform 0.15s;
+}
+.upload-library-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border-light));
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+    transform: translateY(-1px);
+}
+.upload-library-card-title {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+}
+.upload-library-card-meta {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: ui-monospace, Consolas, monospace;
+}
+.upload-library-card-preview {
+    font-size: 0.82rem;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 @media (max-width: 768px) {
     .upload-result-grid {
         grid-template-columns: 1fr;
     }
     .upload-drop-zone { padding: 32px 16px; }
     .upload-paragraph-text { padding-right: 56px; }
+    .upload-library-list { grid-template-columns: 1fr; }
+    .upload-library-btn { margin-left: 0; width: 100%; }
+    .upload-form-row { flex-wrap: wrap; }
 }
 

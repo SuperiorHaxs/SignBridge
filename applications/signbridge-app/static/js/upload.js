@@ -86,11 +86,17 @@
         const anotherBtn  = $('uploadAnotherBtn');
         const regenBtn    = $('uploadRegenBtn');
         const editBtn     = $('uploadEditBtn');
+        const saveBtn     = $('uploadSaveBtn');
+        const libBtn      = $('uploadLibraryBtn');
+        const libClose    = $('uploadLibraryCloseBtn');
         if (copyBtn)     copyBtn.addEventListener('click', _copyParagraph);
         if (downloadBtn) downloadBtn.addEventListener('click', _downloadParagraph);
         if (anotherBtn)  anotherBtn.addEventListener('click', _reset);
         if (regenBtn)    regenBtn.addEventListener('click', _regenerateParagraph);
         if (editBtn)     editBtn.addEventListener('click', _enterParagraphEdit);
+        if (saveBtn)     saveBtn.addEventListener('click', _saveToLibrary);
+        if (libBtn)      libBtn.addEventListener('click', _openLibrary);
+        if (libClose)    libClose.addEventListener('click', _closeLibrary);
     }
 
     // ── File entry point ──────────────────────────────────────────
@@ -288,6 +294,8 @@
         _regenInFlight = false;
         $('uploadProgress').hidden = true;
         $('uploadResult').hidden   = true;
+        const lib = $('uploadLibraryPanel');
+        if (lib) lib.hidden = true;
         $('uploadDropZone').hidden = false;
         $('uploadFileInput').value = '';
         const vid = $('uploadVideoPreview');
@@ -499,6 +507,178 @@
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit((ta.value || '').trim()); }
             else if (e.key === 'Escape')                       { e.preventDefault(); cleanup(); }
         });
+    }
+
+    // ── Save to Library (POST /api/uploads/<id>/save) ─────────────
+    // Persists a metadata.json next to the source video on R2 so it shows
+    // up in the Library panel. Requires that the upload was persisted to
+    // R2 (PERSIST_UPLOADS server-side + R2 creds present) -- otherwise we
+    // don't have an upload_id to save under.
+    async function _saveToLibrary() {
+        if (!_lastResult) return;
+        if (!_lastResult.uploadId) {
+            _flashBtn($('uploadSaveBtn'), 'Save unavailable');
+            console.warn('[Upload] cannot save: no upload_id (PERSIST_UPLOADS off, or R2 upload failed).');
+            return;
+        }
+        const defaultTitle = `Upload ${new Date().toISOString().slice(0, 16).replace('T', ' ')}`;
+        // Prompt the user for an optional title -- they can accept the
+        // timestamp default by pressing Enter on empty.
+        const title = window.prompt('Title for this saved demo (blank for default):', defaultTitle);
+        if (title === null) return;   // user cancelled
+        const saveBtn = $('uploadSaveBtn');
+        if (saveBtn) saveBtn.disabled = true;
+        try {
+            const resp = await fetch(`/api/uploads/${_lastResult.uploadId}/save`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title:          (title || '').trim() || defaultTitle,
+                    paragraph_text: _lastResult.paragraphText,
+                    sentences:      _lastResult.sentences,
+                    glosses:        _lastGlosses || [],
+                    domain:         _lastDomain || '',
+                    ctqi:           _lastResult.ctqi,
+                    plausibility:   _lastResult.plausibility,
+                    segment_count:  _lastResult.segmentCount,
+                    unclear_count:  _lastResult.unclearCount,
+                    duration_sec:   _lastResult.durationSec,
+                    video_url:      _lastResult.r2VideoUrl,
+                    edited:         !!_lastResult.edited,
+                }),
+            });
+            const data = await resp.json();
+            if (data && data.success) {
+                _flashBtn(saveBtn, '✓ Saved');
+                console.log('[Upload] saved to library:', data.metadata && data.metadata.title);
+            } else {
+                _flashBtn(saveBtn, 'Save failed');
+                console.warn('[Upload] save failed:', data && data.error);
+            }
+        } catch (e) {
+            _flashBtn(saveBtn, 'Save failed');
+            console.warn('[Upload] save error:', e.message);
+        } finally {
+            if (saveBtn) saveBtn.disabled = false;
+        }
+    }
+
+    // ── Library panel (open / close / render / load) ──────────────
+    // The library replaces the drop zone / progress / result while open.
+    // Closing returns to whatever was visible before (typically the drop zone).
+    async function _openLibrary() {
+        const panel = $('uploadLibraryPanel');
+        if (!panel) return;
+        $('uploadDropZone').hidden = true;
+        $('uploadProgress').hidden = true;
+        $('uploadResult').hidden   = true;
+        panel.hidden = false;
+        const list  = $('uploadLibraryList');
+        const empty = $('uploadLibraryEmpty');
+        if (list)  list.innerHTML = '<div class="upload-library-loading"><span class="spinner"></span> Loading…</div>';
+        if (empty) empty.hidden = true;
+        try {
+            const resp = await fetch('/api/uploads');
+            const data = await resp.json();
+            const items = (data && data.items) || [];
+            _renderLibraryList(items);
+        } catch (e) {
+            if (list) list.innerHTML = `<div class="upload-library-error">⚠ Could not load library: ${e.message}</div>`;
+        }
+    }
+
+    function _closeLibrary() {
+        const panel = $('uploadLibraryPanel');
+        if (panel) panel.hidden = true;
+        // Return to the drop zone unless a result is already loaded.
+        if (_lastResult) {
+            $('uploadResult').hidden = false;
+        } else {
+            $('uploadDropZone').hidden = false;
+        }
+    }
+
+    function _renderLibraryList(items) {
+        const list  = $('uploadLibraryList');
+        const empty = $('uploadLibraryEmpty');
+        if (!list) return;
+        list.innerHTML = '';
+        if (!items.length) {
+            if (empty) empty.hidden = false;
+            return;
+        }
+        if (empty) empty.hidden = true;
+        items.forEach(item => list.appendChild(_buildLibraryCard(item)));
+    }
+
+    function _buildLibraryCard(item) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'upload-library-card';
+        card.addEventListener('click', () => _loadSavedUpload(item.upload_id));
+
+        const title = document.createElement('div');
+        title.className = 'upload-library-card-title';
+        title.textContent = item.title || `Upload ${item.upload_id}`;
+        card.appendChild(title);
+
+        const meta = document.createElement('div');
+        meta.className = 'upload-library-card-meta';
+        const created = item.created_at ? item.created_at.replace('T', ' ').slice(0, 16) : '';
+        const dur     = (typeof item.duration_sec === 'number') ? `${item.duration_sec.toFixed(0)}s` : '';
+        const ctqi    = (typeof item.ctqi === 'number') ? `CTQI ${item.ctqi.toFixed(0)}` : '';
+        const sigs    = (typeof item.segment_count === 'number') ? `${item.segment_count} signs` : '';
+        meta.textContent = [created, sigs, dur, ctqi, item.domain].filter(Boolean).join(' · ');
+        card.appendChild(meta);
+
+        const preview = document.createElement('div');
+        preview.className = 'upload-library-card-preview';
+        preview.textContent = item.paragraph_text || '';
+        card.appendChild(preview);
+
+        return card;
+    }
+
+    // Load a saved upload into the result panel (re-uses _renderResult).
+    // We don't have the File object, so the preview uses the R2 URL.
+    // Regenerate works because we saved the gloss list. Edit works
+    // locally; Save will overwrite the existing metadata.json.
+    async function _loadSavedUpload(uploadId) {
+        try {
+            const resp = await fetch(`/api/uploads/${uploadId}`);
+            const data = await resp.json();
+            if (!data || !data.success) {
+                console.warn('[Upload] load saved failed:', data && data.error);
+                return;
+            }
+            const md = data.metadata;
+            _lastGlosses = md.glosses || [];
+            _lastDomain  = md.domain || ($('uploadDomainSelect') ? $('uploadDomainSelect').value : '');
+            _lastResult = {
+                sentences:     md.sentences || [],
+                paragraphText: md.paragraph_text || (md.sentences || []).join(' '),
+                edited:        !!md.edited,
+                ctqi:          (typeof md.ctqi === 'number') ? md.ctqi : null,
+                plausibility:  md.plausibility,
+                unclearCount:  md.unclear_count || 0,
+                segmentCount:  md.segment_count || 0,
+                durationSec:   md.duration_sec || 0,
+                totalTime:     null,
+                r2VideoUrl:    md.video_url || null,
+                uploadId:      md.upload_id,
+                file:          null,
+                _fromLibrary:  true,
+            };
+            // Sync the domain dropdown so Regenerate uses the right domain.
+            const sel = $('uploadDomainSelect');
+            if (sel && md.domain) sel.value = md.domain;
+
+            _closeLibrary();
+            _renderResult(_lastResult);
+            console.log('[Upload] loaded saved demo:', md.title || md.upload_id);
+        } catch (e) {
+            console.warn('[Upload] load error:', e.message);
+        }
     }
 
     // ── Copy + download ───────────────────────────────────────────

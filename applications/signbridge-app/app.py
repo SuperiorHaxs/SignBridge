@@ -3271,6 +3271,144 @@ Output STRICT JSON ONLY, no markdown fences, no commentary:
 
 
 # ============================================================================
+# ROUTES — Upload Library (saved demos persisted on R2)
+# ============================================================================
+# When the user clicks Save on a translated upload, we write a small
+# metadata.json next to the already-persisted source video, at:
+#   uploads/<upload_id>/metadata.json
+# The Library list reads everything matching uploads/*/metadata.json and
+# returns it newest-first. Loading a single saved demo is a direct key fetch.
+
+def _save_upload_metadata(upload_id: str, metadata: dict) -> str | None:
+    """Write metadata.json for a saved upload to R2. Returns the public URL
+    on success, None on any failure (no R2 creds, network, etc.)."""
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if not client or not bucket or not upload_id:
+        return None
+    key = f"{UPLOADS_R2_PREFIX}/{upload_id}/metadata.json"
+    try:
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=json.dumps(metadata, indent=2).encode("utf-8"),
+            ContentType="application/json",
+            # No long cache -- the user may resave (rename, re-edit paragraph).
+            CacheControl="no-cache",
+        )
+    except Exception as e:
+        print(f"[Library] save failed for {upload_id}: {type(e).__name__}: {e}")
+        return None
+    if not R2_PUBLIC_BASE_URL:
+        return None
+    return f"{R2_PUBLIC_BASE_URL}/{key}"
+
+
+def _get_saved_upload(upload_id: str) -> dict | None:
+    """Fetch a single saved upload's metadata.json from R2."""
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if not client or not bucket or not upload_id:
+        return None
+    key = f"{UPLOADS_R2_PREFIX}/{upload_id}/metadata.json"
+    try:
+        body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
+        return json.loads(body)
+    except Exception as e:
+        # NoSuchKey is the common case (id not saved yet). Don't spam logs.
+        msg = str(e)
+        if "NoSuchKey" not in msg and "Not Found" not in msg:
+            print(f"[Library] get failed for {upload_id}: {type(e).__name__}: {e}")
+        return None
+
+
+def _list_saved_uploads() -> list[dict]:
+    """List every uploads/<id>/metadata.json on R2, parse, return newest-first."""
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if not client or not bucket:
+        return []
+    items: list[dict] = []
+    prefix = f"{UPLOADS_R2_PREFIX}/"
+    try:
+        paginator = client.get_paginator("list_objects_v2")
+        keys = []
+        for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+            for obj in page.get("Contents", []) or []:
+                k = obj["Key"]
+                if k.endswith("/metadata.json"):
+                    keys.append(k)
+        for k in keys:
+            try:
+                body = client.get_object(Bucket=bucket, Key=k)["Body"].read()
+                md = json.loads(body)
+                items.append(md)
+            except Exception as e:
+                print(f"[Library] could not parse {k}: {type(e).__name__}: {e}")
+    except Exception as e:
+        print(f"[Library] list failed: {type(e).__name__}: {e}")
+    items.sort(key=lambda m: m.get("created_at", ""), reverse=True)
+    return items
+
+
+@app.route("/api/uploads/<upload_id>/save", methods=["POST"])
+def api_save_upload(upload_id):
+    """
+    Save the translated upload to the Library. Writes a metadata.json next
+    to the source video on R2 so it can be listed + reloaded later. The
+    client passes the paragraph (possibly edited), the gloss list (so
+    Regenerate works after reload), CTQI, etc.
+    """
+    if not PERSIST_UPLOADS:
+        return jsonify({"success": False, "error": "Upload persistence disabled on this server"}), 400
+    if not R2_PUBLIC_BASE_URL or not os.environ.get("R2_BUCKET"):
+        return jsonify({"success": False, "error": "R2 not configured"}), 400
+    data = request.get_json() or {}
+    import datetime as _dt
+    now_iso = _dt.datetime.utcnow().isoformat() + "Z"
+    title = (data.get("title") or "").strip()
+    if not title:
+        title = f"Upload {now_iso[:16].replace('T', ' ')}"
+    metadata = {
+        "upload_id":      upload_id,
+        "title":          title,
+        "paragraph_text": (data.get("paragraph_text") or "").strip(),
+        "sentences":      data.get("sentences") or [],
+        "glosses":        data.get("glosses") or [],
+        "domain":         (data.get("domain") or "").strip(),
+        "ctqi":           data.get("ctqi"),
+        "plausibility":   data.get("plausibility"),
+        "segment_count":  data.get("segment_count"),
+        "unclear_count":  data.get("unclear_count"),
+        "duration_sec":   data.get("duration_sec"),
+        "video_url":      data.get("video_url"),     # the R2 URL of the source clip
+        "edited":         bool(data.get("edited")),
+        "created_at":     now_iso,
+    }
+    url = _save_upload_metadata(upload_id, metadata)
+    if not url:
+        return jsonify({"success": False, "error": "Save to R2 failed"}), 500
+    print(f"[Library] saved upload={upload_id} title={title!r}")
+    return jsonify({"success": True, "metadata_url": url, "metadata": metadata})
+
+
+@app.route("/api/uploads", methods=["GET"])
+def api_list_uploads():
+    """List all saved uploads, newest-first. Used by the Library panel."""
+    items = _list_saved_uploads()
+    return jsonify({"success": True, "items": items, "count": len(items)})
+
+
+@app.route("/api/uploads/<upload_id>", methods=["GET"])
+def api_get_upload(upload_id):
+    """Return a single saved upload's metadata."""
+    md = _get_saved_upload(upload_id)
+    if not md:
+        return jsonify({"success": False, "error": "Not found"}), 404
+    return jsonify({"success": True, "metadata": md})
+
+
+# ============================================================================
 # ROUTES — Caption Video (upload → pipeline → download)
 # ============================================================================
 
