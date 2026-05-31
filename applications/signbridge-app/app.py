@@ -22,7 +22,7 @@ import tempfile
 import subprocess
 from pathlib import Path
 import re
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, Response, redirect
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, Response, redirect, make_response
 
 # ============================================================================
 # PATH CONFIGURATION
@@ -1060,6 +1060,28 @@ def _disable_browser_cache_in_debug(response):
         response.headers['Expires'] = '0'
     return response
 
+
+# ── Auto cache-buster from file mtime ───────────────────────────────
+# `?v={{ static_v('css/main.css') }}` in templates resolves to the file's
+# mtime as an integer. Every edit to that file -> new URL -> guaranteed
+# fresh fetch, no manual ?v= bumping. Combined with no-cache on /index
+# (above) this ends the "page broken after every push" cycle: the browser
+# always re-fetches index.html, which always references the current
+# version of each static asset by URL.
+def _static_v(rel_path: str) -> int:
+    """Return the mtime (epoch seconds) of a file under static/, or 0
+    if it's missing. Used as a per-file cache-buster in index.html."""
+    try:
+        full = os.path.join(app.static_folder or '', rel_path)
+        return int(os.path.getmtime(full))
+    except (OSError, TypeError):
+        return 0
+
+
+@app.context_processor
+def _inject_static_v():
+    return {'static_v': _static_v}
+
 # pose-format CLI binaries (same venv as Python). Used by the optional
 # /api/practice-pose-video endpoint to render the user's clip into a
 # pose-only video for the sign bank toggle.
@@ -1250,7 +1272,17 @@ def _build_domain_section(domain):
 
 @app.route("/")
 def index():
-    return render_template("index.html", mode=APP_MODE, method=APP_METHOD)
+    response = make_response(render_template("index.html", mode=APP_MODE, method=APP_METHOD))
+    # Never cache index.html itself. The cache-buster URLs for css/js are
+    # computed from the static files' mtimes (see _static_v + the template
+    # context processor below), so the only way the browser learns about
+    # those updated URLs is by re-fetching this HTML. Caching index.html
+    # would serve stale ?v= references pointing to old assets -- the cause
+    # of the "page is broken after every push" symptom.
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    response.headers['Pragma']  = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 
 # ============================================================================

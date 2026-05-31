@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=65">
+    <link rel="stylesheet" href="/static/css/main.css?v={{ static_v('css/main.css') }}">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -671,16 +671,18 @@
 
 </div><!-- /#homeScreen -->
 
-<!-- MediaPipe (bundled locally) for real-time sign segmentation + pose overlay -->
+<!-- MediaPipe (bundled locally) for real-time sign segmentation + pose overlay.
+     Cache-buster ?v= comes from each file's mtime via static_v(), so any
+     edit auto-busts the browser cache -- no manual ?v=N bumping needed. -->
 <script src="/static/vendor/mediapipe-hands/hands.js"></script>
 <script src="/static/vendor/mediapipe-pose/pose.js"></script>
-<script src="/static/js/sign_segmenter.js?v=2"></script>
-<script src="/static/js/pose_overlay.js?v=1"></script>
-<script src="/static/js/streaming_live.js?v=14"></script>
-<script src="/static/js/app.js?v=141"></script>
+<script src="/static/js/sign_segmenter.js?v={{ static_v('js/sign_segmenter.js') }}"></script>
+<script src="/static/js/pose_overlay.js?v={{ static_v('js/pose_overlay.js') }}"></script>
+<script src="/static/js/streaming_live.js?v={{ static_v('js/streaming_live.js') }}"></script>
+<script src="/static/js/app.js?v={{ static_v('js/app.js') }}"></script>
 <!-- Upload tab (backlog item 10). Loaded after app.js so loadDomainsToUI
      has already populated #uploadDomainSelect by the time the user
      navigates to the tab and submits. Self-contained module. -->
-<script src="/static/js/upload.js?v=5"></script>
+<script src="/static/js/upload.js?v={{ static_v('js/upload.js') }}"></script>
 </body>
 </html>
