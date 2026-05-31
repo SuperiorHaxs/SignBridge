@@ -3549,17 +3549,27 @@ if __name__ == "__main__":
     key_file = cert_dir / "key.pem"
 
     # threaded=True so the dev server handles parallel requests properly --
-    # default Werkzeug serves one at a time, which (combined with debug
-    # auto-reload) causes the browser's ~10 parallel page-load requests to
-    # serialize and occasionally race with a file-save reload, surfacing as
-    # ERR_TOO_MANY_RETRIES on a static asset (usually main.css). threaded
-    # mode is safe for dev use; production should use a proper WSGI server
-    # (gunicorn / uvicorn) which the HF Docker container already does.
+    # default Werkzeug serves one at a time, which causes the browser's ~10
+    # parallel page-load requests to serialize.
+    #
+    # use_reloader=False because the debug auto-reloader restarts the server
+    # whenever a watched file is saved, which kills in-flight requests
+    # mid-response -- the browser then caches the aborted response and
+    # surfaces it as ERR_TOO_MANY_RETRIES on subsequent reloads (most often
+    # on main.css since it's the largest static asset). With use_reloader
+    # off you Ctrl+C and re-run to pick up Python changes, but the page
+    # actually loads reliably during a coding session. Template / static
+    # changes are picked up on the next request regardless.
+    #
+    # Production uses gunicorn / uvicorn in the HF Docker container, so
+    # this only affects local `python app.py --mode live` runs.
     if cert_file.exists() and key_file.exists():
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         context.load_cert_chain(str(cert_file), str(key_file))
         print("  Running with HTTPS (speech recognition enabled)\n")
-        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True, ssl_context=context)
+        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True,
+                use_reloader=False, ssl_context=context)
     else:
         print("  WARNING: No SSL certs found — speech recognition won't work on mobile\n")
-        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True)
+        app.run(host="0.0.0.0", port=args.port, debug=True, threaded=True,
+                use_reloader=False)
