@@ -318,6 +318,120 @@ Open / to decide:
 - [ ] Mid-session mode switch does NOT rebuild the pipeline -- **decided out of
       scope** (mode is chosen before Start Conversation, the normal flow).
 
+## 10. Upload tab: paragraph-length video -> narrative transcript
+
+New top-level Upload tab. User picks a domain, drops a pre-recorded
+video (a paragraph of signing -- a story, a monologue, a recorded
+conversation turn), submits, and gets back a multi-sentence narrative
+transcript with per-sentence breakdown.
+
+The pipeline is the batch translate pipeline we already shipped (item 9),
+with the LLM stage swapped out for a paragraph-mode call. Everything else
+re-uses what's already validated: motion-gate segmentation, per-sign
+inference, unrecognized-segment tracking, CTQI scoring, Edit/Regenerate.
+
+### Decisions (confirmed)
+
+- **Sentence segmentation**: LLM-decides. Send the full ordered gloss
+  list (with per-gloss start_sec/end_sec) to a new construct endpoint
+  and let the LLM segment into sentences. Simpler than pause-heuristic,
+  leverages the model's natural sentence-boundary capability.
+- **Max upload size / length**: 100 MB / ~5 min. Bigger pushes us into
+  chunked upload + persistent storage territory; 100 MB is enough for
+  the demo target without that complexity.
+- **Persistence**: configurable in code, on for now. Keep 2-3 demo
+  uploads on R2 under `uploads/<upload_id>/` so the result page can
+  replay the source video next to the transcript. A `PERSIST_UPLOADS`
+  constant flips it off later.
+- **Progress feedback**: spinner for MVP (single synchronous request
+  with a busy indicator). Polling endpoint added later only if 5-min
+  uploads start hitting proxy timeouts.
+
+### Input expectation (UI helper text)
+
+> "Best with deliberately-paced signing -- pause ~1 second between
+> signs. Faster / fluent signing may merge words together or drop
+> them; use the Edit chip on each sentence in the result page to fix
+> any misses."
+
+Reason: the motion gate's cooldown (~0.53s) + quiet window (0.8s)
+need ~1s of stillness between signs to cleanly separate them. AND the
+underlying WLASL model is trained on isolated signs, not co-articulated
+continuous signing -- even with perfect segmentation, fluent signing
+degrades recognition. Honest framing avoids over-promising.
+
+### Reuses (no new logic)
+
+- `/api/process-signing-clip` with `segmenter=motion_gate` -- decode,
+  motion-gate segment, per-sign inference -> returns gloss list with
+  start_sec/end_sec, plus the existing `confident` flag.
+- `segment_clip_offline` -- same motion gate over the uploaded clip.
+- `_active_glosses_for_model_dir` -- domain vocab for the LLM prompt.
+- `_renderCaptionHtml` -- per-sentence card on the result page (CTQI
+  badge, action chips, [unclear] hard-floor render).
+- Unrecognized-segment tracking + warning UX -- applied per sentence
+  AND aggregated ("3 signs not recognized across the paragraph").
+- CTQI v3 (GA includes unclear) -- per sentence.
+- R2 storage pattern from sign-bank + demo-samples -- new `uploads/`
+  prefix when persistence is on.
+
+### New work
+
+- [ ] New `/api/construct-paragraph` (or `mode='paragraph'` on
+      construct-sentence-live). Input: full gloss list with timestamps,
+      domain, conversation_history (optional). Output: `{ sentences:
+      [{ text, gloss_indices, plausibility }, ...] }`.
+- [ ] Upload tab HTML in `index.html` (new `<div id="phaseUpload">`,
+      matching existing phase pattern). Sidebar nav entry.
+- [ ] `static/js/upload.js` (NEW file) -- file pick/drop, submit,
+      spinner, result rendering. Self-contained.
+- [ ] Upload section in `main.css`.
+- [ ] Flask `MAX_CONTENT_LENGTH` bump to 100 MB (currently default-1MB-ish).
+- [ ] Configurable `PERSIST_UPLOADS = True` + R2 upload helper when on.
+- [ ] Result page: video preview, paragraph with per-sentence cards
+      (gloss list, CTQI, Edit/Regen), copy / download.
+- [ ] Helper text in UI matching the "1 second between signs" guidance.
+
+### Out of scope (for v1)
+
+- Chunked upload / resumable upload (not needed at 100 MB).
+- Background job queue with status polling (spinner is fine for MVP).
+- Editing the source video (trim, crop) before processing.
+- Multi-domain auto-detection within one paragraph.
+
+## 11. Pose-velocity-based segmenter for moderately-fast signing (v2)
+
+Follow-up to item 10. The current motion gate (pixel-diff + cooldown)
+needs ~1s of stillness between signs and silently fails on faster
+signing. Replace / augment with a velocity-based pass that runs full-clip
+pose extraction first, then puts sign boundaries at local minima of
+hand-keypoint velocity. That handles 0.3-0.5s gaps the pixel gate misses
+-- when hands briefly slow between signs without coming to full rest.
+
+Important caveat: this only fixes SEGMENTATION. The underlying WLASL
+model is trained on isolated signs, so even with perfect boundaries
+fluent co-articulated signing will still degrade recognition. True
+fluent-signing support is a CSLR (Continuous Sign Language Recognition)
+problem -- different model, different training data -- and out of scope.
+This item is about getting moderate-pace continuous signing working
+well enough; truly fluent signing remains a documented limitation.
+
+### Open / to design
+
+- [ ] Run full-clip MediaPipe pose extraction in one pass (cache the
+      pose array so per-segment extraction below can slice into it
+      instead of re-running pose on every segment -- net speed-up).
+- [ ] Compute per-frame hand-velocity time series (avg over both hands).
+- [ ] Place sign boundaries at velocity local-minima below a threshold
+      (signs are high-velocity phases; transitions / brief settles are
+      low-velocity).
+- [ ] Tune the threshold + smoothing window. Compare segment count to
+      pixel-gate baseline on a labeled paragraph clip.
+- [ ] A/B against the pixel motion gate on the same uploads; keep both
+      paths behind a `UPLOAD_SEGMENTER` config flag so we can revert.
+- [ ] Document new timing rule of thumb in the Upload helper text once
+      this lands (e.g. "0.3-0.5s between signs ok").
+
 ---
 
 ## Prioritization
@@ -328,8 +442,8 @@ tier and an ordering within tier.)
 | Priority | Items |
 |---|---|
 | P0 | **1a** (Kiosk mode), **1b** (Lanyard mode), 4 (Per-mode setup -- now scoped to just the small per-mode defaults defined in 1a/1b, no separate wizard) |
-| P1 | **9 (Per-mode translate: stream vs batch -- IN PROGRESS / experimental)**, 5 (Signer CTQI alert), 6 (Graceful failure) |
-| P2 | 7 (Unified Settings tab) |
+| P1 | **10 (Upload tab -- IN DESIGN, next up)**, **9 (Per-mode translate: stream vs batch -- IN PROGRESS / experimental)**, 5 (Signer CTQI alert), 6 (Graceful failure) |
+| P2 | 11 (Pose-velocity segmenter -- follow-up to 10), 7 (Unified Settings tab) |
 | P3 | 3 (Sign-bank video storage) |
 | P4 | 8 (Language translation on send) |
 | P5 | **1c** (Conf Call mode -- deferred), 2 (WiFi cam microphone) |
