@@ -1037,6 +1037,29 @@ sock = Sock(app)
 # Allow large binary frames (320x240 JPEG @ q=0.6 is well under 50KB; 256KB is plenty)
 app.config['SOCK_SERVER_OPTIONS'] = {'max_message_size': 262144}
 
+
+# ── No-cache headers in dev mode ────────────────────────────────────
+# Recurring local-dev breakage: edit a static file -> reload browser ->
+# page renders unstyled / blank with ERR_TOO_MANY_RETRIES on main.css.
+# Mechanism: Werkzeug's single-threaded dev server occasionally cuts
+# a static-file response short (file getting rewritten mid-stream, or
+# the auto-reloader bouncing); Chrome caches the aborted entry; future
+# loads see the bad cache and the only recovery is hard-reload or
+# changing the URL.
+#
+# Fix: send no-store / no-cache on every response when app.debug is
+# True. The browser literally cannot cache, so it cannot end up with
+# a torn cached response. Costs an extra round-trip per asset on each
+# reload, which is fine in dev. Production (HF Docker, debug=False)
+# is unaffected and keeps its cache headers.
+@app.after_request
+def _disable_browser_cache_in_debug(response):
+    if app.debug:
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
+
 # pose-format CLI binaries (same venv as Python). Used by the optional
 # /api/practice-pose-video endpoint to render the user's clip into a
 # pose-only video for the sign bank toggle.
