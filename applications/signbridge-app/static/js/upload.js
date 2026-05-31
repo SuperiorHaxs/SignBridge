@@ -32,6 +32,16 @@
     // mysterious 413.
     const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
+    // Run a second LLM pass automatically after the initial paragraph
+    // construction, passing the first attempt back as previous_attempt. The
+    // first pass tends to anchor on top-1 gloss readings; the second pass
+    // (regenerate mode) explores top-2 / top-3 alternates and a different
+    // sentence structure, which empirically produces a noticeably better
+    // narrative -- especially when one or two glosses misrecognized in a way
+    // top-1 doesn't fit. Cost: one extra LLM call per upload (~$0.001).
+    // Flip to false to revert to a single pass.
+    const UPLOAD_AUTO_REFINE = true;
+
     // ── State ─────────────────────────────────────────────────────
     let _selectedFile  = null;
     let _previewBlobUrl = null;       // URL.createObjectURL handle to revoke on reset
@@ -140,7 +150,7 @@
         }
 
         // ----- Step 2: build narrative paragraph (server / LLM) -----
-        _setStage(`Constructing narrative from ${confidentGlss.length} sign${confidentGlss.length === 1 ? '' : 's'}…`);
+        _setStage(`Constructing ${UPLOAD_AUTO_REFINE ? 'draft' : 'narrative'} from ${confidentGlss.length} sign${confidentGlss.length === 1 ? '' : 's'}…`);
         let paraResult;
         try {
             const resp = await fetch('/api/construct-paragraph', {
@@ -158,19 +168,56 @@
             return;
         }
 
-        const sentences = (paraResult && paraResult.sentences && paraResult.sentences.length)
+        let sentences = (paraResult && paraResult.sentences && paraResult.sentences.length)
             ? paraResult.sentences
             : (paraResult && paraResult.fallback) || [];
         if (!sentences.length) {
             _showError('LLM returned no sentences.');
             return;
         }
+        let plausibility = (paraResult && typeof paraResult.plausibility === 'number')
+            ? paraResult.plausibility : null;
+
+        // ----- Step 2b (optional, default on): auto-refine pass -----
+        // Pass the draft back to the same endpoint with previous_attempt set.
+        // The regenerate-mode prompt instructs the LLM to actively explore
+        // top-2/top-3 alternates and a different sentence structure. First
+        // pass tends to over-trust top-1; second pass typically lands a
+        // better narrative. On failure we keep the draft -- never worse
+        // than the single-pass behavior.
+        if (UPLOAD_AUTO_REFINE) {
+            _setStage('Refining the paragraph…');
+            const draftText = sentences.join(' ');
+            try {
+                const resp2 = await fetch('/api/construct-paragraph', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gloss_predictions:    confidentGlss,
+                        domain,
+                        previous_attempt:     draftText,
+                        conversation_history: [],
+                    }),
+                });
+                const refined = await resp2.json();
+                const refinedSentences = (refined && refined.sentences && refined.sentences.length)
+                    ? refined.sentences
+                    : null;
+                if (refinedSentences) {
+                    sentences = refinedSentences;
+                    if (typeof refined.plausibility === 'number') plausibility = refined.plausibility;
+                    console.log('[Upload] auto-refine ok:', sentences.length, 'sentence(s)');
+                } else {
+                    console.warn('[Upload] auto-refine returned no sentences; keeping draft.');
+                }
+            } catch (e) {
+                console.warn('[Upload] auto-refine failed; keeping draft. error=', e.message);
+            }
+        }
 
         // CTQI v3 — GA includes unrecognized segments so dropped signs penalize
         // the score; matches the formula used by the batch path.
         const allSegs = confidentGlss.concat(unclearGlosses);
-        const plausibility = (paraResult && typeof paraResult.plausibility === 'number')
-            ? paraResult.plausibility : null;
         let ctqi = null;
         if (plausibility != null && allSegs.length > 0) {
             const avgConf = allSegs.reduce((s, g) => s + (g.confidence || 0), 0) / allSegs.length;
