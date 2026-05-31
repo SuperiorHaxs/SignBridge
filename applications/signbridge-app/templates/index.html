@@ -8,7 +8,7 @@
     <title>SignBridge</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="stylesheet" href="/static/css/main.css?v=59">
+    <link rel="stylesheet" href="/static/css/main.css?v=60">
 </head>
 <body data-mode="{{ mode }}" data-method="{{ method }}">
 
@@ -140,52 +140,62 @@
         <div id="uploadScreen" style="display:none;">
             <div class="tab-intro">
                 <h2>Upload</h2>
-                <p>Upload an ASL signing video and get it back with English captions burned in. Select the domain that best matches the video content.</p>
+                <p>Upload a pre-recorded signing video — a story, a monologue, a recorded conversation turn — and get back a multi-sentence narrative transcript. Each sign is recognized individually, then an LLM stitches them into well-formed English sentences.</p>
             </div>
 
             <div class="tab-body">
-            <div style="margin-bottom:16px">
-                <label style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px">Domain</label>
-                <select id="uploadDomainSelect" onchange="uploadDomainChanged()" style="
-                    padding:10px 14px; border:1px solid var(--border-light); border-radius:10px;
-                    font-size:0.88rem; background:var(--bg-card); color:var(--text-primary);
-                    width:100%; outline:none;
-                "></select>
-            </div>
 
-            <div id="cvUploadZone" style="
-                border: 2px dashed var(--border-light); border-radius: 14px; padding: 52px 24px;
-                text-align: center; cursor: pointer; transition: border-color 0.2s; background: var(--bg-card);
-            "
-            onclick="document.getElementById('cvFileInput').click()"
-            ondragover="event.preventDefault(); this.style.borderColor='#6c63ff'"
-            ondragleave="this.style.borderColor=''"
-            ondrop="cvHandleDrop(event)">
-                <div style="font-size:2.5rem;margin-bottom:12px">&#x1F4F9;</div>
-                <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:6px">Drop your ASL video here</div>
-                <div style="font-size:0.78rem;color:var(--text-muted)">or click to browse &nbsp;&middot;&nbsp; MP4, MOV, WebM</div>
-                <input type="file" id="cvFileInput" accept="video/*" style="display:none" onchange="cvHandleFile(this.files[0])">
-            </div>
+                <!-- Domain picker. Same id `uploadDomainSelect` so the existing
+                     loadDomainsToUI() populates it on page load. -->
+                <div class="upload-form-row">
+                    <label class="upload-form-label" for="uploadDomainSelect">Domain</label>
+                    <select id="uploadDomainSelect" class="upload-form-select"></select>
+                </div>
 
-            <div id="cvProgress" style="display:none; background:var(--bg-card); border:1px solid var(--border-light); border-radius:12px; padding:20px; margin-top:14px;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                    <span id="cvFileName" style="font-size:0.85rem;color:var(--accent);font-weight:600"></span>
-                    <span id="cvProgressPct" style="font-size:0.75rem;color:var(--text-secondary)">0%</span>
+                <!-- Honest helper text on signing pace and limits -->
+                <div class="upload-helper-text">
+                    <b>Best with deliberately-paced signing</b> — pause ~1 second between signs.
+                    Faster / fluent signing may merge words or drop them; use the <b>✏️ Edit</b>
+                    chip on any sentence in the result to fix misses.
+                    Max <b>100 MB</b> / ~5 minutes.
                 </div>
-                <div style="height:6px;background:var(--bg-toggle);border-radius:3px;overflow:hidden;margin-bottom:10px">
-                    <div id="cvProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6c63ff,#4caf80);border-radius:3px;transition:width 0.4s"></div>
-                </div>
-                <div id="cvStatusMsg" style="font-size:0.8rem;color:var(--text-secondary);font-style:italic">Starting...</div>
-            </div>
 
-            <div id="cvResult" style="display:none; background:var(--bg-card); border:1px solid var(--success); border-radius:12px; padding:20px; margin-top:14px;">
-                <div style="font-size:0.65rem;color:var(--success);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-bottom:12px">&#x2714; Captioning Complete</div>
-                <video id="cvResultVideo" controls style="width:100%;border-radius:8px;background:#000;max-height:380px"></video>
-                <div style="display:flex;gap:10px;margin-top:14px">
-                    <button class="btn btn-primary" id="cvDownloadBtn" style="background:var(--success)">&#x2B07; Download Video</button>
-                    <button class="btn btn-secondary" onclick="cvReset()">Caption Another</button>
+                <!-- Drop zone (handlers wired in upload.js, not inline) -->
+                <div id="uploadDropZone" class="upload-drop-zone">
+                    <div class="upload-drop-icon">&#x1F4F9;</div>
+                    <div class="upload-drop-title">Drop your signing video here</div>
+                    <div class="upload-drop-hint">or click to browse &middot; MP4, MOV, WebM</div>
+                    <input type="file" id="uploadFileInput" accept="video/mp4,video/webm,video/quicktime,video/*" hidden>
                 </div>
-            </div>
+
+                <!-- Processing (spinner-only for MVP -- one synchronous request) -->
+                <div id="uploadProgress" class="upload-progress" hidden>
+                    <span class="spinner upload-progress-spinner"></span>
+                    <div class="upload-progress-body">
+                        <div class="upload-progress-stage" id="uploadStageLabel">Uploading…</div>
+                        <div class="upload-progress-file" id="uploadFileName"></div>
+                    </div>
+                </div>
+
+                <!-- Result: video preview + per-sentence cards. Rendered by upload.js -->
+                <div id="uploadResult" class="upload-result" hidden>
+                    <div class="upload-result-summary" id="uploadSummary"></div>
+
+                    <div class="upload-result-grid">
+                        <div class="upload-result-video-col">
+                            <video id="uploadVideoPreview" class="upload-video-preview" controls playsinline></video>
+                        </div>
+                        <div class="upload-result-transcript-col">
+                            <div class="upload-paragraph" id="uploadParagraph"></div>
+                            <div class="upload-actions">
+                                <button class="btn btn-secondary" id="uploadCopyBtn">&#x1F4CB; Copy</button>
+                                <button class="btn btn-secondary" id="uploadDownloadBtn">&#x2B07; Download .txt</button>
+                                <button class="btn btn-primary" id="uploadAnotherBtn">Upload another</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div><!-- /.tab-body -->
         </div>
 
@@ -639,6 +649,10 @@
 <script src="/static/js/sign_segmenter.js?v=2"></script>
 <script src="/static/js/pose_overlay.js?v=1"></script>
 <script src="/static/js/streaming_live.js?v=14"></script>
-<script src="/static/js/app.js?v=140"></script>
+<script src="/static/js/app.js?v=141"></script>
+<!-- Upload tab (backlog item 10). Loaded after app.js so loadDomainsToUI
+     has already populated #uploadDomainSelect by the time the user
+     navigates to the tab and submits. Self-contained module. -->
+<script src="/static/js/upload.js?v=1"></script>
 </body>
 </html>

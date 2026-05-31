@@ -3262,3 +3262,221 @@ html, body { max-width: 100vw; overflow-x: hidden; }
     margin-left: auto;
     text-align: right;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   Upload tab -- paragraph-length signing -> narrative transcript
+   (Backlog item 10; markup in #uploadScreen, behavior in upload.js)
+   ══════════════════════════════════════════════════════════════ */
+.upload-form-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.upload-form-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 70px;
+}
+.upload-form-select {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    font-size: 0.88rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    outline: none;
+}
+.upload-helper-text {
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border-light));
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+/* Drag-and-drop zone */
+.upload-drop-zone {
+    border: 2px dashed var(--border-light);
+    border-radius: 14px;
+    padding: 52px 24px;
+    text-align: center;
+    cursor: pointer;
+    background: var(--bg-card);
+    transition: border-color 0.2s, background 0.2s;
+}
+.upload-drop-zone:hover,
+.upload-drop-zone-active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 4%, var(--bg-card));
+}
+.upload-drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.upload-drop-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+.upload-drop-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* Inline error (shown above drop zone on bad file / failure) */
+.upload-error {
+    background: rgba(231, 76, 60, 0.08);
+    border: 1px solid rgba(231, 76, 60, 0.35);
+    color: #c0392b;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 12px;
+}
+
+/* Processing state (MVP spinner -- not a percentage bar) */
+.upload-progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+.upload-progress-spinner {
+    width: 22px;
+    height: 22px;
+    border-width: 3px;
+    flex-shrink: 0;
+}
+.upload-progress-body { flex: 1; min-width: 0; }
+.upload-progress-stage {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+.upload-progress-file {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: ui-monospace, Consolas, monospace;
+}
+
+/* Result -- summary bar + 2-column (video | transcript) layout */
+.upload-result {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    padding: 18px;
+}
+.upload-result-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+.upload-summary-stat b { color: var(--text-primary); }
+.upload-summary-warn {
+    color: #c0392b;
+    font-weight: 600;
+}
+.upload-result-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) 1.4fr;
+    gap: 18px;
+}
+.upload-result-video-col video.upload-video-preview {
+    width: 100%;
+    border-radius: 10px;
+    background: #000;
+    display: block;
+    max-height: 420px;
+}
+.upload-result-transcript-col {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.upload-paragraph {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Per-sentence cards */
+.upload-sentence-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: color-mix(in srgb, var(--accent) 4%, var(--bg-card));
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+}
+.upload-sentence-card.upload-sentence-edited {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border-light));
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-card));
+}
+.upload-sentence-text {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+    word-wrap: break-word;
+}
+.upload-sentence-edit {
+    flex: 1;
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 10px;
+    resize: vertical;
+    outline: none;
+}
+.upload-sentence-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+/* Reuse caption-action chip style but ensure clickability in this context
+ * (parent doesn't have pointer-events:none here, but explicit is safer). */
+.upload-sentence-actions .caption-action {
+    cursor: pointer;
+    pointer-events: auto;
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    font-size: 1em;
+}
+
+/* Action buttons row under the transcript */
+.upload-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .upload-result-grid {
+        grid-template-columns: 1fr;
+    }
+    .upload-paragraph { max-height: none; }
+    .upload-drop-zone { padding: 32px 16px; }
+}
+

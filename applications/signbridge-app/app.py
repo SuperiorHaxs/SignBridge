@@ -63,6 +63,13 @@ R2_PUBLIC_BASE_URL = os.environ.get("R2_PUBLIC_BASE_URL", "").rstrip("/")
 # migrate_demo_samples_to_r2.py under the 'demo-samples/' prefix).
 PREFER_LOCAL_SAMPLES = True
 
+# Upload tab (backlog item 10). When True, the input video from a user's
+# upload is also pushed to R2 under uploads/<upload_id>/source.<ext> so we
+# can keep 2-3 demos as reference clips. Flip off later if we don't want
+# random user uploads piling up in the bucket.
+PERSIST_UPLOADS = True
+UPLOADS_R2_PREFIX = "uploads"
+
 
 def _gloss_to_r2_url(gloss: str) -> str | None:
     """Mirror of the migration script's gloss_to_filename normalization."""
@@ -86,6 +93,74 @@ def _sample_r2_url(sample_id: str, relpath: str) -> str | None:
     # Normalize backslashes (Windows callers) and strip leading slashes.
     relpath = relpath.replace("\\", "/").lstrip("/")
     return f"{R2_PUBLIC_BASE_URL}/demo-samples/{sample_id}/{relpath}"
+
+
+# ── Upload-to-R2 client (lazy) ──────────────────────────────────────
+# Mirrors the boto3 S3 setup used by the migration scripts. We don't
+# initialize at import time -- only when an actual upload happens AND
+# PERSIST_UPLOADS is on -- so missing R2 creds don't break the rest of
+# the app for users who don't care about persistence.
+_R2_CLIENT = None
+_R2_CLIENT_ATTEMPTED = False
+
+
+def _r2_client():
+    """Return a boto3 S3 client for R2, or None if creds/dependency missing."""
+    global _R2_CLIENT, _R2_CLIENT_ATTEMPTED
+    if _R2_CLIENT is not None or _R2_CLIENT_ATTEMPTED:
+        return _R2_CLIENT
+    _R2_CLIENT_ATTEMPTED = True
+    key_id     = os.environ.get("R2_ACCESS_KEY_ID")
+    secret_key = os.environ.get("R2_SECRET_ACCESS_KEY")
+    endpoint   = os.environ.get("R2_ENDPOINT")
+    if not (key_id and secret_key and endpoint):
+        print("[R2] Upload disabled: R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_ENDPOINT not set")
+        return None
+    try:
+        import boto3
+        from botocore.config import Config as _BotoConfig
+    except ImportError:
+        print("[R2] Upload disabled: boto3 not installed")
+        return None
+    _R2_CLIENT = boto3.client(
+        "s3",
+        endpoint_url=endpoint,
+        aws_access_key_id=key_id,
+        aws_secret_access_key=secret_key,
+        config=_BotoConfig(
+            signature_version="s3v4",
+            region_name="auto",
+            retries={"max_attempts": 3, "mode": "standard"},
+        ),
+    )
+    return _R2_CLIENT
+
+
+def _r2_upload_bytes(key: str, data: bytes, content_type: str = "application/octet-stream") -> str | None:
+    """
+    Upload raw bytes to R2 at the given key. Returns the public URL on
+    success, or None on any failure (creds missing, bucket missing,
+    network error). Caller treats failure as "no persistence" rather
+    than as a hard error.
+    """
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if not client or not bucket:
+        return None
+    try:
+        client.put_object(
+            Bucket=bucket,
+            Key=key,
+            Body=data,
+            ContentType=content_type,
+            CacheControl="public, max-age=31536000, immutable",
+        )
+    except Exception as e:
+        print(f"[R2] put_object failed for key={key}: {type(e).__name__}: {e}")
+        return None
+    if not R2_PUBLIC_BASE_URL:
+        return None
+    return f"{R2_PUBLIC_BASE_URL}/{key.lstrip('/')}"
 
 # Add paths for imports
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
@@ -951,6 +1026,10 @@ def _predict_from_poses(pose_array, domain="doctor_visit"):
 # ============================================================================
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+# Upload tab accepts paragraph-length videos. 100 MB / ~5 min cap matches
+# the backlog item 10 decision. Without this Flask's default rejects multi-MB
+# multipart uploads. Per-mode batch recordings are also covered.
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 # WebSocket support for streaming-live mode (step 1: transport only)
 from flask_sock import Sock
@@ -2588,10 +2667,41 @@ def process_signing_clip():
     video_file = request.files["video"]
     video_bytes = video_file.read()
     domain = request.form.get("domain", "doctor_visit")
+    # Upload-tab persistence: when 'persist=true' AND PERSIST_UPLOADS is on,
+    # push the raw input video to R2 so we can keep demo uploads around for
+    # the result page to replay. Returned as r2_video_url in the response.
+    want_persist = request.form.get("persist", "").lower() in ("1", "true", "yes")
     if len(video_bytes) == 0:
         return jsonify({"success": False, "error": "Empty video"}), 400
 
-    print(f"[Clip] domain={domain} size={len(video_bytes)//1024}KB")
+    print(f"[Clip] domain={domain} size={len(video_bytes)//1024}KB persist={want_persist}")
+
+    # Persist upstream of the heavy pipeline so a downstream failure still
+    # leaves us with the source clip on R2 for debugging.
+    r2_video_url = None
+    upload_id = None
+    if want_persist and PERSIST_UPLOADS:
+        import uuid as _uuid
+        upload_id = _uuid.uuid4().hex[:12]
+        # Preserve the uploaded filename's extension; default to .webm.
+        orig_name = (video_file.filename or "").lower()
+        ext = ".webm"
+        for cand in (".mp4", ".webm", ".mov", ".m4v"):
+            if orig_name.endswith(cand):
+                ext = cand
+                break
+        content_type = {
+            ".mp4": "video/mp4",
+            ".webm": "video/webm",
+            ".mov": "video/quicktime",
+            ".m4v": "video/x-m4v",
+        }.get(ext, "application/octet-stream")
+        r2_key = f"{UPLOADS_R2_PREFIX}/{upload_id}/source{ext}"
+        r2_video_url = _r2_upload_bytes(r2_key, video_bytes, content_type=content_type)
+        if r2_video_url:
+            print(f"[Clip] persisted upload to R2: {r2_key}")
+        else:
+            print(f"[Clip] persist requested but R2 upload failed (continuing without it)")
 
     if not MEDIAPIPE_AVAILABLE:
         return jsonify({"success": False, "error": "Fast path requires MediaPipe"}), 500
@@ -2714,6 +2824,9 @@ def process_signing_clip():
             # whole-clip segmenter otherwise treats as extra signs.
             "total_frames": len(all_frames),
             "duration_sec": round(len(all_frames) / fps, 2) if fps else None,
+            # Upload-tab persistence (None when not requested or upload failed).
+            "upload_id": upload_id,
+            "r2_video_url": r2_video_url,
         })
 
     except Exception as e:
@@ -2929,6 +3042,161 @@ English sentence:"""
         traceback.print_exc()
         glosses = [p.get("gloss", "") for p in data.get("gloss_predictions", [])]
         return jsonify({"success": False, "error": str(e), "fallback": " ".join(glosses)}), 500
+
+
+@app.route("/api/construct-paragraph", methods=["POST"])
+def construct_paragraph():
+    """
+    Multi-sentence narrative construction for the Upload tab (backlog #10).
+
+    Given a long ordered list of gloss predictions (with start_sec/end_sec
+    timestamps), ask the LLM to produce a coherent English paragraph and
+    segment it into individual sentences. LLM-decides boundaries -- the
+    timestamps are passed as hints so the model can use natural pauses
+    when deciding sentence breaks.
+
+    Response (success):
+        { success: true,
+          sentences: [ "First sentence.", "Second sentence.", ... ],
+          plausibility: <0-100 geometric mean of grammar/semantic/naturalness,
+                        or null if the LLM didn't return the schema> }
+
+    On error, falls back to a single sentence joining the gloss tokens so
+    the client always has something to render.
+    """
+    data = {}
+    try:
+        data = request.get_json() or {}
+        gloss_predictions = data.get("gloss_predictions", [])
+        domain = (data.get("domain") or "emergency").strip()
+        conversation_history = data.get("conversation_history", [])
+
+        if not gloss_predictions:
+            return jsonify({"success": False, "error": "No gloss predictions"}), 400
+
+        # Gloss timeline with top-k alternates and timestamps -- gives the LLM
+        # the same information sentence-mode has, plus the temporal cues it
+        # needs to decide where sentence boundaries should land.
+        lines = []
+        for i, pred in enumerate(gloss_predictions):
+            t = pred.get("start_sec")
+            t_str = f" @ {t:.1f}s" if isinstance(t, (int, float)) else ""
+            top_k = pred.get("top_k") or []
+            if top_k:
+                opts = " | ".join(
+                    f"{(opt.get('gloss') or '?').strip()} ({(opt.get('confidence') or 0) * 100:.0f}%)"
+                    for opt in top_k[:3]
+                )
+            else:
+                conf = (pred.get("confidence") or 0) * 100
+                opts = f"{pred.get('gloss', '?')} ({conf:.0f}%)"
+            lines.append(f"  Pos {i + 1}{t_str}: {opts}")
+        gloss_timeline = "\n".join(lines)
+
+        context_lines = []
+        for msg in conversation_history:
+            speaker = (msg.get("speaker") or "unknown").capitalize()
+            text = msg.get("text", "")
+            context_lines.append(f"{speaker}: {text}")
+        context_str = "\n".join(context_lines) if context_lines else "(none)"
+
+        domain_section = _build_domain_section(domain)
+
+        prompt = f"""You are translating a long ordered sequence of ASL glosses into a natural English NARRATIVE PARAGRAPH for a hearing audience.
+
+{domain_section}
+
+Conversation context (prior turns, if any):
+{context_str}
+
+The signer produced these glosses in order, with per-gloss start timestamps and the model's top-k alternates (the "(NN%)" is the model's confidence, not yours):
+
+{gloss_timeline}
+
+YOUR TASK
+- Construct a coherent English paragraph made of MULTIPLE WELL-FORMED SENTENCES.
+- You decide where to break into sentences -- larger gaps between consecutive timestamps are natural sentence boundaries; semantic shifts (topic change) also are.
+- You MAY swap to a top-2 / top-3 alternate when it forms a more coherent sentence -- the top-1 is not authoritative.
+- Do NOT invent content the glosses don't support. If a span is too noisy to translate, render a brief fragment for it rather than fabricating detail.
+- Aim for 1 to 6 sentences. Each sentence must end with terminal punctuation (. ! ?).
+
+OUTPUT FORMAT
+Output STRICT JSON ONLY, no markdown fences, no commentary:
+
+{{
+  "sentences": [
+    "First sentence.",
+    "Second sentence.",
+    "Third sentence."
+  ],
+  "plausibility": {{
+    "grammatical": <0-100, how grammatical is the paragraph overall>,
+    "semantic":    <0-100, how plausible is the meaning given the gloss evidence>,
+    "naturalness": <0-100, how natural / fluent does it read>
+  }}
+}}
+"""
+
+        llm = create_llm_provider(
+            provider="googleaistudio",
+            model_name="gemini-2.0-flash",
+            max_tokens=800,
+            timeout=45,
+        )
+        response = llm.generate(prompt)
+        generated = (response or "").strip()
+        # Strip markdown fences if the model added them despite instructions.
+        if generated.startswith('```'):
+            stripped = [l for l in generated.split('\n') if not l.strip().startswith('```')]
+            generated = '\n'.join(stripped).strip()
+
+        sentences = []
+        plausibility_overall = None
+        try:
+            fixed = generated.replace('{{', '{').replace('}}', '}')
+            parsed = json.loads(fixed)
+            sents = parsed.get("sentences")
+            if isinstance(sents, list):
+                sentences = [str(s).strip() for s in sents if str(s).strip()]
+            pl = parsed.get("plausibility")
+            if isinstance(pl, dict):
+                g = float(pl.get("grammatical", 0) or 0)
+                s_ = float(pl.get("semantic", 0) or 0)
+                n = float(pl.get("naturalness", 0) or 0)
+                if g > 0 and s_ > 0 and n > 0:
+                    plausibility_overall = (g * s_ * n) ** (1.0 / 3.0)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            # Plain text -> split on sentence-end punctuation
+            import re as _re
+            text = generated.strip().strip('"').strip()
+            sentences = [s.strip() for s in _re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+
+        if not sentences:
+            # Worst-case fallback: one sentence joining gloss tokens.
+            joined = " ".join(p.get("gloss", "") for p in gloss_predictions).strip()
+            sentences = [joined + "."] if joined else ["(no glosses)"]
+
+        print(f"[Paragraph LLM] {len(gloss_predictions)} glosses -> {len(sentences)} sentence(s). "
+              f"P={plausibility_overall if plausibility_overall is None else round(plausibility_overall, 1)}")
+        for s in sentences:
+            print(f"  - {s}")
+
+        return jsonify({
+            "success": True,
+            "sentences": sentences,
+            "plausibility": plausibility_overall,
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"[Paragraph LLM] ERROR: {e}")
+        traceback.print_exc()
+        glosses = [p.get("gloss", "") for p in (data.get("gloss_predictions") or [])]
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "fallback": [" ".join(glosses) + "."] if glosses else [],
+        }), 500
 
 
 # ============================================================================
