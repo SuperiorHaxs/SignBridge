@@ -5374,6 +5374,10 @@ async function _translateBatch() {
     // Step 1: whole-clip segmentation + gloss inference.
     const tClip = performance.now();
     let glosses = [];
+    let unclearGlosses = [];   // segments whose model top-1 was below the
+                                // confidence gate (status=unclear) -- excluded
+                                // from the LLM, but their count is surfaced
+                                // so the user sees a sign was missed.
     let durationSec = 0;
     try {
         const fd = new FormData();
@@ -5385,10 +5389,19 @@ async function _translateBatch() {
         const resp = await fetch('/api/process-signing-clip', { method: 'POST', body: fd });
         const result = await resp.json();
         if (result.success && Array.isArray(result.glosses)) {
+            // Hang onto BOTH the confident glosses (what the LLM sees) and the
+            // unclear ones (segments where the model's top-1 was below the
+            // confidence gate). Unclear are not sent to the LLM -- their
+            // gloss is essentially noise -- but their COUNT and POSITIONS
+            // matter, because silently dropping a middle word like FIRE
+            // produces a confident-sounding but dangerously incomplete
+            // sentence ("Attention, there's a bathroom." with no FIRE).
+            unclearGlosses = result.glosses.filter(g => g.confident === false);
             glosses = result.glosses.filter(g => g.confident !== false);
             durationSec = result.duration_sec || 0;
             console.log(`[Batch] clip processed: ${result.segment_count} segments, ` +
-                        `${glosses.length} confident glosses, dur=${durationSec}s, ` +
+                        `${glosses.length} confident + ${unclearGlosses.length} unclear, ` +
+                        `dur=${durationSec}s, ` +
                         `server total_time=${result.total_time}s, ` +
                         `client=${((performance.now() - tClip) / 1000).toFixed(1)}s`);
         } else {
@@ -5400,6 +5413,12 @@ async function _translateBatch() {
 
     // Clean up tail-motion artifacts (trailing trim + consecutive dedup).
     glosses = _cleanBatchGlosses(glosses, durationSec);
+    // Trailing trim may also remove an unclear that's just hand-drop motion
+    // at the end; don't count those as missing words.
+    if (BATCH_TRAILING_TRIM_SEC > 0 && durationSec > 0) {
+        const cutoff = durationSec - BATCH_TRAILING_TRIM_SEC;
+        unclearGlosses = unclearGlosses.filter(g => g.start_sec == null || g.start_sec < cutoff);
+    }
 
     if (glosses.length === 0) {
         _armSigningGate('batch-no-signs');   // re-arm first (it sets its own status)
@@ -5458,7 +5477,28 @@ async function _translateBatch() {
         btn.style.background = '#4caf80';
         btn.onclick = () => sendNowAndPause();
     }
-    statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
+
+    // Graceful failure: if the segmenter detected signs that the model
+    // couldn't recognize, surface that loudly. Otherwise a middle word
+    // like FIRE gets silently dropped and the user reads a confident
+    // sentence ("Attention, there's a bathroom.") that's missing a
+    // critical word -- worst possible failure mode in emergency domain.
+    if (unclearGlosses.length > 0) {
+        const n = unclearGlosses.length;
+        const where = unclearGlosses.map(g => g.gloss ? `[${g.gloss} ${Math.round((g.confidence||0)*100)}%]` : '[?]').join(' ');
+        console.warn(`[Batch] ${n} unrecognized sign(s) NOT in sentence: ${where}`);
+        statusBar.innerHTML =
+            `<span class="processing" style="color:#ff6666;font-weight:600">` +
+            `⚠ ${n} sign${n===1?'':'s'} not recognized — sentence is incomplete. ` +
+            `Use ✏️ Edit to add the missing word, or click <b>Start Signing</b> on the camera card to re-sign.` +
+            `</span>`;
+        // Reuse the low-CTQI pulsing red border on the caption banner so
+        // the warning is impossible to miss visually.
+        const el = _liveCaptionEl();
+        if (el) el.classList.add('low-ctqi');
+    } else {
+        statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
+    }
 }
 
 // Initialize the sign engine (called once when first needed). Variable name
