@@ -4840,7 +4840,7 @@ function _escapeHtml(s) {
 // Render caption HTML: escaped sentence + CTQI badge + (when CTQI is low or
 // missing and not currently editing) the regenerate + edit action chips.
 // Caches the result so cancel-edit can restore.
-function _renderCaptionHtml(sentence, ctqi) {
+function _renderCaptionHtml(sentence, ctqi, forceActions) {
     // Hard floor: below this CTQI the model is essentially guessing.
     // Hide the constructed sentence and show "[unclear]" so we don't
     // present a confidently-wrong caption. User can still hit Edit to
@@ -4858,9 +4858,12 @@ function _renderCaptionHtml(sentence, ctqi) {
     } else {
         scoreHtml = `<span class="ctqi-missing">(CTQI = ?)</span>`;
     }
-    // Action chips when CTQI is low or missing, but not while editing.
+    // Action chips when CTQI is low / missing OR when the caller forces
+    // them (e.g. unrecognized segments -- the sentence's CTQI is high
+    // because the words that DID make it through are confident, but the
+    // user still needs Edit to add the missing word).
     let actionsHtml = '';
-    const showActions = !_captionIsEdited && (ctqi == null || ctqi < CTQI_LOW_THRESHOLD);
+    const showActions = !_captionIsEdited && (forceActions || ctqi == null || ctqi < CTQI_LOW_THRESHOLD);
     if (showActions) {
         const regenLeft = REGENERATE_LIMIT - _regenerateAttempts;
         if (regenLeft > 0) {
@@ -4875,17 +4878,18 @@ function _renderCaptionHtml(sentence, ctqi) {
     return `${escaped}${scoreHtml}${actionsHtml}`;
 }
 
-function _renderAndShowCaption(sentence, ctqi) {
-    const html = _renderCaptionHtml(sentence, ctqi);
+function _renderAndShowCaption(sentence, ctqi, forceActions) {
+    const html = _renderCaptionHtml(sentence, ctqi, forceActions);
     _lastRenderedCaptionHtml = html;
     _lastCtqi = ctqi;
     _setLiveCaption(html, { updating: false, html: true });
-    // Low-CTQI alert: pulsing red border on the banner. Skip when the
-    // user has manually edited the caption -- their edit is the ground
-    // truth, no need to nag.
+    // Pulsing red border on the banner when something is wrong: either
+    // the CTQI is low (LLM probably misinterpreted) OR the caller forced
+    // it (unrecognized segments -- sentence is incomplete). Skip when
+    // the user has manually edited -- their edit is the ground truth.
     const el = _liveCaptionEl();
     const isLow = !_captionIsEdited && ctqi != null && ctqi < CTQI_LOW_THRESHOLD;
-    if (el) el.classList.toggle('low-ctqi', isLow);
+    if (el) el.classList.toggle('low-ctqi', isLow || !!forceActions);
     // Edge-triggered chime: only on a high->low (or missing->low)
     // transition. Updates the "previous" flag whether we chime or not.
     if (isLow && _prevCtqiWasHigh) {
@@ -5468,7 +5472,13 @@ async function _translateBatch() {
         const avgConf = glosses.reduce((s, g) => s + (g.confidence || 0), 0) / glosses.length;
         ctqi = (avgConf * 100) * (0.5 + 0.5 * plausibility / 100);
     }
-    _renderAndShowCaption(sentence, ctqi);
+    // Force the Edit/Regenerate chips when any segment went unrecognized,
+    // even if the LLM-built sentence has high CTQI. The CTQI only reflects
+    // the words that DID make it through -- it can't know about the
+    // dropped word, so we'd lose the affordance to add it back without
+    // this override.
+    const hasUnclear = unclearGlosses.length > 0;
+    _renderAndShowCaption(sentence, ctqi, hasUnclear);
 
     // Button → Send Message (Regenerate / Edit live on the caption chips).
     if (btn) {
@@ -5478,12 +5488,10 @@ async function _translateBatch() {
         btn.onclick = () => sendNowAndPause();
     }
 
-    // Graceful failure: if the segmenter detected signs that the model
-    // couldn't recognize, surface that loudly. Otherwise a middle word
-    // like FIRE gets silently dropped and the user reads a confident
-    // sentence ("Attention, there's a bathroom.") that's missing a
-    // critical word -- worst possible failure mode in emergency domain.
-    if (unclearGlosses.length > 0) {
+    // Graceful failure: surface unrecognized segments loudly so a critical
+    // dropped word (e.g. FIRE in the middle of ATTENTION / FIRE / BATHROOM)
+    // can't slip through as a confident-sounding but incomplete sentence.
+    if (hasUnclear) {
         const n = unclearGlosses.length;
         const where = unclearGlosses.map(g => g.gloss ? `[${g.gloss} ${Math.round((g.confidence||0)*100)}%]` : '[?]').join(' ');
         console.warn(`[Batch] ${n} unrecognized sign(s) NOT in sentence: ${where}`);
@@ -5492,10 +5500,6 @@ async function _translateBatch() {
             `⚠ ${n} sign${n===1?'':'s'} not recognized — sentence is incomplete. ` +
             `Use ✏️ Edit to add the missing word, or click <b>Start Signing</b> on the camera card to re-sign.` +
             `</span>`;
-        // Reuse the low-CTQI pulsing red border on the caption banner so
-        // the warning is impossible to miss visually.
-        const el = _liveCaptionEl();
-        if (el) el.classList.add('low-ctqi');
     } else {
         statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
     }
