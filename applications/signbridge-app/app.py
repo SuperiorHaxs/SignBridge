@@ -162,6 +162,108 @@ def _r2_upload_bytes(key: str, data: bytes, content_type: str = "application/oct
         return None
     return f"{R2_PUBLIC_BASE_URL}/{key.lstrip('/')}"
 
+
+_BROWSER_VIDEO_CODECS = ("h264", "vp8", "vp9", "av1")
+
+
+def _probe_video_codec(ffmpeg: str, src_path: str) -> str | None:
+    """Extract the video codec name from `ffmpeg -i <src>` stderr. ffmpeg
+    prints a 'Video: <codec> ...' line for every video stream; we grab
+    the first one. Returns None when ffmpeg can't open the file or no
+    video stream is present."""
+    import subprocess as _sp, re as _re
+    try:
+        r = _sp.run(
+            [ffmpeg, "-hide_banner", "-i", src_path],
+            capture_output=True, text=True, timeout=15,
+        )
+    except Exception:
+        return None
+    # ffmpeg always writes stream info to stderr, even on success.
+    m = _re.search(r"Video:\s*([a-zA-Z0-9_]+)", r.stderr or "")
+    if not m:
+        return None
+    return m.group(1).lower()
+
+
+def _faststart_remux(video_bytes: bytes, src_ext: str) -> bytes | None:
+    """Normalize an MP4-family upload into a browser-friendly MP4 and
+    return the new bytes. Two-stage:
+
+      1. Probe codec. If it's a codec every browser can decode (H.264,
+         VP8/9, AV1), we just rewrite the container with the MOOV atom
+         at the start (`-movflags +faststart`, `-c copy`) -- a few-second
+         no-reencode pass. Fixes the common "duration shows 0:00 until
+         the whole file downloads" symptom from MOOV-at-end MP4s.
+
+      2. Otherwise (e.g. MPEG-4 Part 2 'mp4v' from old screen recorders,
+         HEVC without OS support, etc.) we full re-encode to H.264 with
+         `libx264 -preset veryfast`. ~10-20s for a 20MB clip. Without
+         this, Chrome/Edge silently render a blank video element -- the
+         file is decodable by ffmpeg but the browser has no decoder.
+
+    Returns the new bytes on success; None on any failure (caller falls
+    back to uploading the original bytes -- the recognition pipeline
+    runs server-side via ffmpeg and works regardless of browser codec
+    support, so persistence still has value)."""
+    ffmpeg = _find_ffmpeg()
+    if not ffmpeg:
+        return None
+    import tempfile as _tf, subprocess as _sp
+    from pathlib import Path as _PP
+    tmp = _PP(_tf.mkdtemp(prefix="signbridge_remux_"))
+    try:
+        src = tmp / f"in{src_ext}"
+        dst = tmp / "out.mp4"
+        src.write_bytes(video_bytes)
+
+        codec = _probe_video_codec(ffmpeg, str(src))
+        if codec in _BROWSER_VIDEO_CODECS:
+            cmd = [
+                ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+                "-i", str(src),
+                "-c", "copy",                  # no re-encode
+                "-movflags", "+faststart",     # MOOV atom at file start
+                "-map_metadata", "-1",         # drop creation timestamps
+                str(dst),
+            ]
+            mode = "remux"
+        else:
+            # Full re-encode -- last-resort path for codecs the browser
+            # can't decode. -preset veryfast keeps wall-clock reasonable;
+            # -crf 23 is the standard quality default. Audio is dropped
+            # (-an) -- this is a transcript app, audio plays no role and
+            # encoding it would only add time + bytes.
+            cmd = [
+                ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+                "-i", str(src),
+                "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+                "-pix_fmt", "yuv420p",
+                "-movflags", "+faststart",
+                "-map_metadata", "-1",
+                "-an",
+                str(dst),
+            ]
+            mode = f"reencode (input codec was {codec!r})"
+
+        r = _sp.run(cmd, capture_output=True, text=True, timeout=180)
+        if r.returncode != 0:
+            err = (r.stderr or "")[-400:]
+            print(f"[Remux] ffmpeg {mode} failed (rc={r.returncode}): {err}")
+            return None
+        if not dst.exists() or dst.stat().st_size == 0:
+            return None
+        print(f"[Remux] {mode} ok: {len(video_bytes)//1024}KB "
+              f"-> {dst.stat().st_size//1024}KB")
+        return dst.read_bytes()
+    except Exception as e:
+        print(f"[Remux] {type(e).__name__}: {e}")
+        return None
+    finally:
+        import shutil as _sh
+        _sh.rmtree(tmp, ignore_errors=True)
+
+
 # Add paths for imports
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR))
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "llm_interface"))
@@ -1118,6 +1220,11 @@ INFERENCE_API_URL = os.environ.get("INFERENCE_API_URL", "http://localhost:3006")
 
 # LLM prompt template for live mode
 LLM_PROMPT_PATH = PROJECT_UTILITIES_DIR / "llm_interface" / "prompts" / "llm_prompt_topk_self_critique.txt"
+# LLM prompt template for Upload-tab paragraph construction (backlog #10).
+# Different semantics: deduplicates consecutive identical glosses, treats
+# frequency as theme not literal repetition, biases toward SHORT 1-4
+# sentence output. See the file for the full rule set.
+LLM_PARAGRAPH_PROMPT_PATH = PROJECT_UTILITIES_DIR / "llm_interface" / "prompts" / "llm_prompt_paragraph.txt"
 
 # Configurable API base URL (for when API is separated)
 API_BASE_URL = os.environ.get("SIGNBRIDGE_API_URL", None)
@@ -1162,6 +1269,15 @@ def _load_llm_prompt():
     """Load the closed-captions LLM prompt template."""
     if LLM_PROMPT_PATH.exists():
         return LLM_PROMPT_PATH.read_text(encoding='utf-8')
+    return None
+
+
+def _load_paragraph_prompt():
+    """Load the Upload-tab paragraph LLM prompt template. None if missing
+    (caller falls back to a minimal inline prompt so the route still
+    works even if the file was deleted from disk)."""
+    if LLM_PARAGRAPH_PROMPT_PATH.exists():
+        return LLM_PARAGRAPH_PROMPT_PATH.read_text(encoding='utf-8')
     return None
 
 
@@ -2752,14 +2868,36 @@ def process_signing_clip():
             if orig_name.endswith(cand):
                 ext = cand
                 break
-        content_type = {
+
+        # Web-friendly remux: for MP4/MOV/M4V inputs, run a fast no-reencode
+        # pass with `-movflags +faststart` so the MOOV atom lands at the
+        # start of the file. Without this, browsers loading the persisted
+        # video from R2 can't show duration or thumbnail until the entire
+        # file is downloaded -- a 21MB upload reads as "0 sec / no thumb"
+        # in the Library card. WebM doesn't have a MOOV atom (Matroska's
+        # SeekHead is structurally similar but Matroska-specific), so we
+        # skip the remux for that container and upload bytes as-is. Always
+        # uploads as .mp4 when the remux succeeds.
+        upload_bytes = video_bytes
+        upload_ext = ext
+        upload_ct = {
             ".mp4": "video/mp4",
             ".webm": "video/webm",
             ".mov": "video/quicktime",
             ".m4v": "video/x-m4v",
         }.get(ext, "application/octet-stream")
-        r2_key = f"{UPLOADS_R2_PREFIX}/{upload_id}/source{ext}"
-        r2_video_url = _r2_upload_bytes(r2_key, video_bytes, content_type=content_type)
+        if ext in (".mp4", ".mov", ".m4v"):
+            # Probes the codec; remuxes-with-faststart for H.264/VP*/AV1,
+            # re-encodes to H.264 for legacy codecs like MPEG-4 Part 2.
+            # Logs its own outcome under [Remux].
+            remuxed = _faststart_remux(video_bytes, ext)
+            if remuxed is not None:
+                upload_bytes = remuxed
+                upload_ext = ".mp4"
+                upload_ct = "video/mp4"
+
+        r2_key = f"{UPLOADS_R2_PREFIX}/{upload_id}/source{upload_ext}"
+        r2_video_url = _r2_upload_bytes(r2_key, upload_bytes, content_type=upload_ct)
         if r2_video_url:
             print(f"[Clip] persisted upload to R2: {r2_key}")
         else:
@@ -3210,39 +3348,33 @@ def construct_paragraph():
         else:
             regenerate_section = ""
 
-        prompt = f"""You are translating a long ordered sequence of ASL glosses into a natural English NARRATIVE PARAGRAPH for a hearing audience.
+        # Prefer the templated paragraph prompt on disk (deduplicates
+        # repetition, treats frequency as theme, biases short output).
+        # Fall back to a minimal inline prompt only if the file is gone.
+        paragraph_template = _load_paragraph_prompt()
+        if paragraph_template:
+            context_section = f"Conversation context:\n{context_str}"
+            prompt = paragraph_template.replace("{domain_section}", domain_section)
+            prompt = prompt.replace("{context_section}", context_section)
+            prompt = prompt.replace("{regenerate_hint_section}", regenerate_section)
+            prompt = prompt.replace("{gloss_timeline}", gloss_timeline)
+        else:
+            prompt = f"""You are translating a long ordered sequence of ASL glosses into a SHORT, natural English paragraph (1-4 sentences). Collapse consecutive identical glosses (segmentation artifacts), treat repeated content words across the clip as confirmation of theme (NOT literal repetition), and skip noisy/unclear segments rather than forcing them in.
 
 {domain_section}
 
-Conversation context (prior turns, if any):
+Conversation context:
 {context_str}
 
 {regenerate_section}
-The signer produced these glosses in order, with per-gloss start timestamps and the model's top-k alternates (the "(NN%)" is the model's confidence, not yours):
-
+Gloss timeline (Pos N @ Ts: top-1 | top-2 | top-3):
 {gloss_timeline}
 
-YOUR TASK
-- Construct a coherent English paragraph made of MULTIPLE WELL-FORMED SENTENCES.
-- You decide where to break into sentences -- larger gaps between consecutive timestamps are natural sentence boundaries; semantic shifts (topic change) also are.
-- You MAY swap to a top-2 / top-3 alternate when it forms a more coherent sentence -- the top-1 is not authoritative.
-- Do NOT invent content the glosses don't support. If a span is too noisy to translate, render a brief fragment for it rather than fabricating detail.
-- Aim for 1 to 6 sentences. Each sentence must end with terminal punctuation (. ! ?).
-
-OUTPUT FORMAT
-Output STRICT JSON ONLY, no markdown fences, no commentary:
+Output STRICT JSON ONLY, no markdown fences:
 
 {{
-  "sentences": [
-    "First sentence.",
-    "Second sentence.",
-    "Third sentence."
-  ],
-  "plausibility": {{
-    "grammatical": <0-100, how grammatical is the paragraph overall>,
-    "semantic":    <0-100, how plausible is the meaning given the gloss evidence>,
-    "naturalness": <0-100, how natural / fluent does it read>
-  }}
+  "sentences": ["First sentence.", "Second sentence."],
+  "plausibility": {{"grammatical": <0-100>, "semantic": <0-100>, "naturalness": <0-100>}}
 }}
 """
 
@@ -3398,6 +3530,14 @@ def translate_text():
 #   uploads/<upload_id>/metadata.json
 # The Library list reads everything matching uploads/*/metadata.json and
 # returns it newest-first. Loading a single saved demo is a direct key fetch.
+#
+# HF Spaces deployment: the Space runs without R2 credentials (only
+# R2_PUBLIC_BASE_URL is set, per the least-privilege decision). It can't
+# LIST the bucket, so `_list_saved_uploads` would return [] on HF. To
+# keep the Library working there, every local Save also writes a public
+# `uploads/manifest.json` containing all metadata entries; on HF (no
+# client), the list path fetches that manifest via the public R2 URL.
+UPLOADS_MANIFEST_KEY = f"{UPLOADS_R2_PREFIX}/manifest.json"
 
 def _save_upload_metadata(upload_id: str, metadata: dict) -> str | None:
     """Write metadata.json for a saved upload to R2. Returns the public URL
@@ -3425,25 +3565,52 @@ def _save_upload_metadata(upload_id: str, metadata: dict) -> str | None:
 
 
 def _get_saved_upload(upload_id: str) -> dict | None:
-    """Fetch a single saved upload's metadata.json from R2."""
-    client = _r2_client()
-    bucket = os.environ.get("R2_BUCKET")
-    if not client or not bucket or not upload_id:
+    """Fetch a single saved upload's metadata.json. Tries the R2 client
+    first (local app); falls back to a public-URL GET when no client is
+    available (HF Space with R2_PUBLIC_BASE_URL only)."""
+    if not upload_id:
         return None
     key = f"{UPLOADS_R2_PREFIX}/{upload_id}/metadata.json"
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if client and bucket:
+        try:
+            body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
+            return json.loads(body)
+        except Exception as e:
+            msg = str(e)
+            if "NoSuchKey" not in msg and "Not Found" not in msg:
+                print(f"[Library] get failed for {upload_id}: {type(e).__name__}: {e}")
+            return None
+    if not R2_PUBLIC_BASE_URL:
+        return None
+    import urllib.request
+    url = f"{R2_PUBLIC_BASE_URL}/{key}"
     try:
-        body = client.get_object(Bucket=bucket, Key=key)["Body"].read()
-        return json.loads(body)
+        req = urllib.request.Request(url, headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/126.0.0.0 Safari/537.36"
+            ),
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status != 200:
+                return None
+            return json.loads(resp.read())
     except Exception as e:
-        # NoSuchKey is the common case (id not saved yet). Don't spam logs.
-        msg = str(e)
-        if "NoSuchKey" not in msg and "Not Found" not in msg:
-            print(f"[Library] get failed for {upload_id}: {type(e).__name__}: {e}")
+        # 404 is expected when the user opens an unknown id; quiet path.
+        if "404" not in str(e):
+            print(f"[Library] public get failed for {upload_id}: {type(e).__name__}: {e}")
         return None
 
 
-def _list_saved_uploads() -> list[dict]:
-    """List every uploads/<id>/metadata.json on R2, parse, return newest-first."""
+def _list_saved_uploads_via_r2() -> list[dict]:
+    """List every uploads/<id>/metadata.json by paginating the bucket.
+    Requires R2 credentials -- used on the local app and any deploy
+    that has the access key. Returns [] when the client isn't available
+    (HF Space without credentials hits the public-manifest fallback
+    in `_list_saved_uploads` instead)."""
     client = _r2_client()
     bucket = os.environ.get("R2_BUCKET")
     if not client or not bucket:
@@ -3469,6 +3636,88 @@ def _list_saved_uploads() -> list[dict]:
         print(f"[Library] list failed: {type(e).__name__}: {e}")
     items.sort(key=lambda m: m.get("created_at", ""), reverse=True)
     return items
+
+
+def _list_saved_uploads_via_public_manifest() -> list[dict]:
+    """Fetch the public uploads/manifest.json via the R2 public base URL.
+    No credentials needed -- used by the HF Space, which has only
+    R2_PUBLIC_BASE_URL configured. Returns [] if the manifest is
+    missing, unreachable, or unparseable (the Library UI then shows the
+    standard empty state)."""
+    if not R2_PUBLIC_BASE_URL:
+        return []
+    import urllib.request
+    url = f"{R2_PUBLIC_BASE_URL}/{UPLOADS_MANIFEST_KEY}"
+    try:
+        # Cloudflare's public R2 endpoint blocks the default
+        # "Python-urllib/3.x" UA with a 403; a browser-like UA gets
+        # through. Same workaround as project-utilities/test_data/build_paragraph_video.py.
+        req = urllib.request.Request(url, headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/126.0.0.0 Safari/537.36"
+            ),
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            if resp.status != 200:
+                return []
+            body = resp.read()
+        data = json.loads(body)
+        items = data.get("items") if isinstance(data, dict) else None
+        if not isinstance(items, list):
+            return []
+        items.sort(key=lambda m: m.get("created_at", ""), reverse=True)
+        return items
+    except Exception as e:
+        print(f"[Library] public manifest fetch failed: {type(e).__name__}: {e}")
+        return []
+
+
+def _list_saved_uploads() -> list[dict]:
+    """List saved uploads, newest-first. Tries credentialed LIST first
+    (local app, anywhere with R2 keys); falls back to fetching the
+    public manifest.json (HF Space and any deploy without keys)."""
+    items = _list_saved_uploads_via_r2()
+    if items:
+        return items
+    return _list_saved_uploads_via_public_manifest()
+
+
+def _rebuild_and_save_manifest() -> str | None:
+    """Re-list every uploads/<id>/metadata.json from R2 and write the
+    aggregated manifest to uploads/manifest.json. Called after every
+    Save (so the public manifest stays in sync) and from the rebuild
+    endpoint (so existing saved demos predating this code path can be
+    backfilled in one shot). Returns the public manifest URL on success,
+    None on any failure."""
+    client = _r2_client()
+    bucket = os.environ.get("R2_BUCKET")
+    if not client or not bucket:
+        return None
+    items = _list_saved_uploads_via_r2()
+    payload = {
+        # Wrapped in a dict so future fields (counts, generated_at,
+        # schema version) can be added without breaking the contract.
+        "items": items,
+        "count": len(items),
+    }
+    try:
+        client.put_object(
+            Bucket=bucket,
+            Key=UPLOADS_MANIFEST_KEY,
+            Body=json.dumps(payload, indent=2).encode("utf-8"),
+            ContentType="application/json",
+            # No long cache -- HF needs to see the new Save immediately.
+            CacheControl="no-cache",
+        )
+    except Exception as e:
+        print(f"[Library] manifest write failed: {type(e).__name__}: {e}")
+        return None
+    if not R2_PUBLIC_BASE_URL:
+        return None
+    print(f"[Library] manifest written: {len(items)} item(s)")
+    return f"{R2_PUBLIC_BASE_URL}/{UPLOADS_MANIFEST_KEY}"
 
 
 @app.route("/api/uploads/<upload_id>/save", methods=["POST"])
@@ -3508,8 +3757,19 @@ def api_save_upload(upload_id):
     url = _save_upload_metadata(upload_id, metadata)
     if not url:
         return jsonify({"success": False, "error": "Save to R2 failed"}), 500
-    print(f"[Library] saved upload={upload_id} title={title!r}")
-    return jsonify({"success": True, "metadata_url": url, "metadata": metadata})
+    # Refresh the public manifest so the HF Space (and any other deploy
+    # without R2 credentials) sees the new entry on the next Library
+    # open. Failure here is non-fatal -- the individual metadata.json
+    # was saved successfully and a future Save will retry the manifest.
+    manifest_url = _rebuild_and_save_manifest()
+    print(f"[Library] saved upload={upload_id} title={title!r} "
+          f"manifest_url={manifest_url}")
+    return jsonify({
+        "success": True,
+        "metadata_url": url,
+        "manifest_url": manifest_url,
+        "metadata": metadata,
+    })
 
 
 @app.route("/api/uploads", methods=["GET"])
@@ -3526,6 +3786,36 @@ def api_get_upload(upload_id):
     if not md:
         return jsonify({"success": False, "error": "Not found"}), 404
     return jsonify({"success": True, "metadata": md})
+
+
+@app.route("/api/uploads/rebuild-manifest", methods=["POST"])
+def api_rebuild_manifest():
+    """One-shot endpoint to (re)build uploads/manifest.json on R2 from
+    the existing uploads/<id>/metadata.json files. Useful after adding
+    the manifest mechanism so existing saved demos -- which predate the
+    auto-write-on-Save path -- become visible on deployments without
+    R2 credentials (notably the HF Space).
+
+    Requires R2 credentials, so it only runs on the local app. The HF
+    Space will return 400 here, which is fine -- the local Save flow
+    already keeps the manifest current. Call this manually after the
+    first deploy of the manifest feature, then forget about it."""
+    if not PERSIST_UPLOADS:
+        return jsonify({"success": False, "error": "Upload persistence disabled on this server"}), 400
+    if not _r2_client() or not os.environ.get("R2_BUCKET"):
+        return jsonify({
+            "success": False,
+            "error": "R2 credentials not configured -- run this on the local app, not HF.",
+        }), 400
+    manifest_url = _rebuild_and_save_manifest()
+    if not manifest_url:
+        return jsonify({"success": False, "error": "Manifest rebuild failed"}), 500
+    items = _list_saved_uploads_via_r2()
+    return jsonify({
+        "success": True,
+        "manifest_url": manifest_url,
+        "count": len(items),
+    })
 
 
 # ============================================================================

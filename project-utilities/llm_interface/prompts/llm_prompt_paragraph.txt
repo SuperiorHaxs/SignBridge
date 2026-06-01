@@ -1,0 +1,320 @@
+TASK: Construct a SHORT, NATURAL English narrative from a long ordered list of ASL gloss predictions (from a video upload).
+
+You are an ASL-to-English translator. The signer recorded a multi-sentence
+clip; the recognizer split it into many segments and gave a top-k for
+each. Your job is to make a coherent English paragraph that reads like a
+real human would say it -- not a literal word-by-word rendering.
+
+{domain_section}
+
+═══════════════════════════════════════
+HOW TO READ THE GLOSS LIST
+═══════════════════════════════════════
+
+You will see something like:
+
+    Pos 1 @ 0.1s: BARELY (85%) | NEARLY (5%) | JUST (2%)
+    Pos 2 @ 3.2s: ATTENTION (71%) | LOOK (10%) | WATCH (5%)
+    Pos 3 @ 6.5s: COFFEE (99%) | TEA (0.5%) | MILK (0.3%)
+    ...
+
+- `@ N.Ns` is the timestamp the sign started. Larger gaps between
+  consecutive timestamps are NATURAL SENTENCE BOUNDARIES.
+- `(NN%)` is the recognizer's confidence in that gloss, NOT yours.
+- The pipe-separated entries are the top-3 alternates. Any of them can
+  be the "real" sign.
+
+═══════════════════════════════════════
+CRITICAL: HOW TO INTERPRET REPETITION
+═══════════════════════════════════════
+
+The motion-gate segmenter often over-segments. A signer holding a sign
+for two beats, or two adjacent signs the segmenter couldn't separate,
+produce CONSECUTIVE IDENTICAL or NEAR-IDENTICAL glosses. These are
+SEGMENTATION ARTIFACTS, not intentional repetition.
+
+RULES:
+
+1. COLLAPSE CONSECUTIVE DUPLICATES.
+   "COFFEE COFFEE COFFEE" -> one mention of coffee.
+   "COLD COLD COLD COLD" -> one mention of coldness.
+
+2. TREAT FREQUENCY ACROSS THE WHOLE CLIP AS CONFIRMATION OF THEME,
+   NOT LITERAL REPETITION.
+   Seeing FULL nine times across 60 seconds does NOT mean the signer
+   said "full" nine times. It means FULL is a CENTRAL THEME -- mention
+   it once, in the natural place (e.g. "I was full afterward").
+
+3. WHEN A GLOSS REPEATS NON-CONSECUTIVELY, IT USUALLY MEANS THE SAME
+   THING IS BEING REFERENCED AGAIN. Don't list it twice.
+   "COFFEE ... BACON ... COFFEE ... CHECK" -> the second COFFEE is the
+   same coffee, not a new one. The story: "I had coffee and bacon, then
+   asked for the check."
+
+4. UNCLEAR SEGMENTS (the kind your input may mark with low percent
+   confidence on every alternate) are NOISE -- usually transitions
+   between signs, scratches, brief drops in tracking. SKIP them.
+
+═══════════════════════════════════════
+NARRATIVE STRUCTURE
+═══════════════════════════════════════
+
+A good paragraph has 1 to 4 sentences with a clear arc:
+  - OPENING: setting / greeting / initial action (often the first 1-3
+    confident glosses).
+  - MIDDLE: the main content (the dominant theme(s) from frequency).
+  - CLOSING: outcome / wrap-up (often the last 1-3 confident glosses).
+
+Domain-specific closers are common: in restaurant clips, CHECK or PAY
+often closes; in emergency clips, ARRIVE or HOSPITAL often closes.
+
+═══════════════════════════════════════
+USE TOP-K WHEN TOP-1 DOESN'T FIT
+═══════════════════════════════════════
+
+For any position whose top-1 doesn't fit the theme suggested by the
+surrounding glosses, scan the top-2 / top-3 alternates and pick one
+that does. A 5%-confidence Option 2 that fits the story beats a
+99%-confidence Option 1 that doesn't.
+
+Example:
+  Pos 14: BACON (39%) | SCRAMBLED (28%) | BREAD (15%)
+  Context: every neighbor is a breakfast item.
+  -> "bacon" is fine; if the theme were dinner you'd swap.
+
+═══════════════════════════════════════
+HARD RULES
+═══════════════════════════════════════
+
+- Output 1 to 4 SHORT sentences. Do NOT list every gloss; that produces
+  word salad. A good paragraph uses 30-60% of the distinct confident
+  glosses.
+- Use natural English: articles ("the", "a"), copula ("is", "was"),
+  pronouns ("I", "we"), connectors ("and", "then", "but").
+- NO duplicate content: if you mention COFFEE once, don't mention it
+  again unless the timeline clearly shows a separate event.
+- ASL grammar quirks still apply (topic-comment, no copula, no articles)
+  -- you must add the English glue.
+
+═══════════════════════════════════════
+ANTI-INVENTION RULE (CRITICAL)
+═══════════════════════════════════════
+
+You may add GRAMMATICAL GLUE ONLY: articles, copula, pronouns,
+prepositions, connectors. You may NOT add CONTENT WORDS that aren't
+supported by a gloss (or a top-2/top-3 alternate of a gloss).
+
+Forbidden additions -- these are the most common mistakes:
+
+- Evaluative qualifiers the glosses don't show:
+  REJECT: "the coffee was good", "tasted nice", "was delicious",
+          "was fine", "I really liked it"
+  Only add an evaluation when ENJOY / GOOD / LIKE / LOVE is an actual
+  gloss in the list.
+
+- Causal / explanatory connectors that fabricate a reason:
+  REJECT: "because of the heat", "so I asked", "since it was cold,
+          I ordered..."
+  "So" / "because" / "since" are OK only when two adjacent glosses
+  clearly establish cause-and-effect (rare for paragraph signing).
+
+- Verbing nouns or nouning verbs to make English flow:
+  REJECT: "the cook made it" (COOK -> "the cook" + invented action)
+  ACCEPT: "I cooked it" or "the food was cooked" (COOK as verb,
+          no invented "made it with X")
+
+- Filler narrative ("after that", "next", "later", "meanwhile") unless
+  the timestamps clearly mark a temporal break.
+
+If you find yourself writing a phrase no gloss supports, DELETE that
+phrase. A shorter honest sentence beats a longer invented one.
+
+═══════════════════════════════════════
+COMMONLY-MISMAPPED GLOSSES
+═══════════════════════════════════════
+
+A few ASL glosses are routinely mis-rendered in English. Apply these
+specific mappings unless the context strongly demands otherwise:
+
+COOK -- ASL COOK is the verb "to cook" (or past participle "cooked").
+It is NOT the noun "the cook" (a person). In a meal context:
+  ACCEPT: "I cooked the bacon." / "The bacon was barely cooked."
+  REJECT: "The cook made bacon." / "The cook made it with coffee."
+          (Inventing both a person AND a verb 'made' that wasn't
+          signed.)
+
+AGREE -- in a restaurant clip, AGREE usually means the signer's
+ASSENT ("yes, OK, sure") to something (an order, the bill, a server's
+suggestion). It is NOT the formal "I agree with [a statement]".
+  ACCEPT: "I said OK." / "Yes, that's fine." / "I agreed to pay."
+  REJECT: "I agree with the check." (treating CHECK as a proposition
+          to agree with, rather than the bill to pay)
+
+CHAIR / SIT -- typically the OPENING action (the signer entered the
+restaurant and sat down). Even if CHAIR appears late in the gloss
+timeline, signers often add setting context mid-clip; place this in
+the FIRST sentence as scene-setting rather than at the end.
+  ACCEPT: "I sat down and ordered..." (opening)
+  REJECT: "I'll sit in the chair." (dangling at the end, no narrative
+          purpose)
+
+CHECK -- in a restaurant clip, CHECK is the BILL the diner asks for
+at the end of the meal. Almost always the CLOSING action.
+  ACCEPT: "I asked for the check." / "Then the check came."
+
+ATTENTION -- when first or near-first in the gloss list, this is
+usually the signer GETTING the waiter's attention or saying "look
+here" / "listen up". Treat as scene-opening.
+  ACCEPT: "Getting the waiter's attention, I..." / "Excuse me, ..."
+  REJECT: "I paid attention." (the signer rarely narrates their own
+          attention state)
+
+═══════════════════════════════════════
+MODIFIERS: BARELY / COLD / HOT / FULL
+═══════════════════════════════════════
+
+These are the four most-confused glosses across uploads. Treat them as
+follows:
+
+BARELY -- almost always modifies a QUANTITY or QUALITY adjective, not
+a verb. Likely pairings:
+  - BARELY + COLD -> "barely cold" (lukewarm)
+  - BARELY + WARM -> "barely warm"
+  - BARELY + HOT  -> "barely hot" (mildly warm)
+  - BARELY + FULL -> "barely full" (still hungry-ish)
+  - BARELY + (a quantity word) -> "barely any"
+Unlikely:
+  - "I barely paid attention" (attaching BARELY to a verb-phrase
+    that wasn't itself signed).
+
+COLD -- describes the FOOD or DRINK in a meal context, NOT the signer.
+  ACCEPT: "The coffee was cold." / "The food got cold."
+  REJECT: "I was cold." (anthropomorphizing the sensation onto the
+           signer when the topic is a meal)
+
+HOT -- same: usually describes a drink or food.
+  ACCEPT: "Hot coffee." / "The bacon was hot."
+  REJECT: "I was hot." (unless other glosses establish weather/illness)
+
+FULL -- in restaurant / meal contexts, FULL means SATIATED (after
+eating), not "the cup was full" or "the room was full". Place it
+near the END of the paragraph as a wrap-up. Mention it ONCE even if
+it appears many times in the gloss list (frequency-as-theme).
+  ACCEPT: "I was full afterward."
+  REJECT: "It was barely full, but the cook made it..." (treating
+           FULL as describing food rather than the signer's state).
+
+═══════════════════════════════════════
+SUBJECT ATTRIBUTION
+═══════════════════════════════════════
+
+The signer is the implicit SUBJECT for ACTION verbs and the signer's
+own STATE: ATTENTION (got attention), ENJOY (enjoyed it), AGREE
+(agreed), FULL (got full), HURRY (hurried), APPROACH (approached),
+ARRIVE (arrived), SIT/CHAIR (sat down).
+
+The food / drink / scene is the SUBJECT for SENSORY QUALITIES: COLD,
+HOT, BARELY-warm, BIG, SMALL.
+
+When in doubt: ask "could the food have this quality, or is it about
+the person?" Pick the more natural one in the domain.
+
+═══════════════════════════════════════
+EXAMPLES
+═══════════════════════════════════════
+
+Example A -- Restaurant clip, ordered breakfast, was satisfied:
+
+  Glosses (frequencies):
+    CHAIR ×1, ATTENTION ×1, COFFEE ×4, HOT ×1, BACON ×4,
+    HOT-DOG ×1, BANANA ×3, PEACH ×2, CHERRY ×1, ENJOY ×1,
+    BARELY ×3, COLD ×5, FULL ×9, AGREE ×2, CHECK ×2
+
+  GOOD PARAGRAPH (1-3 sentences):
+
+  {{
+    "sentences": [
+      "I sat down and ordered hot coffee with bacon, a hot dog, and fruit.",
+      "Some of it was barely warm and a bit cold, but I enjoyed it and was full.",
+      "I agreed and asked for the check."
+    ],
+    "plausibility": {{"grammatical": 90, "semantic": 85, "naturalness": 88}}
+  }}
+
+  BAD PARAGRAPH (don't do this):
+
+  {{
+    "sentences": [
+      "Hot coffee, banana full, check bacon, check banana.",
+      "Agree full hot dog bacon chair full cherry bacon."
+    ]
+  }}
+  (Word salad -- treats every gloss as a separate utterance, repeats
+  FULL and BACON and CHECK literally instead of recognizing them as
+  one theme each.)
+
+Example B -- Emergency clip, fire in the bathroom:
+
+  Glosses (in order, dedup'd):
+    ATTENTION, FIRE, BATHROOM, ALARM, AWAKE, ALL, HURRY,
+    APPROACH, DOOR, ASSIST, BLIND, ADULT, CAREFUL, FIREFIGHTER,
+    ARRIVE, HOSPITAL
+
+  {{
+    "sentences": [
+      "Attention -- there's a fire in the bathroom! The alarm is going off.",
+      "Wake up, everyone, and hurry to the door.",
+      "Help the blind adult carefully. The firefighters will arrive at the hospital."
+    ],
+    "plausibility": {{"grammatical": 92, "semantic": 90, "naturalness": 88}}
+  }}
+
+Example C -- Mostly noise, only a few confident glosses:
+
+  Glosses:
+    COFFEE (99%), CHECK (98%), everything else < 30% confidence
+
+  {{
+    "sentences": [
+      "Coffee, then the check."
+    ],
+    "plausibility": {{"grammatical": 80, "semantic": 75, "naturalness": 70}}
+  }}
+  (When most segments are noise, output a SHORT fragment using only
+  the confident glosses. Don't pad.)
+
+═══════════════════════════════════════
+INPUTS
+═══════════════════════════════════════
+
+Conversation context (prior turns, usually empty for uploads):
+{context_section}
+
+{regenerate_hint_section}
+
+Ordered gloss timeline (Pos N @ Ts: top-1 | top-2 | top-3):
+{gloss_timeline}
+
+═══════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════
+
+Output STRICT JSON ONLY -- no markdown fences, no commentary outside the
+JSON object:
+
+{{
+  "sentences": [
+    "First sentence.",
+    "Second sentence."
+  ],
+  "plausibility": {{
+    "grammatical": <0-100>,
+    "semantic":    <0-100>,
+    "naturalness": <0-100>
+  }}
+}}
+
+Requirements:
+- "sentences" = 1 to 4 short English sentences, each ending with . ! or ?
+- "plausibility" = your honest self-assessment on 3 axes (0-100 each)
+- Output ONLY the JSON object. No prose. No fences.

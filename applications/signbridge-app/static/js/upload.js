@@ -32,16 +32,6 @@
     // mysterious 413.
     const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 
-    // Run a second LLM pass automatically after the initial paragraph
-    // construction, passing the first attempt back as previous_attempt. The
-    // first pass tends to anchor on top-1 gloss readings; the second pass
-    // (regenerate mode) explores top-2 / top-3 alternates and a different
-    // sentence structure, which empirically produces a noticeably better
-    // narrative -- especially when one or two glosses misrecognized in a way
-    // top-1 doesn't fit. Cost: one extra LLM call per upload (~$0.001).
-    // Flip to false to revert to a single pass.
-    const UPLOAD_AUTO_REFINE = true;
-
     // ── State ─────────────────────────────────────────────────────
     let _selectedFile  = null;
     let _previewBlobUrl = null;       // URL.createObjectURL handle to revoke on reset
@@ -52,6 +42,13 @@
                                        // the heavy recognition pipeline)
     let _lastDomain    = null;
     let _regenInFlight = false;
+    // Last domain the USER explicitly chose in the dropdown (vs. one set
+    // silently by a Library card load). Tracked so that when the user
+    // opens a saved demo and then comes back to upload something new,
+    // the dropdown reflects their last MANUAL choice rather than the
+    // Library card's domain -- previously this led to "I selected
+    // restaurant but the server logged emergency" confusion.
+    let _userChosenDomain = null;
 
     // ── DOM lookups (helper) ──────────────────────────────────────
     const $ = (id) => document.getElementById(id);
@@ -80,6 +77,17 @@
             const f = e.target.files && e.target.files[0];
             if (f) _handleFile(f);
         });
+
+        // Remember the user's MANUAL dropdown picks so a Library card
+        // load doesn't silently steal the selection. See _handleFile
+        // for the restore-on-next-file step.
+        const domSel = $('uploadDomainSelect');
+        if (domSel) {
+            domSel.addEventListener('change', () => {
+                _userChosenDomain = domSel.value || null;
+                console.log('[Upload] user picked domain:', _userChosenDomain);
+            });
+        }
 
         const copyBtn     = $('uploadCopyBtn');
         const downloadBtn = $('uploadDownloadBtn');
@@ -111,6 +119,18 @@
             _showError(`File is ${mb} MB — over the 100 MB limit. Trim the video or split into shorter clips.`);
             return;
         }
+        // If the dropdown was last touched by a Library card load (and
+        // not by the user clicking an option), snap it back to the
+        // user's last explicit choice. Avoids the "I picked restaurant
+        // but it ran emergency" surprise after closing a Library demo.
+        const sel = $('uploadDomainSelect');
+        if (sel && _userChosenDomain && sel.value !== _userChosenDomain) {
+            const opt = Array.from(sel.options).find(o => o.value === _userChosenDomain);
+            if (opt) {
+                sel.value = _userChosenDomain;
+                console.log('[Upload] restored user-chosen domain:', _userChosenDomain);
+            }
+        }
         _selectedFile = file;
         _enterProcessing(file.name);
         await _runPipeline(file);
@@ -119,6 +139,10 @@
     // ── Pipeline: process-signing-clip -> construct-paragraph ─────
     async function _runPipeline(file) {
         const domain = ($('uploadDomainSelect') && $('uploadDomainSelect').value) || 'emergency';
+        // Loud confirmation in DevTools so the user can verify what
+        // domain is actually being submitted (catches the "I thought I
+        // selected X" UX issue).
+        console.log(`[Upload] submitting file="${file.name}" size=${(file.size/1024/1024).toFixed(1)}MB domain="${domain}"`);
 
         // ----- Step 1: segment + per-sign inference (server) -----
         _setStage(`Uploading ${(file.size/1024/1024).toFixed(1)} MB and recognizing signs…`);
@@ -156,7 +180,7 @@
         }
 
         // ----- Step 2: build narrative paragraph (server / LLM) -----
-        _setStage(`Constructing ${UPLOAD_AUTO_REFINE ? 'draft' : 'narrative'} from ${confidentGlss.length} sign${confidentGlss.length === 1 ? '' : 's'}…`);
+        _setStage(`Constructing narrative from ${confidentGlss.length} sign${confidentGlss.length === 1 ? '' : 's'}…`);
         let paraResult;
         try {
             const resp = await fetch('/api/construct-paragraph', {
@@ -174,52 +198,15 @@
             return;
         }
 
-        let sentences = (paraResult && paraResult.sentences && paraResult.sentences.length)
+        const sentences = (paraResult && paraResult.sentences && paraResult.sentences.length)
             ? paraResult.sentences
             : (paraResult && paraResult.fallback) || [];
         if (!sentences.length) {
             _showError('LLM returned no sentences.');
             return;
         }
-        let plausibility = (paraResult && typeof paraResult.plausibility === 'number')
+        const plausibility = (paraResult && typeof paraResult.plausibility === 'number')
             ? paraResult.plausibility : null;
-
-        // ----- Step 2b (optional, default on): auto-refine pass -----
-        // Pass the draft back to the same endpoint with previous_attempt set.
-        // The regenerate-mode prompt instructs the LLM to actively explore
-        // top-2/top-3 alternates and a different sentence structure. First
-        // pass tends to over-trust top-1; second pass typically lands a
-        // better narrative. On failure we keep the draft -- never worse
-        // than the single-pass behavior.
-        if (UPLOAD_AUTO_REFINE) {
-            _setStage('Refining the paragraph…');
-            const draftText = sentences.join(' ');
-            try {
-                const resp2 = await fetch('/api/construct-paragraph', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        gloss_predictions:    confidentGlss,
-                        domain,
-                        previous_attempt:     draftText,
-                        conversation_history: [],
-                    }),
-                });
-                const refined = await resp2.json();
-                const refinedSentences = (refined && refined.sentences && refined.sentences.length)
-                    ? refined.sentences
-                    : null;
-                if (refinedSentences) {
-                    sentences = refinedSentences;
-                    if (typeof refined.plausibility === 'number') plausibility = refined.plausibility;
-                    console.log('[Upload] auto-refine ok:', sentences.length, 'sentence(s)');
-                } else {
-                    console.warn('[Upload] auto-refine returned no sentences; keeping draft.');
-                }
-            } catch (e) {
-                console.warn('[Upload] auto-refine failed; keeping draft. error=', e.message);
-            }
-        }
 
         // CTQI v3 — GA includes unrecognized segments so dropped signs penalize
         // the score; matches the formula used by the batch path.
@@ -324,16 +311,32 @@
         $('uploadProgress').hidden = true;
         $('uploadResult').hidden   = false;
 
-        // Video preview: prefer the R2 URL (so the same view works on a
-        // shared/demo link) but fall back to a local blob URL for the case
-        // where persistence was off or the R2 upload failed.
+        // Video preview source: try the local blob first (instant -- bytes
+        // already in memory), fall back to the R2 URL if the browser can't
+        // decode the local bytes. Some uploads use codecs Chrome/Edge don't
+        // support natively (notably MPEG-4 Part 2 'mp4v' from old screen
+        // recorders); the server-side re-encode in _faststart_remux produces
+        // a playable H.264 MP4 at the R2 URL, so the fallback recovers
+        // automatically. When the card is loaded from Library, r.file is
+        // null and we go straight to the R2 URL.
         const vid = $('uploadVideoPreview');
         if (vid) {
-            if (r.r2VideoUrl) {
-                vid.src = r.r2VideoUrl;
-            } else if (r.file) {
+            // Clear any prior error handler so a previous render's
+            // fallback doesn't fire spuriously on this load.
+            vid.onerror = null;
+            if (r.file) {
                 _previewBlobUrl = URL.createObjectURL(r.file);
                 vid.src = _previewBlobUrl;
+                if (r.r2VideoUrl) {
+                    vid.onerror = () => {
+                        console.log('[Upload] local blob preview failed (likely unsupported codec), '
+                                    + 'falling back to R2 H.264:', r.r2VideoUrl);
+                        vid.onerror = null;     // one-shot
+                        vid.src = r.r2VideoUrl;
+                    };
+                }
+            } else if (r.r2VideoUrl) {
+                vid.src = r.r2VideoUrl;
             }
         }
 
