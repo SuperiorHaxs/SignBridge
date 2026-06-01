@@ -116,6 +116,26 @@ let CTQI_HARD_FLOOR = (() => {
 // sync function transitively reads must also be hoisted here.)
 let _settingsEditing = false;
 let _settingsSnapshot = null;
+
+// ── WiFi camera default URL ─────────────────────────────────────
+// Pre-typed into the Lanyard-mode WiFi camera input when the user
+// hasn't saved a different URL yet. Defaults to the iPhone Personal
+// Hotspot first-client IP (172.20.10.x is the iOS hotspot subnet;
+// .1 is the iPhone, the board's MJPEG endpoint lives on port 81).
+//
+// Use-case priority in `selectCameraSource('wifi')`:
+//   1. ?camera=... URL param (kiosk launcher)
+//   2. localStorage 'signbridge-wifi-camera-url' (user previously typed)
+//   3. currently-connected externalCameraUrl
+//   4. THIS constant (first-run default)
+//
+// To verify the board actually got this IP, plug USB and run
+// `pio device monitor` from hardware/xiao-esp32s3-cam/ -- the board
+// prints "Stream URL: http://X.X.X.X:81/stream" right after WiFi
+// connect. If the IP differs (multiple hotspot clients, Android
+// hotspot uses 192.168.43.x or 192.168.49.x instead, local router
+// gives a 192.168.0/1.x lease), just update this constant.
+const WIFI_CAM_DEFAULT_URL = 'http://172.20.10.8:81/stream';
 const _SETTINGS_INPUTS = [
     'setDisplayName',
     'setTtsEnabled',
@@ -240,12 +260,17 @@ function selectCameraSource(type) {
     const wifiRow = document.getElementById('wifiCameraInputRow');
     if (type === 'wifi') {
         wifiRow.style.display = 'flex';
-        // Pre-fill: kiosk param > localStorage > current external URL > empty
+        // Pre-fill priority:
+        //   1. ?camera= URL param  2. saved localStorage value
+        //   3. currently-connected URL  4. WIFI_CAM_DEFAULT_URL (first-run)
+        // The constant lives near the top of this file with notes on how
+        // to verify / change it for a different network.
         const urlInput = document.getElementById('wifiCameraUrl');
         if (!urlInput.value) {
             const defaultUrl = KIOSK_PARAMS.get('camera')
                 || localStorage.getItem('signbridge-wifi-camera-url')
-                || (externalCameraUrl || '');
+                || externalCameraUrl
+                || WIFI_CAM_DEFAULT_URL;
             urlInput.value = defaultUrl;
         }
     } else {
