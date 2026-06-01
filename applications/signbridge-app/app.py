@@ -3310,6 +3310,87 @@ Output STRICT JSON ONLY, no markdown fences, no commentary:
 
 
 # ============================================================================
+# ROUTES — Translation (MVP: LLM-as-translator, on-Send only)
+# ============================================================================
+# Backlog item 8. Triggered by the client on Send when the user's
+# `speakerLang` setting != 'en'. Reuses the same Gemini provider as
+# the sentence-construction routes, so no new vendor / key / failure
+# surface. One sentence in, one sentence out.
+
+# Display name + BCP-47 locale per supported language. The locale is
+# returned so the client can set SpeechSynthesisUtterance.lang for TTS.
+_TRANSLATE_LANGS = {
+    "es": ("Spanish",  "es-ES"),
+    "fr": ("French",   "fr-FR"),
+    "zh": ("Mandarin", "zh-CN"),
+    "hi": ("Hindi",    "hi-IN"),
+}
+
+
+@app.route("/api/translate", methods=["POST"])
+def translate_text():
+    """Translate an English sentence to the user's preferred speaker
+    language. Body: {text, target_lang} where target_lang is one of the
+    keys in _TRANSLATE_LANGS. Returns {translation, locale} on success.
+
+    Caller-side guard: never call this with target_lang='en' (no-op).
+    """
+    try:
+        data = request.get_json() or {}
+        text = (data.get("text") or "").strip()
+        target = (data.get("target_lang") or "").strip().lower()
+        if not text:
+            return jsonify({"success": False, "error": "Missing text"}), 400
+        if target == "en":
+            # Defense-in-depth: the client should skip the call entirely
+            # for English, but if it doesn't, echo back so it doesn't break.
+            return jsonify({"success": True, "translation": text, "locale": "en-US"})
+        if target not in _TRANSLATE_LANGS:
+            return jsonify({
+                "success": False,
+                "error": f"Unsupported target_lang '{target}'. "
+                         f"Supported: {sorted(_TRANSLATE_LANGS.keys())}",
+            }), 400
+
+        lang_name, locale = _TRANSLATE_LANGS[target]
+        # Tight prompt: no preamble, no quotes, no commentary -- the
+        # translation goes straight into the conversation transcript.
+        prompt = (
+            f"Translate the following English sentence into {lang_name}. "
+            f"Reply with ONLY the translation -- no quotes, no preamble, "
+            f"no explanation, no alternatives. Preserve the original "
+            f"register (formal/informal/imperative) and punctuation.\n\n"
+            f"English: {text}\n{lang_name}:"
+        )
+        llm = create_llm_provider(
+            provider="googleaistudio",
+            model_name="gemini-2.0-flash",
+            max_tokens=200,
+            timeout=15,
+        )
+        translation = (llm.generate(prompt) or "").strip()
+        # Strip any leading/trailing quotes the LLM sometimes adds.
+        if len(translation) >= 2 and translation[0] in '"“' and translation[-1] in '"”':
+            translation = translation[1:-1].strip()
+        if not translation:
+            return jsonify({
+                "success": False,
+                "error": "LLM returned empty translation",
+            }), 502
+        print(f"[Translate] {target}: \"{text}\" -> \"{translation}\"")
+        return jsonify({
+            "success": True,
+            "translation": translation,
+            "locale": locale,
+        })
+    except Exception as e:
+        import traceback
+        print(f"[Translate] ERROR: {e}")
+        traceback.print_exc()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ============================================================================
 # ROUTES — Upload Library (saved demos persisted on R2)
 # ============================================================================
 # When the user clicks Save on a translated upload, we write a small

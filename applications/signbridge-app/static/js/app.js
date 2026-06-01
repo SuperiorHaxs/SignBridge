@@ -30,6 +30,20 @@ let SIGNBRIDGE_MODE = localStorage.getItem('signbridge.mode') || 'kiosk';
 // users expected the signed sentence to be spoken aloud after Send.
 let TTS_ENABLED = localStorage.getItem('signbridge.ttsEnabled') !== '0';
 
+// ── Speaker language (translation on Send, backlog item 8 MVP) ──
+// Stored as a 2-letter code matching keys in app.py _TRANSLATE_LANGS.
+// 'en' = no translation, no extra LLM call (the default).
+// Locales are kept client-side too so SpeechSynthesisUtterance.lang can
+// be set without an extra round-trip; mirrors app.py _TRANSLATE_LANGS.
+let SPEAKER_LANG = localStorage.getItem('signbridge.speakerLang') || 'en';
+const SPEAKER_LANG_LOCALES = {
+    en: 'en-US',
+    es: 'es-ES',
+    fr: 'fr-FR',
+    zh: 'zh-CN',
+    hi: 'hi-IN',
+};
+
 // ── Translate mode, per Live mode (experiment) ──────────────────
 // 'stream'  -> continuous WebSocket pipeline: frames stream to the server,
 //              motion-gated segmentation + per-sign inference run live, and
@@ -107,6 +121,7 @@ const _SETTINGS_INPUTS = [
     'setTtsEnabled',
     'setChimeEnabled',
     'setWakeWord',
+    'setSpeakerLang',
     'setCtqiThreshold',
     'setCtqiHardFloor',
 ];
@@ -1978,6 +1993,14 @@ function onSettingsSaveClick() {
         syncWakeWordUI();
     }
 
+    // --- Speaker language (Audio) ---
+    const langEl = document.getElementById('setSpeakerLang');
+    if (langEl) {
+        const v = (langEl.value || 'en').trim().toLowerCase();
+        SPEAKER_LANG = SPEAKER_LANG_LOCALES[v] ? v : 'en';
+        localStorage.setItem('signbridge.speakerLang', SPEAKER_LANG);
+    }
+
     // --- CTQI alert threshold (Advanced) ---
     const ctqiEl = document.getElementById('setCtqiThreshold');
     if (ctqiEl) {
@@ -2030,6 +2053,8 @@ function syncSettingsPageUI() {
     if (chimeCb) chimeCb.checked = CHIME_ON_LOW_CTQI;
     const wakeEl  = document.getElementById('setWakeWord');
     if (wakeEl) wakeEl.value = _getWakeWord();
+    const langEl  = document.getElementById('setSpeakerLang');
+    if (langEl) langEl.value = SPEAKER_LANG;
 
     // Advanced section
     const ctqiEl  = document.getElementById('setCtqiThreshold');
@@ -3903,7 +3928,10 @@ function stopCamera() {
 // ══════════════════════════════════════════════════════════════
 // TEXT-TO-SPEECH
 // ══════════════════════════════════════════════════════════════
-function speak(text) {
+// `locale` (optional) is a BCP-47 tag like 'es-ES' / 'fr-FR' used to
+// pick a voice matching the speaker's preferred language (backlog #8).
+// Omitted/null => English with the existing male-voice preference.
+function speak(text, locale) {
     return new Promise(resolve => {
         // Honor the per-device TTS toggle (Settings -> "Speak responses
         // aloud"). Off = silent; caller still resolves so any code that
@@ -3911,15 +3939,28 @@ function speak(text) {
         if (!TTS_ENABLED) { resolve(); return; }
         if (!('speechSynthesis' in window)) { resolve(); return; }
 
+        const isEnglish = !locale || /^en/i.test(locale);
+
         function doSpeak() {
             speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(text);
             u.rate = 0.95;
             u.pitch = 1.3;
             const voices = speechSynthesis.getVoices();
-            const preferred = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang) && !/female/i.test(v.name))
-                || voices.find(v => /David|Mark|James|Daniel|Guy/i.test(v.name))
-                || voices.find(v => /en/i.test(v.lang) && !/female|zira|hazel|susan|jenny/i.test(v.name));
+            let preferred;
+            if (isEnglish) {
+                preferred = voices.find(v => /male/i.test(v.name) && /en/i.test(v.lang) && !/female/i.test(v.name))
+                    || voices.find(v => /David|Mark|James|Daniel|Guy/i.test(v.name))
+                    || voices.find(v => /en/i.test(v.lang) && !/female|zira|hazel|susan|jenny/i.test(v.name));
+            } else {
+                // Match the BCP-47 prefix (e.g. 'es-ES' -> any 'es*' voice).
+                // Web Speech voices for es/fr/zh/hi ship by default on
+                // modern Chrome/Edge. If none match, fall back to leaving
+                // u.voice unset -- the browser picks the closest available.
+                const prefix = locale.toLowerCase().split('-')[0];
+                preferred = voices.find(v => v.lang.toLowerCase().startsWith(prefix));
+                u.lang = locale;
+            }
             if (preferred) u.voice = preferred;
             const timeout = setTimeout(() => { speechSynthesis.cancel(); resolve(); },
                 Math.max(text.split(' ').length * 500, 2500) + 3000);
@@ -3935,6 +3976,62 @@ function speak(text) {
             setTimeout(() => { doSpeak(); }, 500);
         }
     });
+}
+
+// ── Translation helper (backlog #8 MVP) ─────────────────────────
+// Given the LLM-built English sentence, return everything the send
+// handlers need to render + speak the translated version:
+//   { displayHtml, ttsText, ttsLocale }
+// Skips the LLM call entirely when SPEAKER_LANG === 'en' (the default).
+// On any translate failure, displayHtml renders the English text with a
+// small "⚠ translation unavailable" chip beneath -- Send never blocks.
+async function _translateForSend(englishText) {
+    if (!englishText || SPEAKER_LANG === 'en') {
+        return {
+            displayHtml: _escapeHtmlForMsg(englishText),
+            ttsText: englishText,
+            ttsLocale: 'en-US',
+        };
+    }
+    try {
+        const resp = await fetch('/api/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: englishText, target_lang: SPEAKER_LANG }),
+        });
+        const result = await resp.json();
+        if (!resp.ok || !result.success || !result.translation) {
+            throw new Error(result.error || `HTTP ${resp.status}`);
+        }
+        return {
+            displayHtml: `${_escapeHtmlForMsg(result.translation)}`
+                       + `<div class="msg-text-original">EN: ${_escapeHtmlForMsg(englishText)}</div>`,
+            ttsText: result.translation,
+            ttsLocale: result.locale || SPEAKER_LANG_LOCALES[SPEAKER_LANG] || 'en-US',
+        };
+    } catch (e) {
+        console.warn('[Translate] failed, falling back to English:', e);
+        return {
+            displayHtml: `${_escapeHtmlForMsg(englishText)}`
+                       + `<div class="msg-text-original msg-text-warn">⚠ translation unavailable</div>`,
+            ttsText: englishText,
+            ttsLocale: 'en-US',
+        };
+    }
+}
+
+// Minimal HTML escape so user-/LLM-generated text can't inject markup
+// when interpolated into addMsg's innerHTML. (addMsg has always used
+// innerHTML so the pre-existing code already trusts upstream sources;
+// this is a defense-in-depth for the translated string + EN subtitle.)
+function _escapeHtmlForMsg(s) {
+    if (s == null) return '';
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -5182,12 +5279,17 @@ async function sendNowAndPause() {
     //    Use _runningCaption (raw LLM output, no CTQI suffix) rather than
     //    reading the caption banner DOM — the banner includes "(CTQI = X)"
     //    which we don't want in the permanent transcript.
+    //    Translation (backlog #8): when SPEAKER_LANG != 'en' we call the LLM
+    //    once to translate; addMsg renders the translation with the English
+    //    beneath it; history keeps the English so future construct-LLM calls
+    //    have a stable context that doesn't degrade through round-trip.
     const finalText = (_runningCaption || _liveCaptionEl()?.textContent || '').trim();
     if (finalText) {
-        addMsg('patient', SIGNER_LABEL, finalText);
+        const { displayHtml, ttsText, ttsLocale } = await _translateForSend(finalText);
+        addMsg('patient', SIGNER_LABEL, displayHtml);
         history.push({ speaker: 'patient', text: finalText });
         if (interactionMode === 'in-person' || METHOD === 'speak') {
-            try { await speak(finalText); } catch (e) { console.warn('[Live] speak failed:', e); }
+            try { await speak(ttsText, ttsLocale); } catch (e) { console.warn('[Live] speak failed:', e); }
         }
     }
 
@@ -5802,11 +5904,15 @@ async function sendSignMessage() {
     }
 
     statusBar.innerHTML = '<span class="sentence">' + sentence + '</span>';
-    addMsg('patient', SIGNER_LABEL, sentence);
+    // Translation on Send (backlog #8). Mirrors sendNowAndPause(): show
+    // translated text + English beneath, speak in target locale, but
+    // keep history in English for stable LLM context across turns.
+    const _t = await _translateForSend(sentence);
+    addMsg('patient', SIGNER_LABEL, _t.displayHtml);
     history.push({ speaker: 'patient', text: sentence });
 
     if (interactionMode === 'in-person' || METHOD === 'speak') {
-        await speak(sentence);
+        await speak(_t.ttsText, _t.ttsLocale);
     }
 
     // Reset glosses
