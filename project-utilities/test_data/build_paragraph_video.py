@@ -71,6 +71,23 @@ NARRATIVES = {
         # Sentence 5: Resolution -- responders on scene
         [("FIREFIGHTER", 1.5), ("ARRIVE", 1.5), ("HOSPITAL", 1.0)],   # small trail
     ],
+    # Built from the emergency-active glosses that ALSO have a signer-12
+    # clip in the WLASL sign bank (so the whole paragraph is the same
+    # signer -- visual consistency is essential for the recognizer's
+    # motion-gate + pose-feature path). Targets ~60s runtime; arc is
+    # warning -> shelter -> injuries -> rescue -> recovery.
+    "hurricane": [
+        # Sentence 1: Warning / wake-up
+        [("ALARM", 1.5), ("LOUD", 1.5), ("HURRICANE", 1.5), ("AWAKE", 3.0)],
+        # Sentence 2: Take shelter
+        [("ALL", 1.5), ("HURRY", 1.5), ("BATHROOM", 1.5), ("CAREFUL", 3.0)],
+        # Sentence 3: Personal injuries / distress
+        [("COLD", 1.5), ("ABDOMEN", 1.5), ("HEADACHE", 1.5), ("BREATHE", 3.0)],
+        # Sentence 4: Call for help
+        [("ASSIST", 1.5), ("HURRY", 1.5), ("HOSPITAL", 3.0)],
+        # Sentence 5: Resolution / recovery
+        [("MEDICINE", 1.5), ("BETTER", 1.5), ("ALL", 1.0)],   # small trail
+    ],
 }
 
 
