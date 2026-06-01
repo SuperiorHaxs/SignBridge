@@ -56,19 +56,21 @@ participants, existing video-call apps (Zoom/Meet/Teams?), and more
 moving pieces than the other two modes. Better to define after the
 shared mode infrastructure exists.
 
-### Implementation checklist (P0: Kiosk + Lanyard only)
+### Implementation checklist (P0: Kiosk + Lanyard only) — **SHIPPED**
 
-- [ ] Mode selector UI inside Live tab (Kiosk / Lanyard; Conf Call
-      placeholder disabled-until-built)
-- [ ] Selected mode persisted in localStorage; returning user lands in
-      their last-used mode
-- [ ] Kiosk mode behavior: hide I Sign / I Speak, default camera =
-      built-in
-- [ ] Lanyard mode behavior: hide I Sign / I Speak, default camera =
+- [x] Mode selector UI inside Live tab (Kiosk / Lanyard; Conf Call
+      placeholder disabled-until-built) — `app.js:1157-1228`,
+      `templates/index.html:72-75`
+- [x] Selected mode persisted in localStorage as `signbridge.mode`;
+      returning user lands in their last-used mode — `app.js:1162`
+- [x] Kiosk mode behavior: hide I Sign / I Speak, default camera =
+      built-in — `app.js:1199, 1204-1208`
+- [x] Lanyard mode behavior: hide I Sign / I Speak, default camera =
       WiFi Camera (IP), auto-open URL prompt on mode select if not
-      already connected
-- [ ] "Enable TTS playback" toggle in Settings (per-device, defaults:
-      off for Lanyard, off for Kiosk -- staff reads, opt-in for TTS)
+      already connected — `app.js:1209-1220`
+- [x] "Enable TTS playback" toggle in Settings (per-device, defaults:
+      off for Lanyard, off for Kiosk -- staff reads, opt-in for TTS) —
+      `templates/index.html:396-405`, `app.js:1966`
 
 ## 2. Get the microphone working on the WiFi cam
 
@@ -91,13 +93,29 @@ Sign-bank videos currently live on an external drive that won't be
 attached during real use. Need a storage solution that works for the
 demo and beyond.
 
-- [ ] Audit: which signs are missing video samples, total size needed
-- [ ] Decide storage: cloud (S3 / R2 / Cloudflare Stream / GitHub
-      LFS / YouTube unlisted), local-bundled, or on-demand fetch
-- [ ] Cost / latency / offline-availability tradeoff per option
-- [ ] Migration: move existing videos to chosen storage
-- [ ] App: update sign-bank fetch path; cache locally if remote
-- [ ] Fallback when a video is missing or fetch fails (graceful UI)
+**Shipped:**
+- [x] Decide storage: **Cloudflare R2** (S3-compatible, ~$0/mo at our
+      scale, public-bucket reads, signer-12 preferred per migration
+      script). Local-bundle fallback kept for dev.
+- [x] Migration: WLASL clips moved to R2 via
+      `project-utilities/migrate_wlasl_to_r2.py`. R2 base URL:
+      `pub-356ccbb34efd4ada8ba91c03fe330713.r2.dev`.
+- [x] App: sign-bank fetch path resolves `PREFER_LOCAL_SIGN_BANK` first,
+      then R2 (`_gloss_to_r2_url`) — `app.py:74, 1764-1773, 2046-2051`.
+- [x] App: `/sign-bank/<filename>` route serves local files
+      (`app.py:3666`); R2 URLs returned directly to client otherwise.
+
+**Close-out (P0 — small remaining tasks):**
+- [ ] Coverage audit: list glosses present in each active domain's
+      active-class set vs glosses present in R2. Output a CSV of
+      gloss × {local, r2, missing}. Decide whether to backfill missing
+      ones or accept "no sample" UI for those.
+- [ ] Graceful UI when a sign-bank video 404s in the client (sign-bank
+      panel currently assumes the video loads). One-line `onerror`
+      handler that shows "no sample available" placeholder.
+- [ ] Document R2 cost / latency / offline tradeoff in a short
+      `docs/sign-bank-storage.md` (3 paragraphs, decision rationale +
+      cutover steps if we need to move).
 
 ## 4. Per-mode setup wizards (audio-in, audio-out, video-in, layout, devices)
 
@@ -110,14 +128,32 @@ For each of the three Live modes, work out:
 - Number of devices physically in the setup (1 vs N)
 - Whether "I Sign" / "I Speak" mode toggle is still meaningful per mode
 
-Sub-items:
-- [ ] Per-mode setup walkthrough on first entry to that mode
-- [ ] Settings page reflects only the knobs relevant to the active mode
-- [ ] Persist per-mode config separately in localStorage
-- [ ] Re-evaluate "I Sign" vs "I Speak" toggle per mode -- might be a
-      single user role implied by mode, not a manual choice
-- [ ] Validation: warn when picked config can't physically work (e.g.,
-      "Lanyard mode needs the WiFi cam connected")
+**Largely shipped via 1a/1b:** mode selector persists the active mode,
+each mode defaults its own camera, hides I Sign / I Speak, and surfaces
+the relevant TTS toggle. No separate "wizard" is needed — defaults
+land users in a usable state on first entry.
+
+**Close-out (P0 — small remaining tasks):**
+- [ ] **Settings page filters by active mode**: hide the speaker-side
+      knobs (TTS, wake word, chime) when the active mode doesn't use
+      them, and hide the WiFi-cam config when mode != lanyard. Audit
+      `templates/index.html` Settings sections.
+- [ ] **Pre-flight validation**: when entering Lanyard mode, if the
+      WiFi cam URL is empty / unreachable, show an inline banner
+      ("Lanyard mode needs the WiFi camera connected — [Set URL]")
+      instead of letting Start Conversation fail silently.
+- [ ] **Per-mode TTS default**: confirm Lanyard defaults to TTS-on
+      (signer can't see screen so audio is required) and Kiosk defaults
+      to TTS-off (staff reads screen). Currently both default to off
+      per `app.js:31` — needs a mode-aware default in `_loadTtsToggle`.
+
+**Decided out of scope:**
+- Per-mode separately-keyed localStorage for every setting (current
+  global-per-device storage is sufficient — users don't switch modes
+  often enough to warrant divergent prefs)
+- Separate "I Sign" / "I Speak" toggle per mode (both modes hide it;
+  decision baked into 1a/1b)
+- First-run walkthrough wizard (defaults are good enough)
 
 ## 5. Signer alert when CTQI is low (regenerate / edit needed) -- visible from the lanyard
 
@@ -125,11 +161,15 @@ The CTQI score's value proposition is acted on by the signer when it's
 low. In Lanyard mode the signer can't see the laptop screen, so the
 alert needs to surface where the signer can perceive it.
 
+**Partially shipped:** the hearing-person side already gets an audible
+chime (app.js:4719-4749) + pulsing red border (app.js:4850) when CTQI
+drops below the threshold. The signer-facing channel below is still open.
+
 - [ ] Decide signer-facing alert channel: phone vibrate? phone screen?
       a smartwatch ping? an audible cue the hearing person hears and
       relays? a small LED / haptic add-on on the lanyard?
 - [ ] Implement the alert path (whatever channel wins above)
-- [ ] Threshold + cooldown (don't ping on every short utterance)
+- [x] Threshold + cooldown — already in place for the chime
 - [ ] Make the regenerate / edit action reachable from the signer's
       side, not just the hearing person's UI
 - [ ] Optional: a one-tap "I said that wrong, try again" gesture for
@@ -139,13 +179,17 @@ alert needs to surface where the signer can perceive it.
 
 Connected to 5. The system must degrade well, not silently mislead.
 
-- [ ] Visible confidence indicator on every emitted caption (already
-      partially done via CTQI; verify it's always present)
-- [ ] When confidence is below a hard floor, show "..." or "[unclear]"
-      instead of guessing
-- [ ] Always-available "this was wrong" affordance for the hearing
-      person to correct in-place (text edit) -- already exists for
-      live mode, audit completeness across modes
+**Mostly shipped:**
+- [x] Visible confidence indicator on every emitted caption — CTQI
+      badge always rendered (app.js:4845-4850)
+- [x] When confidence is below the hard floor, show "[unclear]"
+      instead of guessing — CTQI_HARD_FLOOR default 40, render at
+      app.js:4850
+- [x] Always-available "this was wrong" affordance for the hearing
+      person to correct in-place (text edit) — present across live and
+      upload tabs (templates/index.html:212, upload.js paragraph edit)
+
+**Still open (P2):**
 - [ ] Log failure cases (with consent) for offline analysis
 - [ ] In Kiosk mode specifically: a "tap to repeat" prompt back to the
       signer when the caption is rejected or edited
@@ -230,7 +274,7 @@ fallback.
   dependency, no cloud STT, works offline. Estimated ~1 day to
   implement. Promotes to its own backlog item if/when picked up.
 
-## 8. Language translation on send
+## 8. Language translation on send — MVP scope (P0)
 
 After ASL is recognized and the LLM constructs an English sentence,
 clicking "Send sentence" should translate the final text to the
@@ -244,30 +288,45 @@ recognition model loaded is ASL and a user who chose ASL expects to
 read English output. Translation kicks in only for the speaker side
 or when explicitly changed.
 
-- [ ] Decide translation engine (cloud Google Translate API / DeepL /
-      a local model like NLLB) -- weigh cost, latency, offline
-      capability, language coverage
-- [ ] Trigger: run translation after sentence is finalized on Send,
-      not on each interim rolling-caption update (avoid translating
-      every partial)
-- [ ] Decide: one device-wide language pref, or split into
-      `signer_lang` + `speaker_lang`. (Lean toward split: a deaf user
-      in Mexico signing ASL might want output in Spanish even though
-      the model produces English first.)
-- [ ] Default `signer_lang` = en-US (ASL model assumption); allow
-      override
-- [ ] Settings: language selector(s) under a new "Language" section
-- [ ] Display: where does the translated text render? Replace the
-      English caption, or show beneath it with the original visible?
-- [ ] TTS in non-English: when the deaf user's translated sentence is
-      spoken aloud to a hearing listener, ensure the Web Speech API
-      voice matches the target language
-- [ ] STT in non-English: if the hearing person speaks a non-English
-      language, the speech-to-text pipeline needs to be configured
-      for that language too (Web Speech API supports many; Whisper
-      auto-detects)
-- [ ] Graceful failure when translation API is down -- fall back to
-      the original English with a small indicator
+### MVP scope (P0 — what we build now)
+
+Smallest end-to-end thing that's actually useful for a demo:
+
+- [ ] **Engine**: reuse the existing LLM (OpenAI client already wired
+      for sentence construction) as the translation backend — one new
+      `/api/translate` route, prompt = "translate this English to
+      {target_lang}; reply with only the translation". No new vendor,
+      no new API key, no new failure mode.
+- [ ] **Language scope**: ship with Spanish, French, Mandarin, Hindi
+      as the picker options. Easy to extend later by adding to the
+      enum; LLM handles them all.
+- [ ] **Setting**: single device-wide `speaker_lang` pref in Settings
+      → Audio (new "Speaker language" select, default English). One
+      pref per device, NOT split signer/speaker — that's a later
+      refinement once we have real bilingual users to ask.
+- [ ] **Trigger**: translate ONLY on Send, never on rolling caption
+      updates. Keeps cost + latency bounded.
+- [ ] **Display**: replace the caption text with the translation; keep
+      a small "EN: <original>" line beneath in a muted color so the
+      signer can verify the English the model produced. (Cheap, helps
+      debugging when translation is wrong.)
+- [ ] **TTS in target language**: pass `lang` attribute on the
+      `SpeechSynthesisUtterance` so the browser picks a voice that
+      matches. Web Speech API ships voices for all four MVP languages
+      on modern Chrome/Edge.
+- [ ] **Graceful failure**: if the LLM translate call fails or returns
+      empty, fall back to the English caption + a small "⚠ translation
+      unavailable" indicator. Don't block Send.
+
+### Out of MVP scope (revisit in P2+ once MVP is in users' hands)
+
+- Dedicated translation vendor (DeepL / Google Translate / NLLB).
+  LLM-as-translator is fine for the MVP and stays good enough as
+  long as the LLM keeps improving.
+- Split `signer_lang` vs `speaker_lang` — only worth it if a real
+  user asks for it.
+- STT in non-English (hearing-person-side mic in Spanish, etc.)
+- Translating every interim rolling caption (cost + flicker)
 
 ## 9. Per-mode translate pipeline: streaming vs batch (record -> Translate)
 
@@ -302,7 +361,7 @@ Current state (experiment, behind config -- default Kiosk=batch, Lanyard=stream)
 - [x] `process-signing-clip` returns `duration_sec` / `total_frames` so the
       client can identify tail-motion segments.
 
-Open / to decide:
+Open / to decide (de-prioritized to P2 — feature works end-to-end):
 - [ ] Final default per mode after an accuracy + latency A/B (stream vs batch
       on the same camera / lighting; the config flag makes this a 1-line flip)
 - [ ] Auto-stop on stillness: lightweight client-side pixel-diff (NO model)
@@ -315,7 +374,7 @@ Open / to decide:
       motion threshold can pick up jitter on pause-heavy clips; `min_sign_frames`
       floor). Only if segment COUNT errors show up -- gloss errors are the
       classifier's limit, not segmentation.
-- [ ] Mid-session mode switch does NOT rebuild the pipeline -- **decided out of
+- [x] Mid-session mode switch does NOT rebuild the pipeline -- **decided out of
       scope** (mode is chosen before Start Conversation, the normal flow).
 
 ## 10. Upload tab: paragraph-length video -> narrative transcript
@@ -375,22 +434,26 @@ degrades recognition. Honest framing avoids over-promising.
 - R2 storage pattern from sign-bank + demo-samples -- new `uploads/`
   prefix when persistence is on.
 
-### New work
+### New work — **SHIPPED**
 
-- [ ] New `/api/construct-paragraph` (or `mode='paragraph'` on
-      construct-sentence-live). Input: full gloss list with timestamps,
-      domain, conversation_history (optional). Output: `{ sentences:
-      [{ text, gloss_indices, plausibility }, ...] }`.
-- [ ] Upload tab HTML in `index.html` (new `<div id="phaseUpload">`,
-      matching existing phase pattern). Sidebar nav entry.
-- [ ] `static/js/upload.js` (NEW file) -- file pick/drop, submit,
-      spinner, result rendering. Self-contained.
-- [ ] Upload section in `main.css`.
-- [ ] Flask `MAX_CONTENT_LENGTH` bump to 100 MB (currently default-1MB-ish).
-- [ ] Configurable `PERSIST_UPLOADS = True` + R2 upload helper when on.
-- [ ] Result page: video preview, paragraph with per-sentence cards
-      (gloss list, CTQI, Edit/Regen), copy / download.
-- [ ] Helper text in UI matching the "1 second between signs" guidance.
+- [x] New `/api/construct-paragraph` route — `app.py:3109`. Input: full
+      gloss list with timestamps, domain, optional `previous_attempt`
+      for regenerate mode. Output: paragraph text + per-sentence
+      plausibility.
+- [x] Upload tab HTML in `index.html` — `templates/index.html:140`
+      (`<div id="phaseUpload">`). Sidebar nav entry present.
+- [x] `static/js/upload.js` — self-contained IIFE; file pick/drop,
+      spinner, result rendering, auto-refine (`UPLOAD_AUTO_REFINE`).
+- [x] Upload section in `main.css`.
+- [x] Flask `MAX_CONTENT_LENGTH` bumped to 100 MB.
+- [x] `PERSIST_UPLOADS = True` + R2 upload helper (`_r2_upload_bytes`).
+- [x] Result page: video preview + paragraph block with Regenerate /
+      Edit / Save / Copy / Download chips (paragraph-level, not
+      per-sentence — restructured per user request mid-build).
+- [x] Helper text in UI matching the "1 second between signs" guidance.
+- [x] **Bonus shipped**: Library feature — Save button persists demo to
+      R2 metadata, Library panel lists/loads saved demos (`app.py:3393`
+      save route, `upload.js:517-601` library functions).
 
 ### Out of scope (for v1)
 
@@ -436,19 +499,34 @@ well enough; truly fluent signing remains a documented limitation.
 
 ## Prioritization
 
-(Filled in during the next working session. Each item gets a priority
-tier and an ordering within tier.)
+**Re-tiered 2026-05-31 after audit.** Several items were marked open
+in the doc but were actually shipped (1a, 1b, 7, 7b, 10, most of 6 and
+9). The active queue is now small and focused: close the loose ends on
+storage + per-mode polish, then ship the language-translation MVP.
+Everything else slides to P2+ until those are done.
 
-| Priority | Items |
-|---|---|
-| P0 | **1a** (Kiosk mode), **1b** (Lanyard mode), 4 (Per-mode setup -- now scoped to just the small per-mode defaults defined in 1a/1b, no separate wizard) |
-| P1 | **10 (Upload tab -- IN DESIGN, next up)**, **9 (Per-mode translate: stream vs batch -- IN PROGRESS / experimental)**, 5 (Signer CTQI alert), 6 (Graceful failure) |
-| P2 | 11 (Pose-velocity segmenter -- follow-up to 10), 7 (Unified Settings tab) |
-| P3 | 3 (Sign-bank video storage) |
-| P4 | 8 (Language translation on send) |
-| P5 | **1c** (Conf Call mode -- deferred), 2 (WiFi cam microphone) |
+| Priority | Items                                                                                          |
+|----------|------------------------------------------------------------------------------------------------|
+| **P0**   | **3** (Sign-bank close-out — coverage audit + graceful 404 UI + storage doc), **4** (Per-mode setup close-out — mode-filtered Settings, lanyard pre-flight, mode-aware TTS defaults), **8 MVP** (Language translation via LLM, 4 languages, Send-time only) |
+| P1       | —                                                                                              |
+| P2       | 5 (Signer CTQI alert — needs signer-facing channel decision), 6 remaining (kiosk tap-to-repeat + failure logging), 9 polish (auto-stop on stillness, lanyard-batch fps fix) |
+| P3       | 11 (Pose-velocity segmenter — experimental follow-up to 10)                                    |
+| P4       | 8 v2 (split signer/speaker lang, dedicated translation vendor, STT in non-English)             |
+| P5       | **1c** (Conf Call mode — deferred), 2 (WiFi cam microphone — deferred)                         |
 
-**Process note on P0:** specs for Kiosk and Lanyard agreed during
-mode-definition review (see sections 1a / 1b). Item 4's "per-mode setup
-wizard" is **not** needed at this stage -- the per-mode defaults baked
-into 1a/1b are sufficient. If a real wizard is needed later, revisit.
+### Already shipped (marked done in their sections above)
+
+- 1a Kiosk mode, 1b Lanyard mode
+- 7 Unified Settings tab, 7b Wake-word speaker activation (Chrome)
+- 9 Per-mode translate stream-vs-batch (core flow; only polish remains)
+- 10 Upload tab (+ Library bonus)
+- 6 Graceful failure (CTQI badge + [unclear] floor + edit affordance)
+
+### Process notes
+
+- **Item 4 close-out is intentionally narrow.** The original "per-mode
+  setup wizard" idea was scoped out — defaults baked into 1a/1b are
+  sufficient. Only the three small polish items in §4 remain.
+- **Item 8 MVP is intentionally LLM-only.** Cheapest path to a usable
+  translation feature; we'll know whether translation quality matters
+  to real users before committing to a dedicated vendor.
