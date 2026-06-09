@@ -2041,8 +2041,8 @@ English sentence:"""
 
         llm = create_llm_provider(
             provider="googleaistudio",
-            model_name="gemini-2.0-flash",
-            max_tokens=100,
+            model_name="gemini-2.5-flash",
+            max_tokens=400,
             timeout=15,
         )
         response = llm.generate(prompt)
@@ -2138,8 +2138,8 @@ ASL glosses:"""
 
         llm = create_llm_provider(
             provider="googleaistudio",
-            model_name="gemini-2.0-flash",
-            max_tokens=80,
+            model_name="gemini-2.5-flash",
+            max_tokens=400,
             timeout=15,
         )
         response = llm.generate(prompt)
@@ -3173,8 +3173,8 @@ English sentence:"""
 
         llm = create_llm_provider(
             provider="googleaistudio",
-            model_name="gemini-2.0-flash",
-            max_tokens=150,
+            model_name="gemini-2.5-flash",
+            max_tokens=800,
             timeout=15,
         )
         response = llm.generate(prompt)
@@ -3380,8 +3380,8 @@ Output STRICT JSON ONLY, no markdown fences:
 
         llm = create_llm_provider(
             provider="googleaistudio",
-            model_name="gemini-2.0-flash",
-            max_tokens=800,
+            model_name="gemini-2.5-flash",
+            max_tokens=2000,
             timeout=45,
         )
         response = llm.generate(prompt)
@@ -3496,8 +3496,8 @@ def translate_text():
         )
         llm = create_llm_provider(
             provider="googleaistudio",
-            model_name="gemini-2.0-flash",
-            max_tokens=200,
+            model_name="gemini-2.5-flash",
+            max_tokens=800,
             timeout=15,
         )
         translation = (llm.generate(prompt) or "").strip()
