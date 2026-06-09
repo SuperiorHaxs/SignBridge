@@ -401,7 +401,22 @@ class CameraProcessor:
             return None
 
     def _convert_webm_to_mp4(self, webm_path: str, mp4_path: str) -> bool:
-        """Convert WebM to MP4 using ffmpeg."""
+        """Convert WebM to MP4 using ffmpeg, normalizing to constant 30 fps.
+
+        MediaRecorder emits VFR video -- under encoder backpressure during
+        high-motion signing, frames get dropped non-uniformly. The container
+        records an average fps (often 18-25 across different recordings on
+        the same machine) but the local fps during fast hand motion is even
+        lower. Downstream sampling for inference assumes a uniform temporal
+        grid, so VFR breaks the model's recognition of periodic-motion signs
+        (BATHROOM shake, COME-HERE beckon, etc.).
+
+        `-vf fps=30 -fps_mode cfr` resamples the input onto a fixed 30 fps
+        grid -- duplicating frames where the encoder dropped them and dropping
+        frames where it over-captured. This won't recover lost motion data,
+        but it makes the downstream inference pipeline see the stable temporal
+        structure it was calibrated for, matching the WLASL training fps.
+        """
         ffmpeg = self._get_ffmpeg_path()
         if not ffmpeg:
             print("[CameraProcessor] WARNING: ffmpeg not found — cannot convert WebM to MP4")
@@ -409,6 +424,7 @@ class CameraProcessor:
         try:
             cmd = [
                 ffmpeg, '-y', '-i', webm_path,
+                '-vf', 'fps=30', '-fps_mode', 'cfr',
                 '-c:v', 'libx264', '-preset', 'ultrafast',
                 '-c:a', 'aac', mp4_path
             ]
