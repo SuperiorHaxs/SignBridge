@@ -2043,7 +2043,7 @@ English sentence:"""
             provider="googleaistudio",
             model_name="gemini-2.5-flash-lite",
             max_tokens=100,
-            timeout=15,
+            timeout=30,
         )
         response = llm.generate(prompt)
 
@@ -2140,7 +2140,7 @@ ASL glosses:"""
             provider="googleaistudio",
             model_name="gemini-2.5-flash-lite",
             max_tokens=80,
-            timeout=15,
+            timeout=30,
         )
         response = llm.generate(prompt)
 
@@ -3175,9 +3175,16 @@ English sentence:"""
             provider="googleaistudio",
             model_name="gemini-2.5-flash-lite",
             max_tokens=150,
-            timeout=15,
+            timeout=30,
         )
-        response = llm.generate(prompt)
+        # response_mime_type='application/json' forces the Gemini API to
+        # emit valid JSON ONLY -- no preamble, no markdown fences, no
+        # chain-of-thought narration. Without this, the regenerate prompt
+        # ("produce a meaningfully different sentence") sometimes nudges
+        # the model into reasoning out loud ("Looking at the predictions:
+        # Position 1: ..."), which hits the token ceiling mid-thought and
+        # the parser falls back to displaying the reasoning blob.
+        response = llm.generate(prompt, response_mime_type='application/json')
 
         # Parse response — prompt template expects JSON with "sentence" key
         generated = response.strip()
@@ -3384,7 +3391,9 @@ Output STRICT JSON ONLY, no markdown fences:
             max_tokens=800,
             timeout=45,
         )
-        response = llm.generate(prompt)
+        # Force valid JSON output (no chain-of-thought leak) -- see the
+        # construct-sentence-live equivalent above for full rationale.
+        response = llm.generate(prompt, response_mime_type='application/json')
         generated = (response or "").strip()
         # Strip markdown fences if the model added them despite instructions.
         if generated.startswith('```'):
@@ -3498,7 +3507,7 @@ def translate_text():
             provider="googleaistudio",
             model_name="gemini-2.5-flash-lite",
             max_tokens=200,
-            timeout=15,
+            timeout=30,
         )
         translation = (llm.generate(prompt) or "").strip()
         # Strip any leading/trailing quotes the LLM sometimes adds.
