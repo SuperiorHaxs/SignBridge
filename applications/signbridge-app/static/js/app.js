@@ -2380,7 +2380,7 @@ async function loadSignBank() {
         signBankLoaded = true;
         renderSignBank(data);
     } catch (e) {
-        showToast('Could not load Sign Bank', 'error');
+        showToast('Could not load Practice', 'error');
         console.error('[SignBank] Load error:', e);
     }
 }
@@ -3527,7 +3527,6 @@ function _isInteractiveSpeakerDemo() {
 
 function setDemoMode(mode) {
     if (mode === 'lanyard') {
-        DEMO_LANYARD_ACTIVE = true;
         // Reflect on the Demo nav chip so the user sees which mode they
         // picked. (Mirrors the Live nav's mode chip.)
         const chip = document.getElementById('navDemoModeChip');
@@ -3536,7 +3535,15 @@ function setDemoMode(mode) {
         // WiFi camera URL prompt if not connected, hides I-Sign / I-Speak,
         // configures the segmenter defaults for the lanyard camera, etc.
         if (typeof setSignBridgeMode === 'function') setSignBridgeMode('lanyard', true);
-        navigateTo('live');
+        // navigateTo('live', {...}) jumps to the Live tab's content
+        // panel (which lanyard demo reuses). Two override flags:
+        //   keepDemoLanyardFlag: tell the nav teardown NOT to clear
+        //     DEMO_LANYARD_ACTIVE on its way through (we set it below).
+        //   activeNavOverride: keep the Demo sidebar button visually
+        //     highlighted (not Live), so the user understands they're
+        //     still inside a demo.
+        navigateTo('live', { keepDemoLanyardFlag: true, activeNavOverride: 'navDemo' });
+        DEMO_LANYARD_ACTIVE = true;
     } else {
         // 'kiosk' -> the regular demo-scenarios home page. Clear the
         // lanyard-demo gate so the real Translate path runs if the user
@@ -3551,7 +3558,67 @@ function setDemoMode(mode) {
 // ══════════════════════════════════════════════════════════════
 // SIDEBAR NAVIGATION — flat: Sign Bank, Demo, Live, Upload, Profile
 // ══════════════════════════════════════════════════════════════
-function navigateTo(section) {
+function navigateTo(section, opts) {
+    opts = opts || {};
+
+    // Tear down any active Live session if we're leaving the Live tab.
+    // Without this, when the user navigates Live -> Demo (or anywhere
+    // else) mid-conversation, the camera, segmenter, wake-word listener,
+    // and batch recorder all keep running silently in the background.
+    // That's the "still in Live mode" symptom -- the Demo tab is
+    // visible, but a stray wake-word capture lands in the transcript,
+    // or status-bar updates from the still-streaming segmenter
+    // overwrite the Demo prompt, or stale liveActive=true confuses the
+    // Start Conversation button on next entry.
+    if (section !== 'live' && typeof liveActive !== 'undefined' && liveActive) {
+        console.log('[Nav] leaving Live -> tearing down live session');
+        try { if (typeof stopWakeWordListener === 'function') stopWakeWordListener(); } catch (e) { console.warn('[Nav] stopWakeWordListener threw:', e); }
+        try { if (typeof stopLiveMode === 'function') stopLiveMode(); }                 catch (e) { console.warn('[Nav] stopLiveMode threw:', e); }
+        try { if (typeof stopCamera === 'function') stopCamera(); }                     catch (e) { console.warn('[Nav] stopCamera threw:', e); }
+
+        // stopLiveMode resets internal flags but the BUTTON UI gets
+        // mutated by batch mode (_armSigningGate sets text='Start
+        // Signing', onclick=_startBatchSigning, dataset.armed='1',
+        // btn-secondary class). If we leave it like that, the next
+        // demo session's user click is intercepted: dataset.armed==='1'
+        // sends the addEventListener handler down the btnRestart branch
+        // and the stale .onclick returns early because liveActive=false
+        // -- so the button looks like it "doesn't work anymore". Reset
+        // it back to the same initial state the full-reset branch of
+        // btnRestart produces (app.js ~line 4585).
+        const _btnStart = document.getElementById('btnStart');
+        if (_btnStart) {
+            _btnStart.disabled = false;
+            _btnStart.textContent = 'Start Conversation';
+            _btnStart.dataset.armed = '0';
+            _btnStart.classList.remove('btn-secondary');
+            _btnStart.classList.add('btn-primary');
+            _btnStart.onclick = null;
+            _btnStart.style.background = '';
+        }
+        const _btnRestart = document.getElementById('btnRestart');
+        if (_btnRestart) _btnRestart.style.display = 'none';
+        ['btnSendMessage', 'btnRecordSign', 'btnSpeakSend'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        try { if (typeof recBadge   !== 'undefined' && recBadge)   recBadge.classList.remove('on');   } catch (_) {}
+        try { if (typeof recBorder  !== 'undefined' && recBorder)  recBorder.classList.remove('on');  } catch (_) {}
+    }
+
+    // Clear the Lanyard-demo intercept flag whenever we navigate, UNLESS
+    // we were called from setDemoMode('lanyard') (which passes
+    // keepDemoLanyardFlag and sets it back to true right after this
+    // returns). Without this, the flag would persist after the user
+    // leaves the lanyard demo, and a subsequent real Live Lanyard
+    // session would hit the demo scripted path instead of the LLM.
+    if (!opts.keepDemoLanyardFlag && DEMO_LANYARD_ACTIVE) {
+        console.log('[Nav] clearing DEMO_LANYARD_ACTIVE on nav to ' + section);
+        DEMO_LANYARD_ACTIVE = false;
+        const chip = document.getElementById('navDemoModeChip');
+        if (chip) chip.textContent = 'Kiosk';
+    }
+
     currentNav = section;
 
     // Set MODE based on which section we're in
@@ -3567,7 +3634,13 @@ function navigateTo(section) {
         upload: 'navUpload',
         settings: 'navSettings',
     };
-    const activeBtn = document.getElementById(navIds[section]);
+    // activeNavOverride lets the caller force a different sidebar item
+    // to look active than the one implied by `section`. Used by the
+    // Lanyard demo flow: section='live' (because we reuse the Live tab's
+    // content panel) but we want the Demo sidebar item highlighted so
+    // the user knows they're still inside a demo, not back in Live mode.
+    const activeId = opts.activeNavOverride || navIds[section];
+    const activeBtn = document.getElementById(activeId);
     if (activeBtn) activeBtn.classList.add('active');
 
     // Hide all content sections (including secondary screens)
