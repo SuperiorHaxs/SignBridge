@@ -1002,6 +1002,7 @@ syncWakeWordUI();
 syncLowCtqiChimeUI();
 syncSettingsPageUI();
 _wireNavLiveSubmenu();
+_wireNavDemoSubmenu();
 
 // ══════════════════════════════════════════════════════════════
 // CONVERSATION HISTORY (2.3)
@@ -1325,6 +1326,52 @@ function _wireNavLiveSubmenu() {
     window.addEventListener('resize', () => {
         const m = document.getElementById('navLiveSubmenu');
         if (m && m.classList.contains('is-open')) _positionNavLiveSubmenu();
+    });
+}
+
+// ── Demo nav submenu (Kiosk / Lanyard) ────────────────────────
+// Mirrors the Live submenu: same hover behavior, same body-appended
+// position trick so the sidebar overflow:auto doesn't clip it.
+// Kiosk = the existing demo-scenarios home; Lanyard = the same UI as
+// Live Lanyard mode, but with the Translate handler short-circuited
+// to a scripted output (DEMO_LANYARD_ACTIVE intercepts _translateBatch
+// further down).
+let _navDemoSubmenuHideTimer = null;
+function _positionNavDemoSubmenu() {
+    const wrap = document.getElementById('navDemo');
+    const menu = document.getElementById('navDemoSubmenu');
+    if (!wrap || !menu) return;
+    const r = wrap.getBoundingClientRect();
+    menu.style.left = (r.right + 4) + 'px';
+    menu.style.top  = r.top + 'px';
+}
+function showNavDemoSubmenu() {
+    if (_navDemoSubmenuHideTimer) { clearTimeout(_navDemoSubmenuHideTimer); _navDemoSubmenuHideTimer = null; }
+    const menu = document.getElementById('navDemoSubmenu');
+    if (!menu) return;
+    _positionNavDemoSubmenu();
+    menu.classList.add('is-open');
+}
+function hideNavDemoSubmenu() {
+    if (_navDemoSubmenuHideTimer) clearTimeout(_navDemoSubmenuHideTimer);
+    _navDemoSubmenuHideTimer = setTimeout(() => {
+        const m = document.getElementById('navDemoSubmenu');
+        if (m) m.classList.remove('is-open');
+    }, 200);
+}
+function _wireNavDemoSubmenu() {
+    const wrap = document.getElementById('navDemo') &&
+                 document.getElementById('navDemo').closest('.sidebar-item-wrap');
+    const menu = document.getElementById('navDemoSubmenu');
+    if (!wrap || !menu) return;
+    if (menu.parentNode !== document.body) document.body.appendChild(menu);
+    wrap.addEventListener('mouseenter', showNavDemoSubmenu);
+    wrap.addEventListener('mouseleave', hideNavDemoSubmenu);
+    menu.addEventListener('mouseenter', showNavDemoSubmenu);
+    menu.addEventListener('mouseleave', hideNavDemoSubmenu);
+    window.addEventListener('resize', () => {
+        const m = document.getElementById('navDemoSubmenu');
+        if (m && m.classList.contains('is-open')) _positionNavDemoSubmenu();
     });
 }
 
@@ -3376,6 +3423,132 @@ function practiceRecordCamera(durationMs) {
 }
 
 // ══════════════════════════════════════════════════════════════
+// DEMO MODE (Kiosk / Lanyard) — sibling of the Live mode dropdown
+// ══════════════════════════════════════════════════════════════
+// Kiosk demo  -> the existing demo-scenarios home page (unchanged).
+// Lanyard demo -> the same UI as Live Lanyard mode, but the Translate
+// button is intercepted: instead of running the recognition + LLM
+// pipeline, we wait briefly and then render a hardcoded sentence built
+// from three interesting emergency-domain glosses. Everything else
+// (camera, recording, motion gate, status bar, Send/Edit/Regenerate
+// chips) runs exactly as in real Lanyard live mode -- the demo gate
+// only fires inside _translateBatch when DEMO_LANYARD_ACTIVE is set
+// AND the current SIGNBRIDGE_MODE is 'lanyard', so the real flow
+// stays untouched.
+let DEMO_LANYARD_ACTIVE = false;
+
+// Scripted output for the Lanyard demo's Translate step. One entry per
+// domain; each picks three visually-distinct signs from that domain's
+// ACTIVE vocab (post-masking) and a tight three-beat narrative. The
+// `emergency` script is the fallback used when the selectedDomain isn't
+// in this map yet.
+const DEMO_LANYARD_THINK_MS = 1800;   // simulated processing delay
+function _demoGloss(g, conf) {
+    return { gloss: g, confidence: conf, confident: true,
+             top_k: [{ gloss: g, confidence: conf }] };
+}
+const DEMO_LANYARD_SCRIPTS = {
+    emergency: {
+        // EARTHQUAKE = both-handed tremor, HOSPITAL = H-cross on shoulder.
+        sentence: "There's an earthquake — hurry to the hospital!",
+        glosses: [_demoGloss('EARTHQUAKE', 0.99),
+                  _demoGloss('HURRY',      0.96),
+                  _demoGloss('HOSPITAL',   0.98)],
+        plausibility: 92,
+    },
+    restaurant: {
+        // ORDER (request), LOBSTER (visually distinct pincer motion),
+        // CHECK (the bill -- common closer for a restaurant interaction).
+        sentence: "I'd like to order the lobster, then the check, please.",
+        glosses: [_demoGloss('ORDER',   0.98),
+                  _demoGloss('LOBSTER', 0.94),
+                  _demoGloss('CHECK',   0.97)],
+        plausibility: 91,
+    },
+    doctor_visit: {
+        // Classic pediatrician-visit opener: announces who, what,
+        // and why-they're-here, all in three signs.
+        sentence: "My child has a cold — we have an appointment.",
+        glosses: [_demoGloss('CHILDREN',    0.97),
+                  _demoGloss('COLD',        0.96),
+                  _demoGloss('APPOINTMENT', 0.94)],
+        plausibility: 90,
+    },
+    travel: {
+        // TICKET (mimics punching), FLY (airplane gesture), FRANCE
+        // (F + national-gesture) -- three of the most visually
+        // distinct signs in the travel-50 model.
+        sentence: "I'd like a ticket to fly to France.",
+        glosses: [_demoGloss('TICKET', 0.97),
+                  _demoGloss('FLY',    0.98),
+                  _demoGloss('FRANCE', 0.95)],
+        plausibility: 92,
+    },
+};
+function _getDemoLanyardScript(domain) {
+    return DEMO_LANYARD_SCRIPTS[domain] || DEMO_LANYARD_SCRIPTS.emergency;
+}
+
+// ── Interactive speaker turn (Kiosk demo) ─────────────────────
+// Currently scoped to the restaurant demo. When the conversation hits a
+// SPEAKER turn (i.e. the hearing person's line), instead of auto-typing
+// the scripted line into the transcript, we show it as a teleprompter at
+// the bottom and listen via Web Speech for the actual voice. If what we
+// hear is reasonably close to the script (word-Jaccard >= threshold) we
+// put their voice into the transcript; if it's gibberish or way off we
+// fall back to the scripted line so the demo narrative still makes
+// sense. Signer turns stay fully scripted.
+const DEMO_INTERACTIVE_SPEAKER_DOMAINS = new Set(['restaurant', 'doctor_visit', 'emergency']);
+// Word-Jaccard threshold. Anything BELOW this falls back to the scripted
+// line. Set to be liberal: a casual paraphrase or partial line should
+// still pass and put the user's actual voice in the transcript. Truly
+// off-topic speech ("the weather is nice", "banana split with sprinkles")
+// scores near zero and falls back cleanly.
+const DEMO_SPEAKER_MIN_SIMILARITY = 0.15;
+
+function _speakerTurnSimilarity(actual, expected) {
+    if (!actual || !expected) return 0;
+    if (actual === expected) return 1;
+    const norm = s => String(s).toLowerCase()
+        .replace(/[^a-z0-9 ]+/g, ' ')
+        .split(/\s+/).filter(Boolean);
+    const A = new Set(norm(actual));
+    const B = new Set(norm(expected));
+    if (A.size === 0 || B.size === 0) return 0;
+    let inter = 0;
+    A.forEach(w => { if (B.has(w)) inter++; });
+    const union = A.size + B.size - inter;
+    return union === 0 ? 0 : inter / union;
+}
+
+function _isInteractiveSpeakerDemo() {
+    return MODE === 'demo' && DEMO_INTERACTIVE_SPEAKER_DOMAINS.has(selectedDomain);
+}
+
+function setDemoMode(mode) {
+    if (mode === 'lanyard') {
+        DEMO_LANYARD_ACTIVE = true;
+        // Reflect on the Demo nav chip so the user sees which mode they
+        // picked. (Mirrors the Live nav's mode chip.)
+        const chip = document.getElementById('navDemoModeChip');
+        if (chip) chip.textContent = 'Lanyard';
+        // Reuse the production Lanyard mode entry: this auto-opens the
+        // WiFi camera URL prompt if not connected, hides I-Sign / I-Speak,
+        // configures the segmenter defaults for the lanyard camera, etc.
+        if (typeof setSignBridgeMode === 'function') setSignBridgeMode('lanyard', true);
+        navigateTo('live');
+    } else {
+        // 'kiosk' -> the regular demo-scenarios home page. Clear the
+        // lanyard-demo gate so the real Translate path runs if the user
+        // later navigates back into Live Lanyard.
+        DEMO_LANYARD_ACTIVE = false;
+        const chip = document.getElementById('navDemoModeChip');
+        if (chip) chip.textContent = 'Kiosk';
+        navigateTo('demo');
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
 // SIDEBAR NAVIGATION — flat: Sign Bank, Demo, Live, Upload, Profile
 // ══════════════════════════════════════════════════════════════
 function navigateTo(section) {
@@ -4084,27 +4257,42 @@ function listenForSpeech(expectedText) {
         recognition.maxAlternatives = 1;
 
         let finalResult = '';
+        // Persist the latest interim across onresult firings. Web Speech
+        // often calls onend RIGHT after a short utterance without ever
+        // emitting an isFinal result -- without this, finalResult would
+        // be empty and we'd fall back to expectedText even though the
+        // user actually spoke. The interim text IS the voice; we just
+        // never got the "finalized" signal.
+        let lastInterim = '';
         let resolved = false;
+
+        const finish = () => {
+            const heard = (finalResult || lastInterim || '').trim();
+            const out = heard || expectedText;
+            console.log('[Speech] finalResult=' + JSON.stringify(finalResult) +
+                        ' lastInterim=' + JSON.stringify(lastInterim) +
+                        ' -> resolved=' + JSON.stringify(out));
+            resolve(out);
+        };
 
         const timeout = setTimeout(() => {
             if (!resolved) {
                 resolved = true;
                 recognition.stop();
-                resolve(finalResult || expectedText);
+                finish();
             }
         }, 15000);
 
         recognition.onresult = (event) => {
-            let interim = '';
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 const transcript = event.results[i][0].transcript;
                 if (event.results[i].isFinal) {
                     finalResult += transcript;
                 } else {
-                    interim = transcript;
+                    lastInterim = transcript;
                 }
             }
-            const display = finalResult || interim;
+            const display = finalResult || lastInterim;
             if (display) {
                 const hint = statusBar.querySelector('.script-hint');
                 if (hint) hint.innerHTML = '<span class="listening-indicator"></span>Hearing: "' + display + '"';
@@ -4115,14 +4303,15 @@ function listenForSpeech(expectedText) {
             if (!resolved) {
                 resolved = true;
                 clearTimeout(timeout);
-                resolve(finalResult || expectedText);
+                finish();
             }
         };
 
-        recognition.onerror = () => {
+        recognition.onerror = (e) => {
             if (!resolved) {
                 resolved = true;
                 clearTimeout(timeout);
+                console.warn('[Speech] error:', e && e.error);
                 resolve(expectedText);
             }
         };
@@ -4153,11 +4342,26 @@ function playSignVideo(url) {
         signVid.onended = null;
         signVid.onerror = null;
         signVid.onloadeddata = null;
+        signVid.onloadedmetadata = null;
 
-        const to = setTimeout(() => finish(false), 5000);
+        // Initial metadata-load ceiling. Old value (5s) wasn't enough for
+        // sentence sample videos which redirect to R2 on cache miss --
+        // cold R2 edge latency + redirect-hop routinely takes 6-10s on a
+        // hotspot connection, which manifests as a "randomly black" sign
+        // video while the gloss predictions keep printing (predictions
+        // come from the conversation JSON, not the video). 15s comfortably
+        // covers a slow first fetch without making genuinely-missing
+        // files (404) hang too long.
+        const to = setTimeout(() => {
+            console.warn('[SignVideo] metadata load timed out (15s): ' + url);
+            finish(false);
+        }, 15000);
         signVid.onpause = () => { if (!isPlaying && !liveActive) finish(false); };
 
-        signVid.onerror = () => finish(false);
+        signVid.onerror = () => {
+            console.warn('[SignVideo] error loading: ' + url);
+            finish(false);
+        };
         signVid.onloadedmetadata = () => {
             clearTimeout(to);
             const dynamicTimeout = Math.max((signVid.duration || 5) * 1000 + 3000, 5000);
@@ -4402,7 +4606,14 @@ async function playDoctorTurnDemo(turn) {
     if (!isPlaying) return;
     signVid.style.display = 'none';
 
-    if (METHOD === 'sign') {
+    const hasSpeechRec = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    const interactive = _isInteractiveSpeakerDemo() && hasSpeechRec;
+
+    // Auto path: METHOD === 'sign' on a non-interactive demo (the existing
+    // behavior) just shows the scripted line and types it straight into
+    // the transcript -- no listening. Preserved for every demo we haven't
+    // explicitly upgraded to interactive (see DEMO_INTERACTIVE_SPEAKER_DOMAINS).
+    if (METHOD === 'sign' && !interactive) {
         statusBar.innerHTML = `
             <div class="doctor-script">
                 <div class="script-label">Speaker says:</div>
@@ -4414,11 +4625,17 @@ async function playDoctorTurnDemo(turn) {
         return;
     }
 
-    const hasSpeechRec = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    // Interactive path. Shows the script as a teleprompter, listens
+    // via Web Speech, and puts the actual recognized voice into the
+    // transcript -- UNLESS the recognized text drifts too far from
+    // the script (word-Jaccard similarity below DEMO_SPEAKER_MIN_SIMILARITY).
+    // The drift gate is what saves the demo when nothing recognizable
+    // came out of the mic (returns expected as a no-op fallback) or
+    // when the user got the words wrong and we want the canonical
+    // line to keep the narrative coherent.
     const hintText = hasSpeechRec
         ? '<span class="listening-indicator"></span>Listening...'
         : 'Tap here when done speaking';
-
     statusBar.innerHTML = `
         <div class="doctor-script">
             <div class="script-label">Read this line aloud:</div>
@@ -4427,8 +4644,28 @@ async function playDoctorTurnDemo(turn) {
         </div>`;
 
     const recognized = await listenForSpeech(turn.text);
-    const displayText = recognized.trim() || turn.text;
+    let displayText = turn.text;   // safe default
+    if (interactive) {
+        // Restaurant-style demo: similarity-gated voice in transcript.
+        const heard = (recognized || '').trim();
+        const sim = _speakerTurnSimilarity(heard, turn.text);
+        const useHeard = heard !== '' && heard !== turn.text
+                         && sim >= DEMO_SPEAKER_MIN_SIMILARITY;
+        displayText = useHeard ? heard : turn.text;
+        console.log(`[Demo/${selectedDomain}/Speaker] expected="${turn.text}" ` +
+                    `heard="${heard}" sim=${sim.toFixed(2)} ` +
+                    `use=${useHeard ? 'heard' : 'scripted'}`);
+    } else {
+        // Existing METHOD === 'speak' behavior: trust the recognizer
+        // (it already falls back to expected text when nothing was
+        // heard). No similarity gate here -- preserved verbatim so
+        // other demos / live mode aren't affected by this change.
+        displayText = (recognized || '').trim() || turn.text;
+    }
+
     addMsg('doctor', SPEAKER_LABEL, displayText);
+    // Always log the canonical scripted line to history so the
+    // downstream demo flow doesn't get derailed by a mis-heard turn.
     history.push({ speaker: 'doctor', text: turn.text });
 }
 
@@ -5489,6 +5726,15 @@ function _cleanBatchGlosses(glosses, durationSec) {
 // "Translate" in batch mode: stop recording, send the whole clip for
 // segmentation + gloss inference in one pass, then construct the sentence.
 async function _translateBatch() {
+    // Lanyard Demo short-circuit: same Lanyard live UI, but the Translate
+    // step bypasses the recognition + LLM pipeline and renders a hardcoded
+    // sentence after a brief simulated delay. Gated on both the demo flag
+    // AND the current mode so the production Lanyard path is never affected
+    // by a stale flag from a prior demo session.
+    if (DEMO_LANYARD_ACTIVE && SIGNBRIDGE_MODE === 'lanyard') {
+        return _translateBatchDemoScripted();
+    }
+
     const btn = document.getElementById('btnSendMessage');
     if (btn) { btn.disabled = true; btn.textContent = 'Translating…'; }
     recBadge.classList.remove('on');
@@ -5644,6 +5890,66 @@ async function _translateBatch() {
     } else {
         statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
     }
+}
+
+// Lanyard-demo replacement for the back half of _translateBatch.
+// Stops the recording cleanly (so MediaRecorder doesn't keep
+// streaming and so the user could re-record if they wanted to), waits
+// a moment to mimic real processing latency, then pours the scripted
+// glosses + sentence into the same state the real flow uses --
+// `liveCollectedGlosses`, `_runningCaption`, `_lastSentGlossCount`,
+// _appendGlossRow rows, _renderAndShowCaption -- so the downstream
+// Send / Edit / Regenerate chips behave identically to the real path.
+async function _translateBatchDemoScripted() {
+    const btn = document.getElementById('btnSendMessage');
+    if (btn) { btn.disabled = true; btn.textContent = 'Translating…'; }
+    recBadge.classList.remove('on');
+    recBorder.classList.remove('on');
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Segmenting + recognizing… <span class="spinner"></span></span>';
+
+    // Stop the recording so the MediaRecorder + camera track release
+    // cleanly. The blob is intentionally discarded -- the demo doesn't
+    // need it because the output is scripted -- but stopping matches
+    // the real flow's lifecycle.
+    try { await _stopBatchRecording(); } catch (_) { /* no-op */ }
+
+    // Pretend to think. Shows the same "Segmenting → Constructing" UX
+    // the real path shows, so the demo feels indistinguishable.
+    await sleep(Math.max(0, DEMO_LANYARD_THINK_MS - 200));
+    statusBar.innerHTML = '<span class="processing ai"><span class="ai-sparkle">✨</span>Constructing sentence… <span class="spinner"></span></span>';
+    await sleep(200);
+
+    // Pick the script that matches the active domain. Falls back to the
+    // emergency script for any domain we haven't authored yet so demos
+    // never error out.
+    const script = _getDemoLanyardScript(selectedDomain);
+    console.log('[Demo/Lanyard] domain=' + selectedDomain + ' -> ' + JSON.stringify(script.glosses.map(g => g.gloss)));
+    liveCollectedGlosses = script.glosses.slice();
+    _clearGlossRows();
+    liveCollectedGlosses.forEach(g => _appendGlossRow(g));
+
+    _runningCaption        = script.sentence;
+    _lastSentGlossCount    = liveCollectedGlosses.length;
+    _captionIsEdited       = false;
+
+    // CTQI v3, computed the same way the real path computes it
+    // (GA = mean top-1 conf, CF1 = 1.0, P = plausibility), so the badge
+    // matches what a real high-quality utterance would produce.
+    const avgConf = liveCollectedGlosses.reduce((s, g) => s + (g.confidence || 0), 0)
+                    / liveCollectedGlosses.length;
+    const ctqi = (avgConf * 100) * (0.5 + 0.5 * script.plausibility / 100);
+    _renderAndShowCaption(script.sentence, ctqi, false);
+
+    // Hand off to the real Send Message button so the rest of the
+    // session (sending to transcript, speaker turn, Edit, Regenerate)
+    // all work as in the production flow.
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Send Message';
+        btn.style.background = '#4caf80';
+        btn.onclick = () => sendNowAndPause();
+    }
+    statusBar.innerHTML = '<span class="prompt">Review the caption — click <b>Send Message</b>, or use 🔄 / ✏️ to fix it.</span>';
 }
 
 // Initialize the sign engine (called once when first needed). Variable name
