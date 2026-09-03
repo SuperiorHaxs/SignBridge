@@ -107,7 +107,7 @@
         </div>
         <button class="sidebar-item" id="navSignBank" onclick="navigateTo('sign-bank')">
             <span class="sidebar-icon">&#x1F4D6;</span>
-            <span class="sidebar-label">Practice</span>
+            <span class="sidebar-label">Workshop</span>
         </button>
         <button class="sidebar-item" id="navSettings" onclick="navigateTo('settings')">
             <span class="sidebar-icon">&#x2699;&#xFE0F;</span>
@@ -245,8 +245,8 @@
          ══════════════════════════════════════════ -->
     <div id="signBankScreen">
         <div class="tab-intro">
-            <h2>Practice</h2>
-            <p>Explore our reference library of American Sign Language signs. Each sign includes a short video clip demonstrating the correct form. Hover to preview, click to play with controls, or practice with your camera. <strong><span id="sbTotalCount">0</span> signs available.</strong></p>
+            <h2>Workshop</h2>
+            <p>Explore our reference library of American Sign Language signs. Each sign includes a short video clip demonstrating the correct form. Watch the reference, then <strong>Practice</strong> against the model to check yourself, or <strong>Capture</strong> your recording to help train it. <strong><span id="sbTotalCount">0</span> signs available.</strong></p>
         </div>
 
         <div class="tab-body">
@@ -277,7 +277,7 @@
         <!-- Practice session overlay (2.6) — opens inline when clicking Practice on a card -->
         <div id="practiceSession" style="display:none">
             <div class="prac-topbar">
-                <button class="back-btn" onclick="exitPracticeSession()">&#x2190; Back to Practice</button>
+                <button class="back-btn" onclick="exitPracticeSession()">&#x2190; Back to Workshop</button>
                 <div class="prac-score" id="pracScore"></div>
             </div>
 
@@ -291,6 +291,13 @@
             </div>
             <!-- Hidden mirror for legacy code that referenced pracSignName -->
             <div class="prac-sign-name" id="pracSignName" style="display:none"></div>
+
+            <!-- Mode toggle: Practice (live inference) vs Capture (save training data).
+                 Capture is disabled for signs with no reference/demo video. -->
+            <div class="prac-mode-toggle" id="pracModeToggle">
+                <button type="button" class="prac-mode-btn active" id="pracModePractice" onclick="setPracticeMode('practice')">&#x1F3AF; Practice</button>
+                <button type="button" class="prac-mode-btn" id="pracModeCapture" onclick="setPracticeMode('capture')">&#x1F534; Capture</button>
+            </div>
 
             <div class="prac-split">
                 <div class="prac-panel">
@@ -318,10 +325,28 @@
             </div>
 
             <div class="prac-controls">
-                <button class="btn btn-primary prac-record-btn" id="pracRecordBtn" onclick="practiceRecord()">
-                    &#x1F534; Record Sign
-                </button>
+                <!-- Practice mode: live-inference record (single production model) -->
+                <div class="prac-mode-controls" id="pracPracticeControls">
+                    <button class="btn btn-primary prac-record-btn" id="pracRecordBtn" onclick="practiceRecord()">
+                        &#x1F534; Record Sign
+                    </button>
+                </div>
+                <!-- Capture mode: record a clip for training data. The train/val/test
+                     split is assigned later by the training pipeline (stratified_family_split),
+                     not chosen here. -->
+                <div class="prac-mode-controls" id="pracCaptureControls" style="display:none">
+                    <button class="btn btn-primary prac-record-btn" id="pracCaptureBtn" onclick="practiceCaptureRecord()">
+                        &#x1F534; Record Clip
+                    </button>
+                    <span id="pracCaptureMsg" class="prac-capture-msg"></span>
+                </div>
             </div>
+
+            <!-- Shown when a practice attempt captures no sign segment -->
+            <div class="prac-nosign-hint" id="pracNoSignHint" style="display:none"></div>
+
+            <!-- Camera/viewpoint normalization diagnostic (Practice mode) -->
+            <div class="prac-framing-fit" id="pracFramingFit" style="display:none"></div>
 
             <div class="prac-feedback" id="pracFeedback" style="display:none">
                 <div class="prac-feedback-icon" id="pracFeedbackIcon"></div>
@@ -705,6 +730,7 @@
 <script src="/static/vendor/mediapipe-pose/pose.js"></script>
 <script src="/static/js/sign_segmenter.js?v={{ static_v('js/sign_segmenter.js') }}"></script>
 <script src="/static/js/pose_overlay.js?v={{ static_v('js/pose_overlay.js') }}"></script>
+<script src="/static/js/framing_live.js?v={{ static_v('js/framing_live.js') }}"></script>
 <script src="/static/js/streaming_live.js?v={{ static_v('js/streaming_live.js') }}"></script>
 <script src="/static/js/app.js?v={{ static_v('js/app.js') }}"></script>
 <!-- Upload tab (backlog item 10). Loaded after app.js so loadDomainsToUI

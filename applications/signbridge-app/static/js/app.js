@@ -2385,6 +2385,46 @@ async function loadSignBank() {
     }
 }
 
+// Build one sign-bank card (video preview + Practice button). Extracted so both
+// the default preview render and search-results render use identical cards.
+function _createSbCard(sign, domain) {
+    const card = document.createElement('div');
+    card.className = 'sb-card';
+    card.dataset.gloss = sign.gloss.toLowerCase();
+    card.innerHTML = `
+        <div class="sb-card-video">
+            <video src="${sign.video_url}" muted playsinline loop preload="metadata"></video>
+            <div class="sb-play-hint">▶</div>
+        </div>
+        <div class="sb-card-label">
+            <span class="sb-card-gloss">${sign.gloss.toUpperCase()}</span>
+        </div>
+        <div class="sb-card-actions">
+            <button class="sb-practice-btn" title="Practice this sign">&#x270B; Practice</button>
+        </div>
+    `;
+    const video = card.querySelector('video');
+    const videoBox = card.querySelector('.sb-card-video');
+    videoBox.addEventListener('mouseenter', () => { video.play().catch(() => {}); });
+    videoBox.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
+    videoBox.addEventListener('click', () => {
+        if (video.controls) {
+            video.controls = false;
+            video.muted = true;
+        } else {
+            video.controls = true;
+            video.muted = false;
+            video.currentTime = 0;
+            video.play().catch(() => {});
+        }
+    });
+    card.querySelector('.sb-practice-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        startPracticeSession({ ...sign, domain });
+    });
+    return card;
+}
+
 function renderSignBank(data) {
     const container = document.getElementById('sbGrid');
     const totalEl = document.getElementById('sbTotalCount');
@@ -2431,44 +2471,7 @@ function renderSignBank(data) {
         const restSigns    = group.signs.slice(PREVIEW_LIMIT);
 
         previewSigns.forEach(sign => {
-            const card = document.createElement('div');
-            card.className = 'sb-card';
-            card.dataset.gloss = sign.gloss.toLowerCase();
-            card.innerHTML = `
-                <div class="sb-card-video">
-                    <video src="${sign.video_url}" muted playsinline loop preload="metadata"></video>
-                    <div class="sb-play-hint">\u25B6</div>
-                </div>
-                <div class="sb-card-label">
-                    <span class="sb-card-gloss">${sign.gloss.toUpperCase()}</span>
-                </div>
-                <div class="sb-card-actions">
-                    <button class="sb-practice-btn" title="Practice this sign">&#x270B; Practice</button>
-                </div>
-            `;
-
-            const video = card.querySelector('video');
-            const videoBox = card.querySelector('.sb-card-video');
-            videoBox.addEventListener('mouseenter', () => { video.play().catch(() => {}); });
-            videoBox.addEventListener('mouseleave', () => { video.pause(); video.currentTime = 0; });
-            videoBox.addEventListener('click', () => {
-                if (video.controls) {
-                    video.controls = false;
-                    video.muted = true;
-                } else {
-                    video.controls = true;
-                    video.muted = false;
-                    video.currentTime = 0;
-                    video.play().catch(() => {});
-                }
-            });
-
-            card.querySelector('.sb-practice-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                startPracticeSession({ ...sign, domain: group.domain });
-            });
-
-            grid.appendChild(card);
+            grid.appendChild(_createSbCard(sign, group.domain));
         });
 
         section.appendChild(grid);
@@ -2515,27 +2518,49 @@ function filterSignBank() {
     const visibleEl = document.getElementById('sbVisibleCount');
     const emptyEl = document.getElementById('sbEmpty');
 
+    // Empty query -> restore the default preview layout (4 cards/group + picker).
+    if (!query) {
+        renderSignBank(signBankData);
+        return;
+    }
+
+    // Search across the FULL dataset (not just the 4 rendered previews), and
+    // render a card for every match. Capped per group so a very short query
+    // doesn't spin up thousands of video thumbnails.
+    const MATCH_CAP = 24;
+    container.innerHTML = '';
     let visible = 0;
 
-    container.querySelectorAll('.sb-group').forEach(group => {
-        const cards = group.querySelectorAll('.sb-card');
-        let groupVisible = 0;
-        cards.forEach(card => {
-            const match = !query || card.dataset.gloss.includes(query);
-            card.style.display = match ? '' : 'none';
-            if (match) { visible++; groupVisible++; }
-        });
-        group.style.display = groupVisible === 0 ? 'none' : '';
-        const countEl = group.querySelector('.sb-group-count');
-        if (countEl && query) {
-            countEl.textContent = groupVisible + ' shown';
-        } else if (countEl) {
-            const total = cards.length;
-            countEl.textContent = total + ' sign' + (total !== 1 ? 's' : '');
-        }
+    signBankData.groups.forEach(group => {
+        const matches = group.signs.filter(s => s.gloss.toLowerCase().includes(query));
+        if (matches.length === 0) return;
+
+        const meta = getSbDomainMeta(group.domain);
+        const section = document.createElement('div');
+        section.className = 'sb-group';
+        section.dataset.domain = group.domain;
+
+        const shown = matches.slice(0, MATCH_CAP);
+        const header = document.createElement('div');
+        header.className = 'sb-group-header';
+        const countTxt = matches.length + ' match' + (matches.length !== 1 ? 'es' : '') +
+                         (matches.length > MATCH_CAP ? ` (showing ${MATCH_CAP})` : '');
+        header.innerHTML = `
+            <span class="sb-group-icon" style="background:${meta.bg};color:${meta.color}">${meta.icon}</span>
+            <span class="sb-group-label">${group.label}</span>
+            <span class="sb-group-count">${countTxt}</span>
+        `;
+        section.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'sb-group-grid';
+        shown.forEach(sign => grid.appendChild(_createSbCard(sign, group.domain)));
+        section.appendChild(grid);
+        container.appendChild(section);
+        visible += shown.length;
     });
 
-    visibleEl.textContent = query ? visible + ' of ' + signBankData.count : signBankData.count + ' shown';
+    visibleEl.textContent = visible + ' of ' + signBankData.count;
     emptyEl.style.display = visible === 0 ? 'block' : 'none';
 }
 
@@ -2755,6 +2780,12 @@ async function startPracticeSession(sign) {
         feed.style.display = 'none';
         showToast('Camera access denied — practice mode needs your camera', 'error');
     }
+
+    // Set up the Practice/Capture mode toggle for this sign.
+    initPracticeModes(sign);
+
+    // Start live framing feedback (border + message) now that the camera is up.
+    _startPracticeFramingMonitor();
 }
 
 // ── Custom Practice: jump straight to the signing page ──
@@ -2947,11 +2978,18 @@ function _applyPracticeReferenceVideo() {
 }
 
 function exitPracticeSession() {
+    _pracClearNoSignHint();
+    if (practiceFramingMonitor) { try { practiceFramingMonitor.stop(); } catch (_) {} }
     // Stop the streaming practice WS if listening.
     if (practiceStream) {
         try { practiceStream.stop(); } catch (_) {}
         practiceStream = null;
     }
+    // Stop an in-progress capture recording (discard it).
+    if (pracCaptureRecorder && pracCaptureRecorder.state === 'recording') {
+        try { pracCaptureRecorder.ondataavailable = null; pracCaptureRecorder.onstop = null; pracCaptureRecorder.stop(); } catch (_) {}
+    }
+    pracCaptureRecorder = null;
     // Stop camera
     if (practiceCameraStream) {
         practiceCameraStream.getTracks().forEach(t => t.stop());
@@ -2995,10 +3033,86 @@ function updatePracticeScore() {
 // for a sign. Cleaned up by practiceRetry() / exitPracticeSession().
 let practiceStream = null;
 
+// Real-time framing monitor (client-side MediaPipe Pose): colors the camera
+// border + bottom message while the user frames up, before/while signing.
+let practiceFramingMonitor = null;
+let pracFramingLevel = null;   // latest framing level from the monitor
+function _startPracticeFramingMonitor() {
+    if (!practiceCameraStream || !window.PracticeFramingMonitor || !window.Pose) return;
+    const feed = document.getElementById('pracCameraFeed');
+    if (!feed) return;
+    try {
+        if (!practiceFramingMonitor) practiceFramingMonitor = new PracticeFramingMonitor();
+        practiceFramingMonitor.onLevel = _onFramingLevel;
+        practiceFramingMonitor.init(feed).then(() => practiceFramingMonitor.start()).catch(() => {});
+    } catch (_) {}
+}
+
+function _onFramingLevel(level) {
+    if (level == null) return;   // monitor stopping — leave buttons as-is
+    pracFramingLevel = level;
+    _updateRecordGate();
+}
+
+// Framing gate: don't let recognition (or a capture take) start while the
+// framing is red — otherwise the motion of the user *adjusting* their framing
+// gets picked up as "signing." Red -> disable + relabel the record button;
+// only touch it when a session/recording isn't already in progress.
+function _updateRecordGate() {
+    const bad = (pracFramingLevel === 'bad');
+    if (practiceMode === 'capture') {
+        const b = document.getElementById('pracCaptureBtn');
+        const recording = pracCaptureRecorder && pracCaptureRecorder.state === 'recording';
+        if (b && !recording) {
+            b.disabled = bad;
+            b.innerHTML = bad ? '🔴 Fix framing first' : '🔴 Record Clip';
+        }
+    } else {
+        const b = document.getElementById('pracRecordBtn');
+        if (b && !practiceStream) {   // not while a recognition session is live
+            b.disabled = bad;
+            b.innerHTML = bad ? '🔴 Fix framing first' : '🔴 Record Sign';
+        }
+    }
+}
+
+// "No sign detected" hint: if a practice attempt listens for a while without the
+// motion gate capturing a segment, tell the user why nothing happened (rather
+// than leaving the badge silently absent).
+let practiceNoSignTimer = null;
+const PRAC_NOSIGN_MS = 8000;
+function _pracClearNoSignHint() {
+    if (practiceNoSignTimer) { clearTimeout(practiceNoSignTimer); practiceNoSignTimer = null; }
+    const el = document.getElementById('pracNoSignHint');
+    if (el) el.style.display = 'none';
+}
+function _pracArmNoSignHint() {
+    _pracClearNoSignHint();
+    practiceNoSignTimer = setTimeout(() => {
+        const el = document.getElementById('pracNoSignHint');
+        if (el && practiceStream) {   // still listening, nothing captured yet
+            el.textContent = 'No sign detected yet — make sure both hands are fully in view and sign clearly.';
+            el.style.display = 'block';
+        }
+    }, PRAC_NOSIGN_MS);
+}
+
 async function practiceRecord() {
     if (!practiceCameraStream || !practiceSign) return;
     // Reuse if already listening (idempotent click).
     if (practiceStream) return;
+    // Don't start recognition while framing is red — the motion of fixing your
+    // framing would otherwise get recognized as signing.
+    if (pracFramingLevel === 'bad') {
+        if (typeof showToast === 'function') showToast('Adjust your framing first (see the red bar), then record.', 'error');
+        return;
+    }
+
+    // Pause the client-side framing monitor while recognizing: it runs MediaPipe
+    // Pose in the browser, which otherwise contends with the server's Holistic
+    // extraction for CPU (they share the machine in local dev). Not needed while
+    // signing anyway — resumes on the result for the next attempt.
+    if (practiceFramingMonitor) { try { practiceFramingMonitor.stop(); } catch (_) {} }
 
     const btn = document.getElementById('pracRecordBtn');
     const feedback = document.getElementById('pracFeedback');
@@ -3032,8 +3146,13 @@ async function practiceRecord() {
         zoneTop: _zTop,
         zoneBottom: _zBot,
     });
-    // Practice's start message includes target_gloss for server-side match check.
+    // Practice's start message includes target_gloss for server-side match check,
+    // plus a portrait flag so the framing diagnostic can account for the phone
+    // 4:3 crop (source aspect from the actual camera, not the styled element).
     practiceStream.targetGloss = targetGloss;
+    practiceStream.isPortrait = (videoEl && videoEl.videoWidth && videoEl.videoHeight)
+        ? (videoEl.videoHeight > videoEl.videoWidth)
+        : (window.innerHeight > window.innerWidth);
     // Patch _openWS to include target_gloss in the start payload. Simpler than
     // adding a constructor field since this is a one-line tweak.
     const origOpenWS = practiceStream._openWS.bind(practiceStream);
@@ -3046,6 +3165,7 @@ async function practiceRecord() {
                 this._ws.send(JSON.stringify({
                     type: 'tune',
                     target_gloss: this.targetGloss || '',
+                    portrait: !!this.isPortrait,
                 }));
             } catch (_) {}
             if (_origOnOpen) _origOnOpen.call(this._ws, ev);
@@ -3082,6 +3202,7 @@ async function practiceRecord() {
     };
 
     await practiceStream.init(videoEl);
+    _pracArmNoSignHint();
 }
 
 function _practiceSetStatus(text) {
@@ -3096,6 +3217,7 @@ function _practiceSetStatus(text) {
 // Called by the wrapped message handler when the server emits practice_result.
 function _practiceOnResult(m) {
     const btn = document.getElementById('pracRecordBtn');
+    _pracClearNoSignHint();   // a segment was captured -> hide the "no sign" hint
     // Tear down the streaming session — we got our one result for this attempt.
     if (practiceStream) {
         try { practiceStream.stop(); } catch (_) {}
@@ -3112,6 +3234,9 @@ function _practiceOnResult(m) {
         predBadge.className = 'prac-prediction-badge ' + (matched ? 'match' : 'miss');
         predBadge.style.display = 'block';
     }
+    _renderFramingFit(m.framing);
+    // Resume live framing feedback for the next attempt (paused during recognition).
+    if (practiceFramingMonitor && practiceCameraStream) { try { practiceFramingMonitor.start(); } catch (_) {} }
     const overlay = document.getElementById('pracBigCountdown');
     if (overlay) overlay.style.display = 'none';
 
@@ -3420,6 +3545,163 @@ function practiceRecordCamera(durationMs) {
             if (recorder.state === 'recording') recorder.stop();
         }, durationMs);
     });
+}
+
+// ══════════════════════════════════════════════════════════════
+// PRACTICE / CAPTURE mode toggle (Capture folded into the Practice tab)
+// ══════════════════════════════════════════════════════════════
+// One session shell, one camera stream, two actions:
+//   practice -> live inference via /ws/practice-stream (StreamingLiveMode)
+//   capture  -> record a clip and POST /api/capture as training data
+// Capture is only offered for signs that have a reference/demo video, so a
+// capturer always sees the sign first.
+let practiceMode = 'practice';
+let pracCaptureRecorder = null;
+let pracCaptureChunks = [];
+
+function initPracticeModes(sign) {
+    practiceMode = 'practice';
+    const hasDemo = !!(sign && sign.video_url);
+    const capBtn = document.getElementById('pracModeCapture');
+    if (capBtn) {
+        capBtn.disabled = !hasDemo;
+        capBtn.title = hasDemo ? '' : 'Capture needs a reference video for this sign';
+    }
+    const msg = document.getElementById('pracCaptureMsg');
+    if (msg) { msg.textContent = ''; msg.className = 'prac-capture-msg'; }
+    const ff = document.getElementById('pracFramingFit');
+    if (ff) { ff.style.display = 'none'; ff.innerHTML = ''; }
+    _pracClearNoSignHint();
+    _applyPracticeModeUI();
+}
+
+function setPracticeMode(mode) {
+    if (mode === 'capture') {
+        const capBtn = document.getElementById('pracModeCapture');
+        if (capBtn && capBtn.disabled) return;   // no demo -> capture not allowed
+        // Leaving Practice: stop any live-inference session so the badge stays quiet.
+        if (practiceStream) { try { practiceStream.stop(); } catch (_) {} practiceStream = null; }
+        _pracClearNoSignHint();
+        _practiceSetStatus(null);
+        const predBadge = document.getElementById('pracPredictionBadge');
+        if (predBadge) predBadge.style.display = 'none';
+        const recBtn = document.getElementById('pracRecordBtn');
+        if (recBtn) recBtn.disabled = false;
+    }
+    practiceMode = mode;
+    _applyPracticeModeUI();
+}
+
+function _applyPracticeModeUI() {
+    const isCap = practiceMode === 'capture';
+    const pBtn = document.getElementById('pracModePractice');
+    const cBtn = document.getElementById('pracModeCapture');
+    if (pBtn) pBtn.classList.toggle('active', !isCap);
+    if (cBtn) cBtn.classList.toggle('active', isCap);
+    const pc = document.getElementById('pracPracticeControls');
+    const cc = document.getElementById('pracCaptureControls');
+    if (pc) pc.style.display = isCap ? 'none' : '';
+    if (cc) cc.style.display = isCap ? '' : 'none';
+    if (isCap) {
+        const fb = document.getElementById('pracFeedback');
+        if (fb) fb.style.display = 'none';
+        const ff = document.getElementById('pracFramingFit');
+        if (ff) ff.style.display = 'none';
+    }
+    _updateRecordGate();
+}
+
+// Render the camera/viewpoint "fit" diagnostic under the Practice camera:
+// a 0-100 score plus directional messages about how the framing compares to
+// the training-data distribution.
+function _renderFramingFit(framing) {
+    const el = document.getElementById('pracFramingFit');
+    if (!el) return;
+    if (!framing || (framing.score == null && !(framing.issues && framing.issues.length))) {
+        el.style.display = 'none';
+        return;
+    }
+    const issues = (framing.issues || []).map((t, i) =>
+        `<div class="pff-issue ${(framing.severity || [])[i] || 'info'}">${t}</div>`).join('');
+    let head = '';
+    if (framing.score != null) {
+        const s = framing.score;
+        const cls = s >= 85 ? 'good' : (s >= 65 ? 'warn' : 'bad');
+        head = `<div class="pff-head">Camera fit <span class="pff-score ${cls}">${s}/100</span>
+                <span class="pff-sub">vs training viewpoint</span></div>`;
+    }
+    el.innerHTML = head + issues;
+    el.style.display = 'block';
+}
+
+function _pracPickMime() {
+    for (const t of ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4']) {
+        if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) return t;
+    }
+    return '';
+}
+
+// Capture mode: click to start recording, click again to stop -> auto-saves the
+// clip to /api/capture (same endpoint/store as the standalone Capture page).
+async function practiceCaptureRecord() {
+    if (!practiceCameraStream || !practiceSign) return;
+    const btn = document.getElementById('pracCaptureBtn');
+    const msg = document.getElementById('pracCaptureMsg');
+
+    // Second click -> stop; onstop handler submits.
+    if (pracCaptureRecorder && pracCaptureRecorder.state === 'recording') {
+        pracCaptureRecorder.stop();
+        return;
+    }
+    // Don't record training data with red framing.
+    if (pracFramingLevel === 'bad') {
+        if (msg) { msg.textContent = 'Fix your framing first (see the red bar).'; msg.className = 'prac-capture-msg err'; }
+        return;
+    }
+
+    pracCaptureChunks = [];
+    try {
+        pracCaptureRecorder = new MediaRecorder(practiceCameraStream, { mimeType: _pracPickMime() });
+    } catch (e) {
+        try { pracCaptureRecorder = new MediaRecorder(practiceCameraStream); }
+        catch (e2) { if (msg) { msg.textContent = 'Recording not supported'; msg.className = 'prac-capture-msg err'; } return; }
+    }
+    pracCaptureRecorder.ondataavailable = (e) => { if (e.data.size > 0) pracCaptureChunks.push(e.data); };
+    pracCaptureRecorder.onstop = async () => {
+        const blob = new Blob(pracCaptureChunks, { type: 'video/webm' });
+        pracCaptureRecorder = null;
+        if (btn) { btn.innerHTML = '🔴 Record Clip'; btn.disabled = true; }
+        if (!blob.size) {
+            if (msg) { msg.textContent = 'Empty clip — try again'; msg.className = 'prac-capture-msg err'; }
+            if (btn) btn.disabled = false;
+            return;
+        }
+        if (msg) { msg.textContent = 'Saving…'; msg.className = 'prac-capture-msg'; }
+        const domain = practiceSign.domain === 'other' ? 'generic' : practiceSign.domain;
+        const gloss = (practiceSign.gloss || '').toUpperCase();
+        const fd = new FormData();
+        fd.append('domain', domain); fd.append('gloss', gloss);
+        fd.append('video', blob, 'capture.webm');
+        try {
+            const r = await (await fetch('/api/capture', { method: 'POST', body: fd })).json();
+            if (r.success) {
+                let count = '';
+                try {
+                    const inv = await (await fetch('/api/captures?domain=' + encodeURIComponent(domain))).json();
+                    if (inv.success && inv.by_gloss) count = ` · ${inv.by_gloss[gloss] || 0} for ${gloss}`;
+                } catch (_) {}
+                if (msg) { msg.textContent = `Saved ✓ (${r.frames} frames, ${r.backend})${count}`; msg.className = 'prac-capture-msg ok'; }
+            } else {
+                if (msg) { msg.textContent = 'Error: ' + (r.error || 'save failed'); msg.className = 'prac-capture-msg err'; }
+            }
+        } catch (e) {
+            if (msg) { msg.textContent = 'Network error saving clip'; msg.className = 'prac-capture-msg err'; }
+        }
+        if (btn) btn.disabled = false;
+    };
+    pracCaptureRecorder.start();
+    if (btn) btn.innerHTML = '■ Stop &amp; Save';
+    if (msg) { msg.textContent = 'Recording… sign now, then Stop'; msg.className = 'prac-capture-msg'; }
 }
 
 // ══════════════════════════════════════════════════════════════

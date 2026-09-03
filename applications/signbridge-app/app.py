@@ -271,8 +271,11 @@ sys.path.insert(0, str(MODELS_DIR / "openhands-modernized" / "src"))
 sys.path.insert(0, str(MODELS_DIR / "openhands-modernized" / "src" / "util"))
 sys.path.insert(0, str(APPLICATIONS_DIR / "show-and-tell"))  # for camera_processor
 sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "inference_api"))  # for model_registry
+sys.path.insert(0, str(PROJECT_UTILITIES_DIR / "camera-framing"))  # for framing_diag
 
 from llm_factory import create_llm_provider
+
+import framing_diag  # Practice camera/viewpoint normalization diagnostic (project-utilities/camera-framing)
 
 # ============================================================================
 # FAST PATH — In-memory MediaPipe pose extraction (from show-and-tell)
@@ -910,16 +913,18 @@ _direct_model_cache = {}  # domain -> (model, id_to_gloss, masked_class_ids)
 _direct_model_lock = threading.Lock()
 
 
-def _get_direct_model(domain):
-    """Load and cache model for direct in-process inference."""
+def _get_direct_model(domain, version=None):
+    """Load and cache model for direct in-process inference. `version` selects a
+    specific model version (e.g. '1.1'); None loads the domain's active model."""
+    cache_key = domain if not version else f"{domain}@{version}"
     with _direct_model_lock:
-        if domain not in _direct_model_cache:
+        if cache_key not in _direct_model_cache:
             from model_registry import ModelRegistry
             registry = ModelRegistry()
-            model, id_to_gloss, masked_class_ids = registry.get_model(domain)
-            _direct_model_cache[domain] = (model, id_to_gloss, masked_class_ids)
-            print(f"[DirectInfer] Cached model for domain '{domain}'")
-        return _direct_model_cache[domain]
+            model, id_to_gloss, masked_class_ids = registry.get_model(domain, version=version)
+            _direct_model_cache[cache_key] = (model, id_to_gloss, masked_class_ids)
+            print(f"[DirectInfer] Cached model for '{cache_key}'")
+        return _direct_model_cache[cache_key]
 
 
 # Per-sign confidence floor. Predictions below this get marked
@@ -978,7 +983,7 @@ def _detect_clip_handedness(pose_array):
     return 'two_handed', 'right' if r_path >= l_path else 'left'
 
 
-def _predict_with_handedness_aware_refinement(pose_array, domain):
+def _predict_with_handedness_aware_refinement(pose_array, domain, version=None):
     """
     Stage 4: Two-pass inference with handedness-aware refinement.
 
@@ -989,7 +994,7 @@ def _predict_with_handedness_aware_refinement(pose_array, domain):
     This prevents spurious mask-and-re-predict changing a low-confidence
     wrong answer into a high-confidence different wrong answer.
     """
-    pred1 = _predict_from_poses(pose_array, domain=domain)
+    pred1 = _predict_from_poses(pose_array, domain=domain, version=version)
     clip_handedness, clip_dominant = _detect_clip_handedness(pose_array)
 
     if clip_handedness != 'one_handed':
@@ -1013,7 +1018,7 @@ def _predict_with_handedness_aware_refinement(pose_array, domain):
     if masked is None:
         return pred1, {'refined': False, 'reason': 'masking_skipped'}
 
-    pred2 = _predict_from_poses(masked, domain=domain)
+    pred2 = _predict_from_poses(masked, domain=domain, version=version)
     if pred2.get('confidence', 0) > pred1.get('confidence', 0):
         return pred2, {
             'refined': True,
@@ -1032,7 +1037,7 @@ def _predict_with_handedness_aware_refinement(pose_array, domain):
     }
 
 
-def _predict_from_poses(pose_array, domain="doctor_visit"):
+def _predict_from_poses(pose_array, domain="doctor_visit", version=None):
     """
     Run inference directly from pose array, bypassing pickle file I/O
     and HTTP round-trip to the inference API.
@@ -1042,7 +1047,7 @@ def _predict_from_poses(pose_array, domain="doctor_visit"):
     from openhands_modernized import WLASLPoseProcessor
 
     _t0 = _t.time()
-    model, id_to_gloss, masked_class_ids = _get_direct_model(domain)
+    model, id_to_gloss, masked_class_ids = _get_direct_model(domain, version=version)
     processor = WLASLPoseProcessor()
     _t1 = _t.time()
 
@@ -1447,16 +1452,26 @@ def ws_practice_stream(ws):
 
     print("[WS] /ws/practice-stream connected")
     send_lock = _threading.Lock()
+    _closed = {"v": False}
 
     def send(payload):
+        if _closed["v"]:
+            return
         with send_lock:
             try:
                 ws.send(json.dumps(payload))
             except Exception as e:
-                print(f"[WS-Practice] send failed: {e}")
+                # A client that closed the socket (nav away / stop) surfaces as
+                # a benign close (1005/1006) on the next send -- go quiet instead
+                # of spamming the log, and stop trying to send to a dead socket.
+                m = str(e).lower()
+                if "clos" in m or "1005" in m or "1006" in m:
+                    _closed["v"] = True
+                else:
+                    print(f"[WS-Practice] send failed: {e}")
 
     session = StreamingSession(send_json=send)
-    state = {"domain": "emergency", "target": ""}
+    state = {"domain": "emergency", "target": "", "version": None, "portrait": False}
     inference_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ws-practice")
 
     def run_practice(segment_id, frames):
@@ -1484,10 +1499,21 @@ def ws_practice_stream(ws):
                 return
 
             prediction, refine_info = _predict_with_handedness_aware_refinement(
-                trimmed, domain=state["domain"]
+                trimmed, domain=state["domain"], version=state["version"]
             )
             prediction = _apply_confidence_gate(prediction)
             t2 = _time.time()
+
+            # Camera/viewpoint normalization diagnostic: how does this clip's
+            # framing (pitch, aspect, signing-space placement) compare to the
+            # training-data distribution? Uses the raw pre-normalization pose.
+            try:
+                framing = framing_diag.framing_fit(
+                    framing_diag.frame_stats(full_pose), framing_diag.load_baseline(),
+                    portrait=state.get("portrait", False))
+            except Exception as _fe:
+                framing = None
+                print(f"[WS-Practice] framing diag skipped: {type(_fe).__name__}: {_fe}")
 
             target = state["target"].strip().upper()
             predicted = (prediction.get("gloss") or "").strip().upper()
@@ -1501,6 +1527,13 @@ def ws_practice_stream(ws):
                   f"target={target} predicted={predicted} ({prediction.get('confidence',0)*100:.0f}%) "
                   f"top1_match={match_top1} topk_match={match_top_k} | "
                   f"pose={t1-t0:.2f}s infer={t2-t1:.2f}s")
+            # Log framing distance-from-baseline per attempt so framing can be
+            # correlated with prediction quality (z = std-devs from training mean).
+            if framing:
+                _fz = framing.get("z", {})
+                _fi = (framing.get("issues") or ["-"])[0]
+                print(f"[WS-Practice]   framing: fit={framing.get('score')}/100 | "
+                      f"z={ {k: v for k, v in _fz.items()} } | {_fi}")
 
             send({
                 "type": "practice_result",
@@ -1513,6 +1546,7 @@ def ws_practice_stream(ws):
                 "target": target,
                 "match_top1": match_top1,
                 "match_top_k": match_top_k,
+                "framing": framing,
                 "frames_in": len(frames),
                 "frames_after_trim": len(trimmed),
                 "trim_reason": trim_info.get("reason", "?"),
@@ -1570,6 +1604,11 @@ def ws_practice_stream(ws):
                     if payload.get("domain"): state["domain"] = str(payload["domain"])
                     if payload.get("target_gloss") is not None:
                         state["target"] = str(payload["target_gloss"])
+                    if "version" in payload:  # A/B: practice against a specific model version
+                        v = payload.get("version")
+                        state["version"] = str(v) if v else None
+                    if "portrait" in payload:  # phone framing guard for the diagnostic
+                        state["portrait"] = bool(payload["portrait"])
                     if kind == "start":
                         session.reset()
                 elif kind == "reset":
@@ -2208,6 +2247,30 @@ def warm_model():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/api/model-versions", methods=["GET"])
+def model_versions():
+    """List a domain's available model versions for A/B inference.
+    Returns {active, versions:[...]}; versions=[] means the domain hasn't been
+    versioned yet (only its single active model exists)."""
+    domain = request.args.get("domain", "")
+    if not domain:
+        return jsonify({"success": False, "error": "domain required"}), 400
+    try:
+        from model_registry import ModelRegistry
+        info = ModelRegistry().list_versions(domain)
+        return jsonify({"success": True, "domain": domain, **info})
+    except Exception as e:
+        return jsonify({"success": False, "error": f"{type(e).__name__}: {e}"}), 500
+
+
+@app.route("/api/framing-baseline", methods=["GET"])
+def framing_baseline():
+    """Serve the framing baseline so the browser can score camera framing live
+    (real-time border/message in Practice). Same baseline the server uses for
+    the after-sign camera-fit check."""
+    return jsonify(framing_diag.load_baseline() or {})
+
+
 @app.route("/api/process-sign", methods=["POST"])
 def process_sign():
     """
@@ -2222,6 +2285,7 @@ def process_sign():
     video_file = request.files["video"]
     video_bytes = video_file.read()
     domain = request.form.get("domain", "doctor_visit")
+    version = request.form.get("version") or None  # A/B: pick a specific model version
 
     if len(video_bytes) == 0:
         return jsonify({"success": False, "error": "Empty video"}), 400
@@ -2268,7 +2332,7 @@ def process_sign():
 
             t2 = _time.time()
 
-            prediction, refine_info = _predict_with_handedness_aware_refinement(pose_array, domain=domain)
+            prediction, refine_info = _predict_with_handedness_aware_refinement(pose_array, domain=domain, version=version)
             prediction = _apply_confidence_gate(prediction)
 
             t3 = _time.time()
@@ -4096,6 +4160,24 @@ def serve_sample_file(filepath):
         if r2_url:
             return redirect(r2_url, code=302)
     return "Not found", 404
+
+
+# ============================================================================
+# Data-capture feature (isolated blueprint; records signs into the training pipeline)
+# ============================================================================
+try:
+    from capture_routes import register_capture_routes
+    register_capture_routes(
+        app,
+        project_root=PROJECT_ROOT,
+        decode_video_bytes=_decode_video_bytes,
+        extract_poses=_extract_poses,
+        reject_outliers=_reject_outlier_landmarks,
+        drop_sparse_hands=_drop_sparse_hand_detections,
+        smooth_missing=_smooth_missing_landmarks,
+    )
+except Exception as _cap_e:  # never let the capture feature break app startup
+    print(f"[capture] routes NOT registered: {type(_cap_e).__name__}: {_cap_e}")
 
 
 # ============================================================================

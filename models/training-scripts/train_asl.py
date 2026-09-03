@@ -458,7 +458,7 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
                            architecture="openhands", model_size="small", hidden_size=None, num_layers=None, dropout=0.1,
                            label_smoothing=0.1, warmup_epochs=None, grad_clip=1.0, force_fresh=False, weight_decay=None,
                            manifest_path=None, use_finger_features=True, use_spatial_features=True, manifest_dir=None,
-                           lr_override=None, max_samples_per_class=None):
+                           lr_override=None, max_samples_per_class=None, epochs_override=None):
     """Train model on specified number of most frequent classes."""
 
     print(f"{num_classes}-Class Sign Language Recognition Training")
@@ -815,6 +815,11 @@ def train_multi_class_model(num_classes=20, dataset_type='original', augmented_p
         print(f"HYPERPARAMS: Configured for small original dataset")
         print(f"  Batch size: {batch_size} (small)")
         print(f"  Learning rate: {lr} (higher)")
+
+    # Override total epochs if explicitly provided (quick local runs).
+    if epochs_override is not None:
+        num_epochs = int(epochs_override)
+        print(f"  Epochs: {num_epochs} (custom override)")
 
     # Override LR if explicitly provided
     if lr_override is not None:
@@ -1225,6 +1230,8 @@ if __name__ == "__main__":
                        help='Model architecture: transformer (default) or cnn_lstm')
     parser.add_argument('--early-stopping', type=int, default=None,
                        help='Early stopping patience (number of epochs without improvement). Default: no early stopping')
+    parser.add_argument('--epochs', type=int, default=None,
+                       help='Cap total training epochs (overrides the default 1500). Use for quick local runs.')
     parser.add_argument('--model-size', choices=['tiny', 'small', 'large'], default='small',
                        help='Model size: tiny (32 hidden, 2 layers), small (64 hidden, 3 layers), or large (256 hidden, 6 layers)')
     parser.add_argument('--hidden-size', type=int, default=None,
@@ -1361,6 +1368,7 @@ if __name__ == "__main__":
                 manifest_dir=args.manifest_dir,
                 lr_override=args.lr,
                 max_samples_per_class=args.max_samples_per_class,
+                epochs_override=args.epochs,
             )
 
             print()

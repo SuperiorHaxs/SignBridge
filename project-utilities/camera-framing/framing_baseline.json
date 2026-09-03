@@ -1,0 +1,38 @@
+{
+  "pitch_ratio": {
+    "mean": 0.43219,
+    "std": 0.04312,
+    "n": 1152
+  },
+  "body_aspect": {
+    "mean": 0.71646,
+    "std": 0.04812,
+    "n": 1152
+  },
+  "nose_rel_y": {
+    "mean": 0.60406,
+    "std": 0.04569,
+    "n": 1152
+  },
+  "hand_rest_y_left": {
+    "mean": -0.71252,
+    "std": 0.75951,
+    "n": 1152
+  },
+  "hand_rest_y_right": {
+    "mean": -0.55924,
+    "std": 0.62103,
+    "n": 1152
+  },
+  "hips_visible_frac": {
+    "mean": 1.0,
+    "std": 0.0,
+    "n": 1200
+  },
+  "dominant_hand_right_frac": 0.746,
+  "_meta": {
+    "clips_used": 1200,
+    "glosses_scanned": 2000,
+    "source": "augmented_pool originals"
+  }
+}

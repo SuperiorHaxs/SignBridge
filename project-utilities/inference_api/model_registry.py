@@ -37,7 +37,11 @@ class ModelRegistry:
     def __init__(self, models_dir: Path = None, registry: dict = None):
         self._models_dir = models_dir or PRODUCTION_MODELS_DIR
         self._registry = registry or self._load_registry()
-        self._cache = {}  # domain -> (model, id_to_gloss, masked_class_ids)
+        # Optional per-domain version map, {domain: {version: model_dir}} + active
+        # version, parsed from registry.json's domains.<d>.versions. Empty for
+        # domains that haven't been versioned by the retrain utility.
+        self._versions, self._active_version = self._load_versions()
+        self._cache = {}  # cache key (domain or "domain@version") -> (model, id_to_gloss, masked_class_ids)
         self._lock = threading.Lock()
 
         # Log registry on startup for debugging
@@ -99,16 +103,45 @@ class ModelRegistry:
         # Legacy flat format: {"domain": "model_dir_name"}
         return raw
 
+    def _load_versions(self):
+        """Parse per-domain versions from registry.json (new format only).
+        Returns ({domain: {version: model_dir}}, {domain: active_version})."""
+        versions, active = {}, {}
+        registry_path = os.environ.get("DOMAIN_REGISTRY_PATH")
+        path = Path(registry_path) if registry_path else (self._models_dir / "registry.json")
+        try:
+            if not path.exists():
+                return versions, active
+            with open(path, "r") as f:
+                raw = json.load(f)
+            for domain_key, entry in raw.get("domains", {}).items():
+                if isinstance(entry, dict) and isinstance(entry.get("versions"), dict):
+                    versions[domain_key] = dict(entry["versions"])
+                    active[domain_key] = entry.get("active_version")
+        except Exception as e:  # never let versioning break model loading
+            print(f"[ModelRegistry] version parse skipped: {type(e).__name__}: {e}")
+        return versions, active
+
+    def list_versions(self, domain: str) -> dict:
+        """{active, versions:[...]} for a domain. versions=[] means unversioned
+        (only the single active model_dir exists)."""
+        vmap = self._versions.get(domain, {})
+        return {"active": self._active_version.get(domain),
+                "versions": sorted(vmap.keys())}
+
     def register_domain(self, domain: str, model_dir_name: str):
         """Register a new domain -> model mapping."""
         self._registry[domain] = model_dir_name
 
-    def get_model(self, domain: str = "generic"):
+    def get_model(self, domain: str = "generic", version: str = None):
         """
         Get model for a domain. Loads from disk on first call, cached thereafter.
 
         Args:
             domain: Domain name (e.g., "generic", "healthcare")
+            version: Optional model version (e.g. "1.1"). When given and known,
+                     loads that version's dir; otherwise loads the domain's
+                     active model_dir (unchanged legacy behavior).
 
         Returns:
             tuple: (model, id_to_gloss, masked_class_ids)
@@ -117,28 +150,35 @@ class ModelRegistry:
             ValueError: If domain is not registered
             FileNotFoundError: If model directory doesn't exist
         """
+        # Resolve which dir to load. Unknown/omitted version -> active model_dir.
+        vmap = self._versions.get(domain, {})
+        if version and version in vmap:
+            model_dir_name = vmap[version]
+            cache_key = f"{domain}@{version}"
+        else:
+            if domain not in self._registry:
+                available = list(self._registry.keys())
+                raise ValueError(f"Unknown domain '{domain}'. Available: {available}")
+            model_dir_name = self._registry[domain]
+            cache_key = domain
+
         with self._lock:
-            if domain in self._cache:
-                return self._cache[domain]
+            if cache_key in self._cache:
+                return self._cache[cache_key]
 
         # Load outside the lock (IO-bound)
-        if domain not in self._registry:
-            available = list(self._registry.keys())
-            raise ValueError(f"Unknown domain '{domain}'. Available: {available}")
-
-        model_dir_name = self._registry[domain]
         model_path = self._models_dir / model_dir_name
-
         if not model_path.exists():
             raise FileNotFoundError(
-                f"Model directory not found for domain '{domain}': {model_path}"
+                f"Model directory not found for domain '{domain}'"
+                f"{f' version {version}' if version else ''}: {model_path}"
             )
 
-        print(f"[ModelRegistry] Loading model for domain '{domain}' from {model_path}")
+        print(f"[ModelRegistry] Loading model for '{cache_key}' from {model_path}")
         model, id_to_gloss, masked_class_ids = load_model_from_checkpoint(str(model_path))
 
         with self._lock:
-            self._cache[domain] = (model, id_to_gloss, masked_class_ids)
+            self._cache[cache_key] = (model, id_to_gloss, masked_class_ids)
 
         return model, id_to_gloss, masked_class_ids
 
